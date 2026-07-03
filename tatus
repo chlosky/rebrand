@@ -1,0 +1,73 @@
+warning: in the working copy of 'src/pages/features/MirrorRehearsal.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/pages/features/MirrorRehearsal.tsx b/src/pages/features/MirrorRehearsal.tsx[m
+[1mindex 7c7d54d..9cf7413 100644[m
+[1m--- a/src/pages/features/MirrorRehearsal.tsx[m
+[1m+++ b/src/pages/features/MirrorRehearsal.tsx[m
+[36m@@ -601,44 +601,29 @@[m [mconst MirrorRehearsal: React.FC = () => {[m
+   };[m
+ [m
+   const startCoinsAudio = async () => {[m
+[31m-    if (!coinsAudioCtxRef.current) {[m
+[31m-      coinsAudioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();[m
+[31m-    }[m
+[31m-    const ctxA = coinsAudioCtxRef.current;[m
+[31m-    if (!ctxA) return;[m
+[31m-    try { if (ctxA.state === "suspended") await ctxA.resume(); } catch {}[m
+[31m-[m
+[31m-    if (!coinsMasterGainRef.current) {[m
+[31m-      const master = ctxA.createGain();[m
+[31m-      master.gain.value = 0.35; // much louder[m
+[31m-      master.connect(ctxA.destination);[m
+[31m-      coinsMasterGainRef.current = master;[m
+[31m-    }[m
+[31m-[m
+[31m-    // Brown-ish noise bed[m
+[31m-    const bufferSize = 2 * ctxA.sampleRate;[m
+[31m-    const noiseBuffer = ctxA.createBuffer(1, bufferSize, ctxA.sampleRate);[m
+[31m-    const output = noiseBuffer.getChannelData(0);[m
+[31m-    let lastOut = 0;[m
+[31m-    for (let i = 0; i < bufferSize; i++) {[m
+[31m-      const white = Math.random() * 2 - 1;[m
+[31m-      output[i] = (lastOut + 0.02 * white) / 1.02;[m
+[31m-      lastOut = output[i];[m
+[31m-    }[m
+[31m-[m
+[31m-    const noiseSource = ctxA.createBufferSource();[m
+[31m-    noiseSource.buffer = noiseBuffer;[m
+[31m-    noiseSource.loop = true;[m
+[31m-[m
+[31m-    const gain = ctxA.createGain();[m
+[31m-    gain.gain.value = 0.22; // louder brown noise bed[m
+[31m-[m
+[31m-    noiseSource.connect(gain);[m
+[31m-    gain.connect(coinsMasterGainRef.current);[m
+[31m-[m
+[31m-    noiseSource.start();[m
+[31m-    coinsNoiseSourceRef.current = noiseSource;[m
+[31m-    coinsNoiseGainRef.current = gain;[m
+[32m+[m[32m    if (coinsAudioCtxRef.current) return;[m
+[32m+[m[32m    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;[m
+[32m+[m[32m    if (!AudioCtx) return;[m
+[32m+[m[32m    const audioCtx = new AudioCtx();[m
+[32m+[m[32m    try { if (audioCtx.state === "suspended") audioCtx.resume(); } catch {}[m
+[32m+[m[32m    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);[m
+[32m+[m[32m    const data = buffer.getChannelData(0);[m
+[32m+[m[32m    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.32;[m
+[32m+[m[32m    const coinNoise = audioCtx.createBufferSource();[m
+[32m+[m[32m    coinNoise.buffer = buffer;[m
+[32m+[m[32m    coinNoise.loop = true;[m
+[32m+[m[32m    const coinFilter = audioCtx.createBiquadFilter();[m
+[32m+[m[32m    coinFilter.type = "lowpass";[m
+[32m+[m[32m    coinFilter.frequency.value = 1400;[m
+[32m+[m[32m    const coinGain = audioCtx.createGain();[m
+[32m+[m[32m    coinGain.gain.value = 0.14;[m
+[32m+[m[32m    coinNoise.connect(coinFilter);[m
+[32m+[m[32m    coinFilter.connect(coinGain);[m
+[32m+[m[32m    coinGain.connect(audioCtx.destination);[m
+[32m+[m[32m    coinNoise.start();[m
+[32m+[m[32m    coinsAudioCtxRef.current = audioCtx;[m
+[32m+[m[32m    coinsNoiseSourceRef.current = coinNoise;[m
+[32m+[m[32m    coinsNoiseGainRef.current = coinGain;[m
+   };[m
+ [m
+   const startGoldAudio = async () => {[m

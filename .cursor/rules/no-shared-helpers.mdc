@@ -1,0 +1,12 @@
+---
+description: No shared helpers, utilities, or tooling unless explicitly requested
+alwaysApply: true
+---
+
+# Implementation style
+
+- Do not create shared helpers, utilities, or cross-file abstractions unless explicitly requested.
+- Wire behavior inline at the call site instead of extracting helpers.
+- Do not add Python scripts or generate-* tooling unless explicitly requested.
+- Do not introduce new shared modules for one-off tasks.
+- Prefer the smallest direct diff that solves the request.

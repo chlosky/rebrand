@@ -1,0 +1,27 @@
+{
+  "continue": "Continuar",
+  "back": "Voltar",
+  "signIn": "Entrar",
+  "alreadyHaveAccountSignIn": "Já tem uma conta? Entre",
+  "save": "Salvar",
+  "cancel": "Cancelar",
+  "close": "Fechar",
+  "loading": "Carregando…",
+  "error": "Algo deu errado",
+  "legalEnglishDisclaimer": "",
+  "edgeErrors": {
+    "permissionDenied": "Permissão negada. Entre e tente de novo.",
+    "genericRetry": "Ocorreu um erro. Tente novamente.",
+    "databaseError": "Erro no banco. Tente de novo.",
+    "serviceUnavailable": "Serviço temporariamente indisponível. Tente novamente.",
+    "unknownError": "Erro desconhecido",
+    "noCharacterSelected": "Selecione um personagem primeiro.",
+    "failedToGenerateMessage": "Falha ao gerar mensagem",
+    "noMessageGenerated": "Nenhuma mensagem gerada",
+    "dailyMessageLimit": "Você atingiu seu limite diário de mensagens ({{limit}}). O limite reinicia à meia-noite.",
+    "userIdAndMessageRequired": "ID do usuário e mensagem são obrigatórios.",
+    "connectionError": "Erro de conexão. Verifique sua rede e tente novamente.",
+    "unauthorized": "Você não está autorizado. Entre e tente novamente.",
+    "invalidRequest": "Solicitação inválida. Tente novamente."
+  }
+}

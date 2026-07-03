@@ -1,0 +1,120 @@
+{
+  "email": {
+    "consent": "Wenn du fortfährst, stimmst du zu, dein Quiz-Ergebnis und gelegentliche Manifestationstipps von Palette Plotting zu erhalten. Abmeldung jederzeit möglich.",
+    "emailInvalid": "Bitte gib eine gültige E-Mail-Adresse ein.",
+    "emailPlaceholder": "E-Mail",
+    "emailRequired": "Bitte gib deine E-Mail-Adresse ein.",
+    "firstNamePlaceholder": "Vorname (optional)",
+    "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "submit": "Mein Ergebnis anzeigen",
+    "submitting": "Speichern…",
+    "subtitle": "Wir speichern dein Ergebnis und geben dir eine personalisierte Empfehlung.",
+    "title": "Erhalte deine Manifestationsdiagnose"
+  },
+  "intro": {
+    "eyebrow": "Palette Plotting-Quiz",
+    "meta": "Fünf Fragen · etwa zwei Minuten · ein klarer nächster Schritt",
+    "startCta": "Quiz starten",
+    "subtitle": "Eine kurze Diagnose, um das größte Muster zu erkennen, das deine Manifestationsergebnisse stört.",
+    "title": "Was blockiert deine Manifestation gerade?"
+  },
+  "nav": {
+    "back": "Zurück",
+    "questionProgress": "Frage {{current}} von {{total}}"
+  },
+  "questions": {
+    "q1": {
+      "options": {
+        "check_signs": "Nach Zeichen oder Bewegung suchen.",
+        "rewrite": "Affirmationen oder Scripts umschreiben.",
+        "spiral": "In eine Spirale geraten und annehmen, dass es nicht funktioniert.",
+        "stop": "Ganz aufhören."
+      },
+      "prompt": "Wenn sich deine Manifestation verzögert anfühlt, was tust du normalerweise?"
+    },
+    "q2": {
+      "options": {
+        "intrusive": "Aufdringliche Gedanken.",
+        "old_assumptions": "In alte Annahmen zurückfallen.",
+        "opposite_3d": "Das Gegenteil in der 3D sehen.",
+        "starting_over": "Ständig neu anfangen."
+      },
+      "prompt": "Was frustriert dich am meisten?"
+    },
+    "q3": {
+      "options": {
+        "checking": "Ich suche ständig nach Beweisen.",
+        "confident_panic": "Ich fühle mich selbstsicher und gerate dann in Panik.",
+        "every_method": "Ich habe fast jede Methode ausprobiert.",
+        "replaying": "Ich spiele alte Situationen immer wieder ab."
+      },
+      "prompt": "Welche Aussage klingt am meisten nach dir?"
+    },
+    "q4": {
+      "options": {
+        "daily_practice": "Eine tägliche Routine beibehalten.",
+        "ignoring_3d": "Aktuelle Umstände ignorieren.",
+        "one_approach": "Sich auf einen Ansatz festlegen.",
+        "steady": "Emotional stabil bleiben."
+      },
+      "prompt": "Was ist für dich am schwierigsten?"
+    },
+    "q5": {
+      "options": {
+        "daily_routine": "Eine tägliche Routine, die mich konsequent hält.",
+        "detachment": "Ein Detachment-Reset.",
+        "simple_system": "Ein einfaches Manifestationssystem.",
+        "stabilize": "Mein Mindset stabilisieren."
+      },
+      "prompt": "Was klingt gerade am hilfreichsten?"
+    }
+  },
+  "result": {
+    "actionStepHeading": "Ein kostenloser Handlungsschritt",
+    "buildPractice": "Baue deine personalisierte Manifestationsroutine in Palette Plotting auf.",
+    "eyebrow": "Deine Diagnose",
+    "readOnBlog": "Im Palette Plotting-Blog lesen →",
+    "recommended": "Für dich empfohlen",
+    "relatedGuide": "Zugehöriger Guide",
+    "retake": "Quiz erneut machen",
+    "startTrial": "Kostenlose Testversion starten",
+    "whatThisMeans": "Was das bedeutet"
+  },
+  "results": {
+    "method_hopper": {
+      "actionStep": "Lege dich sieben Tage auf ein Tool fest. Keine neuen Scripts, kein neuer Creator, keine neue „Geheimmethode“. Dieselbe Annahme, dasselbe Format, täglich.",
+      "explanation": "Du wechselst Techniken, Affirmationen, Coaches und Routinen, bevor irgendetwas Zeit hat zu wirken. Es kann wie Fortschritt aussehen, aber das Muster ist Misstrauen — neu anfangen, statt bei einer Annahme zu bleiben.",
+      "guideTitle": "Warum mehr Techniken nicht immer besser sind",
+      "paletteplottingPitch": "Palette Plotting hält Subliminals, Scripting, Mirror Work und Glaubensarbeit an einem Ort — damit du ein System aufbaust, statt zehn halb angefangene zu sammeln.",
+      "title": "Der Methoden-Springer"
+    },
+    "no_routine_manifestor": {
+      "actionStep": "Wähle ein 5-Minuten-Fenster (Morgenkaffee, Arbeitsweg, vor dem Schlafen) und eine Aktion: ein Subliminal hören, drei Affirmationen lesen oder eine Mirror-Work-Runde. Gleiche Zeit, gleiche Aktion, sieben Tage.",
+      "explanation": "Du hast Wunsch und Glauben, aber keine wiederholbare Routine. Inspiration kommt, dann übernimmt das Leben — und Manifestation wird etwas, woran du denkst, statt etwas, das du täglich tust.",
+      "guideTitle": "Die einfachste Manifestationsroutine überhaupt",
+      "paletteplottingPitch": "Palette Plotting ist für einen täglichen Rhythmus gebaut — Subliminals, Affirmationen, Mirror Work und Fortschrittstracking — ohne Manifestation zu einem Vollzeitprojekt zu machen.",
+      "title": "Der Manifestor ohne Routine"
+    },
+    "old_story_repeater": {
+      "actionStep": "Wenn eine alte Szene wieder auftaucht, unterbrich sie mit einer Revisionszeile: „Das war die alte Version.“ Diskutiere nicht damit — leite einmal um und geh weiter.",
+      "explanation": "Du probst alte Annahmen weiter, während du eine neue Realität erschaffen willst. Innere Gespräche, mentale Wiederholungen und „Was, wenn es wieder passiert?“-Loops halten die Vergangenheit aktiv — selbst wenn du die „richtigen“ Techniken machst.",
+      "guideTitle": "Wie du aufhörst, die Vergangenheit zu proben",
+      "paletteplottingPitch": "Palette Plotting unterstützt Glaubensarbeit und Scripting, damit du die alte Storyline durch Sprache ersetzt, in der du wirklich leben willst — statt nur Affirmationen darüberzulegen.",
+      "title": "Der Alte-Story-Wiederholer"
+    },
+    "three_d_checker": {
+      "actionStep": "Wähle eine Rückkehrzeile für diese Woche: „Stille ist nicht die endgültige Antwort.“ Sag sie einmal, wenn du merkst, dass du nach Beweisen suchst — und kehre dann in deinen Tag zurück.",
+      "explanation": "Du reagierst stark auf aktuelle Umstände und nutzt sie, um zu entscheiden, ob deine Manifestation funktioniert. Wenn die 3D still oder gegenteilig aussieht, wird deine Annahme neu verhandelt — selbst wenn du das Ende bereits gewählt hast.",
+      "guideTitle": "Wie du aufhörst, auf die 3D zu reagieren",
+      "paletteplottingPitch": "Palette Plotting hilft dir, den Endzustand in Schleife zu wiederholen — Subliminals, Affirmationen und Mirror Work — damit die 3D nicht länger der Chef deiner Annahme ist.",
+      "title": "Der 3D-Checker"
+    },
+    "waver": {
+      "actionStep": "Schreibe einen Satz, zu dem du zurückkehrst, wenn du schwankst: „Ich habe das bereits gewählt.“ Lege ihn auf deinen Sperrbildschirm oder in deine Notizen — nutze ihn, bevor du die ganze Geschichte umschreibst.",
+      "explanation": "An einem Tag glaubst du, am nächsten zweifelst du. Dein Wunsch ist nicht immer das Problem — die Beständigkeit ist es. Die alte Geschichte wird laut, wenn die 3D pausiert, und du verlässt die Entscheidung, die du bereits getroffen hast.",
+      "guideTitle": "Warum Manifestation an einem Tag leicht und am nächsten unmöglich wirkt",
+      "paletteplottingPitch": "Palette Plotting gibt dir eine wiederholbare Routine — nicht noch eine Methode, zu der du springst — damit dein Mindset einen stabilen Ort hat, wenn Zweifel auftauchen.",
+      "title": "Der Schwankende"
+    }
+  }
+}

@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>
+(function () {
+  var path = location.pathname.replace(/\/$/, "");
+  if (path.indexOf("/onboarding/subliminal") === 0) {
+    location.replace("/" + location.search + location.hash);
+  }
+})();
+</script>
+<script>
+(function () {
+  var path = location.pathname.replace(/\/$/, "");
+  var assets;
+  if (path === "/onboarding/welcome") {
+    assets = [
+      ["/apple-ios-logo-hero.png", "high"],
+      ["/marketing/welcome-mockup-screens/subliminal-maker-tracks.png", "high"],
+      ["/marketing/iphone-mockup-frame-hero.png", "auto"],
+    ];
+  } else {
+    return;
+  }
+  assets.forEach(function (pair) {
+    var link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = pair[0];
+    if (pair[1]) link.setAttribute("fetchpriority", pair[1]);
+    document.head.appendChild(link);
+  });
+  var fc = document.createElement("link");
+  fc.rel = "preconnect";
+  fc.href = "https://fonts.cdnfonts.com";
+  fc.crossOrigin = "anonymous";
+  document.head.appendChild(fc);
+})();
+</script>
+<!-- TikTok: ttq.load below + ttq.track in marketingConversionTrack.ts (direct browser pixel). -->
+<!-- TikTok Pixel Code Start — Pixel 062026 (D8RDRHJC77U677EP2BF0) -->
+<script>
+!function (w, d, t) {
+  w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+
+
+  ttq.load('D8RDRHJC77U677EP2BF0');
+  var pagePath = window.location.pathname || '/';
+  ttq.page({
+    content_id: pagePath,
+    content_type: 'product',
+    content_name: pagePath,
+    contents: [{
+      content_id: pagePath,
+      content_type: 'product',
+      content_name: pagePath,
+      quantity: 1
+    }]
+  });
+}(window, document, 'ttq');
+</script>
+<!-- TikTok Pixel Code End -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-64SFCH1EBW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-64SFCH1EBW');
+</script>
+<!--
+  `interactive-widget=overlays-content` tells Chrome / Android WebView to overlay the on-screen
+  keyboard on top of existing layout instead of shrinking the visual viewport. Stops fixed footers
+  (Back / Continue on onboarding form pages) from lifting above the keyboard. iOS WKWebView already
+  behaves this way under Capacitor `KeyboardResize.None`, so this is a no-op on iOS.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content" />
+<link rel="preconnect" href="https://play.google.com" crossorigin />
+<link rel="preconnect" href="https://tools.applemediaservices.com" crossorigin />
+<link rel="preconnect" href="https://essjyrhhaiywotvgjkcg.supabase.co" crossorigin />
+<meta name="color-scheme" content="light">
+<script>
+(function () {
+  try {
+    if (/Capacitor/i.test(navigator.userAgent)) {
+      document.documentElement.classList.add("capacitor-native");
+      var stored = localStorage.getItem("theme");
+      var isDark = stored !== "light";
+      if (isDark) document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+      var bg = isDark ? "#0f0d14" : "#ffffff";
+      document.documentElement.style.backgroundColor = bg;
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+/* Font smoothing */
+* {
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+
+html {
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+}
+
+/* Prevent Android WebView filters - but allow normal theming */
+html, body, #root {
+filter: none !important;
+}
+
+/* Native app: respect light/dark appearance (dashboard + chat). */
+html.capacitor-native.dark,
+html.capacitor-native.dark body,
+html.capacitor-native.dark #root {
+color-scheme: dark;
+background-color: #0f0d14 !important;
+}
+
+html.capacitor-native:not(.dark),
+html.capacitor-native:not(.dark) body,
+html.capacitor-native:not(.dark) #root {
+color-scheme: light;
+background-color: #ffffff !important;
+}
+
+html.capacitor-native[data-app-appearance="cosmic"],
+html.capacitor-native[data-app-appearance="cosmic"] body,
+html.capacitor-native[data-app-appearance="cosmic"] #root {
+color-scheme: dark;
+background-color: #0a0812 !important;
+}
+
+/* Light mode defaults (when no .dark class) */
+html:not(.dark):not(.capacitor-native) {
+color-scheme: light;
+background-color: #ffffff;
+}
+
+html:not(.dark):not(.capacitor-native) body {
+background-color: #ffffff;
+}
+
+/* Dark mode — match app tool-page theme (#0f0d14), not shadcn default */
+html.dark {
+color-scheme: dark;
+background-color: #0f0d14;
+}
+
+html.dark body,
+html.dark #root {
+background-color: #0f0d14;
+}
+</style>
+<title>Palette Plotting</title>
+<meta name="description" content="Palette Plotting: Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools. Start your personal growth journey today." />
+<meta name="author" content="Palette Plotting" />
+<meta name="keywords" content="affirmations, self-improvement, personal growth, goal setting, reflection, visualization, audio creation, Mirror Work, subliminal audio, AI affirmations" />
+<link rel="canonical" href="https://paletteplot.com" />
+
+<meta property="og:title" content="Palette Plotting" />
+<meta property="og:description" content="Palette Plotting: Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools. Start your personal growth journey today." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://paletteplot.com" />
+<meta property="og:site_name" content="Palette Plotting" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@paletteplotting" />
+<meta name="twitter:title" content="Palette Plotting" />
+<meta name="twitter:description" content="Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools." />
+
+<!-- PWA Meta Tags -->
+<meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Palette Plotting" />
+
+<!--
+  Apple Smart App Banner — shows a native banner at the top of mobile Safari
+  with one-tap install / open. Only renders when Safari is the active browser
+  (it's a no-op in TikTok / IG / FB webviews, but it's a major install lift
+  for organic + retargeting traffic that does land in Safari).
+  app-id derived from PALETTE_PLOTTING_APP_STORE_URL (id6759469696).
+-->
+<meta name="apple-itunes-app" content="app-id=6759469696" />
+
+<!-- Manifest: mobile gets real manifest; desktop gets a blank manifest + SW unregister + SW register noop -->
+<script>
+(function() {
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+// Remove any existing manifest links first
+document.querySelectorAll('link[rel="manifest"]').forEach(l => l.remove());
+
+const link = document.createElement('link');
+link.rel = 'manifest';
+        link.href = isMobile ? '/manifest.json' : 'data:application/manifest+json,{}';
+        // For desktop, use a minimal valid manifest to avoid parsing errors
+        link.href = isMobile ? '/manifest.json' : 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent('{"name":"","display":"browser"}');
+document.head.appendChild(link);
+
+// Unregister stale service workers on all devices (mobile PWA cache can serve old CSS/JS).
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.getRegistrations().then(function(regs) {
+  regs.forEach(function(reg) { reg.unregister(); });
+}).catch(function() {});
+var originalRegister = navigator.serviceWorker.register ? navigator.serviceWorker.register.bind(navigator.serviceWorker) : null;
+navigator.serviceWorker.register = function() {
+console.warn('Service worker registration blocked to prevent stale homepage cache', arguments[0]);
+return Promise.reject(new Error('SW registration blocked'));
+};
+if (navigator.serviceWorker.ready) {
+navigator.serviceWorker.ready.catch(function() {});
+}
+}
+
+// Viewport parity debug — open homepage with ?debug=viewport (console + optional on-screen overlay).
+if (/[?&]debug=viewport/.test(window.location.search)) {
+function logViewportDebug() {
+  var vv = window.visualViewport;
+  var moduleScript = document.querySelector('script[type="module"]');
+  var cssLink = document.querySelector('link[rel="stylesheet"]');
+  var payload = {
+    innerWidth: window.innerWidth,
+    clientWidth: document.documentElement.clientWidth,
+    visualViewportWidth: vv ? vv.width : null,
+    visualViewportScale: vv ? vv.scale : null,
+    devicePixelRatio: window.devicePixelRatio,
+    isMobileUa: isMobile,
+    isMobileBreakpoint: window.innerWidth < 768,
+    assetJs: moduleScript ? moduleScript.getAttribute('src') : null,
+    assetCss: cssLink ? cssLink.getAttribute('href') : null,
+    viewportMeta: document.querySelector('meta[name="viewport"]') ? document.querySelector('meta[name="viewport"]').getAttribute('content') : null,
+  };
+  console.info('[paletteplotting viewport debug]', payload);
+  var el = document.getElementById('sv-viewport-debug');
+  if (!el) {
+    el = document.createElement('pre');
+    el.id = 'sv-viewport-debug';
+    el.style.cssText = 'position:fixed;left:0;right:0;bottom:5rem;z-index:9999;margin:0;padding:8px;font:11px/1.35 monospace;background:rgba(0,0,0,0.88);color:#0f0;white-space:pre-wrap;pointer-events:none;max-height:40vh;overflow:auto;';
+    document.body.appendChild(el);
+  }
+  el.textContent = JSON.stringify(payload, null, 2);
+}
+document.addEventListener('DOMContentLoaded', logViewportDebug);
+window.addEventListener('resize', logViewportDebug);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', logViewportDebug);
+}
+})();
+</script>
+<script>
+// Sync meta theme-color with dashboard appearance (PWA status bar, mobile browser chrome, Capacitor WebView).
+(function() {
+function syncStatusBar() {
+var themeMeta = document.querySelector('meta[name="theme-color"]');
+if (!themeMeta) return;
+
+function applyAppSurfaces(bg) {
+document.documentElement.style.backgroundColor = bg;
+if (document.body) document.body.style.backgroundColor = bg;
+var appRoot = document.getElementById('root');
+if (appRoot) appRoot.style.backgroundColor = bg;
+}
+
+function applyMarketingSiteSurfaces() {
+themeMeta.setAttribute('content', '#000000');
+var appleStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+if (appleStatus) appleStatus.setAttribute('content', 'black-translucent');
+document.documentElement.style.colorScheme = 'dark';
+document.documentElement.style.backgroundColor = '#000000';
+if (document.body) document.body.style.backgroundColor = '#000000';
+var appRoot = document.getElementById('root');
+if (appRoot) appRoot.style.backgroundColor = '#000000';
+if (document.documentElement.classList.contains('dark')) {
+document.documentElement.classList.remove('dark');
+}
+}
+
+// React marketing shell (FAQ, quiz, legal, etc.) — keep black safe-area inlets.
+if (document.documentElement.getAttribute('data-marketing-site') === 'true') {
+applyMarketingSiteSurfaces();
+return;
+}
+
+// Marketing pages: black chrome (status bar / safe area). Not dashboard, onboarding, or login.
+function isMarketingSitePath(pathname) {
+var path = pathname === '/' ? '/' : pathname.replace(/\/$/, '') || '/';
+if (path === '/login') return false;
+if (path.indexOf('/dashboard') === 0) return false;
+if (path.indexOf('/onboarding') === 0) return false;
+var exact = ['/', '/mobilelanding', '/mobilelandingBR', '/mobilelandingmimi', '/mobilelandingjonni', '/faq', '/what-is-palette-plotting', '/terms', '/privacy', '/acceptable-use', '/contact', '/community', '/billing', '/pricingplans', '/dmca', '/quiz/blocking-manifestation'];
+if (exact.indexOf(path) !== -1) return true;
+if (path.indexOf('/blog') === 0) return true;
+return false;
+}
+if (isMarketingSitePath(window.location.pathname)) {
+applyMarketingSiteSurfaces();
+return;
+}
+
+var path = window.location.pathname.replace(/\/$/, '') || '/';
+if (path.indexOf('/onboarding') === 0) {
+var onboardingShellBg = 'linear-gradient(180deg, #020104 0%, #050308 48%, #020104 100%)';
+themeMeta.setAttribute('content', '#020104');
+var appleOnboarding = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+if (appleOnboarding) appleOnboarding.setAttribute('content', 'black-translucent');
+document.documentElement.style.colorScheme = 'dark';
+document.documentElement.style.setProperty('background', onboardingShellBg, 'important');
+document.documentElement.style.setProperty('background-color', '#020104', 'important');
+if (document.body) {
+document.body.style.setProperty('background', onboardingShellBg, 'important');
+document.body.style.setProperty('background-color', '#020104', 'important');
+}
+var onboardingRoot = document.getElementById('root');
+if (onboardingRoot) {
+onboardingRoot.style.setProperty('background', onboardingShellBg, 'important');
+onboardingRoot.style.setProperty('background-color', '#020104', 'important');
+}
+return;
+}
+
+document.documentElement.style.removeProperty('background');
+document.documentElement.style.removeProperty('background-color');
+if (document.body) {
+document.body.style.removeProperty('background');
+document.body.style.removeProperty('background-color');
+}
+var appRoot = document.getElementById('root');
+if (appRoot) {
+appRoot.style.removeProperty('background');
+appRoot.style.removeProperty('background-color');
+}
+var appleStatusDefault = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+if (appleStatusDefault) appleStatusDefault.setAttribute('content', 'default');
+
+var appearance = document.documentElement.getAttribute('data-app-appearance');
+if (appearance === 'cosmic') {
+themeMeta.setAttribute('content', '#0a0812');
+if (appleStatusDefault) appleStatusDefault.setAttribute('content', 'black-translucent');
+document.documentElement.style.colorScheme = 'dark';
+applyAppSurfaces('#0a0812');
+return;
+}
+
+if (path.indexOf('/dashboard') === 0) {
+var isHome = path === '/dashboard';
+if (appearance === 'dark') {
+var darkBg = isHome ? '#0a0812' : '#0f0d14';
+themeMeta.setAttribute('content', darkBg);
+if (appleStatusDefault) appleStatusDefault.setAttribute('content', 'black-translucent');
+document.documentElement.style.colorScheme = 'dark';
+applyAppSurfaces(darkBg);
+} else {
+themeMeta.setAttribute('content', '#ffffff');
+if (appleStatusDefault) appleStatusDefault.setAttribute('content', 'default');
+document.documentElement.style.colorScheme = 'light';
+applyAppSurfaces('#ffffff');
+}
+return;
+}
+
+var isDark = document.documentElement.classList.contains('dark');
+if (isDark) {
+themeMeta.setAttribute('content', '#0f0d14');
+applyAppSurfaces('#0f0d14');
+return;
+}
+
+themeMeta.setAttribute('content', '#ffffff');
+applyAppSurfaces('#ffffff');
+}
+
+// Watch for theme / appearance changes (React sets data-app-appearance on the document element)
+var observer = new MutationObserver(syncStatusBar);
+observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-app-appearance', 'data-marketing-site'] });
+syncStatusBar();
+
+// Watch for route changes
+let lastPath = window.location.pathname;
+const checkRoute = () => {
+if (window.location.pathname !== lastPath) {
+lastPath = window.location.pathname;
+syncStatusBar();
+}
+};
+window.addEventListener('popstate', checkRoute);
+setInterval(checkRoute, 100);
+
+// Also sync after DOM is ready and after a delay (React needs time to set theme)
+document.addEventListener('DOMContentLoaded', function() {
+syncStatusBar();
+setTimeout(syncStatusBar, 100);
+setTimeout(syncStatusBar, 500);
+});
+})();
+</script>
+<link rel="apple-touch-icon" href="/icon-196.png" />
+<link rel="icon" type="image/png" sizes="196x196" href="/icon-196.png?v=5" />
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=5" />
+<link rel="shortcut icon" href="/icon-196.png?v=5" />
+
+<link rel="preconnect" href="https://fonts.cdnfonts.com">
+<link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/proxima-nova" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet">
+
+<!-- Structured Data (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Palette Plotting",
+  "url": "https://paletteplot.com",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://paletteplot.com/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Palette Plotting",
+  "applicationCategory": "HealthApplication",
+  "operatingSystem": "Web, iOS, Android",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools. Start your personal growth journey today.",
+  "url": "https://paletteplot.com"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Palette Plotting",
+  "url": "https://paletteplot.com",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+1-847-563-4944",
+    "contactType": "customer service",
+    "email": "support@paletteplot.com",
+    "areaServed": "US",
+    "availableLanguage": "English"
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "1 North State Street Ste 1500",
+    "addressLocality": "Chicago",
+    "addressRegion": "IL",
+    "postalCode": "60602",
+    "addressCountry": "US"
+  },
+  "sameAs": [
+    "https://twitter.com/paletteplotting"
+  ]
+}
+</script>
+
+</head>
+
+<body>
+<!-- Force remove dark class immediately on page load -->
+<script>
+(function() {
+  // Remove dark class if it exists
+  document.documentElement.classList.remove('dark');
+
+  // Store the original add and remove methods
+  const originalClassListAdd = DOMTokenList.prototype.add;
+  const originalClassListRemove = DOMTokenList.prototype.remove;
+
+  // Get the original classList descriptor
+  const originalClassListDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'classList') || 
+                                      Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'classList');
+  
+  // Override the classList property on Element.prototype
+  Object.defineProperty(Element.prototype, 'classList', {
+    get: function() {
+      const self = this; // Capture the element instance
+      
+      // Get the actual classList using the original getter
+      const actualClassList = originalClassListDescriptor ? 
+                              originalClassListDescriptor.get.call(self) : 
+                              self.classList;
+
+      // Create a proxy for the classList that calls the original methods
+      // with the correct context (the element's actual classList)
+      const customClassList = {
+        add: function(...args) {
+          // Block dark class from being added to html element on non-dashboard pages
+          if (self === document.documentElement &&
+              args.includes('dark') &&
+              !window.location.pathname.startsWith('/dashboard')) {
+            console.log('Blocked dark class on non-dashboard page');
+            return;
+          }
+          // Call the original add method, ensuring 'this' context is the actual classList
+          return originalClassListAdd.apply(actualClassList, args);
+        },
+        remove: function(...args) {
+          // Call the original remove method, ensuring 'this' context is the actual classList
+          return originalClassListRemove.apply(actualClassList, args);
+        },
+        toggle: function(...args) {
+          return actualClassList.toggle.apply(actualClassList, args);
+        },
+        contains: function(...args) {
+          return actualClassList.contains.apply(actualClassList, args);
+        },
+        item: function(...args) {
+          return actualClassList.item.apply(actualClassList, args);
+        },
+        replace: function(...args) {
+          return actualClassList.replace.apply(actualClassList, args);
+        },
+        get length() {
+          return actualClassList.length;
+        },
+        get value() {
+          return actualClassList.value;
+        },
+        set value(val) {
+          actualClassList.value = val;
+        },
+        forEach: function(...args) {
+          return actualClassList.forEach.apply(actualClassList, args);
+        },
+        entries: function() {
+          return actualClassList.entries();
+        },
+        keys: function() {
+          return actualClassList.keys();
+        },
+        values: function() {
+          return actualClassList.values();
+        },
+        [Symbol.iterator]: function() {
+          return actualClassList[Symbol.iterator]();
+        },
+        toString: function() {
+          return actualClassList.toString();
+        }
+      };
+
+      return customClassList;
+    },
+    configurable: true, // Allow the property to be redefined
+  });
+})();
+</script>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+{
+  "email": {
+    "consent": "En continuant, vous acceptez de recevoir votre résultat de quiz et des conseils occasionnels de manifestation de Palette Plotting. Désabonnement à tout moment.",
+    "emailInvalid": "Veuillez saisir une adresse e-mail valide.",
+    "emailPlaceholder": "E-mail",
+    "emailRequired": "Veuillez saisir votre adresse e-mail.",
+    "firstNamePlaceholder": "Prénom (facultatif)",
+    "genericError": "Une erreur s’est produite. Veuillez réessayer.",
+    "submit": "Afficher mon résultat",
+    "submitting": "Enregistrement…",
+    "subtitle": "Nous enregistrerons votre résultat et vous donnerons une recommandation personnalisée.",
+    "title": "Obtenez votre diagnostic de manifestation"
+  },
+  "intro": {
+    "eyebrow": "Quiz Palette Plotting",
+    "meta": "Cinq questions · environ deux minutes · une prochaine étape claire",
+    "startCta": "Commencer le quiz",
+    "subtitle": "Un court diagnostic pour identifier le plus grand schéma qui interfère avec vos résultats de manifestation.",
+    "title": "Qu’est-ce qui bloque votre manifestation en ce moment ?"
+  },
+  "nav": {
+    "back": "Retour",
+    "questionProgress": "Question {{current}} sur {{total}}"
+  },
+  "questions": {
+    "q1": {
+      "options": {
+        "check_signs": "Chercher des signes ou du mouvement.",
+        "rewrite": "Réécrire des affirmations ou scripts.",
+        "spiral": "Partir en spirale et supposer que ça ne marche pas.",
+        "stop": "Arrêter complètement."
+      },
+      "prompt": "Quand votre manifestation semble retardée, que faites-vous généralement ?"
+    },
+    "q2": {
+      "options": {
+        "intrusive": "Pensées intrusives.",
+        "old_assumptions": "Retomber dans de vieilles suppositions.",
+        "opposite_3d": "Voir l’opposé dans le 3D.",
+        "starting_over": "Recommencer constamment."
+      },
+      "prompt": "Qu’est-ce qui vous frustre le plus ?"
+    },
+    "q3": {
+      "options": {
+        "checking": "Je continue à chercher des preuves.",
+        "confident_panic": "Je me sens confiante puis je panique.",
+        "every_method": "J’ai essayé presque toutes les méthodes.",
+        "replaying": "Je rejoue sans cesse d’anciennes situations."
+      },
+      "prompt": "Quelle phrase vous ressemble le plus ?"
+    },
+    "q4": {
+      "options": {
+        "daily_practice": "Maintenir une routine quotidienne.",
+        "ignoring_3d": "Ignorer les circonstances actuelles.",
+        "one_approach": "S’engager dans une seule approche.",
+        "steady": "Rester émotionnellement stable."
+      },
+      "prompt": "Qu’est-ce qui est le plus difficile pour vous ?"
+    },
+    "q5": {
+      "options": {
+        "daily_routine": "Une routine quotidienne qui me garde régulière.",
+        "detachment": "Un reset de détachement.",
+        "simple_system": "Un système de manifestation simple.",
+        "stabilize": "Stabiliser mon mindset."
+      },
+      "prompt": "Qu’est-ce qui semble le plus utile maintenant ?"
+    }
+  },
+  "result": {
+    "actionStepHeading": "Une action gratuite",
+    "buildPractice": "Construisez votre pratique de manifestation personnalisée dans Palette Plotting.",
+    "eyebrow": "Votre diagnostic",
+    "readOnBlog": "Lire sur le blog Palette Plotting →",
+    "recommended": "Recommandé pour vous",
+    "relatedGuide": "Guide associé",
+    "retake": "Refaire le quiz",
+    "startTrial": "Commencer l’essai gratuit",
+    "whatThisMeans": "Ce que cela signifie"
+  },
+  "results": {
+    "method_hopper": {
+      "actionStep": "Engagez-vous sur un outil pendant sept jours. Pas de nouveaux scripts, pas de nouveau créateur, pas de nouvelle « méthode secrète ». Même supposition, même format, chaque jour.",
+      "explanation": "Vous changez de techniques, d’affirmations, de coaches et de routines avant que l’une d’elles ait le temps d’agir. Cela peut ressembler à du progrès, mais le schéma est la méfiance — recommencer au lieu de rester avec une supposition.",
+      "guideTitle": "Pourquoi plus de techniques n’est pas toujours mieux",
+      "paletteplottingPitch": "Palette Plotting garde les subliminaux, le scripting, le mirror work et le travail sur les croyances au même endroit — afin de construire un système au lieu d’en collectionner dix à moitié commencés.",
+      "title": "La sauteuse de méthode"
+    },
+    "no_routine_manifestor": {
+      "actionStep": "Choisissez un créneau de 5 minutes (café du matin, trajet, avant de dormir) et une action : écouter un subliminal, lire trois affirmations ou faire un tour de mirror work. Même heure, même action, sept jours.",
+      "explanation": "Vous avez le désir et la croyance, mais pas de pratique répétable. L’inspiration arrive, puis la vie prend le dessus — et la manifestation devient quelque chose auquel vous pensez au lieu de quelque chose que vous faites chaque jour.",
+      "guideTitle": "La routine de manifestation la plus simple possible",
+      "paletteplottingPitch": "Palette Plotting est conçu pour un rythme quotidien — subliminaux, affirmations, mirror work et suivi des progrès — sans transformer la manifestation en projet à temps plein.",
+      "title": "La manifestatrice sans routine"
+    },
+    "old_story_repeater": {
+      "actionStep": "Quand une ancienne scène se rejoue, interrompez-la avec une ligne de révision : « C’était l’ancienne version. » Ne débattez pas — redirigez une fois et continuez.",
+      "explanation": "Vous continuez à répéter d’anciennes suppositions tout en essayant de créer une nouvelle réalité. Les conversations intérieures, les relectures mentales et les boucles « et si ça recommence ? » maintiennent le passé actif — même quand vous faites les « bonnes » techniques.",
+      "guideTitle": "Comment arrêter de répéter le passé",
+      "paletteplottingPitch": "Palette Plotting soutient le travail sur les croyances et le scripting afin de remplacer l’ancienne histoire par un langage dans lequel vous voulez réellement vivre — pas seulement poser des affirmations par-dessus.",
+      "title": "La répétitrice de l’ancienne histoire"
+    },
+    "three_d_checker": {
+      "actionStep": "Choisissez une phrase de retour pour cette semaine : « Le silence n’est pas la réponse finale. » Dites-la une fois quand vous vous surprenez à chercher des preuves — puis retournez à votre journée.",
+      "explanation": "Vous réagissez fortement aux circonstances actuelles et les utilisez pour décider si votre manifestation fonctionne. Quand le 3D semble silencieux ou opposé, votre supposition est renégociée — même si vous avez déjà choisi la fin.",
+      "guideTitle": "Comment arrêter de réagir au 3D",
+      "paletteplottingPitch": "Palette Plotting vous aide à répéter l’état final en boucle — subliminaux, affirmations et mirror work — afin que le 3D cesse d’agir comme le patron de votre supposition.",
+      "title": "La vérificatrice du 3D"
+    },
+    "waver": {
+      "actionStep": "Écrivez une phrase à laquelle revenir quand vous vacillez : « J’ai déjà choisi cela. » Mettez-la sur votre écran de verrouillage ou dans vos notes — utilisez-la avant de réécrire toute l’histoire.",
+      "explanation": "Vous croyez un jour et doutez le lendemain. Votre désir n’est pas toujours le problème — la constance l’est. L’ancienne histoire devient bruyante quand le 3D marque une pause, et vous abandonnez la décision déjà prise.",
+      "guideTitle": "Pourquoi la manifestation semble facile un jour et impossible le lendemain",
+      "paletteplottingPitch": "Palette Plotting vous donne une pratique répétable — pas une autre méthode vers laquelle sauter — afin que votre mindset ait un endroit stable où atterrir quand le doute apparaît.",
+      "title": "La vacillante"
+    }
+  }
+}

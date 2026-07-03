@@ -1,0 +1,316 @@
+{
+  "pricing": {
+    "billingPolicy": "Facturerings- en restitutiebeleid",
+    "features": {
+      "affirmations": {
+        "description": "Laat je eigen affirmaties op een leesscherm zien, tel je herhalingen en visualiseer.",
+        "title": "Robotisch affirmeren en je leven scripten"
+      },
+      "beliefs": {
+        "description": "Ontleed zelfbeperkende overtuigingen en integreer verruimende overtuigingen.",
+        "title": "Pak zelfbeperkende overtuigingen aan"
+      },
+      "coach": {
+        "description": "Stel vragen die je aan niemand anders durft te stellen en krijg advies wanneer je wankelt door 3D-omstandigheden.",
+        "title": "Digitale manifestatiecoach"
+      },
+      "journal": {
+        "description": "Journal, leg geïnspireerde actie vast en volg je voortgang met manifestatielijsten.",
+        "title": "Journal & volg voortgang"
+      },
+      "mirror": {
+        "description": "Dompel je onder in scènes en geluiden van digitale mirror work terwijl je met affirmaties je zelfbeeld opbouwt.",
+        "title": "Mirror work"
+      },
+      "subliminal": {
+        "description": "Maak subliminals met je eigen stem, binaural beats, achtergrondgeluiden en gelaagde vocals.",
+        "title": "Subliminal Maker"
+      }
+    },
+    "legalAnd": "en",
+    "legalPrefix": "Zie ons",
+    "planHeader": "Plan",
+    "plans": {
+      "annual": {
+        "cadence": "per jaar",
+        "label": "Jaarlijks"
+      },
+      "monthly": {
+        "cadence": "per maand",
+        "label": "Maandelijks"
+      },
+      "weekly": {
+        "cadence": "per week",
+        "label": "Wekelijks"
+      }
+    },
+    "priceHeader": "Prijs",
+    "prices": {
+      "annual": "$149.99",
+      "monthly": "$19.99",
+      "weekly": "$5.99"
+    },
+    "pricesSubjectToChange": "Prijzen kunnen wijzigen.",
+    "subtitle": "Eén lidmaatschap met volledige toegang tot elke Palette Plotting-tool op web en mobiel.",
+    "termsOfService": "Servicevoorwaarden",
+    "title": "Prijzen",
+    "whatsIncluded": "Wat is inbegrepen"
+  },
+  "contact": {
+    "address": "Adres",
+    "addressLine1": "1 North State Street Ste 1500",
+    "addressLine2": "Chicago, IL 60602",
+    "email": "E-mail",
+    "getInTouch": "Neem contact op",
+    "phone": "Telefoon",
+    "subtitle": "We horen graag van je. Stuur ons een e-mail en we reageren zo snel mogelijk.",
+    "title": "Neem contact op"
+  },
+  "faq": {
+    "items": {
+      "acceptableUse": {
+        "answer": "We kunnen je toegang beperken of opschorten om een veilige en respectvolle omgeving te behouden.",
+        "question": "Wat gebeurt er als ik het beleid voor acceptabel gebruik schend?"
+      },
+      "automated": {
+        "answer": "Sommige functies kunnen geautomatiseerde of door het systeem gegenereerde antwoorden gebruiken om je reflectie, prompts of audiocreatie te ondersteunen. Dit zijn aanvullende tools, geen professioneel advies.",
+        "question": "Gebruikt Palette Plotting geautomatiseerde functies?"
+      },
+      "cancel": {
+        "answer": "Ja. Je kunt op elk moment annuleren via je accountinstellingen. Je plan blijft actief tot het einde van de factureringsperiode.",
+        "question": "Kan ik mijn abonnement opzeggen?"
+      },
+      "deleteAccount": {
+        "answer": "Je kunt verwijdering aanvragen via de app of door contact op te nemen met support@paletteplot.com.",
+        "question": "Hoe verwijder ik mijn account?"
+      },
+      "legalTerms": {
+        "answer": "Links naar de Gebruiksvoorwaarden, het Privacybeleid en het Beleid voor acceptabel gebruik staan in de app en op onze website. Voor auteursrechtelijke kwesties, zie ons DMCA-melding en verwijderingsbeleid.",
+        "linkAcceptableUse": "Beleid voor acceptabel gebruik",
+        "linkDmca": "DMCA-melding en verwijderingsbeleid",
+        "linkPrivacy": "Privacybeleid",
+        "linkTerms": "Gebruiksvoorwaarden",
+        "question": "Waar kan ik de juridische voorwaarden lezen?"
+      },
+      "notTherapy": {
+        "answer": "Nee. Palette Plotting is geen aanbieder van mentale, medische, psychologische, juridische of financiële adviezen. Als je klinische of noodhulp nodig hebt, neem contact op met passende diensten.",
+        "question": "Is Palette Plotting therapie of medische ondersteuning?"
+      },
+      "plans": {
+        "answer": "Palette Plotting biedt maandelijkse en jaarlijkse abonnementen. Terugbetalingen voor iOS-in-app aankopen zijn ter beoordeling van Apple. Terugbetalingen voor alle niet-Apple-aankopen zijn ter beoordeling van Palette Plotting. Zie het facturerings- en restitutiebeleid voor details.",
+        "linkBilling": "Facturerings- en restitutiebeleid",
+        "question": "Welke abonnementen zijn beschikbaar?"
+      },
+      "privacy": {
+        "answer": "Ja. Je journals, reflecties, audiocreaties en notities zijn privé.",
+        "question": "Is mijn content privé?"
+      },
+      "sellData": {
+        "answer": "Nee. We verkopen je persoonsgegevens niet.",
+        "question": "Verkopen jullie mijn informatie?"
+      },
+      "whatIs": {
+        "answer": "Palette Plotting is een digitaal platform voor persoonlijke groei dat je helpt momentum op te bouwen, te reflecteren via journaling, audiotools te maken, mindsetpatronen te verkennen en te werken met begeleide suggesties voor helderheid en vooruitgang. Lees Wat is Palette Plotting? voor een korte rondleiding door elke tool in de context van manifestatiepraktijk.",
+        "linkWhatIs": "Wat is Palette Plotting?",
+        "question": "Wat is Palette Plotting?"
+      },
+      "whoCanUse": {
+        "answer": "Gebruikers moeten 18 jaar of ouder zijn.",
+        "question": "Wie kan Palette Plotting gebruiken?"
+      }
+    },
+    "subtitle": "Vind antwoorden op veelgestelde vragen over Palette Plotting",
+    "title": "Veelgestelde vragen"
+  },
+  "home": {
+    "download": {
+      "appleStore": "Apple App Store",
+      "googlePlay": "Google Play",
+      "headingDesktop": "Download de app en start je gratis proefperiode",
+      "headingMobile": "Download de app",
+      "qrAltAppStore": "QR-code om Palette Plotting in de App Store te openen",
+      "qrAltGooglePlay": "QR-code om Palette Plotting in Google Play te openen",
+      "qrError": "QR-codes niet beschikbaar. Gebruik de store-badges hieronder.",
+      "qrUnavailable": "Niet beschikbaar",
+      "scanPhone": "Scan met je telefoon.",
+      "tapInstall": "Tik om op je telefoon te installeren."
+    },
+    "featureStripKeys": [
+      "subliminal",
+      "mirror",
+      "affirmations",
+      "beliefs",
+      "journal",
+      "coach"
+    ],
+    "footer": {
+      "acceptableUse": "Beleid voor acceptabel gebruik",
+      "billing": "Facturering",
+      "community": "Community",
+      "company": "PALETTE PLOTTING LLC",
+      "contact": "Contact",
+      "copyright": "© {{year}} Palette Plotting LLC. Alle rechten voorbehouden.",
+      "faq": "FAQ",
+      "footerNav": "Voettekst",
+      "privacy": "Privacybeleid",
+      "terms": "Gebruiksvoorwaarden",
+      "whatIs": "Wat is Palette Plotting?"
+    },
+    "header": {
+      "blog": "Blog",
+      "community": "Community",
+      "dashboard": "Dashboard",
+      "downloadApp": "App downloaden",
+      "faq": "FAQ",
+      "logOut": "Uitloggen",
+      "mainNav": "Hoofdmenu",
+      "signIn": "Inloggen",
+      "user": "Gebruiker",
+      "yourAccount": "Je account"
+    },
+    "hero": {
+      "abundance": "Overvloed",
+      "awardLine": "De meest complete manifestatie-app",
+      "ctaDownload": "Download de app en start je gratis proefperiode",
+      "ctaHeroMobile": "Start je gratis proefperiode",
+      "exploreApp": "Ontdek de app",
+      "fitness": "Fitness",
+      "freeTrialLine": "Start nu je gratis proefperiode",
+      "freeTrialUnderBadges": "Start je gratis proefperiode in de App Store",
+      "joy": "Vreugde",
+      "loveSp": "Liefde",
+      "manifestEverything": "Manifesteer alles",
+      "manifestPrefix": "Manifesteren",
+      "subhead1": "Subliminals + robotisch affirmeren & scripting",
+      "subhead2": "Mirror work + overtuigingswerk",
+      "subhead3": "Digitale manifestatiecoach + meer"
+    },
+    "manifestPanel": {
+      "headlineLine1": "Eén app om te manifesteren",
+      "headlineLine2": "wat je wilt",
+      "manifestListAria": "Wat je kunt manifesteren",
+      "rows": [
+        [
+          "liefde & sp",
+          "droomlichaam"
+        ],
+        [
+          "glow-up",
+          "wellness"
+        ],
+        [
+          "zelfbeeld",
+          "discipline"
+        ],
+        [
+          "geld",
+          "focus"
+        ],
+        [
+          "onderwijs",
+          "levensreset"
+        ]
+      ]
+    },
+    "meta": {
+      "description": "Palette Plotting helpt je subliminals, affirmaties, mirror work, scripting en manifestatieroutines op één plek te maken.",
+      "ogDescription": "Maak subliminals, affirmaties, mirror work, scripting en manifestatieroutines met Palette Plotting.",
+      "title": "Home | Palette Plotting",
+      "twitterDescription": "Maak subliminals, affirmaties, mirror work, scripting en manifestatieroutines met Palette Plotting."
+    },
+    "newsletter": {
+      "consent": "Door je te abonneren ga je akkoord met marketingmails van Palette Plotting. Je kunt je altijd uitschrijven.",
+      "errorEmpty": "Voer je e-mailadres in.",
+      "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw.",
+      "errorInvalid": "Voer een geldig e-mailadres in.",
+      "heading": "Tips in je inbox",
+      "placeholder": "E-mailadres",
+      "subscribe": "Abonneren",
+      "subscribing": "Abonneren…",
+      "subtitle": "Blijf consistent, hoor over nieuwe functies en ontvang speciale promoties.",
+      "successBody": "Bedankt voor je aanmelding. Houd je inbox in de gaten voor manifestatietips, nieuwe functies en speciale promoties.",
+      "successHeading": "Je staat op de lijst"
+    },
+    "practiceSection": {
+      "body": "Palette Plotting brengt je manifestatie op één plek — zodat je niet hoeft te jongleren met notities, willekeurige subliminal-playlists, screenshots, spraakmemo’s, journals en losse methoden wanneer twijfel opkomt. Gebruik het om het verhaal te schrijven, te horen, te zien, te herhalen en in het eindresultaat te leven.",
+      "focusAreasAria": "Focusgebieden",
+      "headlineLine1": "Alles wat je nodig hebt voor",
+      "headlineLine2": "het nieuwe verhaal",
+      "pills": [
+        {
+          "category": "Zelfbeeld",
+          "color": "pink",
+          "label": "Liefde, SP, zelfbeeld"
+        },
+        {
+          "category": "Law of Assumption",
+          "color": "green",
+          "label": "Overvloed"
+        },
+        {
+          "category": "Zelfbeeld",
+          "color": "blue",
+          "label": "Confidence"
+        },
+        {
+          "category": "Zelfbeeld",
+          "color": "yellow",
+          "label": "Vrede"
+        }
+      ]
+    },
+    "stats": [
+      {
+        "label": "manifestatietools",
+        "value": "10+"
+      },
+      {
+        "label": "subliminals per maand",
+        "value": "30"
+      },
+      {
+        "label": "mirror-work-scènes",
+        "value": "5"
+      },
+      {
+        "label": "AI-gidsopties",
+        "value": "4"
+      }
+    ],
+    "stickyBarAria": "Palette Plotting downloaden",
+    "testimonials": {
+      "carouselAria": "Gebruikerservaringen",
+      "headlineLine1": "Resultaten van onze",
+      "headlineLine2": "gebruikers en testers",
+      "items": [
+        {
+          "name": "Maya T.",
+          "quote": "Als ik wankel en de 3D keihard wordt, liet ik vroeger mijn hele SP-routine vallen en ging ik op zoek naar een nieuwe methode of crashte ik. Nu doe ik hier scripting en mirror work en blijf ik echt bij mijn verhaal in plaats van om 2 uur ’s nachts manifestatie-TikTok te scrollen.",
+          "role": "SP & zelfbeeld"
+        },
+        {
+          "name": "Devon K.",
+          "quote": "Mijn brein wil nog steeds discussiëren voordat ik begin met robotisch affirmeren. Maar deze app, het leesscherm en de herhalingsteller helpen me mijn sessie af te maken in plaats van alleen te worstelen.",
+          "role": "Law of Assumption · scripting"
+        },
+        {
+          "name": "Jade L.",
+          "quote": "YouTube-subliminals raakten me nooit omdat het niet mijn stem of mijn exacte woorden waren. Ik heb er hier één gemaakt met mijn affirmaties + binaural beats, en het is de enige die ik kan loopen zonder me na 2 dagen te vervelen.",
+          "role": "subliminals · affirmeren"
+        }
+      ],
+      "next": "Volgende testimonial",
+      "pageN": "Testimonial {{n}}",
+      "pagesAria": "Testimonialpagina’s",
+      "previous": "Vorige testimonial",
+      "starsAria": "5 van de 5 sterren"
+    }
+  },
+  "community": {
+    "eyebrow": "Community",
+    "title": "Sluit je aan bij de community",
+    "body": "Verbind met Palette Plotting op Discord en TikTok — updates, manifestatiegesprekken en wat we hierna bouwen.",
+    "discordTitle": "Officiële Palette Plotting Discord",
+    "tiktokTitle": "Officiële Palette Plotting TikTok"
+  }
+}

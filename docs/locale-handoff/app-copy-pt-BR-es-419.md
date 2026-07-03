@@ -1,0 +1,3427 @@
+# Palette Plotting app copy handoff — pt-BR & es-419
+
+**Status:** Both locales are wired in production (`src/i18n/locales/pt-BR/` and `src/i18n/locales/es-419/`). This document is regenerated from those runtime JSON files so reviewers see the same strings users get in the app.
+
+**Last synced:** 2026-06-09
+
+## For Cursor / engineering team
+
+**This file is a copy-review handoff only — not an implementation spec.** Do not treat it as a task list, architecture doc, or source of truth for code changes.
+
+- **Source of truth for shipped strings:** `src/i18n/locales/pt-BR/*.json` and `src/i18n/locales/es-419/*.json`
+- **Use this doc for:** native-speaker copy review, translator comments, and spotting wording drift vs runtime
+- **Do not use this doc for:** wiring i18n, refactoring keys, inventing new strings, or bulk code edits unless a human explicitly requests a copy change and names the locale key
+- **Size:** ~3,400 lines is intentional (full string inventory). Skim the status sections at the top; scroll the keyed sections only when reviewing a surface.
+
+## Review status
+
+| Locale | Runtime | Handoff | Native review |
+|--------|---------|---------|---------------|
+| **pt-BR** | Complete (9 namespaces) | Synced in this doc | **Approved** (directionally) |
+| **es-419** | Complete (9 namespaces) | Synced in this doc | **Approved** (after targeted fix pass) |
+
+## Known non-blockers (do not reopen unless reviewer asks)
+
+- **pt-BR:** Some toasts still use **“Falha ao…”** instead of **“Não foi possível…”**. Marked optional micro-polish only — **not a blocker** for ship or for Cursor to “fix” proactively.
+- **es-419:** Settings nav stays **“Ajustes”** (not a global migration to **“Configuración”**). That is an **intentional, approved** product decision documented below.
+- **es-419:** Product jargon **“set/sets de afirmaciones”** is kept where it appears in runtime.
+
+## Shared conventions (both locales)
+
+- **Namespaces:** `common`, `dashboard`, `onboarding`, `settings`, `auth`, `paywall`, `tools`, `support`, `marketing`
+- **Placeholders:** Keep `{{name}}`, `{{pct}}`, `{{limit}}`, `{{year}}`, etc. exactly as shown
+- **Intentional English product terms:** Scripting, Tap-in, SP (specific person), Palette Plotting, River/Sage/Rose/Oliver
+- **es-419 UI label:** Settings nav uses **Ajustes** — intentional; do **not** switch globally to Configuración
+- **pt-BR billing channel:** Web shows **Web (cartão / pagamento)**
+- **es-419 billing channel:** Web shows **Web (tarjeta / pago)**
+- **home.defaultName:** blank in both locales (no fallback “there/allí”)
+- **Manifestation intensity locked-in label:** pt-BR **Focado** · es-419 **Enfocado**
+- **Daily practice section:** both use inspired-actions wording (**Ações inspiradas** / **Acciones inspiradas**), not “daily practice”
+- **TTS:** pt-BR **texto para fala** · es-419 **texto a voz**
+- **Paywall title (es-419):** “Desbloquea tus herramientas de manifestación hoy.” (no “stack”)
+
+## Deprecated / do not use for review
+
+- `docs/locale-handoff/app-copy-es-419-proposed-clean.md` — proposal doc; changes are already in runtime
+- Standalone `app-copy-pt-BR.md` and `app-copy-es-419.md` — superseded by this combined handoff unless you need a single-locale export
+- **ChatGPT / translator review with English reference:** use `app-copy-en-pt-BR-es-419.md` (en + pt-BR + es-419 side by side)
+
+---
+
+# Português (Brasil, pt-BR)
+
+Todas as strings visíveis para o usuário enviadas em **pt-BR**. Revise e edite apenas este texto — não o código-fonte.
+
+Gerado a partir dos arquivos de locale em `src/i18n/locales/pt-BR/`. **Apenas texto** — sem código. Placeholders como {{name}} aparecem exatamente como na interface.
+
+---
+
+## Comum — botões e rótulos compartilhados
+
+- **continue:** Continuar
+- **back:** Voltar
+- **save:** Salvar
+- **cancel:** Cancelar
+- **close:** Fechar
+- **loading:** Carregando…
+- **error:** Algo deu errado
+- **legalEnglishDisclaimer:** Termos e Privacidade estão em inglês.
+- **edgeErrors > permissionDenied:** Permissão negada. Entre e tente de novo.
+- **edgeErrors > genericRetry:** Ocorreu um erro. Tente novamente.
+- **edgeErrors > databaseError:** Erro no banco. Tente de novo.
+- **edgeErrors > serviceUnavailable:** Serviço temporariamente indisponível. Tente novamente.
+- **edgeErrors > unknownError:** Erro desconhecido
+- **edgeErrors > noCharacterSelected:** Selecione um personagem primeiro.
+- **edgeErrors > failedToGenerateMessage:** Falha ao gerar mensagem
+- **edgeErrors > noMessageGenerated:** Nenhuma mensagem gerada
+- **edgeErrors > dailyMessageLimit:** Você atingiu seu limite diário de mensagens ({{limit}}). O limite reinicia à meia-noite.
+
+## Painel e navegação
+
+- **greeting > morning:** Bom dia
+- **greeting > afternoon:** Boa tarde
+- **greeting > evening:** Boa noite
+- **manifestationCharge > needsPersistence:** Precisa de constância
+- **manifestationCharge > lockedIn:** Focado
+- **manifestationCharge > aligned:** Alinhado
+- **manifestationCharge > percentToday:** {{pct}}% alinhado hoje
+- **sections > inspiredActions:** Ações inspiradas
+- **sections > manifestationCharge:** Energia de manifestação
+- **sections > tools:** Ferramentas
+- **sections > dailyPractice:** Ações inspiradas
+- **home > subtitle:** Tudo que você precisa para manifestar.
+- **home > pageTitle:** Painel | Palette Plotting
+- **home > defaultName:** 
+- **inspiredActions > footer:** Afirme e encarne a nova história diariamente.
+- **appearance > light:** Claro
+- **appearance > dark:** Escuro
+- **profile > defaultUser:** Usuário
+- **profile > yourAccount:** Sua conta
+- **nav > home:** Início
+- **nav > affirmScript:** Afirmar e escrever
+- **nav > yourJourney:** Sua jornada
+- **nav > settings:** Configurações
+- **nav > appearance:** Aparência
+- **nav > talkToGuide:** Falar com o guia
+- **nav > help:** Ajuda
+- **nav > signOut:** Sair
+- **nav > signOutError:** Erro ao sair
+- **tools > affirmScript > title:** Afirmar e escrever
+- **tools > affirmScript > description:** Crie afirmações e metas visuais
+- **tools > subliminalMaker > title:** Criador de subliminares
+- **tools > subliminalMaker > description:** Crie áudios para ouvir diariamente
+- **tools > mirrorWork > title:** Trabalho com espelho
+- **tools > mirrorWork > description:** Afirme com seu reflexo
+- **tools > beliefWork > title:** Trabalho de crenças
+- **tools > beliefWork > description:** Libere ou integre crenças
+- **tools > embody > title:** Encarnar
+- **tools > embody > description:** Acompanhe sua nova história
+- **tools > yourJourney > title:** Sua jornada
+- **tools > yourJourney > description:** Diário, reflexões e guia
+- **supportTools > dashboard:** Painel (início)
+- **supportTools > affirmationVisualizer:** Visualizador de afirmações
+- **supportTools > talkToGuide:** Falar com o guia (chat)
+- **supportTools > musicComposer:** Compositor musical
+- **supportTools > tapIn:** Tap-in / Piano
+- **supportTools > activityTracking:** Atividade
+- **supportTools > journal:** Diário de manifestação
+- **supportTools > settingsAccount:** Configurações / Conta
+- **supportTools > billing:** Assinatura / pagamentos
+- **supportTools > other:** Outro
+- **billingChannels > apple:** Apple App Store
+- **billingChannels > googlePlay:** Google Play
+- **billingChannels > web:** Web (cartão / pagamento)
+
+## Onboarding e fluxo de configuração
+
+- **welcome > signUp:** Cadastrar
+- **welcome > ctaSubtext:** Crie seu primeiro subliminar em 3 minutos
+- **welcome > freeTrialLine:** Comece seu teste grátis
+- **welcome > nativeTitle:** Seus métodos de manifestação
+- **welcome > nativeDescription:** Manifeste com facilidade. Crie subliminares, personalize afirmações, faça trabalho com espelho e mais.
+- **welcome > awardLine1:** Um dos apps
+- **welcome > awardLine2:** de manifestação
+- **welcome > awardLine3:** mais completos
+- **welcome > webHeadline1:** Manifeste seus desejos agora,
+- **welcome > webHeadlineAccent:** Crie seus subliminares
+- **welcome > toolRows > row1 (line 1):** Subliminares
+- **welcome > toolRows > row1 (line 2):** Afirmações robóticas
+- **welcome > toolRows > row1 (line 3):** Scripting
+- **welcome > toolRows > row2 (line 1):** Trabalho com espelho
+- **welcome > toolRows > row2 (line 2):** Crenças
+- **welcome > toolRows > row2 (line 3):** Ação inspirada
+- **welcome > toolRows > row3 (line 1):** Listas
+- **welcome > toolRows > row3 (line 2):** Guia com IA
+- **welcome > webSteps > desire > title:** Escolha seu desejo
+- **welcome > webSteps > desire > subtitle:** Amor · SP · Beleza · Abundância
+- **welcome > webSteps > makeYours > title:** Faça do seu jeito
+- **welcome > webSteps > makeYours > subtitle:** Suas afirmações, sua voz, seus sons
+- **welcome > webSteps > listen > title:** Ouça e repita
+- **welcome > webSteps > listen > subtitle:** Subliminares prontos para ouvir
+- **welcome > webToolbar > robotic:** Afirmações robóticas
+- **welcome > webToolbar > scripting:** Scripting
+- **welcome > webToolbar > mirror:** Espelho
+- **welcome > webToolbar > more:** E mais
+- **setup > name > title:** Como devemos te chamar?
+- **setup > name > firstNameLabel:** Nome
+- **setup > name > firstNamePlaceholder:** Seu nome
+- **setup > name > saveError:** Não foi possível salvar. Tente de novo.
+- **setup > desireCategory > title:** O que você mais quer manifestar?
+- **setup > desireCategory > subtitle:** Escolha um foco.
+- **setup > conditionalSpecificity > subtitle:** Isso define sua orientação no app.
+- **setup > conditionalSpecificity > fallbackHeadline:** Um detalhe rápido
+- **setup > conditionalSpecificity > fallbackMessage:** Volte e escolha uma área de foco.
+- **setup > conditionalSpecificity > customLabel:** Descreva seu foco
+- **setup > conditionalSpecificity > spPerson > headline:** Há uma pessoa específica ligada a este desejo?
+- **setup > conditionalSpecificity > spPerson > nameLabel:** Que nome usamos?
+- **setup > conditionalSpecificity > spPerson > choices > yes:** Sim
+- **setup > conditionalSpecificity > spPerson > choices > no:** Não
+- **setup > conditionalSpecificity > spPerson > choices > complicated:** É complicado
+- **setup > conditionalSpecificity > spPerson > choices > prefer_not:** Prefiro não dizer
+- **setup > conditionalSpecificity > categories > Finances > headline:** Que mudança financeira você quer?
+- **setup > conditionalSpecificity > categories > Finances > options > consistentIncome:** Renda consistente
+- **setup > conditionalSpecificity > categories > Finances > options > debtFreedom:** Sem dívidas
+- **setup > conditionalSpecificity > categories > Finances > options > moreSales:** Mais vendas
+- **setup > conditionalSpecificity > categories > Finances > options > luxuryEase:** Luxo e facilidade
+- **setup > conditionalSpecificity > categories > Finances > options > financialSafety:** Segurança
+- **setup > conditionalSpecificity > categories > Self-Love > headline:** O que você quer sentir quando se vê?
+- **setup > conditionalSpecificity > categories > Self-Love > options > beautiful:** Bonita
+- **setup > conditionalSpecificity > categories > Self-Love > options > desired:** Desejada
+- **setup > conditionalSpecificity > categories > Self-Love > options > radiant:** Radiante
+- **setup > conditionalSpecificity > categories > Self-Love > options > expensive:** Valiosa
+- **setup > conditionalSpecificity > categories > Self-Love > options > seen:** Vista
+- **setup > conditionalSpecificity > categories > Career > headline:** Que resultado de carreira você quer?
+- **setup > conditionalSpecificity > categories > Career > options > newJob:** Novo emprego
+- **setup > conditionalSpecificity > categories > Career > options > promotion:** Promoção
+- **setup > conditionalSpecificity > categories > Career > options > higherPay:** Salário maior
+- **setup > conditionalSpecificity > categories > Career > options > dreamOpportunity:** Oportunidade ideal
+- **setup > conditionalSpecificity > categories > Business > headline:** Que resultado de negócio você quer?
+- **setup > conditionalSpecificity > categories > Business > options > moreSales:** Mais vendas
+- **setup > conditionalSpecificity > categories > Business > options > moreCustomersClients:** Mais clientes
+- **setup > conditionalSpecificity > categories > Business > options > launchSuccess:** Lançamento de sucesso
+- **setup > conditionalSpecificity > categories > Business > options > audienceGrowth:** Mais audiência
+- **setup > conditionalSpecificity > categories > Confidence > headline:** Qual foco de autoconceito combina?
+- **setup > conditionalSpecificity > categories > Confidence > options > confidence:** Confiança
+- **setup > conditionalSpecificity > categories > Confidence > options > visibility:** Visibilidade
+- **setup > conditionalSpecificity > categories > Confidence > options > selfTrust:** Autoconfiança
+- **setup > conditionalSpecificity > categories > Confidence > options > magnetism:** Magnetismo
+- **setup > conditionalSpecificity > categories > Learning > headline:** Que resultado escolar você quer?
+- **setup > conditionalSpecificity > categories > Learning > options > betterGrades:** Notas melhores
+- **setup > conditionalSpecificity > categories > Learning > options > examSuccess:** Sucesso em provas
+- **setup > conditionalSpecificity > categories > Learning > options > collegeAcceptance:** Aprovação
+- **setup > conditionalSpecificity > categories > Learning > options > scholarship:** Bolsa de estudos
+- **setup > conditionalSpecificity > categories > Learning > options > focusStudying:** Foco nos estudos
+- **setup > conditionalSpecificity > categories > Discipline > headline:** Onde quer mais constância?
+- **setup > conditionalSpecificity > categories > Discipline > options > morningRoutine:** Rotina matinal
+- **setup > conditionalSpecificity > categories > Discipline > options > fitness:** Fitness
+- **setup > conditionalSpecificity > categories > Discipline > options > studying:** Estudar
+- **setup > conditionalSpecificity > categories > Discipline > options > work:** Trabalho
+- **setup > conditionalSpecificity > categories > Discipline > options > selfCare:** Autocuidado
+- **setup > conditionalSpecificity > categories > Productivity > headline:** Onde você quer mais foco?
+- **setup > conditionalSpecificity > categories > Productivity > options > workProjects:** Projetos de trabalho
+- **setup > conditionalSpecificity > categories > Productivity > options > studying:** Estudar
+- **setup > conditionalSpecificity > categories > Productivity > options > creativeWork:** Trabalho criativo
+- **setup > conditionalSpecificity > categories > Productivity > options > contentCreation:** Criação de conteúdo
+- **setup > conditionalSpecificity > categories > Productivity > options > dailyRoutine:** Rotina diária
+- **setup > conditionalSpecificity > categories > Fitness > headline:** Que mudança física você quer?
+- **setup > conditionalSpecificity > categories > Fitness > options > strength:** Força
+- **setup > conditionalSpecificity > categories > Fitness > options > shapeTone:** Forma e tônus
+- **setup > conditionalSpecificity > categories > Fitness > options > energy:** Energia
+- **setup > conditionalSpecificity > categories > Fitness > options > confidence:** Confiança
+- **setup > conditionalSpecificity > categories > Fitness > options > consistentWorkouts:** Treinos constantes
+- **setup > conditionalSpecificity > categories > Nutrition > headline:** Que mudança de bem-estar você quer?
+- **setup > conditionalSpecificity > categories > Nutrition > options > moreEnergy:** Mais energia
+- **setup > conditionalSpecificity > categories > Nutrition > options > betterRest:** Melhor descanso
+- **setup > conditionalSpecificity > categories > Nutrition > options > emotionalEase:** Calma emocional
+- **setup > conditionalSpecificity > categories > Nutrition > options > balance:** Equilíbrio
+- **setup > conditionalSpecificity > categories > Nutrition > options > softerRoutines:** Rotinas mais leves
+- **setup > conditionalSpecificity > categories > Organization > headline:** Que parte da vida quer reiniciar?
+- **setup > conditionalSpecificity > categories > Organization > options > mySpace:** Meu espaço
+- **setup > conditionalSpecificity > categories > Organization > options > mySchedule:** Minha agenda
+- **setup > conditionalSpecificity > categories > Organization > options > myRoutines:** Minhas rotinas
+- **setup > conditionalSpecificity > categories > Organization > options > myEnvironment:** Meu ambiente
+- **setup > conditionalSpecificity > categories > Organization > options > myPriorities:** Minhas prioridades
+- **setup > currentFriction > title:** Que crença quer mudar?
+- **setup > currentFriction > subtitle:** Que crença bloqueia sua manifestação?
+- **setup > currentFriction > placeholder:** Descreva a crença que quer mudar…
+- **setup > toolPreference > title:** Como você quer receber apoio?
+- **setup > toolPreference > subtitle:** Escolha as ferramentas para começar.
+- **setup > toolPreferenceOptions > powerful_affirmations:** Afirmações poderosas
+- **setup > toolPreferenceOptions > custom_subliminals:** Subliminares
+- **setup > toolPreferenceOptions > mirror_work_reset:** Espelho
+- **setup > toolPreferenceOptions > belief_restructuring:** Crenças
+- **setup > toolPreferenceOptions > ai_manifestation_guidance:** Guia com IA
+- **setup > toolPreferenceOptions > daily_wins_progress:** Constância e progresso
+- **setup > guide > title:** Escolha um guia
+- **setup > guide > subtitle:** Um guia de IA para suas dúvidas.
+- **setup > manifestationIntensity > title:** Escolha sua intensidade
+- **setup > manifestationIntensity > subtitle:** Defina rotina e notificações opcionais.
+- **setup > manifestationIntensity > setRoutine:** Definir rotina
+- **setup > manifestationIntensity > notificationsQuestion:** Quer notificações para voltar à rotina?
+- **setup > manifestationIntensity > notificationsHint:** Elas te lembram de voltar às ações inspiradas.
+- **setup > manifestationIntensity > yes:** Sim
+- **setup > manifestationIntensity > notNow:** Agora não
+- **setup > manifestationIntensity > dailyTime:** Horário diário
+- **setup > manifestationIntensity > customizeInSettings:** Personalize depois em Configurações.
+- **setup > manifestationIntensity > light > title:** Leve
+- **setup > manifestationIntensity > light > tagline:** A rotina recomendada.
+- **setup > manifestationIntensity > light > description:** Manifestação leve, com notificações diárias se quiser.
+- **setup > manifestationIntensity > consistent > title:** Consistente
+- **setup > manifestationIntensity > consistent > tagline:** Para manifestadores experientes.
+- **setup > manifestationIntensity > consistent > description:** Intensidade moderada. 2 notificações diárias.
+- **setup > manifestationIntensity > lockedIn > title:** Focado
+- **setup > manifestationIntensity > lockedIn > tagline:** A rotina mais intensa.
+- **setup > manifestationIntensity > lockedIn > description:** Metas intensas. 3 notificações diárias.
+- **setup > manifestationIntensity > alerts > alert:** Alerta
+- **setup > manifestationIntensity > alerts > first:** 1.º alerta
+- **setup > manifestationIntensity > alerts > second:** 2.º alerta
+- **setup > manifestationIntensity > alerts > third:** 3.º alerta
+- **setup > notifications > title:** Ative permissões
+- **setup > notifications > subtitle:** Ajude-nos a melhorar o Palette Plotting.
+- **setup > tracking > title:** Ajude-nos a melhorar (opcional)
+- **setup > tracking > body:** Usamos dados de atividade para medir anúncios e melhorar o app. Você ajuda?
+- **setup > tracking > yes:** Sim
+- **setup > tracking > no:** Não
+- **setup > email > title:** Salve seu caminho
+- **setup > email > titleLine1:** Salve seu caminho e
+- **setup > email > titleLine2:** comece seu teste grátis
+- **setup > email > subtitle:** Crie sua conta para salvar seu caminho. Seu progresso fica neste e-mail.
+- **setup > email > emailLabel:** E-mail
+- **setup > email > passwordLabel:** Senha
+- **setup > email > emailPlaceholder:** voce@email.com
+- **setup > email > passwordPlaceholder:** 8+ caracteres
+- **setup > email > invalidEmail:** Digite um e-mail válido
+- **setup > email > needFirstName:** Precisamos do seu nome.
+- **setup > email > passwordLength:** Digite uma senha de 8+ caracteres
+- **setup > email > acceptTerms:** Aceite os Termos e a Privacidade
+- **setup > email > subscriptionError:** Não foi possível abrir assinaturas. Tente de novo.
+- **setup > email > tryAgain:** Tentar de novo
+- **setup > email > checkingAvailability:** Verificando disponibilidade…
+- **setup > email > hidePassword:** Ocultar senha
+- **setup > email > showPassword:** Mostrar senha
+- **setup > affirmationRead > title:** Afirme seus desejos em voz alta
+- **setup > affirmationRead > subtitle:** Fale e internalize suas afirmações
+- **setup > embody > title:** Como encarnar sua nova identidade?
+- **setup > embody > subtitle:** Escolha cinco — elas viram Ações inspiradas. ({{count}} de {{required}})
+- **setup > embodyOptions > embody_rest:** Descansar
+- **setup > embodyOptions > embody_self_care:** Autocuidado
+- **setup > embodyOptions > embody_clean_environment:** Organizar o ambiente
+- **setup > embodyOptions > embody_nutrition:** Nutrição
+- **setup > embodyOptions > embody_have_fun:** Divertir-se
+- **setup > embodyOptions > embody_move:** Exercício
+- **setup > embodyOptions > embody_glam_up:** Caprichar
+- **setup > embodyOptions > embody_connect:** Conectar com outros
+- **setup > embodyOptions > embody_seen:** Ser visto e visível
+- **setup > embodyOptions > embody_work_or_study:** Trabalhar ou estudar
+- **setup > pathSynthesis > title:** Seu caminho está pronto.
+- **setup > pathSynthesis > subtitle:** Tudo fica pronto ao desbloquear o Palette Plotting.
+- **setup > pathSynthesis > items > subliminals:** Subliminares personalizados.
+- **setup > pathSynthesis > items > mirror:** Espelho para autoconceito.
+- **setup > pathSynthesis > items > guideReady:** {{name}} está pronto para te guiar.
+- **setup > pathSynthesis > items > guideReadyGeneric:** Seu guia está pronto.
+- **setup > pathSynthesis > items > affirmations:** Afirmações para o novo você.
+- **setup > pathSynthesis > items > beliefs:** Crenças prontas.
+- **setup > pathSynthesis > items > journal:** Diário pronto.
+- **setup > pathLoading > title:** Construindo seu caminho…
+- **setup > pathLoading > subtitle:** Personalizando sua configuração.
+- **setup > pathLoading > loading:** Carregando
+- **setup > pathLoading > hint:** Seu caminho já está tomando forma.
+- **setup > beginJourney > lead:** Palette Plotting ajuda você a praticar manifestação e encarnar seus desejos.
+- **setup > beginJourney > subtitle:** Vamos começar sua jornada.
+- **legacy > threeActs > title:** Sua suíte de autoconceito
+- **legacy > threeActs > subtitle:** Uma estrutura para saltos quânticos
+- **legacy > threeActs > tools > subliminalMaker > title:** Criador de subliminares
+- **legacy > threeActs > tools > subliminalMaker > description:** Subliminares com batidas binaurais
+- **legacy > threeActs > tools > mirrorWork > title:** Trabalho com espelho
+- **legacy > threeActs > tools > mirrorWork > description:** Espelho imersivo
+- **legacy > threeActs > tools > affirmScript > title:** Afirmar e escrever
+- **legacy > threeActs > tools > affirmScript > description:** Afirmações e visuais personalizados
+- **legacy > threeActs > tools > beliefWork > title:** Trabalho de crenças
+- **legacy > threeActs > tools > beliefWork > description:** Desconstrua crenças limitantes
+- **legacy > threeActs > tools > habitTracking > title:** Hábitos
+- **legacy > threeActs > tools > habitTracking > description:** Progresso diário nas metas
+- **legacy > threeActs > tools > manifestationJournal > title:** Diário de manifestação
+- **legacy > threeActs > tools > manifestationJournal > description:** Diário e notas diárias
+- **legacy > threeActs > tools > pianoTapping > title:** Tapping no piano
+- **legacy > threeActs > tools > pianoTapping > description:** Integração tátil de metas
+- **legacy > double > title:** Escolha um guia
+- **legacy > double > subtitle:** Um guia de IA nos chats
+- **legacy > double > characters > river > name:** River
+- **legacy > double > characters > river > themes (line 1):** Transições
+- **legacy > double > characters > river > themes (line 2):** Carreira
+- **legacy > double > characters > sage > name:** Sage
+- **legacy > double > characters > sage > themes (line 1):** Finanças
+- **legacy > double > characters > sage > themes (line 2):** Identidade
+- **legacy > double > characters > rose > name:** Rose
+- **legacy > double > characters > rose > themes (line 1):** Amor
+- **legacy > double > characters > rose > themes (line 2):** Autoconceito
+- **legacy > double > characters > oliver > name:** Oliver
+- **legacy > double > characters > oliver > themes (line 1):** Autoimagem
+- **legacy > double > characters > oliver > themes (line 2):** Fitness
+- **legacy > digitalMirror > title:** Trabalho com espelho
+- **legacy > digitalMirror > subtitle:** Sessões guiadas para autoconfiança
+- **legacy > digitalMirror > imageAlt:** Trabalho com espelho
+- **legacy > subliminalMaker > title:** Criador de subliminares
+- **legacy > subliminalMaker > subtitle:** Crie áudios subliminares
+- **legacy > subliminalMaker > imageAlt:** Criador de subliminares
+- **legacy > manifestationTools > title:** Ferramentas de manifestação
+- **legacy > manifestationTools > subtitle:** Use técnicas experimentais para manifestar
+- **legacy > manifestationTools > imageAlt:** Ferramentas de manifestação
+- **legacy > habitTracking > title:** Hábitos e progresso
+- **legacy > habitTracking > subtitle:** Acompanhe progresso e hábitos
+- **legacy > habitTracking > imageAlt:** Hábitos e progresso
+- **legacy > onboardingQuestions > title:** Foco de manifestação
+- **legacy > onboardingQuestions > question:** O que você quer mudar?
+- **legacy > onboardingQuestions > selectUpTo3:** Selecione até 3 opções
+- **legacy > onboardingQuestions > options > Career:** Carreira
+- **legacy > onboardingQuestions > options > Business:** Negócios
+- **legacy > onboardingQuestions > options > Learning:** Escola / Provas
+- **legacy > onboardingQuestions > options > Finances:** Dinheiro
+- **legacy > onboardingQuestions > options > Productivity:** Foco
+- **legacy > onboardingQuestions > options > Organization:** Recomeço de vida
+- **legacy > onboardingQuestions > options > Confidence:** Autoconceito
+- **legacy > onboardingQuestions > options > Self-Love:** Beleza / Glow Up
+- **legacy > onboardingQuestions > options > Connections:** Amor / SP
+- **legacy > onboardingQuestions > options > Fitness:** Corpo / Fitness
+- **legacy > onboardingQuestions > options > Nutrition:** Bem-estar
+- **legacy > onboardingQuestions > options > Discipline:** Disciplina
+
+## Configurações e rotina de manifestação
+
+- **title:** Configurações
+- **header:** Sua conta
+- **tabs > profile:** Perfil
+- **tabs > settings:** Configurações
+- **tabs > billing:** Assinatura
+- **tabs > legal:** Legal
+- **language > heading:** Idioma
+- **language > description:** Escolha o idioma do app.
+- **profile > nameLabel:** Nome
+- **profile > usernameLabel:** Nome de usuário
+- **profile > emailLabel:** E-mail
+- **profile > emailCannotChange:** E-mail não alterável
+- **profile > phoneLabel:** Número de telefone
+- **profile > updateButton:** Atualizar perfil
+- **profile > namePlaceholder:** Digite seu nome
+- **profile > usernamePlaceholder:** Digite seu nome de usuário
+- **profile > phonePlaceholder:** +55 (11) 91234-5678
+- **profile > codePlaceholder:** Código de 6 dígitos
+- **profile > sendCode:** Enviar código
+- **profile > sendingCode:** Enviando...
+- **profile > verify:** Verificar
+- **profile > verifyPhoneHint:** Verifique seu número de telefone para atualizá-lo
+- **profile > phoneVerified:** ✓ Telefone verificado
+- **profile > newPhoneVerified:** ✓ Novo telefone verificado
+- **profile > changePasswordHeading:** Alterar senha
+- **profile > currentPasswordLabel:** Senha atual
+- **profile > newPasswordLabel:** Nova senha
+- **profile > confirmPasswordLabel:** Confirmar nova senha
+- **profile > changePasswordButton:** Alterar senha
+- **profile > validatingPassword:** Validando senha...
+- **profile > currentPasswordPlaceholder:** Senha atual
+- **profile > newPasswordPlaceholder:** Nova senha
+- **profile > confirmPasswordPlaceholder:** Confirme a nova senha
+- **passwordValidation > minLength:** Mínimo de 8 caracteres
+- **passwordValidation > lowercase:** Inclua uma letra minúscula
+- **passwordValidation > uppercase:** Inclua uma letra maiúscula
+- **passwordValidation > digit:** Inclua um número
+- **passwordValidation > mismatch:** As senhas não coincidem
+- **preferences > routineHeading:** Rotina de manifestação
+- **preferences > routineDescription:** Ajuste intensidade, rotina e notificações.
+- **preferences > routineButtonTitle:** Rotina e intensidade
+- **preferences > routineButtonSubtitle:** Intensidade e notificações
+- **preferences > emailHeading:** Preferências de e-mail
+- **preferences > emailDescription:** Dicas, novidades e atualizações por e-mail.
+- **preferences > emailMarketingLabel:** Marketing por e-mail
+- **preferences > textMarketingLabel:** Marketing por SMS
+- **preferences > dataTrainingHeading:** Treinamento de dados
+- **preferences > dataTrainingDescription:** Ajude a melhorar usando dados anônimos para treinar modelos.
+- **preferences > dataTrainingLabel:** Permitir treino de dados
+- **preferences > timeZoneLabel:** Fuso horário
+- **deletion > heading:** Excluir conta
+- **deletion > scheduledPrefix:** Sua conta está programada para exclusão em
+- **deletion > scheduledSuffix:** Você pode cancelar antes dessa data.
+- **deletion > description:** Exclui sua conta e dados. A exclusão é agendada para 30 dias depois.
+- **deletion > cancelRequest:** Cancelar solicitação de exclusão
+- **deletion > deleteButton:** Excluir minha conta
+- **deletion > confirm1Title:** Excluir sua conta?
+- **deletion > confirm1Body:** Sua conta e dados serão excluídos permanentemente. Não será possível recuperar. Continuar?
+- **deletion > confirm2Title:** Confirmação final
+- **deletion > confirm2Body:** Última chance para cancelar. Sua conta e dados serão excluídos. Tem certeza?
+- **deletion > deleting:** Excluindo…
+- **deletion > scheduledFallback:** em 30 dias
+- **deletion > scheduledToast:** Sua conta está programada para exclusão em {{date}}. Você pode entrar antes dessa data para cancelar em Configurações.
+- **billing > subscriptionHeading:** Assinatura
+- **billing > currentPlan:** Plano atual
+- **billing > billingHeading:** Assinatura
+- **billing > billingDescription:** Gerencie assinatura e pagamentos
+- **billing > manageBilling:** Gerenciar assinatura
+- **billing > loadingOptions:** Carregando assinaturas…
+- **billing > portalHint:** Abra o portal para atualizar pagamento ou cancelar.
+- **billing > planMonthly:** Mensal
+- **billing > planAnnual:** Anual
+- **billing > planWeekly:** Semanal
+- **billing > openingPortal:** Abrindo assinatura…
+- **legal > heading:** Legal e informações
+- **legal > faq:** Perguntas frequentes
+- **legal > terms:** Termos de uso
+- **legal > privacy:** Política de privacidade
+- **legal > acceptableUse:** Política de uso aceitável
+- **legal > billingRefunds:** Pagamento e reembolsos
+- **legal > dmca:** Aviso e política de remoção DMCA
+- **legal > eula:** Contrato de licença de usuário final
+- **legal > contact:** Fale conosco
+- **routine > title:** Rotina de manifestação
+- **routine > subtitle:** Intensidade de manifestação e notificações de rotina
+- **routine > backAria:** Voltar para configurações
+- **routine > loading:** Carregando sua rotina…
+- **routine > intensityHeading:** Intensidade de manifestação
+- **routine > intensityDescription:** Ajuste sua intensidade de manifestação
+- **routine > saveIntensity:** Salvar intensidade
+- **routine > saving:** Salvando…
+- **routine > notificationsHeading:** Notificações de rotina
+- **routine > notificationsDescription:** As notificações lembram você de voltar às ações inspiradas.
+- **routine > pushRemindersLabel:** Lembretes e push
+- **routine > dailyTimeHeading:** Horário diário
+- **routine > deviceDeniedHint:** Notificações desativadas. Sua rotina continua.
+- **routine > intensity > light > title:** Leve
+- **routine > intensity > light > tagline:** A rotina recomendada.
+- **routine > intensity > light > description:** Integração leve de manifestação, com notificações diárias, se você optar.
+- **routine > intensity > consistent > title:** Consistente
+- **routine > intensity > consistent > tagline:** Para manifestadores experientes.
+- **routine > intensity > consistent > description:** Intensidade de manifestação mais moderada. 2 notificações diárias, se selecionadas.
+- **routine > intensity > locked_in > title:** Focado
+- **routine > intensity > locked_in > tagline:** A rotina de maior intensidade.
+- **routine > intensity > locked_in > description:** Para metas de manifestação mais intensas. 3 notificações diárias, se você optar.
+- **routine > alerts > single:** Alerta
+- **routine > alerts > first:** 1.º alerta
+- **routine > alerts > second:** 2.º alerta
+- **routine > alerts > third:** 3.º alerta
+- **toasts > profileUpdated:** Perfil atualizado com sucesso
+- **toasts > passwordUpdated:** Senha atualizada com sucesso
+- **toasts > enterPhone:** Digite um número de telefone
+- **toasts > codeSent:** Código de verificação enviado!
+- **toasts > codeSendFailed:** Não foi possível enviar o código.
+- **toasts > phoneVerified:** Número de telefone verificado e salvo!
+- **toasts > invalidCode:** Código inválido. Tente novamente.
+- **toasts > usernameEmpty:** O nome de usuário não pode estar vazio
+- **toasts > verifyPhoneFirst:** Verifique seu novo número de telefone antes de atualizar
+- **toasts > userNotFound:** Usuário não encontrado
+- **toasts > usernameTaken:** O nome de usuário já está em uso. Escolha outro.
+- **toasts > profileUpdateError:** Erro ao atualizar o perfil
+- **toasts > invalidPassword:** Senha inválida
+- **toasts > passwordUpdateError:** Erro ao atualizar a senha
+- **toasts > smsEnabled:** Notificações por SMS ativadas
+- **toasts > smsDisabled:** Notificações por SMS desativadas
+- **toasts > smsUpdateError:** Erro ao atualizar SMS
+- **toasts > loginRequired:** Entre para atualizar as preferências
+- **toasts > dataTrainingEnabled:** Treinamento de dados ativado
+- **toasts > dataTrainingDisabled:** Treinamento de dados desativado
+- **toasts > dataTrainingError:** Erro ao atualizar treino de dados
+- **toasts > deletionScheduled:** Sua conta está programada para exclusão em {{date}}. Você pode entrar antes dessa data para cancelar em Configurações.
+- **toasts > deletionFailed:** Não foi possível agendar a exclusão. Tente de novo ou escreva ao suporte.
+- **toasts > deletionCancelled:** Exclusão da conta cancelada. Sua conta não será excluída.
+- **toasts > deletionCancelFailed:** Não foi possível cancelar. Tente de novo ou escreva ao suporte.
+- **toasts > emailPrefError:** Erro: {{message}}
+- **toasts > emailEnabled:** Notificações por e-mail ativadas
+- **toasts > emailDisabled:** Notificações por e-mail desativadas
+- **toasts > billingLoginRequired:** Entre para gerenciar sua assinatura
+- **toasts > playSubscriptionsFailed:** Não foi possível abrir as assinaturas do Google Play.
+- **toasts > iosSubscriptionsHint:** Gerencie no iPhone: Ajustes > ID Apple > Assinaturas.
+- **toasts > portalFailed:** Não foi possível abrir o portal de assinatura. Tente novamente.
+- **toasts > portalFailedFallback:** Não foi possível abrir o portal. Tente de novo ou use o link do e-mail.
+- **toasts > routineLoadFailed:** Não foi possível carregar as configurações da sua rotina.
+- **toasts > routineNotifUpdateFailed:** Não foi possível atualizar a preferência de notificações.
+- **toasts > routineNotifOff:** Notificações de rotina desativadas
+- **toasts > routineNotifDenied:** A permissão de notificações foi negada.
+- **toasts > routineNotifDeniedIos:** As notificações estão desativadas nas Configurações do iOS. Ative-as lá e tente novamente.
+- **toasts > routineNotifPermissionFailed:** Não foi possível solicitar a permissão de notificações.
+- **toasts > routineNotifOn:** Notificações de rotina ativadas
+- **toasts > routineIntensitySaved:** Intensidade de manifestação atualizada
+- **toasts > routineIntensitySaveFailed:** Não foi possível salvar sua intensidade de rotina.
+- **legalDisclaimer:** Os Termos e a Privacidade estão disponíveis atualmente em inglês.
+
+## Entrar, redefinição de senha e ativação
+
+- **notFound > title:** 404
+- **notFound > message:** Página não encontrada
+- **notFound > redirecting:** Redirecionando para o início...
+- **signIn > pageTitle:** Entrar | Palette Plotting
+- **signIn > title:** Entrar
+- **signIn > description:** Entre para continuar
+- **signIn > emailOrUsernameLabel:** E-mail ou usuário
+- **signIn > emailOrUsernamePlaceholder:** voce@email.com ou usuário
+- **signIn > passwordLabel:** Senha
+- **signIn > passwordPlaceholder:** ••••••••
+- **signIn > forgotPasswordLink:** Esqueceu a senha?
+- **signIn > submit:** Entrar
+- **signIn > submitting:** Entrando...
+- **signIn > noAccount:** Não tem uma conta?
+- **signIn > signUp:** Cadastre-se
+- **forgotPassword > checkEmailTitle:** Verifique seu e-mail
+- **forgotPassword > checkEmailBody:** Verifique seu e-mail para redefinir a senha.
+- **forgotPassword > backToSignIn:** Voltar para entrar
+- **forgotPassword > sendResetLink:** Enviar link
+- **forgotPassword > sending:** Enviando...
+- **resetPassword > title:** Redefinir senha
+- **resetPassword > noSessionDescription:** Clique no link do seu e-mail para redefinir sua senha.
+- **resetPassword > description:** Digite sua nova senha
+- **resetPassword > newPasswordLabel:** Nova senha
+- **resetPassword > newPasswordPlaceholder:** Nova senha
+- **resetPassword > confirmPasswordLabel:** Confirmar nova senha
+- **resetPassword > confirmPasswordPlaceholder:** Confirme a senha
+- **resetPassword > validatingPassword:** Validando senha...
+- **resetPassword > submit:** Redefinir senha
+- **resetPassword > submitting:** Redefinindo...
+- **resetPassword > backToSignIn:** Voltar para entrar
+- **activate > title:** Ative seu plano
+- **activate > subtitleWithTier:** Você escolheu o plano {{tier}} ({{billing}}).
+- **activate > subtitleDefault:** Conclua para ativar sua assinatura.
+- **activate > billingMonthly:** mensal
+- **activate > missingInfo:** Informações de ativação ausentes. Reinicie o cadastro.
+- **activate > restart:** Reiniciar
+- **activate > paymentNotConfirmed:** Pagamento não confirmado. Verifique se seu pagamento foi concluído.
+- **activate > goToSubscriptions:** Ir para assinaturas
+- **activate > accountCreatedTitle:** Conta criada com sucesso!
+- **activate > accountCreatedBody:** Verifique seu e-mail para definir sua senha. Depois, entre na conta.
+- **activate > goToSignIn:** Ir para entrar
+- **activate > waitingForAccount:** Aguardando criação da conta...
+- **verifyEmail > verifying:** Verificando…
+- **verifyEmail > successTitle:** E-mail verificado
+- **verifyEmail > successBody:** Tudo pronto.
+- **verifyEmail > errorTitle:** Verificação falhou
+- **verifyEmail > missingToken:** Token ausente.
+- **verifyEmail > verificationFailed:** Verificação falhou.
+- **verifyEmail > requestNewEmail:** Solicite um novo e-mail de verificação.
+- **verifyEmail > goToDashboard:** Ir para o painel
+- **toasts > usernameNotFound:** Nome de usuário não encontrado
+- **toasts > resetLinkSent:** Link de redefinição enviado para seu e-mail
+- **toasts > resetLinkFailed:** Não foi possível enviar o link.
+- **toasts > passwordResetSuccess:** Senha redefinida com sucesso. Entre na sua conta.
+- **toasts > passwordResetFailed:** Não foi possível redefinir a senha. Tente novamente.
+- **toasts > accountCreated:** Conta criada! Verifique seu e-mail para definir sua senha.
+- **toasts > activationLoadFailed:** Não foi possível carregar a sessão de ativação. Reinicie o cadastro.
+- **toasts > accountCreationSlow:** A criação da conta está demorando mais do que o esperado. Verifique seu e-mail ou entre em contato com o suporte.
+- **legalDisclaimer:** Termos e Privacidade estão em inglês.
+
+## Paywall e pós-compra
+
+- **postPaywall > title:** Seu caminho está pronto
+- **postPaywall > buildingDashboard:** Montando seu painel…
+- **postPaywall > finishingSubtitle:** Quase lá — finalizando painel.
+- **postPaywall > loadingStatusAria:** Carregamento
+- **postPaywall > commitmentLabel:** Diga isto uma vez, em voz alta:
+- **postPaywall > commitmentText:** Eu nomeei o que quero e não vou abandonar quando a dúvida aparecer. Dou ao meu desejo minha voz, atenção e constância. Vou agir como quem já está neste caminho. O que quero merece meu sim completo.
+- **postPaywall > simsLines (line 1):** Assinatura confirmada — oficial.
+- **postPaywall > simsLines (line 2):** Criando afirmações com suas respostas.
+- **postPaywall > simsLines (line 3):** Dando voz às suas afirmações.
+- **postPaywall > simsLines (line 4):** Misturando som, sussurros e theta…
+- **postPaywall > simsLines (line 5):** Desbloqueando seu painel…
+- **postPaywall > toastActivateFailedIos:** Compra concluída, mas não conseguimos ativar seu plano ainda. Tente novamente em assinaturas.
+- **postPaywall > toastActivateFailedAndroid:** Compra concluída, mas não conseguimos ativar seu plano ainda. Tente novamente.
+- **postPaywall > toastSetupSnag:** Tivemos um problema ao finalizar a configuração. Indo para o painel…
+- **legacyIos > titleLine1:** Desbloqueie o teste grátis
+- **legacyIos > titleLine2:** Comece a manifestar
+- **legacyIos > subtitle:** Escolha o plano semanal para começar.
+- **legacyIos > loadingOptions:** Carregando opções de assinatura…
+- **legacyIos > weekly:** Semanal
+- **legacyIos > monthly:** Mensal
+- **legacyIos > yearly:** Anual
+- **legacyIos > bestAnnualValue:** Melhor valor anual
+- **legacyIos > onlyPerMonth:** Apenas {{amount}}/mês
+- **legacyIos > perWeek:** {{price}}/semana
+- **legacyIos > perMonth:** {{price}}/mês
+- **legacyIos > perYear:** {{price}}/ano
+- **legacyIos > opening:** Abrindo…
+- **legacyIos > tryAgain:** Tentar de novo
+- **legacyIos > fallbackTitle:** Não conseguimos concluir essa etapa
+- **legacyIos > fallbackBody:** Toque em Tentar de novo ou volte e toque em Continuar.
+- **legacyIos > terms:** Termos / EULA
+- **legacyIos > privacy:** Privacidade
+- **legacyIos > restorePurchases:** Restaurar compras
+- **legacyIos > restoring:** Restaurando…
+- **legacyIos > restore:** Restaurar
+- **legacyIos > closeAria:** Fechar
+- **legacyIos > errorNotIosApp:** Assinaturas só no app iOS.
+- **legacyIos > errorSignInAgain:** Entre novamente e abra a assinatura.
+- **legacyIos > errorNoSession:** Nenhuma sessão ativa. Saia, entre novamente e toque em Continuar.
+- **legacyIos > errorOpenFromSignup:** Abra a assinatura no app após cadastro.
+- **legacyIos > errorSkippedDetail:** Use Continuar no cadastro ou Conta em Ajustes.
+- **legacyIos > errorGeneric:** Algo deu errado.
+- **legacyIos > errorPersist:** Algo deu errado. Copie o log de depuração do Safari se persistir.
+- **legacyIos > restoreOnlyIos:** Restaurar está disponível apenas no app iOS.
+- **legacyIos > restoredSuccess:** Assinatura restaurada. Bem-vindo!
+- **legacyIos > restoreCancelled:** Restauração cancelada.
+- **legacyIos > nothingToRestore:** Nada para restaurar.
+- **legacyAndroid > title:** Desbloqueie ferramentas de manifestação.
+- **legacyAndroid > subtitle:** Toque em Continuar para confirmar.
+- **legacyAndroid > opening:** Abrindo…
+- **legacyAndroid > tryAgain:** Tentar de novo
+- **legacyAndroid > fallbackTitle:** Não conseguimos concluir essa etapa
+- **legacyAndroid > fallbackBody:** Toque em Tentar de novo ou volte e toque em Continuar.
+- **legacyAndroid > terms:** Termos / EULA
+- **legacyAndroid > privacy:** Privacidade
+- **legacyAndroid > closeAria:** Fechar
+- **legacyAndroid > errorNotAndroidApp:** Assinaturas só no app Android.
+- **legacyAndroid > errorSignInAgain:** Entre novamente e abra a assinatura.
+- **legacyAndroid > errorNoSession:** Nenhuma sessão ativa. Saia, entre novamente e toque em Continuar.
+- **legacyAndroid > errorOpenFromSignup:** Abra a assinatura no app após cadastro.
+- **legacyAndroid > errorSkippedDetail:** Use Continuar na tela de cadastro ou abra Conta em Configurações.
+- **legacyAndroid > errorGeneric:** Algo deu errado.
+- **flow > subscriptionAlreadyOpening:** A assinatura já está abrindo — aguarde alguns segundos e tente novamente.
+- **flow > subscriptionScreenMayBeOpening:** A tela de assinatura pode estar abrindo. Aguarde e tente de novo.
+- **flow > openingSubscriptionsTimedOut:** A assinatura demorou para abrir. Reinicie a app e tente de novo.
+- **flow > paymentNotCompleted:** O pagamento não foi concluído.
+- **flow > couldNotOpenSubscription:** Não foi possível abrir as opções de assinatura.
+- **flow > signInRequiredBeforeSubscribing:** É necessário entrar antes de assinar.
+- **webWrapper > checkoutFailed:** Não foi possível abrir o pagamento.
+- **webWrapper > checkoutClosed:** Pagamento cancelado. Assine quando quiser.
+- **webWrapper > viewPlans:** Ver planos
+- **webWrapper > close:** Fechar
+- **webWrapper > notConfigured:** Pagamento web indisponível. Tente mais tarde.
+- **webWrapper > subscriptionNotCompleted:** Assinatura não concluída.
+- **emailCollection > title:** Vamos começar
+- **emailCollection > emailLabel:** E-mail
+- **emailCollection > firstNameLabel:** Nome
+- **emailCollection > usernameLabel:** Usuário
+- **emailCollection > passwordLabel:** Senha
+- **emailCollection > confirmLabel:** Confirmar
+- **emailCollection > emailPlaceholder:** seu@email.com
+- **emailCollection > firstNamePlaceholder:** Nome
+- **emailCollection > usernamePlaceholder:** Usuário
+- **emailCollection > passwordPlaceholder:** 8+ caracteres
+- **emailCollection > confirmPlaceholder:** Digite novamente
+- **emailCollection > checkingEmail:** Verificando disponibilidade...
+- **emailCollection > checkingUsername:** Verificando...
+- **emailCollection > emailTaken:** Este e-mail já está cadastrado. Entre em vez disso.
+- **emailCollection > usernameTaken:** Este usuário já está em uso. Escolha outro.
+- **emailCollection > passwordMinLength:** A senha deve ter pelo menos 8 caracteres.
+- **emailCollection > passwordMismatch:** As senhas não coincidem.
+- **emailCollection > passwordMismatchToast:** As senhas não coincidem
+- **emailCollection > invalidEmail:** Digite um e-mail válido
+- **emailCollection > needUsername:** Digite um nome de usuário
+- **emailCollection > needPassword:** Digite uma senha com pelo menos 8 caracteres
+- **emailCollection > needFirstName:** Digite seu nome
+- **emailCollection > acceptTerms:** Aceite os Termos de serviço e a Política de privacidade
+- **emailCollection > verifyEmailBlocked:** Conta criada, mas o login está bloqueado. Verifique seu e-mail e entre.
+- **emailCollection > subscriptionError:** Não foi possível abrir as opções de assinatura. Tente novamente em instantes.
+- **emailCollection > saveFailed:** Falha ao salvar. Tente novamente.
+- **emailCollection > tryAgain:** Tentar novamente
+- **emailCollection > termsAcceptPrefix:** Aceito os
+- **emailCollection > termsOfService:** Termos de serviço
+- **emailCollection > termsAnd:** e a
+- **emailCollection > privacyPolicy:** Privacidade
+- **emailCollection > appNotificationsConsent:** Aceito notificações do app (opcional). Cancele em Configurações.
+- **emailCollection > emailMarketingConsent:** Aceito marketing por e-mail (opcional). Cancele nas configurações.
+- **emailCollection > smsMarketingConsent:** Aceito marketing por SMS (opcional). Cancele nas configurações.
+- **paymentProcessing > title:** Processando pagamento
+- **paymentProcessing > subtitle:** Aguarde enquanto confirmamos seu pagamento. Isso geralmente leva alguns segundos.
+- **paymentProcessing > missingInfo:** Informações de pagamento ausentes. Reinicie o onboarding.
+- **paymentProcessing > verificationSlow:** A verificação do pagamento está demorando mais do que o esperado. Entre em contato com o suporte.
+- **paymentProcessing > verificationFailed:** Não foi possível verificar o pagamento. Entre em contato com o suporte.
+
+## Ferramentas do app
+
+- **chat > selectCharacterFirst:** Selecione um personagem primeiro para começar a conversar.
+- **chat > goToEmbody:** Ir para Encarnar
+- **chat > messagesToday:** {{count}} / {{limit}} mensagens hoje
+- **chat > startConversation:** Comece uma conversa com {{name}}
+- **chat > system:** Sistema
+- **chat > placeholder:** Digite sua mensagem...
+- **chat > dailyLimitReached:** Limite diário atingido. Seu limite reinicia amanhã.
+- **chat > errors > loadHistory:** Falha ao carregar o histórico do chat
+- **chat > errors > sendFailed:** Falha ao enviar a mensagem. Tente novamente.
+- **chat > errors > sessionExpired:** Sua sessão expirou. Atualize a página e tente novamente.
+- **chat > errors > forbidden:** Você não tem permissão para enviar mensagens. Verifique o status da sua conta.
+- **chat > errors > rateLimit:** Muitas solicitações. Aguarde um momento e tente novamente.
+- **chat > errors > connection:** Erro de conexão. Verifique sua internet e tente novamente.
+- **chat > errors > timeout:** A solicitação expirou. Tente novamente.
+- **demo > affirmations > maxAffirmations:** Máximo de 5 afirmações para esta demo
+- **demo > affirmations > walkthrough > createSet > title:** Crie seu primeiro conjunto
+- **demo > affirmations > walkthrough > createSet > message:** Toque em "Novo conjunto" para criar seu conjunto de afirmações. Dê um nome e selecione uma categoria.
+- **demo > affirmations > walkthrough > writeAffirmations > title:** Escreva suas afirmações
+- **demo > affirmations > walkthrough > writeAffirmations > message:** Toque no botão de editar e digite suas afirmações. Pressione Enter para adicionar cada uma. Você pode adicionar até 5 afirmações.
+- **demo > affirmations > walkthrough > chooseImages > title:** Escolha imagens do quadro
+- **demo > affirmations > walkthrough > chooseImages > message:** Toque no botão de imagem para selecionar imagens para suas afirmações. Escolha 5 imagens das 10 opções disponíveis. A biblioteca de assinantes tem mais de 50 imagens.
+- **demo > affirmations > walkthrough > saveImages > title:** Salve suas imagens
+- **demo > affirmations > walkthrough > saveImages > message:** Toque em Salvar para adicionar as imagens selecionadas ao seu conjunto de afirmações.
+- **demo > affirmations > walkthrough > play > title:** Veja seu conjunto
+- **demo > affirmations > walkthrough > play > message:** Toque em Reproduzir para ver seu conjunto de afirmações com imagens.
+- **demo > subliminal > recordingSavedCustomize:** Gravação salva! Agora personalize as configurações da sua faixa abaixo.
+- **demo > subliminal > trackGenerated:** Faixa gerada com sucesso!
+- **demo > subliminal > generateTrackFailed:** Falha ao gerar a faixa
+- **demo > subliminal > playTrackFailed:** Falha ao reproduzir a faixa
+- **demo > subliminal > maxTrackLengthDemo:** A duração máxima da faixa é 1 minuto para a demo.
+- **demo > subliminal > emailNotFoundForFeedback:** Não encontramos seu e-mail para este feedback.
+- **demo > subliminal > feedbackSubmitFailed:** Falha ao enviar feedback. Tente novamente.
+- **demo > subliminal > micAccessFailed:** Falha ao acessar o microfone. Verifique as permissões.
+- **demo > subliminal > walkthrough > record > title:** Grave suas afirmações
+- **demo > subliminal > walkthrough > record > message:** Escolha o modo Freestyle ou Karaoke para gravar suas afirmações. A função de texto para fala está disponível para assinantes pagos.
+- **demo > subliminal > walkthrough > customize > title:** Personalize sua faixa
+- **demo > subliminal > walkthrough > customize > message:** Personalize sua faixa subliminar. Theta e Ocean vêm pré-selecionados. Ajuste volumes, camadas e duração, depois toque em Criar faixa.
+- **demo > subliminal > walkthrough > play > title:** Reproduzir faixa
+- **demo > subliminal > walkthrough > play > message:** Sua faixa está pronta! Toque em Reproduzir para ouvir seu áudio subliminar.
+- **demo > subliminal > walkthrough > signup > title:** Gostou? Tenha acesso a mais.
+- **demo > subliminal > walkthrough > signup > message:** Nesta demo você vê menos de 15% do app. Desbloqueie subliminares, espelho, metas, hábitos e outras ferramentas.
+- **demo > subliminal > walkthrough > signup > actionText:** Cadastrar-se
+- **demo > subliminal > walkthrough > signup > secondaryActionText:** Ainda não, dar feedback
+- **demo > subliminal > walkthrough > feedback > title:** Compartilhe seu feedback
+- **demo > subliminal > walkthrough > feedback > message:** O que impediu você de se cadastrar hoje?
+- **demo > subliminal > walkthrough > thankYou > title:** Obrigado!
+- **demo > subliminal > walkthrough > thankYou > message:** Agradecemos seu feedback e vamos usá-lo para melhorar o Palette Plotting.
+- **activity > title:** Marcos de manifestação
+- **activity > milestones > tabs > inspiredActions:** Ações inspiradas
+- **activity > milestones > tabs > desires:** Desejos
+- **activity > milestones > tabs > weeklyWins:** Vitórias semanais
+- **activity > milestones > toasts > error:** Erro
+- **activity > milestones > toasts > loadHistoryFailed:** Falha ao carregar o histórico de ações. Tente novamente.
+- **activity > milestones > toasts > loadGoalsFailed:** Falha ao carregar os desejos semanais
+- **activity > milestones > toasts > categoryRequired:** Categoria obrigatória
+- **activity > milestones > toasts > selectCategoryForGoal:** Selecione uma categoria para seu desejo
+- **activity > milestones > toasts > saveGoalFailed:** Falha ao salvar o desejo
+- **activity > milestones > toasts > updateGoalFailed:** Falha ao atualizar o desejo
+- **activity > milestones > toasts > deleteGoalFailed:** Falha ao excluir o desejo
+- **activity > milestones > toasts > loadReviewFailed:** Falha ao carregar a revisão semanal
+- **activity > milestones > aria > completed:** Concluído
+- **activity > milestones > aria > notCompleted:** Não concluído
+- **activity > milestones > goals > addPlaceholder:** Adicionar
+- **activity > milestones > goals > category:** Categoria
+- **activity > milestones > goals > addButton:** Adicionar
+- **activity > milestones > goals > loading:** Carregando desejos...
+- **activity > milestones > goals > emptyTitle:** Nenhum desejo definido para esta semana.
+- **activity > milestones > goals > emptyHint:** Adicione um desejo acima para começar.
+- **activity > milestones > review > loading:** Carregando vitórias semanais...
+- **activity > milestones > review > inspiredActionsTitle:** Ações inspiradas
+- **activity > milestones > review > inspiredActionsCount:** Ações inspiradas concluídas nesta semana
+- **activity > milestones > review > desiresTitle:** Desejos
+- **activity > milestones > review > desiresSet:** Desejos definidos
+- **activity > milestones > review > desiresAttained:** Desejos alcançados
+- **activity > milestones > review > completionRate:** {{pct}}% de conclusão
+- **activity > milestones > review > byCategoryTitle:** Desejos por categoria
+- **activity > milestones > review > categoryCompleted:** {{completed}}/{{total}} concluídos
+- **activity > milestones > review > emptyTitle:** Nenhuma atividade registrada para esta semana.
+- **activity > milestones > review > emptyHint:** Comece suas ações inspiradas e defina desejos para ver seu progresso aqui.
+- **chrono > title:** Diário de manifestação
+- **chrono > loadingTimeline:** Carregando sua linha do tempo...
+- **chrono > emptyTimeline:** Sua linha do tempo está esperando ser escrita.
+- **chrono > createFirstEntry:** Crie sua primeira entrada
+- **chrono > timeline > description:** Reflita sobre seu crescimento e desenvolvimento.
+- **chrono > timeline > newEntry:** Nova entrada
+- **chrono > timeline > editEntry:** Editar entrada
+- **chrono > timeline > showLess:** Mostrar menos
+- **chrono > timeline > showMore:** Mostrar mais
+- **chrono > timeline > env3d:** 3D (ambiente):
+- **chrono > timeline > dayExperience:** Como você viveu o dia:
+- **chrono > timeline > winToday:** Vitória hoje:
+- **chrono > timeline > yes:** Sim
+- **chrono > timeline > no:** Não
+- **chrono > timeline > env3dAria:** O ambiente 3D pareceu {{rating}}
+- **chrono > timeline > dayExperienceAria:** O dia foi vivido como {{rating}}
+- **chrono > form > editEntry:** Editar entrada
+- **chrono > form > newEntry:** Nova entrada
+- **chrono > form > deleteEntry:** Excluir entrada
+- **chrono > form > date:** Data
+- **chrono > form > pickDate:** Escolha uma data
+- **chrono > form > titleLabel:** Título *
+- **chrono > form > titlePlaceholder:** Dê um título à sua entrada...
+- **chrono > form > whatHappened:** O que aconteceu? *
+- **chrono > form > textPlaceholder:** Conte à sua linha do tempo o que aconteceu hoje...
+- **chrono > form > env3dQuestion:** (1) Como estava o 3D (ambiente externo) hoje? *
+- **chrono > form > dayExperienceQuestion:** (2) Como você viveu o dia? *
+- **chrono > form > updating:** Atualizando...
+- **chrono > form > creating:** Criando...
+- **chrono > form > update:** Atualizar
+- **chrono > form > addEntry:** Adicionar entrada
+- **chrono > form > deleteTitle:** Excluir entrada
+- **chrono > form > deleteDescription:** Tem certeza de que deseja excluir esta entrada? Esta ação não pode ser desfeita.
+- **chrono > form > deleting:** Excluindo...
+- **chrono > form > delete:** Excluir
+- **chrono > form > mood > rough:** Difícil ou pesado
+- **chrono > form > mood > neutral:** Neutro
+- **chrono > form > mood > good:** Bom
+- **chrono > form > toast > titleRequired:** Título obrigatório
+- **chrono > form > toast > titleRequiredDesc:** Dê um título à sua entrada.
+- **chrono > form > toast > entryRequired:** Entrada obrigatória
+- **chrono > form > toast > entryRequiredDesc:** Escreva algo para sua linha do tempo.
+- **chrono > form > toast > authRequired:** Autenticação necessária
+- **chrono > form > toast > authRequiredDesc:** Faça login para criar entradas.
+- **chrono > form > toast > reflectionIncomplete:** Reflexão incompleta
+- **chrono > form > toast > reflectionIncompleteDesc:** Responda às duas perguntas usando as carinhas abaixo.
+- **chrono > form > toast > permissionDenied:** Permissão negada
+- **chrono > form > toast > permissionDeniedDesc:** Certifique-se de estar logado e tente novamente.
+- **chrono > form > toast > error:** Erro
+- **chrono > form > toast > createFailed:** Falha ao criar a entrada. Tente novamente.
+- **chrono > form > toast > deleteFailed:** Falha ao excluir a entrada. Tente novamente.
+- **chrono > form > toast > noSession:** Nenhuma sessão válida encontrada. Faça login e tente novamente.
+- **double > choose > settings:** Configurações
+- **double > choose > chooseGuide:** Escolha um guia
+- **double > choose > chooseGuideSubtitle:** Escolha quem te acompanha todo dia
+- **double > choose > dailyPracticeChoices:** Ações inspiradas
+- **double > choose > dailyPracticeSubtitle:** Escolha cinco. Troque quando quiser.
+- **double > choose > selectedCount:** {{count}} de 5 selecionadas
+- **double > choose > practices > rest:** Descansar e relaxar
+- **double > choose > practices > selfCare:** Autocuidado
+- **double > choose > practices > clean:** Limpar e organizar o ambiente
+- **double > choose > practices > drinkWater:** Nutrição
+- **double > choose > practices > haveFun:** Divertir-se
+- **double > choose > practices > exercise:** Exercício
+- **double > choose > practices > glamUp:** Caprichar
+- **double > choose > practices > connect:** Conectar com outros
+- **double > choose > practices > seen:** Ser visto e visível
+- **double > choose > practices > work:** Trabalhar ou estudar
+- **double > choose > ariaSelected:** {{label}}, selecionado
+- **double > choose > ariaNotSelected:** {{label}}, não selecionado
+- **double > choose > weeklyCheckIn:** Check-in semanal
+- **double > choose > weeklyCheckInSubtitle:** Escolha como quer chegar ao seu check-in semanal. Você pode mudar isso a qualquer momento.
+- **double > choose > addToCalendar:** Adicionar ao calendário
+- **double > choose > addToCalendarDesc:** Alertas semanais de início e encerramento usando seu calendário.
+- **double > choose > recommended:** Recomendado
+- **double > choose > deviceAutomation:** Automação do dispositivo
+- **double > choose > deviceAutomationDesc:** Use Atalhos do iPhone ou rotinas do Android para abrir seu resumo semanal.
+- **double > choose > viewSetupSteps:** Ver passos de configuração
+- **double > choose > advanced:** Avançado
+- **double > choose > changeDoubleTitle:** Mudar seu duplo?
+- **double > choose > changeDoubleDescription:** Mudar de {{from}} para {{to}}?
+- **double > choose > yourCurrentCharacter:** seu personagem atual
+- **double > choose > confirm:** Confirmar
+- **double > choose > toast > error:** Erro
+- **double > choose > toast > saveFailed:** Não foi possível salvar as escolhas. Tente novamente.
+- **double > choose > toast > downloaded:** Baixado
+- **double > choose > toast > calendarDownloaded:** Arquivo de calendário baixado. Importe-o no seu app de calendário.
+- **double > choose > toast > calendarFailed:** Falha ao gerar o arquivo de calendário. Tente novamente.
+- **double > choose > themes > transitions:** Transições
+- **double > choose > themes > career:** Carreira
+- **double > choose > themes > finance:** Finanças
+- **double > choose > themes > identity:** Identidade
+- **double > choose > themes > love:** Amor
+- **double > choose > themes > selfConcept:** Autoconceito
+- **double > choose > themes > selfImage:** Autoimagem
+- **double > choose > themes > fitness:** Fitness
+- **double > embody > title:** Encarnar
+- **double > embody > subtitle:** Acompanhe o progresso diário ao encarnar sua nova história.
+- **double > embody > pageTitle:** Encarnar | Palette Plotting
+- **double > embody > metaDescription:** Acompanhe o progresso diário ao encarnar sua nova história e obter seus desejos.
+- **double > embody > dailyPracticeTracking:** Ações e vitórias semanais
+- **double > embody > changeCharacter:** Mudar personagem
+- **double > embody > dailyPower:** Poder diário: {{percent}}%
+- **double > embody > confirmAction:** Confirmar ação
+- **double > embody > yes:** Sim
+- **double > embody > no:** Não
+- **double > embody > toast > permissionDenied:** Permissão negada
+- **double > embody > toast > permissionDeniedDesc:** Certifique-se de estar logado e tente novamente.
+- **double > embody > toast > error:** Erro
+- **double > embody > toast > loadProgressFailed:** Falha ao carregar o progresso diário. Tente novamente.
+- **double > embody > toast > authRequired:** Autenticação necessária
+- **double > embody > toast > mustBeLoggedInProgress:** Você precisa estar logado para salvar o progresso.
+- **double > embody > toast > saveProgressFailed:** Falha ao salvar o progresso. Tente novamente.
+- **double > embody > toast > mustBeLoggedInActions:** Você precisa estar logado para salvar ações.
+- **double > embody > toast > saveActionFailed:** Falha ao salvar a ação. Tente novamente.
+- **double > embody > toast > loadHistoryFailed:** Falha ao carregar o histórico de ações. Tente novamente.
+- **journey > pageTitle:** Sua jornada | Palette Plotting
+- **journey > title:** Sua jornada
+- **journey > subtitle:** Reflita sobre seu progresso diário.
+- **journey > dailySnapshot:** Resumo diário
+- **journey > statusAligned:** Alinhado
+- **journey > coherenceHint:** Afirme diariamente e encarne a nova história para coerência e alinhamento.
+- **journey > yourProgress:** Seu progresso
+- **journey > journalTitle:** Diário de manifestação
+- **journey > journalDescription:** Reflexões e intenções diárias.
+- **journey > changeCharacter:** Mudar personagem
+- **freeplay > pageTitle:** Piano Tapping | Palette Plotting
+- **freeplay > title:** Piano Tapping
+- **freeplay > subtitleMobile:** Mergulhe na sua afirmação com música e cor
+- **freeplay > subtitleDesktop:** Mergulhe nas suas afirmações com música e cor
+- **freeplay > affirmationSetOptional:** Conjunto de afirmações (opcional)
+- **freeplay > none:** Nenhum
+- **freeplay > colorFeedback:** Cor
+- **freeplay > start:** Começar
+- **freeplay > iphoneAudioHint:** Se você não ouvir o piano no iPhone, saia do app, desative o Modo Silencioso e aumente o volume.
+- **affirmationViewer > loading:** Carregando conjunto...
+- **affirmationViewer > notFound:** Conjunto não encontrado
+- **affirmationViewer > goToAffirmations:** Ir para Afirmações
+- **affirmationViewer > progress:** {{current}} de {{total}}
+- **affirmationViewer > pause:** Pausar
+- **affirmationViewer > autoPlay:** Reprodução automática
+- **affirmationViewer > speed:** Velocidade:
+- **affirmationVisualizer > title:** Afirmar e escrever
+- **affirmationVisualizer > loading:** Carregando…
+- **affirmationVisualizer > setNotFound:** Conjunto não encontrado
+- **affirmationVisualizer > loadingSet:** Carregando conjunto…
+- **affirmationVisualizer > notFound:** Conjunto não encontrado.
+- **affirmationVisualizer > backToAffirmScript:** Voltar para Afirmar e escrever
+- **affirmationVisualizer > subtitle:** Afirme e escreva seus desejos.
+- **affirmationVisualizer > start:** Começar
+- **affirmationVisualizer > tapStartBefore:** Toque em
+- **affirmationVisualizer > tapStartAfter:** para começar.
+- **affirmationVisualizer > noAffirmations:** Este conjunto não tem afirmações para exibir.
+- **affirmationVisualizer > settings:** Configurações
+- **affirmationVisualizer > settingsSubtitle:** Velocidade, fundos, loops
+- **affirmationVisualizer > collapseSettings:** Recolher configurações
+- **affirmationVisualizer > expandSettings:** Expandir configurações
+- **affirmationVisualizer > autoplayImages:** Reproduzir imagens automaticamente
+- **affirmationVisualizer > loopText:** Repetir texto
+- **affirmationVisualizer > loopTextHint:** Reinicia o roteiro ao terminar.
+- **affirmationVisualizer > loopCounter:** Contador de loops
+- **affirmationVisualizer > loopCounterHint:** Mostra quantas repetições desde Começar.
+- **affirmationVisualizer > imageRhythm:** Ritmo das imagens
+- **affirmationVisualizer > imageRhythmHint:** Tempo entre imagens.
+- **affirmationVisualizer > scriptingSpeed:** Velocidade da escrita
+- **affirmationVisualizer > scriptingSpeedHint:** Menor = mais rápido
+- **affirmationVisualizer > msPerChar:** {{ms}} ms/car
+- **affirmationVisualizer > seconds:** {{seconds}}s
+- **affirmationVisualizer > loopedAriaOne:** Repetiu 1 vez nesta sessão
+- **affirmationVisualizer > loopedAriaMany:** Repetiu {{count}} vezes nesta sessão
+- **affirmationVisualizer > loopsTitle:** Loops nesta sessão: {{count}}
+- **affirmations > pageTitle:** Afirmar e escrever | Palette Plotting
+- **affirmations > title:** Afirmar e escrever
+- **affirmations > subtitle:** Crie afirmações ou use conjuntos prontos.
+- **affirmations > yourCustomSets:** Seus conjuntos personalizados
+- **affirmations > storingSets:** Armazenando {{current}}/{{limit}} conjuntos de afirmações
+- **affirmations > newSet:** Novo conjunto
+- **affirmations > createNewSet:** Criar conjunto
+- **affirmations > setNamePlaceholder:** Nome do conjunto (Riqueza, Amor...)
+- **affirmations > selectCategory:** Selecionar categoria
+- **affirmations > generateAffirmations:** Gerar afirmações
+- **affirmations > loading:** Carregando...
+- **affirmations > weeklyCount:** ({{current}}/{{limit}} esta semana)
+- **affirmations > generateAffirmationsAria:** Gerar afirmações
+- **affirmations > generateHint:** ✨ Gere 5 afirmações com base no nome do seu conjunto
+- **affirmations > weeklyLimitReached:** Você atingiu seu limite semanal de {{limit}} conjuntos gerados.
+- **affirmations > generating:** Gerando...
+- **affirmations > generateSet:** Gerar conjunto
+- **affirmations > createSet:** Criar conjunto
+- **affirmations > noCustomSets:** Nenhum conjunto personalizado ainda
+- **affirmations > affirmationCount_one:** {{count}} afirmação
+- **affirmations > affirmationCount_other:** {{count}} afirmações
+- **affirmations > editSet:** Editar conjunto
+- **affirmations > closeImages:** Fechar imagens
+- **affirmations > addImages:** Adicionar imagens
+- **affirmations > playAffirmations:** Reproduzir afirmações
+- **affirmations > deleteSet:** Excluir conjunto
+- **affirmations > addAffirmationsFirst:** Adicione afirmações para escolher imagens (máx. {{max}}).
+- **affirmations > selectUpToImages_one:** Selecione até {{count}} imagem (uma por afirmação)
+- **affirmations > selectUpToImages_other:** Selecione até {{count}} imagens (uma por afirmação)
+- **affirmations > selectCategoryPlaceholder:** Selecionar categoria
+- **affirmations > loadingLibrary:** Carregando biblioteca...
+- **affirmations > loadingImages:** Carregando imagens...
+- **affirmations > showingImages_one:** Mostrando {{visible}} de {{total}} imagem
+- **affirmations > showingImages_other:** Mostrando {{visible}} de {{total}} imagens
+- **affirmations > inCategory:**  em {{category}}
+- **affirmations > selectedCount:**  • {{selected}}/{{max}} selecionadas
+- **affirmations > addImagesButton_one:** Adicionar {{count}} imagem
+- **affirmations > addImagesButton_other:** Adicionar {{count}} imagens
+- **affirmations > imageAlt:** Imagem
+- **affirmations > selected:** Selecionada
+- **affirmations > loadMore:** Carregar mais ({{remaining}} restantes)
+- **affirmations > noImagesFound:** Nenhuma imagem encontrada com seus filtros.
+- **affirmations > imageCount_one:** {{count}} imagem
+- **affirmations > imageCount_other:** {{count}} imagens
+- **affirmations > visionBoardImageAlt:** Imagem do quadro de visão
+- **affirmations > affirmationInputPlaceholder:** Digite a afirmação e pressione Enter...
+- **affirmations > affirmationLimitHint:** {{current}}/10 afirmações • Enter para adicionar • {{max}} caracteres
+- **affirmations > deleteAffirmation:** Excluir afirmação
+- **affirmations > premadeSets:** Conjuntos prontos
+- **affirmations > premadeSetsSubtitle:** Afirmações prontas para metas comuns
+- **affirmations > viewAffirmations:** Ver afirmações
+- **affirmations > deleteDialogTitle:** Excluir conjunto de afirmações?
+- **affirmations > deleteDialogDescription:** Tem certeza de que deseja excluir "{{name}}"? Esta ação não pode ser desfeita.
+- **affirmations > thisSet:** este conjunto
+- **affirmations > cancel:** Cancelar
+- **affirmations > delete:** Excluir
+- **affirmations > viewTerms:** Ver Termos de serviço
+- **affirmations > toasts > loadFailed:** Falha ao carregar os conjuntos de afirmações. Tente novamente.
+- **affirmations > toasts > noSession:** Nenhuma sessão válida encontrada. Faça login e tente novamente.
+- **affirmations > toasts > permissionDenied:** Permissão negada. Certifique-se de estar logado e tente novamente.
+- **affirmations > toasts > migrationNeeded:** É necessária uma migração do banco de dados. Entre em contato com o suporte.
+- **affirmations > toasts > updateFailed:** Falha ao atualizar o conjunto: {{message}}
+- **affirmations > toasts > createFailed:** Falha ao criar o conjunto: {{message}}
+- **affirmations > toasts > saveFailed:** Falha ao salvar os conjuntos de afirmações. Tente novamente.
+- **affirmations > toasts > imageLibraryFailed:** Falha ao carregar a biblioteca de imagens. Tente novamente.
+- **affirmations > toasts > maxImages_one:** Máximo de {{max}} imagem (uma por afirmação)
+- **affirmations > toasts > maxImages_other:** Máximo de {{max}} imagens (uma por afirmação)
+- **affirmations > toasts > imagesAdded_one:** {{count}} imagem adicionada!
+- **affirmations > toasts > imagesAdded_other:** {{count}} imagens adicionadas!
+- **affirmations > toasts > imageRemoved:** Imagem removida
+- **affirmations > toasts > enterSetName:** Digite um nome para o conjunto
+- **affirmations > toasts > selectCategory:** Selecione uma categoria
+- **affirmations > toasts > setLimitReached:** Você atingiu o limite de {{limit}} conjuntos personalizados do seu plano. Exclua um conjunto ou faça upgrade para criar mais.
+- **affirmations > toasts > weeklyLimitUpgrade:** Você atingiu seu limite semanal de {{limit}} conjuntos gerados. Tente novamente na próxima semana ou faça upgrade do seu plano.
+- **affirmations > toasts > weeklyLimit:** Você atingiu seu limite semanal de {{limit}} conjuntos gerados. Tente novamente na próxima semana.
+- **affirmations > toasts > blockedDefault:** Esta ferramenta está temporariamente indisponível devido a violações repetidas das diretrizes. O acesso será restaurado em 24 horas.
+- **affirmations > toasts > connectFailed:** Falha ao conectar ao serviço de geração de afirmações.
+- **affirmations > toasts > rateLimit:** Limite de solicitações excedido. Tente novamente em instantes.
+- **affirmations > toasts > creditsDepleted:** Créditos esgotados.
+- **affirmations > toasts > genericError:** Erro. Tente novamente.
+- **affirmations > toasts > noAffirmationsReceived:** Nenhuma afirmação recebida. Tente novamente.
+- **affirmations > toasts > generatedCount:** {{count}} afirmações geradas!
+- **affirmations > toasts > generateFailed:** Falha ao gerar afirmações: {{message}}
+- **affirmations > toasts > setCreated:** Conjunto criado com sucesso
+- **affirmations > toasts > enterAffirmation:** Digite uma afirmação
+- **affirmations > toasts > maxAffirmations:** Máximo de 10 afirmações por conjunto
+- **affirmations > toasts > affirmationAdded:** Afirmação adicionada
+- **affirmations > toasts > affirmationRemoved:** Afirmação removida
+- **affirmations > toasts > cannotDeletePremade:** Não é possível excluir conjuntos prontos
+- **affirmations > toasts > setDeleted:** Conjunto excluído
+- **affirmations > toasts > noAffirmationsInSet:** Este conjunto ainda não tem afirmações
+- **affirmations > toasts > unknownError:** Erro desconhecido
+- **refactor > pageTitle:** Trabalho de crenças | Palette Plotting
+- **refactor > title:** Trabalho de crenças
+- **refactor > subtitle:** Explore crenças que você quer liberar ou integrar.
+- **refactor > hideWeeklyLimit:** Ocultar limite semanal de gerações
+- **refactor > showWeeklyLimit:** Mostrar limite semanal de gerações
+- **refactor > weeklyGenerations:** Gerações semanais:
+- **refactor > yourBeliefs:** Suas crenças ({{count}})
+- **refactor > createNew:** Criar novo
+- **refactor > noSavedBeliefs:** Nenhuma crença salva ainda
+- **refactor > eliminate:** Eliminar
+- **refactor > integrate:** Integrar
+- **refactor > beliefLabel:** Crença:
+- **refactor > typeLabel:** Tipo:
+- **refactor > dateCreatedLabel:** Data de criação:
+- **refactor > view:** Ver
+- **refactor > enterYourBelief:** Digite sua crença
+- **refactor > cancel:** Cancelar
+- **refactor > titlePlaceholder:** p. ex., Ansiedade com prova de física
+- **refactor > beliefPlaceholderEliminate:** p. ex., 'Se eu não tirar A na prova de física, minha vida está arruinada'
+- **refactor > beliefPlaceholderIntegrate:** p. ex., 'Sou capaz de alcançar minhas metas'
+- **refactor > charactersCount:** {{count}}/250 caracteres
+- **refactor > eliminateTooltip:** Eliminar uma crença limitante
+- **refactor > integrateTooltip:** Integrar uma crença expansiva
+- **refactor > analyzing:** Analisando...
+- **refactor > analyzeBelief:** Analisar crença
+- **refactor > disclaimer:** Trabalho de crenças pode cometer erros e não é uma ferramenta terapêutica. Foi feito para analisar crenças com estrutura e lógica. Não é uma ferramenta de apoio emocional ou psicológico.
+- **refactor > eliminateBelief:** Eliminar crença
+- **refactor > integrateBelief:** Integrar crença
+- **refactor > png:** PNG
+- **refactor > save:** Salvar
+- **refactor > beliefNode:** Crença
+- **refactor > modeEliminate:** Eliminar crença limitante
+- **refactor > modeIntegrate:** Integrar crença expansiva
+- **refactor > assumption:** Suposição {{number}}
+- **refactor > visualizationPlaceholder:** A visualização aparecerá aqui após a análise
+- **refactor > viewTerms:** Ver Termos de serviço
+- **refactor > toasts > enterBelief:** Digite uma crença
+- **refactor > toasts > selectMode:** Selecione um modo (Eliminar ou Integrar)
+- **refactor > toasts > eliminationSubscribers:** Eliminar crenças é apenas para assinantes. Assine para acessar este recurso.
+- **refactor > toasts > integrationSubscribers:** Integrar crenças é apenas para assinantes. Assine para acessar este recurso.
+- **refactor > toasts > weeklyCheckFailed:** Não foi possível verificar o limite semanal. Tente novamente.
+- **refactor > toasts > weeklyLimitReached:** Limite semanal de gerações atingido ({{current}}/{{limit}}). Seu limite reinicia na segunda-feira.
+- **refactor > toasts > moderationUnavailable:** Verificação de segurança de conteúdo indisponível. Tente novamente.
+- **refactor > toasts > moderationUnavailableDetail:** Verificação de segurança de conteúdo indisponível. Tente novamente ou entre em contato com o suporte se o problema continuar.
+- **refactor > toasts > statementNotSupported:** Esta ferramenta não foi feita para processar este tipo de declaração.
+- **refactor > toasts > moderationFailed:** Falha na verificação de segurança de conteúdo. Tente novamente.
+- **refactor > toasts > moderationFailedDetail:** Falha na verificação de segurança de conteúdo. Tente novamente ou entre em contato com o suporte se o problema continuar.
+- **refactor > toasts > blockedDefault:** Esta ferramenta está temporariamente indisponível devido a violações repetidas das diretrizes. O acesso será restaurado em 24 horas.
+- **refactor > toasts > genericError:** Erro.
+- **refactor > toasts > connectionError:** Erro de conexão. Verifique sua internet e tente novamente.
+- **refactor > toasts > tryAgain:** Erro. Tente novamente.
+- **refactor > toasts > logFailed:** Falha ao registrar a geração. A contagem semanal pode estar imprecisa.
+- **refactor > toasts > analyzedSuccess:** Crença analisada com sucesso!
+- **refactor > toasts > analyzeFailed:** Falha ao analisar a crença. Tente novamente.
+- **refactor > toasts > preparingDownload:** Preparando download...
+- **refactor > toasts > exportedPng:** Exportado como PNG!
+- **refactor > toasts > exportPngFailed:** Falha ao exportar PNG
+- **refactor > toasts > permissionDenied:** Permissão negada. Certifique-se de estar logado e tente novamente.
+- **refactor > toasts > loadFailed:** Falha ao carregar crenças salvas. Tente novamente.
+- **refactor > toasts > loginToSave:** Você precisa estar logado para salvar crenças.
+- **refactor > toasts > invalidAnalysis:** Dados de análise inválidos. Tente analisar novamente.
+- **refactor > toasts > missingField:** Campo obrigatório ausente. Tente novamente.
+- **refactor > toasts > entryExists:** A entrada já existe. Tente novamente.
+- **refactor > toasts > tableNotFound:** Tabela do banco de dados não encontrada. Entre em contato com o suporte.
+- **refactor > toasts > schemaError:** Erro de esquema do banco de dados. Entre em contato com o suporte.
+- **refactor > toasts > saveFailed:** Falha ao salvar: {{message}}
+- **refactor > toasts > saved:** Salvo!
+- **refactor > toasts > saveGenericFailed:** Falha ao salvar
+- **refactor > toasts > loginToDelete:** Você precisa estar logado para excluir crenças.
+- **refactor > toasts > deleteFailed:** Falha ao excluir. Tente novamente.
+- **refactor > toasts > deleted:** Excluído
+- **musicComposer > pageTitle:** Fundos subliminares | Palette Plotting
+- **musicComposer > title:** Fundos subliminares
+- **musicComposer > subtitle:** Crie fundos sonoros subliminares personalizados.
+- **musicComposer > yourTracks:** Suas faixas
+- **musicComposer > tracksStored:** {{current}}/5 faixas armazenadas
+- **musicComposer > newSession:** Nova sessão
+- **musicComposer > noTracksYet:** Nenhuma faixa ainda
+- **musicComposer > createFirstBackground:** Crie seu primeiro fundo subliminar
+- **musicComposer > iphonePianoHint:** Se você não ouvir o piano no iPhone, saia do app, desative o Modo Silencioso e aumente o volume.
+- **musicComposer > piano:** Piano
+- **musicComposer > notes:** Notas
+- **musicComposer > record:** Gravar
+- **musicComposer > autoCorrect:** Autocorreção
+- **musicComposer > quantizeFast:** Rápido (1/8)
+- **musicComposer > quantizeMedium:** Médio (1/4)
+- **musicComposer > quantizeSlow:** Lento (1/2)
+- **musicComposer > quantizeVerySlow:** Muito lento
+- **musicComposer > maxOneMin:** Máx. 1 min
+- **musicComposer > notesCount:** {{count}} notas
+- **musicComposer > notesRecorded:** {{count}} notas gravadas
+- **musicComposer > enterMusicNotes:** Inserir notas musicais
+- **musicComposer > notesFormatHint:** Digite notas no formato: C4, D#5, E3, etc. (uma por linha ou separadas por vírgula)
+- **musicComposer > notesPlaceholder:** C4, D4, E4, F4, G4, A4, B4, C5
+- **musicComposer > parseNotes:** Analisar notas
+- **musicComposer > notesParsed:** {{count}} notas analisadas
+- **musicComposer > stop:** Parar
+- **musicComposer > play:** Reproduzir
+- **musicComposer > clear:** Limpar
+- **musicComposer > songNamePlaceholder:** Nome da música...
+- **musicComposer > save:** Salvar
+- **musicComposer > confirmOriginal:** Confirmo que esta é música original
+- **musicComposer > originalMusicOnly:** Somente música original
+- **musicComposer > copyrightDisclaimer:** Crie apenas música original. Você é responsável por garantir que suas composições não infrinjam direitos autorais existentes.
+- **musicComposer > recordMode:** Modo gravação
+- **musicComposer > speed:** Velocidade:
+- **musicComposer > affirmationSetOptional:** Conjunto de afirmações (opcional)
+- **musicComposer > none:** Nenhum
+- **musicComposer > dialogTitle:** Nova sessão
+- **musicComposer > dialogDescription:** Escolha o tipo de sessão e as configurações
+- **musicComposer > sessionType:** Tipo de sessão
+- **musicComposer > pianoTapping:** Piano Tapping
+- **musicComposer > recordingSession:** Sessão de gravação
+- **musicComposer > trackName:** Nome da faixa
+- **musicComposer > trackNamePlaceholder:** Digite o nome da faixa...
+- **musicComposer > cancel:** Cancelar
+- **musicComposer > startSession:** Iniciar sessão
+- **musicComposer > deleteConfirm:** Tem certeza de que deseja excluir "{{name}}"?
+- **musicComposer > durationMin:** {{minutes}} min
+- **musicComposer > toasts > loadTracksFailed:** Falha ao carregar as faixas
+- **musicComposer > toasts > subscribersOnly:** Fundos subliminares são exclusivos para assinantes. Assine para acessar este recurso.
+- **musicComposer > toasts > trackDeleted:** Faixa excluída
+- **musicComposer > toasts > deleteTrackFailed:** Falha ao excluir a faixa
+- **musicComposer > toasts > songTrimmed:** Música cortada para o limite de 1 minuto ({{count}} notas)
+- **musicComposer > toasts > parsedNotes:** {{count}} notas analisadas
+- **musicComposer > toasts > parseFailed:** Falha ao analisar as notas: {{message}}
+- **musicComposer > toasts > noNotesToPlay:** Nenhuma nota para reproduzir
+- **musicComposer > toasts > enterSongName:** Digite um nome para a música
+- **musicComposer > toasts > noNotesToSave:** Nenhuma nota para salvar
+- **musicComposer > toasts > confirmOriginal:** Confirme que sua música é original
+- **musicComposer > toasts > loginToSave:** Faça login para salvar faixas
+- **musicComposer > toasts > trackLimitReached:** Você atingiu o limite de 5 faixas de fundo. Exclua uma para salvar uma nova.
+- **musicComposer > toasts > trackTrimmed:** Faixa cortada para o limite de 1 minuto ({{count}} notas)
+- **musicComposer > toasts > noValidNotes:** Nenhuma nota válida para salvar. Grave algumas notas primeiro.
+- **musicComposer > toasts > duplicateName:** Já existe uma faixa com este nome. Escolha outro nome.
+- **musicComposer > toasts > generatingAudio:** Gerando áudio...
+- **musicComposer > toasts > generateAudioFailed:** Falha ao gerar o áudio: {{message}}
+- **musicComposer > toasts > bucketNotFound:** Bucket de armazenamento 'background-tracks' não encontrado. Crie-o em Supabase Dashboard > Storage > Buckets.
+- **musicComposer > toasts > uploadFailed:** Falha ao enviar o arquivo de áudio: {{message}}
+- **musicComposer > toasts > saveDbFailed:** Falha ao salvar a faixa no banco de dados
+- **musicComposer > toasts > trackSaved:** Faixa salva com sucesso! Já está disponível como som de fundo.
+- **musicComposer > toasts > saveFailed:** Falha ao salvar a faixa: {{message}}
+- **musicComposer > toasts > enterTrackName:** Digite um nome de faixa para sessões de gravação
+- **musicComposer > toasts > unknownError:** Erro desconhecido
+- **subliminal > pageTitle:** Criador de subliminares | Palette Plotting
+- **subliminal > title:** Criador de subliminares
+- **subliminal > subtitle:** Crie faixas com fundo e batidas binaurais
+- **subliminal > hideLimits:** Ocultar limites de armazenamento e semanais
+- **subliminal > showLimits:** Mostrar limites de armazenamento e semanais
+- **subliminal > storage:** Armazenamento:
+- **subliminal > weeklyCreations:** Criações semanais:
+- **subliminal > loading:** Carregando...
+- **subliminal > deleteTrack:** Excluir faixa
+- **subliminal > deleteDescription:** Tem certeza de que deseja excluir "{{name}}"? Esta ação não pode ser desfeita e liberará espaço de armazenamento.
+- **subliminal > cancel:** Cancelar
+- **subliminal > delete:** Excluir
+- **subliminal > yourTracks:** Suas faixas
+- **subliminal > create:** Criar
+- **subliminal > subliminalTrack:** Faixa subliminar
+- **subliminal > subliminalBackgrounds:** Fundos subliminares
+- **subliminal > pianoTapping:** Piano Tapping
+- **subliminal > noTracksYet:** Nenhuma faixa ainda
+- **subliminal > trackOptions:** Opções da faixa
+- **subliminal > pause:** Pausar
+- **subliminal > play:** Reproduzir
+- **subliminal > turnOffLoop:** Desativar repetição
+- **subliminal > loopPlayback:** Repetir reprodução
+- **subliminal > dismissPlayer:** Fechar player
+- **subliminal > loop:** Repetir
+- **subliminal > vocalBase:** Base vocal
+- **subliminal > nameYourTrack:** Nomeie sua faixa
+- **subliminal > trackNamePlaceholder:** p. ex., Motivação matinal
+- **subliminal > freestyle:** Freestyle
+- **subliminal > karaoke:** Karaoke
+- **subliminal > textToSpeech:** Texto para fala
+- **subliminal > selectAffirmationSet:** Selecionar conjunto de afirmações
+- **subliminal > chooseAffirmationSet:** Escolha um conjunto de afirmações
+- **subliminal > readAndRecord:** Leia e grave:
+- **subliminal > generateVoiceHint:** Gere uma voz lendo suas afirmações.
+- **subliminal > willGenerate:** Serão geradas: {{count}} afirmações
+- **subliminal > generating:** Gerando...
+- **subliminal > generateAudio:** Gerar áudio
+- **subliminal > next:** Próximo
+- **subliminal > step1Disclaimer:** Use apenas áudio que você tem permissão para usar. As gravações podem ser repetidas — você não precisa preencher a faixa inteira. Karaoke: leia as afirmações na tela enquanto grava.
+- **subliminal > binauralBeats:** Batidas binaurais
+- **subliminal > frequencyType:** Tipo de frequência
+- **subliminal > thetaRecommended:** Recomendado para foco profundo e relaxamento
+- **subliminal > frequenciesNote:** Nota: as frequências são aproximações.
+- **subliminal > back:** Voltar
+- **subliminal > subliminalSettings:** Configurações subliminares
+- **subliminal > affirmationVolume:** Volume das afirmações
+- **subliminal > voiceNotAudible:** A voz está presente, mas pouco audível abaixo de 20%
+- **subliminal > binauralVolume:** Volume binaural
+- **subliminal > backgroundVolume:** Volume de fundo: {{percent}}%
+- **subliminal > backgroundSound:** Som de fundo
+- **subliminal > selectBackgroundSound:** Selecionar som de fundo...
+- **subliminal > createOwnBackground:** (Quer criar o seu?
+- **subliminal > openSubliminalBackgrounds:** Abrir Fundos subliminares
+- **subliminal > loseProgress:** . Você perderá seu progresso atual.)
+- **subliminal > openBackgroundsConfirm:** Abrir Fundos subliminares? Você perderá seu progresso atual.
+- **subliminal > affirmationLayers:** Camadas de afirmações: {{count}}
+- **subliminal > layersRecommended:** 3–5 recomendadas
+- **subliminal > trackLength:** Duração da faixa: {{minutes}} minutos
+- **subliminal > createTrack:** Criar faixa
+- **subliminal > customSound:** {{name}} (som personalizado)
+- **subliminal > binauralShort > none:** Sem beat
+- **subliminal > binauralShort > delta:** Delta
+- **subliminal > binauralShort > theta:** Theta
+- **subliminal > binauralShort > alpha:** Alpha
+- **subliminal > binauralShort > beta:** Beta
+- **subliminal > binauralShort > gamma:** Gamma
+- **subliminal > binauralBeatsOptions > none > label:** Sem batida binaural
+- **subliminal > binauralBeatsOptions > none > desc:** Somente afirmações e fundo; sem tons binaurais na mixagem.
+- **subliminal > binauralBeatsOptions > delta > label:** Delta (batida 0,5–4 Hz, portadora ~200 Hz)
+- **subliminal > binauralBeatsOptions > delta > desc:** Sono profundo, cura, regeneração
+- **subliminal > binauralBeatsOptions > theta > label:** Theta (batida 4–8 Hz, portadora ~200 Hz)
+- **subliminal > binauralBeatsOptions > theta > desc:** Meditação, foco profundo, relaxamento profundo
+- **subliminal > binauralBeatsOptions > alpha > label:** Alpha (batida 8–13 Hz, portadora ~250 Hz)
+- **subliminal > binauralBeatsOptions > alpha > desc:** Relaxamento, aprendizado, meditação leve
+- **subliminal > binauralBeatsOptions > beta > label:** Beta (batida 13–30 Hz, portadora ~300 Hz)
+- **subliminal > binauralBeatsOptions > beta > desc:** Foco, concentração, alerta
+- **subliminal > binauralBeatsOptions > gamma > label:** Gamma (batida 30–100 Hz, portadora ~400 Hz)
+- **subliminal > binauralBeatsOptions > gamma > desc:** Máxima consciência, aprimoramento cognitivo
+- **subliminal > backgroundSounds > none:** Sem som de fundo
+- **subliminal > backgroundSounds > cityCorner:** Esquina urbana
+- **subliminal > backgroundSounds > fireplace:** Lareira
+- **subliminal > backgroundSounds > goldCoins:** Moedas de ouro
+- **subliminal > backgroundSounds > naturePark:** Parque natural
+- **subliminal > backgroundSounds > ocean:** Oceano
+- **subliminal > backgroundSounds > rain:** Chuva
+- **subliminal > toasts > permissionDenied:** Permissão negada. Certifique-se de estar logado e tente novamente.
+- **subliminal > toasts > genericError:** Erro. Tente novamente.
+- **subliminal > toasts > loadFailed:** Falha ao carregar as faixas: {{message}}
+- **subliminal > toasts > enterTrackName:** Digite um nome para a faixa
+- **subliminal > toasts > recordAffirmationsFirst:** Grave as afirmações primeiro
+- **subliminal > toasts > selectBackgroundSound:** Selecione um som de fundo
+- **subliminal > toasts > ttsUpgrade:** Texto para fala requer upgrade de plano. Faça upgrade para acessar este recurso.
+- **subliminal > toasts > ttsCharLimit:** Texto para fala tem limite de 480 caracteres. Seu texto tem {{length}} caracteres. Encurte suas afirmações.
+- **subliminal > toasts > loginToGenerate:** Faça login para gerar áudio
+- **subliminal > toasts > voiceGenerated:** Voz gerada com sucesso!
+- **subliminal > toasts > processAudioFailed:** Falha ao processar os dados de áudio. Tente novamente.
+- **subliminal > toasts > noAudioContent:** Nenhum conteúdo de áudio recebido do servidor
+- **subliminal > toasts > generateAudioFailed:** Falha ao gerar o áudio. Tente novamente.
+- **subliminal > toasts > recordingNoData:** Falha na gravação. Nenhum dado de áudio capturado.
+- **subliminal > toasts > recordingEmpty:** Falha na gravação. O arquivo de áudio está vazio.
+- **subliminal > toasts > recordingError:** Ocorreu um erro de gravação. Tente novamente.
+- **subliminal > toasts > recordingStarted:** Gravação iniciada
+- **subliminal > toasts > micAccessPrefix:** Não foi possível acessar o microfone. 
+- **subliminal > toasts > micAndroidSettings:** Abra Configurações do Android → Apps → Palette Plotting → Permissões → Microfone e permita o acesso.
+- **subliminal > toasts > micBrowserSettings:** Permita o acesso ao microfone nas configurações do navegador.
+- **subliminal > toasts > noMicrophone:** Nenhum microfone encontrado neste dispositivo.
+- **subliminal > toasts > micInUse:** O microfone está sendo usado por outro aplicativo.
+- **subliminal > toasts > micCheckSettings:** Verifique as configurações do microfone.
+- **subliminal > toasts > recordingStopped:** Gravação interrompida
+- **subliminal > toasts > recordingSaved:** Gravação salva!
+- **subliminal > toasts > noAudioToPlay:** Nenhum áudio para reproduzir. Grave áudio primeiro.
+- **subliminal > toasts > audioEmpty:** O arquivo de áudio está vazio. Grave novamente.
+- **subliminal > toasts > audioError:** Erro de áudio: {{code}} - {{message}}
+- **subliminal > toasts > audioUnsupported:** Falha ao reproduzir o áudio. O formato do arquivo pode não ser compatível.
+- **subliminal > toasts > playingAudio:** Reproduzindo áudio
+- **subliminal > toasts > playFailedPrefix:** Falha ao reproduzir o áudio. 
+- **subliminal > toasts > tapPlayAgain:** Toque no botão de reproduzir novamente. Navegadores móveis exigem interação direta do usuário.
+- **subliminal > toasts > loadTimeout:** O áudio demorou demais para carregar. Tente novamente.
+- **subliminal > toasts > audioLoadFailed:** Falha ao carregar o áudio. O arquivo pode estar corrompido. Grave novamente.
+- **subliminal > toasts > tapAgain:** Tente tocar no botão de reproduzir novamente.
+- **subliminal > toasts > playingTrack:** Reproduzindo: {{name}}
+- **subliminal > toasts > playTrackFailedPrefix:** Falha ao reproduzir a faixa. 
+- **subliminal > toasts > interactFirst:** Interaja com a página primeiro.
+- **subliminal > toasts > playTrackFailed:** Falha ao reproduzir a faixa. Tente novamente.
+- **subliminal > toasts > loginToDelete:** Você precisa estar logado para excluir faixas.
+- **subliminal > toasts > trackDeleted:** Faixa excluída
+- **subliminal > toasts > deleteTrackFailed:** Falha ao excluir a faixa
+- **subliminal > toasts > loginToGenerateTrack:** Você precisa estar logado para gerar faixas.
+- **subliminal > toasts > sessionExpired:** Sessão expirada. Atualize a página e faça login novamente.
+- **subliminal > toasts > weeklyCheckFailed:** Não foi possível verificar o limite semanal. Tente novamente.
+- **subliminal > toasts > weeklyLimitReached:** Limite semanal de gerações atingido ({{current}}/{{limit}}). Seu limite reinicia na segunda-feira.
+- **subliminal > toasts > fileTooLargeRemaining:** O arquivo é muito grande ({{size}} MB). Você tem {{remaining}} MB restantes. Tente uma faixa mais curta.
+- **subliminal > toasts > fileTooLargeMax:** O arquivo é muito grande ({{size}} MB). O tamanho máximo é {{max}} MB para o seu plano. Tente uma faixa mais curta.
+- **subliminal > toasts > fileLargeWarning:** O arquivo é grande ({{size}} MB). O envio pode demorar um pouco.
+- **subliminal > toasts > bucketNotFound:** Bucket de armazenamento 'subliminal-tracks' não encontrado.
+- **subliminal > toasts > storagePermissionDenied:** Permissão de armazenamento negada. Entre em contato com o suporte.
+- **subliminal > toasts > bucketSizeLimit:** O arquivo é muito grande ({{size}} MB). O bucket tem limite máximo de tamanho (geralmente 50 MB por arquivo). Tente uma faixa mais curta (atual: {{minutes}} minutos).
+- **subliminal > toasts > tierStorageLimit:** O arquivo é muito grande ({{size}} MB). Você tem {{remaining}} MB restantes. Tente uma faixa mais curta (atual: {{minutes}} minutos).
+- **subliminal > toasts > uploadFailed:** Falha ao enviar o arquivo.
+- **subliminal > toasts > loginAgain:** Sessão expirada. Faça login novamente.
+- **subliminal > toasts > sessionMismatch:** Incompatibilidade de sessão detectada. Atualize a página e tente novamente.
+- **subliminal > toasts > trackGenerated:** Faixa subliminar "{{name}}" gerada e salva!
+- **subliminal > toasts > generateTrackFailed:** Falha ao gerar a faixa. Tente novamente.
+- **subliminal > toasts > selectAffirmationSetFirst:** Selecione um conjunto de afirmações primeiro
+- **subliminal > toasts > trackGeneratedSaved:** Faixa "{{name}}" gerada e salva!
+- **subliminal > toasts > loadTrackFailed:** Falha ao carregar a faixa. Tente novamente.
+- **subliminal > toasts > maxTrackLength:** A duração máxima da faixa é {{max}} minutos para o seu plano. Faça upgrade para faixas mais longas.
+- **subliminal > toasts > generationTimeout:** A geração da faixa expirou. Tente novamente com uma duração menor.
+- **subliminal > toasts > sessionVerificationFailed:** Falha na verificação da sessão. Faça login novamente.
+- **subliminal > toasts > loginToGenerateTracks:** Você precisa estar logado para gerar faixas. Atualize a página e tente novamente.
+- **subliminal > toasts > serverError:** Erro do servidor ({{status}}).
+- **subliminal > toasts > unknownError:** Erro desconhecido
+- **mirror > pageTitle:** Trabalho com espelho | Palette Plotting
+- **mirror > metaDescription:** Trabalho com espelho — ligue sua câmera e pratique afirmações com confiança.
+- **mirror > metaDescriptionWeb:** Visualização de câmera espelho. Ligue sua câmera e pratique afirmações com confiança.
+- **mirror > title:** Trabalho com espelho
+- **mirror > subtitle:** Pratique afirmações com seu reflexo
+- **mirror > bestInApp:** Melhor experiência no app.
+- **mirror > seeYourself:** Veja-se
+- **mirror > stop:** Parar
+- **mirror > affirmationSet:** Conjunto de afirmações
+- **mirror > scenes:** Cenas
+- **mirror > feedback:** Feedback
+- **mirror > enable:** Ativar
+- **mirror > displaySpeed:** Velocidade de exibição
+- **mirror > selectPlaceholder:** Selecionar
+- **mirror > noSetsAvailable:** Nenhum conjunto disponível
+- **mirror > initializingCamera:** Iniciando câmera...
+- **mirror > scenesOptions > none:** Nenhuma
+- **mirror > scenesOptions > hearts:** Corações
+- **mirror > scenesOptions > coins:** Moedas
+- **mirror > scenesOptions > naturePark:** Parque natural
+- **mirror > scenesOptions > rain:** Chuva
+- **mirror > scenesOptions > summit:** Cume
+- **mirror > errors > httpsRequired:** O acesso à câmera requer uma conexão segura (HTTPS). Use HTTPS ou localhost.
+- **mirror > errors > notSupported:** O acesso à câmera não é compatível com este dispositivo ou navegador. Use um navegador moderno como Chrome, Safari ou Firefox.
+- **mirror > errors > permissionDeniedSafari:** Permissão de câmera negada. Ative em Ajustes > Safari > Câmera.
+- **mirror > errors > permissionDeniedNative:** Permissão de câmera negada. Ative em Ajustes > Palette Plotting > Câmera.
+- **mirror > errors > noVideoTrack:** Nenhuma faixa de vídeo disponível na câmera.
+- **mirror > errors > unableAccess:** Não foi possível acessar a câmera.
+- **mirror > errors > unableAccessAllow:** Não foi possível acessar a câmera. Permita o acesso à câmera.
+- **mirror > errors > permissionDeniedIosSafari:** Permissão de câmera negada. Toque em "Permitir" quando solicitado, ou vá em Ajustes > Safari > Câmera e ative para este site.
+- **mirror > errors > permissionDeniedIosNative:** Permissão de câmera negada. Toque em "Permitir" quando solicitado, ou vá em Ajustes > Palette Plotting > Câmera.
+- **mirror > errors > permissionDeniedBrowser:** Permissão de câmera negada. Ative nas configurações do navegador.
+- **mirror > errors > noCameraFound:** Nenhuma câmera encontrada neste dispositivo.
+- **mirror > errors > cameraInUse:** A câmera está sendo usada por outro aplicativo. Feche outros apps que usam a câmera.
+- **mirror > errors > securityBlocked:** Acesso à câmera bloqueado por segurança. Certifique-se de usar HTTPS ou localhost.
+- **mirror > errors > apiNotAvailable:** A API de câmera não está disponível. Use um navegador moderno que suporte acesso à câmera.
+- **mirror > errors > checkDeviceSettings:** Não foi possível acessar a câmera. Verifique as configurações do dispositivo.
+- **mirror > errors > cameraOffAndroid:** A câmera está desativada para o Palette Plotting. Abra Configurações → Apps → Palette Plotting → Permissões → Câmera → Permitir e tente novamente.
+- **mirror > errors > permissionDeniedAndroid:** Permissão de câmera negada. Abra Configurações → Apps → Palette Plotting → Permissões → Câmera → Permitir, volte aqui e toque em Iniciar novamente.
+- **mirror > permissionHints > native:** Se o aviso não apareceu, vá em Ajustes → Palette Plotting → Câmera e ative.
+- **mirror > permissionHints > safari:** Se o aviso não apareceu, vá em Ajustes → Safari → Câmera e ative para este site.
+- **mirror > feedbackMessages > low (line 1):** Um pouco mais alto!
+- **mirror > feedbackMessages > low (line 2):** Fale para manifestar!
+- **mirror > feedbackMessages > low (line 3):** Fale mais alto!
+- **mirror > feedbackMessages > low (line 4):** Afirme!
+- **mirror > feedbackMessages > mid (line 1):** Assim está melhor.
+- **mirror > feedbackMessages > mid (line 2):** Continue!
+- **mirror > feedbackMessages > mid (line 3):** Você consegue!
+- **mirror > feedbackMessages > mid (line 4):** Você tem isso!
+- **mirror > feedbackMessages > high (line 1):** É isso.
+- **mirror > feedbackMessages > high (line 2):** Perfeito!
+- **mirror > feedbackMessages > high (line 3):** Ótima energia!
+- **mirror > feedbackMessages > high (line 4):** Leve isso adiante.
+
+## Relatar problema e caixa de suporte
+
+- **pageTitle:** Pedido de ajuda
+- **supportInbox:** Caixa de suporte
+- **tabs > create:** Ajude-me a criar
+- **tabs > support:** Suporte do app
+- **tabs > inbox:** Caixa de entrada
+- **create > intro:** Compartilhe só o relevante. Palette Plotting cria prompts, afirmações ou rotina.
+- **create > successTitle:** Enviado.
+- **create > successBody:** Responderemos por e-mail. Urgente? Escreva para
+- **create > successBodySuffix:** .
+- **create > backToDashboard:** Voltar ao painel
+- **create > submitAnother:** Enviar outro
+- **create > focusLabel:** O que você está manifestando agora?
+- **create > focusPlaceholder:** Conte o que você está manifestando e quais dificuldades está enfrentando.
+- **create > helpTypeLabel:** Com o que você precisa de ajuda?
+- **create > chooseOne:** Escolha uma opção
+- **create > footer:** Envie o que parecer mais relevante. A Palette Plotting tentará responder em 24 a 48 horas. Você também pode nos contatar em support@paletteplot.com.
+- **create > submit:** Enviar
+- **create > submitting:** Enviando…
+- **createHelpOptions > affirmationsOrScripting:** Afirmações ou scripting
+- **createHelpOptions > strongSubliminal:** Criar um subliminar forte
+- **createHelpOptions > mirrorWorkGuidance:** Guia de espelho
+- **createHelpOptions > buildWeeklyRoutine:** Montar uma rotina semanal
+- **createHelpOptions > notSureHelpMeChoose:** Não sei — me ajude
+- **submissionTypes > report:** Reportar um problema
+- **submissionTypes > aiFlag:** Sinalizar conteúdo gerado por IA
+- **submissionTypes > featureRequest:** Pedido de recurso
+- **submissionTypes > helpMeCreate:** Ajude-me a criar
+- **supportForm > successTitle:** Obrigado — recebemos seu envio.
+- **supportForm > successBody:** Buscamos responder em 24–48 horas. Se precisar de algo com urgência, você também pode escrever para
+- **supportForm > successBodySuffix:** .
+- **supportForm > submissionTypeLabel:** Tipo de envio
+- **supportForm > toolOrAreaLabel:** Ferramenta ou área
+- **supportForm > toolPlaceholder:** Onde isso se aplica?
+- **supportForm > purchaseChannelLabel:** Onde você comprou?
+- **supportForm > purchaseChannelPlaceholder:** Apple App Store, Google Play ou Web
+- **supportForm > descriptionLabel:** Descreva o problema ou pedido
+- **supportForm > descriptionPlaceholder:** O que aconteceu, o que deveria mudar ou o que ajudaria?
+- **supportForm > appleRefundNote:** A Apple controla pagamentos e reembolsos; mesmo assim faremos o possível para ajudar.
+- **supportForm > screenshotsLabel:** Prints (opcional)
+- **supportForm > screenshotsHint:** Até {{max}} arquivos · HEIC, JPG, PNG, WebP, etc. · máx. 5 MB cada
+- **supportForm > chooseFiles:** Escolher arquivos
+- **supportForm > filesSelected_one:** {{count}} arquivo selecionado
+- **supportForm > filesSelected_other:** {{count}} arquivos selecionados
+- **supportForm > noFilesSelected:** Nenhum arquivo selecionado
+- **supportForm > removeFileAria:** Remover {{name}}
+- **supportForm > contactFooter:** Você também pode nos contatar em support@paletteplot.com.
+- **inbox > title:** Caixa de entrada
+- **inbox > description:** Seus pedidos enviados e respostas da Palette Plotting. Novos pedidos começam nas outras abas.
+- **inbox > refresh:** Atualizar
+- **inbox > backToRequests:** ← Voltar aos pedidos
+- **inbox > loading:** Carregando…
+- **inbox > noMessages:** Ainda não há mensagens.
+- **inbox > senderSupport:** Palette Plotting
+- **inbox > senderYou:** Você
+- **inbox > yourReply:** Sua resposta
+- **inbox > replyPlaceholder:** Responder nesta conversa…
+- **inbox > sending:** Enviando…
+- **inbox > sendReply:** Enviar resposta
+- **inbox > empty:** Nenhum pedido ainda. Envie em outras abas; respostas aparecem aqui.
+- **inbox > newReplyAria:** Nova resposta
+- **inbox > supportRepliedPrefix:** Palette Plotting respondeu · 
+- **inbox > submittedPrefix:** Enviado {{when}}
+- **inbox > todayAt:** Hoje às {{time}}
+- **inbox > yesterdayAt:** Ontem às {{time}}
+- **inbox > caseTypes > helpMeCreate:** Ajude-me a criar
+- **inbox > caseTypes > appSupportFeedback:** Suporte do app
+- **inbox > subtypes > request:** Pedido
+- **inbox > subtypes > supportRequest:** Pedido de suporte
+- **toasts > maxAttachments:** Você pode adicionar até {{max}} imagens.
+- **toasts > unsupportedImage:** {{name}} não é um tipo de imagem compatível.
+- **toasts > fileTooLarge:** {{name}} é grande demais (máx. 5 MB por arquivo).
+- **toasts > chooseSubmissionType:** Escolha um tipo de envio.
+- **toasts > chooseToolOrArea:** Escolha onde isso se aplica.
+- **toasts > choosePurchaseChannel:** Selecione onde você comprou (Apple App Store, Google Play ou Web).
+- **toasts > descriptionMinLength:** Digite pelo menos {{min}} caracteres na descrição.
+- **toasts > uploadFailed:** Falha ao enviar a imagem
+- **toasts > requestFailed:** Falha na solicitação
+- **toasts > submitted:** Enviado
+- **toasts > shareManifestationFocus:** Compartilhe o que você está tentando manifestar ou mudar.
+- **toasts > chooseHelpType:** Escolha com o que você precisa de ajuda.
+- **toasts > addMoreDetail:** Adicione um pouco mais de detalhe.
+- **toasts > loadInboxFailed:** Não foi possível carregar a caixa de entrada.
+- **toasts > loadConversationFailed:** Não foi possível carregar a conversa.
+- **toasts > replySent:** Resposta enviada
+- **toasts > sendReplyFailed:** Não foi possível enviar a resposta.
+
+## FAQ, contato e preços
+
+- **pricing > title:** Preços
+- **pricing > subtitle:** Uma assinatura com acesso total na web e no app.
+- **pricing > planHeader:** Plano
+- **pricing > priceHeader:** Preço
+- **pricing > plans > weekly > label:** Semanal
+- **pricing > plans > weekly > cadence:** por semana
+- **pricing > plans > monthly > label:** Mensal
+- **pricing > plans > monthly > cadence:** por mês
+- **pricing > plans > annual > label:** Anual
+- **pricing > plans > annual > cadence:** por ano
+- **pricing > prices > weekly:** $5.99
+- **pricing > prices > monthly:** $19.99
+- **pricing > prices > annual:** $149.99
+- **pricing > pricesSubjectToChange:** Preços podem mudar.
+- **pricing > legalPrefix:** Veja nossa
+- **pricing > billingPolicy:** Pagamentos e reembolsos
+- **pricing > legalAnd:** e os
+- **pricing > termsOfService:** Termos de serviço
+- **pricing > whatsIncluded:** O que está incluído
+- **pricing > features > subliminal > title:** Criador de subliminares
+- **pricing > features > subliminal > description:** Crie subliminares com sua própria voz, batidas binaurais, sons de fundo e vocais em camadas.
+- **pricing > features > mirror > title:** Espelho
+- **pricing > features > mirror > description:** Mergulhe em cenas e sons de trabalho com espelho digital enquanto fortalece seu autoconceito com suas afirmações.
+- **pricing > features > affirmations > title:** Afirmar e escrever
+- **pricing > features > affirmations > description:** Mostre suas afirmações personalizadas em uma tela tipo teleprompter, conte suas repetições e visualize.
+- **pricing > features > beliefs > title:** Abordar crenças limitantes
+- **pricing > features > beliefs > description:** Desconstrua crenças limitantes e integre crenças expansivas.
+- **pricing > features > journal > title:** Diário e progresso
+- **pricing > features > journal > description:** Diário, ações inspiradas e listas de manifestação.
+- **pricing > features > coach > title:** Coach digital de manifestação
+- **pricing > features > coach > description:** Pergunte o que teme dizer e receba apoio quando o 3D pesar.
+- **contact > title:** Fale conosco
+- **contact > subtitle:** Gostaríamos de ouvir de você. Envie um e-mail e responderemos o mais rápido possível.
+- **contact > getInTouch:** Entre em contato
+- **contact > email:** E-mail
+- **contact > phone:** Telefone
+- **contact > address:** Endereço
+- **contact > addressLine1:** 1 North State Street Ste 1500
+- **contact > addressLine2:** Chicago, IL 60602
+- **faq > title:** Perguntas frequentes
+- **faq > subtitle:** Respostas sobre Palette Plotting
+- **faq > items > whatIs > question:** O que é o Palette Plotting?
+- **faq > items > whatIs > answer:** O Palette Plotting é uma plataforma digital de crescimento pessoal que ajuda você a ganhar impulso, refletir por meio do diário, criar ferramentas em áudio, explorar padrões de mentalidade e usar orientações guiadas para ter mais clareza e progresso. Para uma visão geral rápida de cada ferramenta no contexto da prática de manifestação, leia O que é o Palette Plotting?.
+- **faq > items > whatIs > linkWhatIs:** O que é o Palette Plotting?
+- **faq > items > notTherapy > question:** O Palette Plotting é terapia ou suporte médico?
+- **faq > items > notTherapy > answer:** Não. Palette Plotting não oferece aconselhamento médico, psicológico, legal ou financeiro. Em emergência, procure serviços adequados.
+- **faq > items > whoCanUse > question:** Quem pode usar o Palette Plotting?
+- **faq > items > whoCanUse > answer:** Os usuários devem ter 18 anos ou mais.
+- **faq > items > automated > question:** O Palette Plotting usa recursos automatizados?
+- **faq > items > automated > answer:** Alguns recursos usam respostas automáticas para reflexão, prompts ou áudio. São ferramentas extras, não aconselhamento profissional.
+- **faq > items > privacy > question:** Meu conteúdo é privado?
+- **faq > items > privacy > answer:** Sim. Seus diários, reflexões, criações de áudio e notas são privados.
+- **faq > items > plans > question:** Quais planos de assinatura estão disponíveis?
+- **faq > items > plans > answer:** Palette Plotting oferece planos mensal e anual. Reembolsos de compras iOS ficam com a Apple; outros, com Palette Plotting. Veja a política de reembolsos.
+- **faq > items > plans > linkBilling:** Pagamentos e reembolsos
+- **faq > items > cancel > question:** Posso cancelar minha assinatura?
+- **faq > items > cancel > answer:** Sim. Cancele quando quiser nas configurações. Seu plano fica ativo até o fim do período.
+- **faq > items > sellData > question:** Vocês venderão minhas informações?
+- **faq > items > sellData > answer:** Não. Não vendemos seus dados pessoais.
+- **faq > items > deleteAccount > question:** Como excluo minha conta?
+- **faq > items > deleteAccount > answer:** Você pode solicitar a exclusão pelo app ou entrando em contato: support@paletteplot.com
+- **faq > items > acceptableUse > question:** O que acontece se eu violar a Política de uso aceitável?
+- **faq > items > acceptableUse > answer:** Podemos limitar ou suspender seu acesso para manter um ambiente seguro e respeitoso.
+- **faq > items > legalTerms > question:** Onde posso ler os termos legais?
+- **faq > items > legalTerms > answer:** Links para Termos, Privacidade e Uso aceitável aparecem no app e no site. Para copyright, veja a política DMCA.
+- **faq > items > legalTerms > linkTerms:** Termos de uso
+- **faq > items > legalTerms > linkPrivacy:** Política de privacidade
+- **faq > items > legalTerms > linkAcceptableUse:** Política de uso aceitável
+- **faq > items > legalTerms > linkDmca:** Política de aviso e remoção DMCA
+- **home > meta > title:** Início | Palette Plotting
+- **home > meta > description:** O Palette Plotting ajuda você a criar subliminares, afirmações, trabalho com espelho, scripting e rotinas de manifestação em um só lugar.
+- **home > meta > ogDescription:** Crie subliminares, afirmações, trabalho com espelho, scripting e rotinas de manifestação com o Palette Plotting.
+- **home > meta > twitterDescription:** Crie subliminares, afirmações, trabalho com espelho, scripting e rotinas de manifestação com o Palette Plotting.
+- **home > header > community:** Comunidade
+- **home > header > faq:** FAQ
+- **home > header > blog:** Blog
+- **home > header > signIn:** Entrar
+- **home > header > downloadApp:** Baixar app
+- **home > header > yourAccount:** Sua conta
+- **home > header > dashboard:** Painel
+- **home > header > logOut:** Sair
+- **home > header > user:** Usuário
+- **home > header > mainNav:** Principal
+- **home > hero > manifestEverything:** Manifeste tudo
+- **home > hero > manifestPrefix:** Manifeste
+- **home > hero > loveSp:** amor e SP
+- **home > hero > abundance:** abundância
+- **home > hero > fitness:** fitness
+- **home > hero > joy:** alegria
+- **home > hero > freeTrialLine:** Comece seu teste grátis agora
+- **home > hero > subhead1:** Subliminares + afirmação robótica e scripting
+- **home > hero > subhead2:** Espelho + crenças
+- **home > hero > subhead3:** Coach digital de manifestação e mais
+- **home > hero > awardLine:** O app de manifestação mais completo
+- **home > hero > ctaHeroMobile:** Comece seu teste grátis
+- **home > hero > ctaDownload:** Baixe o app e comece seu teste grátis
+- **home > hero > exploreApp:** Explore o app
+- **home > hero > freeTrialUnderBadges:** Comece seu teste grátis na App Store
+- **home > manifestPanel > headlineLine1:** Um app para manifestar
+- **home > manifestPanel > headlineLine2:** o que você quer
+- **home > manifestPanel > manifestListAria:** O que você pode manifestar
+- **home > manifestPanel > rows (line 1) (line 1):** amor e sp
+- **home > manifestPanel > rows (line 1) (line 2):** corpo dos sonhos
+- **home > manifestPanel > rows (line 2) (line 1):** glow up
+- **home > manifestPanel > rows (line 2) (line 2):** bem-estar
+- **home > manifestPanel > rows (line 3) (line 1):** autoconceito
+- **home > manifestPanel > rows (line 3) (line 2):** disciplina
+- **home > manifestPanel > rows (line 4) (line 1):** dinheiro
+- **home > manifestPanel > rows (line 4) (line 2):** foco
+- **home > manifestPanel > rows (line 5) (line 1):** educação
+- **home > manifestPanel > rows (line 5) (line 2):** recomeço
+- **home > featureStripKeys (line 1):** subliminal
+- **home > featureStripKeys (line 2):** mirror
+- **home > featureStripKeys (line 3):** affirmations
+- **home > featureStripKeys (line 4):** beliefs
+- **home > featureStripKeys (line 5):** journal
+- **home > featureStripKeys (line 6):** coach
+- **home > practiceSection > headlineLine1:** Tudo que você precisa para
+- **home > practiceSection > headlineLine2:** a nova história
+- **home > practiceSection > body:** O Palette Plotting reúne sua manifestação em um só lugar — para você não ficar alternando entre notas, playlists subliminares aleatórias, prints, memos de voz, diários e métodos espalhados quando a dúvida aparece. Use para escrever a história, ouvir, ver, repetir e viver no final.
+- **home > practiceSection > focusAreasAria:** Áreas de foco
+- **home > practiceSection > pills (line 1) > label:** Amor, SP, autoconceito
+- **home > practiceSection > pills (line 1) > category:** Autoconceito
+- **home > practiceSection > pills (line 1) > color:** pink
+- **home > practiceSection > pills (line 2) > label:** Abundância
+- **home > practiceSection > pills (line 2) > category:** Lei da assunção
+- **home > practiceSection > pills (line 2) > color:** green
+- **home > practiceSection > pills (line 3) > label:** Confiança
+- **home > practiceSection > pills (line 3) > category:** Autoconceito
+- **home > practiceSection > pills (line 3) > color:** blue
+- **home > practiceSection > pills (line 4) > label:** Paz
+- **home > practiceSection > pills (line 4) > category:** Autoconceito
+- **home > practiceSection > pills (line 4) > color:** yellow
+- **home > stats (line 1) > value:** 10+
+- **home > stats (line 1) > label:** ferramentas
+- **home > stats (line 2) > value:** 30
+- **home > stats (line 2) > label:** subliminares por mês
+- **home > stats (line 3) > value:** 5
+- **home > stats (line 3) > label:** cenas com espelho
+- **home > stats (line 4) > value:** 4
+- **home > stats (line 4) > label:** opções de guia IA
+- **home > testimonials > headlineLine1:** Resultados dos nossos
+- **home > testimonials > headlineLine2:** usuários e testadores
+- **home > testimonials > carouselAria:** Depoimentos de usuários
+- **home > testimonials > previous:** Depoimento anterior
+- **home > testimonials > next:** Próximo depoimento
+- **home > testimonials > pagesAria:** Páginas de depoimentos
+- **home > testimonials > pageN:** Depoimento {{n}}
+- **home > testimonials > starsAria:** 5 de 5 estrelas
+- **home > testimonials > items (line 1) > quote:** Quando vacilo e o 3D pesa, eu abandonava minha rotina de SP. Agora faço scripting e espelho aqui e fico na minha história.
+- **home > testimonials > items (line 1) > name:** Maya T.
+- **home > testimonials > items (line 1) > role:** SP e autoconceito
+- **home > testimonials > items (line 2) > quote:** Meu cérebro ainda quer discutir antes de começar a afirmação robótica. Mas este app, o teleprompter e o contador de repetições me ajudam a terminar a sessão em vez de lutar sozinha.
+- **home > testimonials > items (line 2) > name:** Devon K.
+- **home > testimonials > items (line 2) > role:** Lei da assunção · scripting
+- **home > testimonials > items (line 3) > quote:** Subliminares do YouTube nunca funcionavam porque não era minha voz nem minhas palavras exatas. Fiz um aqui com minhas afirmações + batidas binaurais e é o único que repito sem enjoar em 2 dias.
+- **home > testimonials > items (line 3) > name:** Jade L.
+- **home > testimonials > items (line 3) > role:** Subliminais · afirmação
+- **home > download > headingMobile:** Baixe o app
+- **home > download > headingDesktop:** Baixe o app e comece seu teste grátis
+- **home > download > scanPhone:** Escaneie com seu celular.
+- **home > download > tapInstall:** Toque para instalar no seu celular.
+- **home > download > qrUnavailable:** Indisponível
+- **home > download > qrError:** QR indisponível. Use os badges abaixo.
+- **home > download > appleStore:** Apple App Store
+- **home > download > googlePlay:** Google Play
+- **home > download > qrAltAppStore:** QR code para abrir o Palette Plotting na App Store
+- **home > download > qrAltGooglePlay:** QR code para abrir o Palette Plotting no Google Play
+- **home > newsletter > heading:** Dicas na sua caixa de entrada
+- **home > newsletter > subtitle:** Receba dicas, novidades e promoções.
+- **home > newsletter > placeholder:** E-mail
+- **home > newsletter > subscribe:** Inscrever-se
+- **home > newsletter > subscribing:** Inscrevendo…
+- **home > newsletter > successHeading:** Você está na lista
+- **home > newsletter > successBody:** Inscrição feita. Veja dicas, novidades e promoções no seu e-mail.
+- **home > newsletter > consent:** Ao se inscrever, você concorda em receber e-mails de marketing do Palette Plotting. Cancele quando quiser.
+- **home > newsletter > errorEmpty:** Digite seu e-mail.
+- **home > newsletter > errorInvalid:** Digite um e-mail válido.
+- **home > newsletter > errorGeneric:** Algo deu errado. Tente novamente.
+- **home > footer > company:** PALETTE PLOTTING LLC
+- **home > footer > copyright:** © {{year}} Palette Plotting LLC. Todos os direitos reservados.
+- **home > footer > whatIs:** O que é o Palette Plotting?
+- **home > footer > faq:** FAQ
+- **home > footer > community:** Comunidade
+- **home > footer > billing:** Assinatura
+- **home > footer > contact:** Contato
+- **home > footer > terms:** Termos de uso
+- **home > footer > privacy:** Privacidade
+- **home > footer > acceptableUse:** Uso aceitável
+- **home > footer > footerNav:** Rodapé
+- **home > stickyBarAria:** Baixar Palette Plotting
+
+## Notificações push (enviadas pelo servidor)
+
+### Lembrete de rotina de manifestação
+
+- **Título da notificação:** Hora de manifestar!
+- **Subtítulo da notificação:** Volte ao app para fazer sua rotina de manifestação.
+- **Corpo da notificação:** Seus sonhos estão esperando. Vamos voltar à sua prática de manifestação agora.
+
+### Resposta a pedido de ajuda
+
+- **Corpo da notificação:** Respondemos à sua solicitação de ajuda.
+- **Nome do app no cabeçalho (todos os idiomas):** Palette Plotting
+
+---
+
+## Alternador de idioma (sempre exibido nestas formas)
+
+Na tela de boas-vindas e em Configurações, os nomes dos idiomas **não** são traduzidos:
+
+- English
+- Español
+- Português
+
+---
+
+## Superfícies apenas em inglês (o usuário ainda pode ver)
+
+Estes itens **não** estão neste arquivo de locale; os usuários ainda podem ver inglês em:
+
+- Texto completo de Terms of Service, Privacy Policy, EULA, DMCA, Billing & Refunds e Acceptable Use (páginas legais)
+- Paywall nativo do RevenueCat e tela de pagamento web (configurados no painel do RevenueCat)
+- Posts do blog e páginas longas de marketing que não foram ligadas ao i18n
+- Conteúdo gerado pelo usuário (texto de afirmações, mensagens de chat, entradas do diário)
+- Nomes dos personagens no chat: River, Sage, Rose, Oliver
+- Mensagens de erro do Supabase/auth ou do provedor de pagamento retornadas literalmente pelo servidor
+- Aviso da aba legal em Configurações (localizado): ver seção Comum acima
+
+**Total de strings localizadas (pt-BR):** 1614
+
+---
+
+# Español (Latinoamérica, es-419)
+
+Every user-visible string shipped for **es-419**. Review and edit this copy only — not source code.
+
+Gerado a partir dos arquivos de locale em `src/i18n/locales/es-419/`. **Apenas texto** — sem código. Placeholders como {{name}} aparecem exatamente como na interface.
+
+---
+
+## Common — shared buttons & labels
+
+- **continue:** Continuar
+- **back:** Atrás
+- **save:** Guardar
+- **cancel:** Cancelar
+- **close:** Cerrar
+- **loading:** Cargando…
+- **error:** Algo salió mal
+- **legalEnglishDisclaimer:** Términos y Privacidad están en inglés.
+- **edgeErrors > permissionDenied:** Permiso denegado. Inicia sesión e inténtalo de nuevo.
+- **edgeErrors > genericRetry:** Ocurrió un error. Inténtalo de nuevo.
+- **edgeErrors > databaseError:** Error de base de datos. Intenta de nuevo.
+- **edgeErrors > serviceUnavailable:** Servicio temporalmente no disponible. Inténtalo de nuevo.
+- **edgeErrors > unknownError:** Error desconocido
+- **edgeErrors > noCharacterSelected:** Selecciona un personaje primero.
+- **edgeErrors > failedToGenerateMessage:** No se pudo generar el mensaje
+- **edgeErrors > noMessageGenerated:** No se generó ningún mensaje
+- **edgeErrors > dailyMessageLimit:** Alcanzaste tu límite diario de mensajes ({{limit}}). Se reinicia a medianoche.
+
+## Dashboard & navigation
+
+- **greeting > morning:** Buenos días
+- **greeting > afternoon:** Buenas tardes
+- **greeting > evening:** Buenas noches
+- **manifestationCharge > needsPersistence:** Necesita constancia
+- **manifestationCharge > lockedIn:** Enfocado
+- **manifestationCharge > aligned:** Alineado
+- **manifestationCharge > percentToday:** {{pct}}% alineado hoy
+- **sections > inspiredActions:** Acciones inspiradas
+- **sections > manifestationCharge:** Energía de manifestación
+- **sections > tools:** Herramientas
+- **sections > dailyPractice:** Acciones inspiradas
+- **home > subtitle:** Todo lo que necesitas para manifestar.
+- **home > pageTitle:** Panel | Palette Plotting
+- **home > defaultName:** 
+- **inspiredActions > footer:** Afirma y encarna la nueva historia a diario.
+- **appearance > light:** Claro
+- **appearance > dark:** Oscuro
+- **profile > defaultUser:** Usuario
+- **profile > yourAccount:** Tu cuenta
+- **nav > home:** Inicio
+- **nav > affirmScript:** Afirmar y escribir
+- **nav > yourJourney:** Tu camino
+- **nav > settings:** Ajustes
+- **nav > appearance:** Apariencia
+- **nav > talkToGuide:** Hablar con tu guía
+- **nav > help:** Ayuda
+- **nav > signOut:** Cerrar sesión
+- **nav > signOutError:** Error al cerrar sesión
+- **tools > affirmScript > title:** Afirmar y escribir
+- **tools > affirmScript > description:** Crea afirmaciones y metas visuales
+- **tools > subliminalMaker > title:** Creador de subliminales
+- **tools > subliminalMaker > description:** Crea audios para escuchar a diario
+- **tools > mirrorWork > title:** Trabajo con espejo
+- **tools > mirrorWork > description:** Afirma con tu reflejo
+- **tools > beliefWork > title:** Trabajo de creencias
+- **tools > beliefWork > description:** Suelta o integra creencias
+- **tools > embody > title:** Encarnar
+- **tools > embody > description:** Sigue tu nueva historia
+- **tools > yourJourney > title:** Tu camino
+- **tools > yourJourney > description:** Diario, reflexiones y guía
+- **supportTools > dashboard:** Panel (inicio)
+- **supportTools > affirmationVisualizer:** Visualizador de afirmaciones
+- **supportTools > talkToGuide:** Hablar con tu guía (chat)
+- **supportTools > musicComposer:** Compositor musical
+- **supportTools > tapIn:** Tap-in / Piano
+- **supportTools > activityTracking:** Actividad
+- **supportTools > journal:** Diario de manifestación
+- **supportTools > settingsAccount:** Ajustes / Cuenta
+- **supportTools > billing:** Facturación / suscripciones
+- **supportTools > other:** Otro
+- **billingChannels > apple:** Apple App Store
+- **billingChannels > googlePlay:** Google Play
+- **billingChannels > web:** Web (tarjeta / pago)
+
+## Onboarding & setup funnel
+
+- **welcome > signUp:** Registrarse
+- **welcome > ctaSubtext:** Crea tu primer subliminal en 3 minutos
+- **welcome > freeTrialLine:** Comienza tu prueba gratis
+- **welcome > nativeTitle:** Tus métodos de manifestación
+- **welcome > nativeDescription:** Manifiesta con facilidad. Crea subliminales, personaliza afirmaciones, haz trabajo con espejo y más.
+- **welcome > awardLine1:** Una de las apps
+- **welcome > awardLine2:** de manifestación
+- **welcome > awardLine3:** más completas
+- **welcome > webHeadline1:** Manifiesta tus deseos ahora,
+- **welcome > webHeadlineAccent:** Crea tus subliminales
+- **welcome > toolRows > row1 (line 1):** Subliminales
+- **welcome > toolRows > row1 (line 2):** Afirmaciones robóticas
+- **welcome > toolRows > row1 (line 3):** Scripting
+- **welcome > toolRows > row2 (line 1):** Trabajo con espejo
+- **welcome > toolRows > row2 (line 2):** Creencias
+- **welcome > toolRows > row2 (line 3):** Acción inspirada
+- **welcome > toolRows > row3 (line 1):** Listas
+- **welcome > toolRows > row3 (line 2):** Guía con IA
+- **welcome > webSteps > desire > title:** Elige tu deseo
+- **welcome > webSteps > desire > subtitle:** Amor · SP · Belleza · Abundancia
+- **welcome > webSteps > makeYours > title:** Hazlo tuyo
+- **welcome > webSteps > makeYours > subtitle:** Tus afirmaciones, tu voz, tus sonidos
+- **welcome > webSteps > listen > title:** Escucha y repite
+- **welcome > webSteps > listen > subtitle:** Subliminales listos para escuchar
+- **welcome > webToolbar > robotic:** Afirmaciones robóticas
+- **welcome > webToolbar > scripting:** Scripting
+- **welcome > webToolbar > mirror:** Espejo
+- **welcome > webToolbar > more:** Y más
+- **setup > name > title:** ¿Cómo quieres que te llamemos?
+- **setup > name > firstNameLabel:** Nombre
+- **setup > name > firstNamePlaceholder:** Tu nombre
+- **setup > name > saveError:** No pudimos guardarlo. Intenta de nuevo.
+- **setup > desireCategory > title:** ¿Qué quieres manifestar más?
+- **setup > desireCategory > subtitle:** Elige un enfoque.
+- **setup > conditionalSpecificity > subtitle:** Esto define tu guía en la app.
+- **setup > conditionalSpecificity > fallbackHeadline:** Un detalle rápido
+- **setup > conditionalSpecificity > fallbackMessage:** Regresa y elige un área de enfoque.
+- **setup > conditionalSpecificity > customLabel:** Describe tu enfoque
+- **setup > conditionalSpecificity > spPerson > headline:** ¿Hay una persona específica ligada a este deseo?
+- **setup > conditionalSpecificity > spPerson > nameLabel:** ¿Qué nombre usamos?
+- **setup > conditionalSpecificity > spPerson > choices > yes:** Sí
+- **setup > conditionalSpecificity > spPerson > choices > no:** No
+- **setup > conditionalSpecificity > spPerson > choices > complicated:** Es complicado
+- **setup > conditionalSpecificity > spPerson > choices > prefer_not:** Prefiero no decirlo
+- **setup > conditionalSpecificity > categories > Finances > headline:** ¿Qué cambio financiero quieres?
+- **setup > conditionalSpecificity > categories > Finances > options > consistentIncome:** Ingresos constantes
+- **setup > conditionalSpecificity > categories > Finances > options > debtFreedom:** Sin deudas
+- **setup > conditionalSpecificity > categories > Finances > options > moreSales:** Más ventas
+- **setup > conditionalSpecificity > categories > Finances > options > luxuryEase:** Lujo y facilidad
+- **setup > conditionalSpecificity > categories > Finances > options > financialSafety:** Seguridad financiera
+- **setup > conditionalSpecificity > categories > Self-Love > headline:** ¿Qué quieres sentir cuando te ves?
+- **setup > conditionalSpecificity > categories > Self-Love > options > beautiful:** Bella
+- **setup > conditionalSpecificity > categories > Self-Love > options > desired:** Deseada
+- **setup > conditionalSpecificity > categories > Self-Love > options > radiant:** Radiante
+- **setup > conditionalSpecificity > categories > Self-Love > options > expensive:** Valiosa
+- **setup > conditionalSpecificity > categories > Self-Love > options > seen:** Vista
+- **setup > conditionalSpecificity > categories > Career > headline:** ¿Qué resultado profesional quieres?
+- **setup > conditionalSpecificity > categories > Career > options > newJob:** Nuevo trabajo
+- **setup > conditionalSpecificity > categories > Career > options > promotion:** Ascenso
+- **setup > conditionalSpecificity > categories > Career > options > higherPay:** Mejor salario
+- **setup > conditionalSpecificity > categories > Career > options > dreamOpportunity:** Oportunidad ideal
+- **setup > conditionalSpecificity > categories > Business > headline:** ¿Qué resultado de negocio quieres?
+- **setup > conditionalSpecificity > categories > Business > options > moreSales:** Más ventas
+- **setup > conditionalSpecificity > categories > Business > options > moreCustomersClients:** Más clientes
+- **setup > conditionalSpecificity > categories > Business > options > launchSuccess:** Lanzamiento exitoso
+- **setup > conditionalSpecificity > categories > Business > options > audienceGrowth:** Más audiencia
+- **setup > conditionalSpecificity > categories > Confidence > headline:** ¿Qué enfoque de autoconcepto encaja?
+- **setup > conditionalSpecificity > categories > Confidence > options > confidence:** Confianza
+- **setup > conditionalSpecificity > categories > Confidence > options > visibility:** Visibilidad
+- **setup > conditionalSpecificity > categories > Confidence > options > selfTrust:** Autoconfianza
+- **setup > conditionalSpecificity > categories > Confidence > options > magnetism:** Magnetismo
+- **setup > conditionalSpecificity > categories > Learning > headline:** ¿Qué resultado educativo quieres?
+- **setup > conditionalSpecificity > categories > Learning > options > betterGrades:** Mejores notas
+- **setup > conditionalSpecificity > categories > Learning > options > examSuccess:** Éxito en exámenes
+- **setup > conditionalSpecificity > categories > Learning > options > collegeAcceptance:** Aceptación
+- **setup > conditionalSpecificity > categories > Learning > options > scholarship:** Beca
+- **setup > conditionalSpecificity > categories > Learning > options > focusStudying:** Foco al estudiar
+- **setup > conditionalSpecificity > categories > Discipline > headline:** ¿Dónde quieres más constancia?
+- **setup > conditionalSpecificity > categories > Discipline > options > morningRoutine:** Rutina matutina
+- **setup > conditionalSpecificity > categories > Discipline > options > fitness:** Fitness
+- **setup > conditionalSpecificity > categories > Discipline > options > studying:** Estudiar
+- **setup > conditionalSpecificity > categories > Discipline > options > work:** Trabajo
+- **setup > conditionalSpecificity > categories > Discipline > options > selfCare:** Autocuidado
+- **setup > conditionalSpecificity > categories > Productivity > headline:** ¿Dónde quieres más enfoque?
+- **setup > conditionalSpecificity > categories > Productivity > options > workProjects:** Proyectos de trabajo
+- **setup > conditionalSpecificity > categories > Productivity > options > studying:** Estudiar
+- **setup > conditionalSpecificity > categories > Productivity > options > creativeWork:** Trabajo creativo
+- **setup > conditionalSpecificity > categories > Productivity > options > contentCreation:** Creación de contenido
+- **setup > conditionalSpecificity > categories > Productivity > options > dailyRoutine:** Rutina diaria
+- **setup > conditionalSpecificity > categories > Fitness > headline:** ¿Qué cambio físico quieres?
+- **setup > conditionalSpecificity > categories > Fitness > options > strength:** Fuerza
+- **setup > conditionalSpecificity > categories > Fitness > options > shapeTone:** Forma y tono
+- **setup > conditionalSpecificity > categories > Fitness > options > energy:** Energía
+- **setup > conditionalSpecificity > categories > Fitness > options > confidence:** Confianza
+- **setup > conditionalSpecificity > categories > Fitness > options > consistentWorkouts:** Entrenos constantes
+- **setup > conditionalSpecificity > categories > Nutrition > headline:** ¿Qué cambio de bienestar quieres?
+- **setup > conditionalSpecificity > categories > Nutrition > options > moreEnergy:** Más energía
+- **setup > conditionalSpecificity > categories > Nutrition > options > betterRest:** Mejor descanso
+- **setup > conditionalSpecificity > categories > Nutrition > options > emotionalEase:** Calma emocional
+- **setup > conditionalSpecificity > categories > Nutrition > options > balance:** Equilibrio
+- **setup > conditionalSpecificity > categories > Nutrition > options > softerRoutines:** Rutinas más suaves
+- **setup > conditionalSpecificity > categories > Organization > headline:** ¿Qué parte quieres reiniciar?
+- **setup > conditionalSpecificity > categories > Organization > options > mySpace:** Mi espacio
+- **setup > conditionalSpecificity > categories > Organization > options > mySchedule:** Mi agenda
+- **setup > conditionalSpecificity > categories > Organization > options > myRoutines:** Mis rutinas
+- **setup > conditionalSpecificity > categories > Organization > options > myEnvironment:** Mi entorno
+- **setup > conditionalSpecificity > categories > Organization > options > myPriorities:** Mis prioridades
+- **setup > currentFriction > title:** ¿Qué creencia quieres cambiar?
+- **setup > currentFriction > subtitle:** ¿Qué creencia bloquea tu manifestación?
+- **setup > currentFriction > placeholder:** Describe la creencia que quieres cambiar…
+- **setup > toolPreference > title:** ¿Cómo quieres recibir apoyo?
+- **setup > toolPreference > subtitle:** Elige las herramientas para empezar.
+- **setup > toolPreferenceOptions > powerful_affirmations:** Afirmaciones poderosas
+- **setup > toolPreferenceOptions > custom_subliminals:** Subliminales
+- **setup > toolPreferenceOptions > mirror_work_reset:** Espejo
+- **setup > toolPreferenceOptions > belief_restructuring:** Creencias
+- **setup > toolPreferenceOptions > ai_manifestation_guidance:** Guía con IA
+- **setup > toolPreferenceOptions > daily_wins_progress:** Constancia y progreso
+- **setup > guide > title:** Elige tu guía
+- **setup > guide > subtitle:** Tu guía de IA para tus dudas.
+- **setup > manifestationIntensity > title:** Elige tu intensidad
+- **setup > manifestationIntensity > subtitle:** Configura rutina y notificaciones.
+- **setup > manifestationIntensity > setRoutine:** Configurar rutina
+- **setup > manifestationIntensity > notificationsQuestion:** ¿Quieres notificaciones para retomar tu rutina?
+- **setup > manifestationIntensity > notificationsHint:** Te recuerdan volver a tus acciones inspiradas.
+- **setup > manifestationIntensity > yes:** Sí
+- **setup > manifestationIntensity > notNow:** Ahora no
+- **setup > manifestationIntensity > dailyTime:** Hora diaria
+- **setup > manifestationIntensity > customizeInSettings:** Personalízala después en Ajustes.
+- **setup > manifestationIntensity > light > title:** Ligera
+- **setup > manifestationIntensity > light > tagline:** La rutina recomendada.
+- **setup > manifestationIntensity > light > description:** Manifestación ligera, con notificaciones si quieres.
+- **setup > manifestationIntensity > consistent > title:** Constante
+- **setup > manifestationIntensity > consistent > tagline:** Para manifestadores con experiencia.
+- **setup > manifestationIntensity > consistent > description:** Intensidad moderada. 2 notificaciones diarias.
+- **setup > manifestationIntensity > lockedIn > title:** Enfocado
+- **setup > manifestationIntensity > lockedIn > tagline:** La rutina más intensa.
+- **setup > manifestationIntensity > lockedIn > description:** Metas intensas. 3 notificaciones diarias.
+- **setup > manifestationIntensity > alerts > alert:** Alerta
+- **setup > manifestationIntensity > alerts > first:** 1.ª alerta
+- **setup > manifestationIntensity > alerts > second:** 2.ª alerta
+- **setup > manifestationIntensity > alerts > third:** 3.ª alerta
+- **setup > notifications > title:** Activa permisos
+- **setup > notifications > subtitle:** Ayúdanos a mejorar Palette Plotting.
+- **setup > tracking > title:** Ayúdanos a mejorar (opcional)
+- **setup > tracking > body:** Usamos datos de actividad para medir anuncios y mejorar la app. ¿Nos ayudas?
+- **setup > tracking > yes:** Sí
+- **setup > tracking > no:** No
+- **setup > email > title:** Guarda tu camino
+- **setup > email > titleLine1:** Guarda tu camino y
+- **setup > email > titleLine2:** comienza tu prueba gratis
+- **setup > email > subtitle:** Crea tu cuenta para guardar tu camino. Tu progreso queda en este correo.
+- **setup > email > emailLabel:** Correo
+- **setup > email > passwordLabel:** Contraseña
+- **setup > email > emailPlaceholder:** tu@correo.com
+- **setup > email > passwordPlaceholder:** 8+ caracteres
+- **setup > email > invalidEmail:** Ingresa un correo válido
+- **setup > email > needFirstName:** Necesitamos tu nombre.
+- **setup > email > passwordLength:** Ingresa una contraseña de 8+ caracteres
+- **setup > email > acceptTerms:** Acepta los Términos y la Privacidad
+- **setup > email > subscriptionError:** No pudimos abrir suscripciones. Intenta de nuevo.
+- **setup > email > tryAgain:** Intentar de nuevo
+- **setup > email > checkingAvailability:** Comprobando disponibilidad…
+- **setup > email > hidePassword:** Ocultar contraseña
+- **setup > email > showPassword:** Mostrar contraseña
+- **setup > affirmationRead > title:** Afirma tus deseos en voz alta
+- **setup > affirmationRead > subtitle:** Di e internaliza tus afirmaciones
+- **setup > embody > title:** ¿Cómo encarnarás tu nueva identidad?
+- **setup > embody > subtitle:** Elige cinco—serán tus Acciones inspiradas. ({{count}} de {{required}})
+- **setup > embodyOptions > embody_rest:** Descansar
+- **setup > embodyOptions > embody_self_care:** Autocuidado
+- **setup > embodyOptions > embody_clean_environment:** Ordenar tu entorno
+- **setup > embodyOptions > embody_nutrition:** Nutrición
+- **setup > embodyOptions > embody_have_fun:** Divertirse
+- **setup > embodyOptions > embody_move:** Ejercicio
+- **setup > embodyOptions > embody_glam_up:** Arreglarse
+- **setup > embodyOptions > embody_connect:** Conectar con otros
+- **setup > embodyOptions > embody_seen:** Ser visto y visible
+- **setup > embodyOptions > embody_work_or_study:** Trabajar o estudiar
+- **setup > pathSynthesis > title:** Tu camino está listo.
+- **setup > pathSynthesis > subtitle:** Todo estará listo al desbloquear Palette Plotting.
+- **setup > pathSynthesis > items > subliminals:** Subliminales personalizados.
+- **setup > pathSynthesis > items > mirror:** Espejo para autoconcepto.
+- **setup > pathSynthesis > items > guideReady:** {{name}} está listo para guiarte.
+- **setup > pathSynthesis > items > guideReadyGeneric:** Tu guía está lista.
+- **setup > pathSynthesis > items > affirmations:** Afirmaciones para el nuevo tú.
+- **setup > pathSynthesis > items > beliefs:** Creencias listas.
+- **setup > pathSynthesis > items > journal:** Diario listo.
+- **setup > pathLoading > title:** Construyendo tu camino…
+- **setup > pathLoading > subtitle:** Personalizando tu configuración.
+- **setup > pathLoading > loading:** Cargando
+- **setup > pathLoading > hint:** Tu camino ya está tomando forma.
+- **setup > beginJourney > lead:** Palette Plotting te ayuda a practicar manifestación y encarnar tus deseos.
+- **setup > beginJourney > subtitle:** Comencemos tu camino.
+- **legacy > threeActs > title:** Tu suite de autoconcepto
+- **legacy > threeActs > subtitle:** Un marco para saltos cuánticos
+- **legacy > threeActs > tools > subliminalMaker > title:** Creador de subliminales
+- **legacy > threeActs > tools > subliminalMaker > description:** Subliminales con beats binaurales
+- **legacy > threeActs > tools > mirrorWork > title:** Trabajo con espejo
+- **legacy > threeActs > tools > mirrorWork > description:** Espejo inmersivo
+- **legacy > threeActs > tools > affirmScript > title:** Afirmar y escribir
+- **legacy > threeActs > tools > affirmScript > description:** Afirmaciones y visuales personalizados
+- **legacy > threeActs > tools > beliefWork > title:** Trabajo de creencias
+- **legacy > threeActs > tools > beliefWork > description:** Desarma creencias limitantes
+- **legacy > threeActs > tools > habitTracking > title:** Hábitos
+- **legacy > threeActs > tools > habitTracking > description:** Progreso diario en tus metas
+- **legacy > threeActs > tools > manifestationJournal > title:** Diario de manifestación
+- **legacy > threeActs > tools > manifestationJournal > description:** Diario y notas diarias
+- **legacy > threeActs > tools > pianoTapping > title:** Piano Tapping
+- **legacy > threeActs > tools > pianoTapping > description:** Integración táctil de metas
+- **legacy > double > title:** Elige tu guía
+- **legacy > double > subtitle:** Tu guía de IA en los chats
+- **legacy > double > characters > river > name:** River
+- **legacy > double > characters > river > themes (line 1):** Transiciones
+- **legacy > double > characters > river > themes (line 2):** Carrera
+- **legacy > double > characters > sage > name:** Sage
+- **legacy > double > characters > sage > themes (line 1):** Finanzas
+- **legacy > double > characters > sage > themes (line 2):** Identidad
+- **legacy > double > characters > rose > name:** Rose
+- **legacy > double > characters > rose > themes (line 1):** Amor
+- **legacy > double > characters > rose > themes (line 2):** Autoconcepto
+- **legacy > double > characters > oliver > name:** Oliver
+- **legacy > double > characters > oliver > themes (line 1):** Autoimagen
+- **legacy > double > characters > oliver > themes (line 2):** Fitness
+- **legacy > digitalMirror > title:** Trabajo con espejo
+- **legacy > digitalMirror > subtitle:** Sesiones guiadas para autoconfianza
+- **legacy > digitalMirror > imageAlt:** Trabajo con espejo
+- **legacy > subliminalMaker > title:** Creador de subliminales
+- **legacy > subliminalMaker > subtitle:** Crea audios subliminales
+- **legacy > subliminalMaker > imageAlt:** Creador de subliminales
+- **legacy > manifestationTools > title:** Herramientas de manifestación
+- **legacy > manifestationTools > subtitle:** Usa técnicas experimentales para manifestar
+- **legacy > manifestationTools > imageAlt:** Herramientas de manifestación
+- **legacy > habitTracking > title:** Hábitos y progreso
+- **legacy > habitTracking > subtitle:** Sigue progreso y hábitos
+- **legacy > habitTracking > imageAlt:** Hábitos y progreso
+- **legacy > onboardingQuestions > title:** Enfoque de manifestación
+- **legacy > onboardingQuestions > question:** ¿Qué quieres cambiar?
+- **legacy > onboardingQuestions > selectUpTo3:** Selecciona hasta 3 opciones
+- **legacy > onboardingQuestions > options > Career:** Carrera
+- **legacy > onboardingQuestions > options > Business:** Negocios
+- **legacy > onboardingQuestions > options > Learning:** Escuela / Exámenes
+- **legacy > onboardingQuestions > options > Finances:** Dinero
+- **legacy > onboardingQuestions > options > Productivity:** Enfoque
+- **legacy > onboardingQuestions > options > Organization:** Reinicio de vida
+- **legacy > onboardingQuestions > options > Confidence:** Autoconcepto
+- **legacy > onboardingQuestions > options > Self-Love:** Belleza / Glow Up
+- **legacy > onboardingQuestions > options > Connections:** Amor / SP
+- **legacy > onboardingQuestions > options > Fitness:** Cuerpo / Fitness
+- **legacy > onboardingQuestions > options > Nutrition:** Bienestar
+- **legacy > onboardingQuestions > options > Discipline:** Disciplina
+
+## Settings & manifestation routine
+
+- **title:** Ajustes
+- **header:** Tu cuenta
+- **tabs > profile:** Perfil
+- **tabs > settings:** Ajustes
+- **tabs > billing:** Facturación
+- **tabs > legal:** Legal
+- **language > heading:** Idioma
+- **language > description:** Elige el idioma de la app.
+- **profile > nameLabel:** Nombre
+- **profile > usernameLabel:** Usuario
+- **profile > emailLabel:** Correo electrónico
+- **profile > emailCannotChange:** El correo no se puede cambiar
+- **profile > phoneLabel:** Número de teléfono
+- **profile > updateButton:** Actualizar perfil
+- **profile > namePlaceholder:** Ingresa tu nombre
+- **profile > usernamePlaceholder:** Ingresa tu usuario
+- **profile > phonePlaceholder:** +1 (555) 123-4567
+- **profile > codePlaceholder:** Código de 6 dígitos
+- **profile > sendCode:** Enviar código
+- **profile > sendingCode:** Enviando...
+- **profile > verify:** Verificar
+- **profile > verifyPhoneHint:** Verifica tu número de teléfono para actualizarlo
+- **profile > phoneVerified:** ✓ Teléfono verificado
+- **profile > newPhoneVerified:** ✓ Nuevo teléfono verificado
+- **profile > changePasswordHeading:** Cambiar contraseña
+- **profile > currentPasswordLabel:** Contraseña actual
+- **profile > newPasswordLabel:** Nueva contraseña
+- **profile > confirmPasswordLabel:** Confirmar nueva contraseña
+- **profile > changePasswordButton:** Cambiar contraseña
+- **profile > validatingPassword:** Validando contraseña...
+- **profile > currentPasswordPlaceholder:** Contraseña actual
+- **profile > newPasswordPlaceholder:** Nueva contraseña
+- **profile > confirmPasswordPlaceholder:** Confirma la nueva contraseña
+- **passwordValidation > minLength:** Mínimo 8 caracteres
+- **passwordValidation > lowercase:** Incluye una minúscula
+- **passwordValidation > uppercase:** Incluye una mayúscula
+- **passwordValidation > digit:** Incluye un número
+- **passwordValidation > mismatch:** Las contraseñas no coinciden
+- **preferences > routineHeading:** Rutina de manifestación
+- **preferences > routineDescription:** Ajusta intensidad, rutina y notificaciones.
+- **preferences > routineButtonTitle:** Rutina e intensidad
+- **preferences > routineButtonSubtitle:** Intensidad y notificaciones
+- **preferences > emailHeading:** Preferencias de correo
+- **preferences > emailDescription:** Consejos, novedades y actualizaciones por correo.
+- **preferences > emailMarketingLabel:** Marketing por correo
+- **preferences > textMarketingLabel:** Marketing por SMS
+- **preferences > dataTrainingHeading:** Entrenamiento de datos
+- **preferences > dataTrainingDescription:** Ayuda a mejorar usando datos anónimos para entrenar modelos.
+- **preferences > dataTrainingLabel:** Permitir entrenar datos
+- **preferences > timeZoneLabel:** Zona horaria
+- **deletion > heading:** Eliminar cuenta
+- **deletion > scheduledPrefix:** Tu cuenta está programada para eliminarse el
+- **deletion > scheduledSuffix:** Puedes cancelar antes de esa fecha.
+- **deletion > description:** Elimina tu cuenta y datos. La eliminación se programa para 30 días después.
+- **deletion > cancelRequest:** Cancelar solicitud de eliminación
+- **deletion > deleteButton:** Eliminar mi cuenta
+- **deletion > confirm1Title:** ¿Eliminar tu cuenta?
+- **deletion > confirm1Body:** Tu cuenta y datos se eliminarán permanentemente. No podrás recuperarlos. ¿Continuar?
+- **deletion > confirm2Title:** Confirmación final
+- **deletion > confirm2Body:** Última oportunidad para cancelar. Tu cuenta y datos se eliminarán. ¿Seguro?
+- **deletion > deleting:** Eliminando…
+- **deletion > scheduledFallback:** en 30 días
+- **deletion > scheduledToast:** Tu cuenta está programada para eliminarse el {{date}}. Puedes iniciar sesión antes de esa fecha para cancelar en Ajustes.
+- **billing > subscriptionHeading:** Suscripción
+- **billing > currentPlan:** Plan actual
+- **billing > billingHeading:** Facturación
+- **billing > billingDescription:** Administra suscripción y pagos
+- **billing > manageBilling:** Administrar facturación
+- **billing > loadingOptions:** Cargando suscripciones…
+- **billing > portalHint:** Abre el portal para actualizar el pago o cancelar.
+- **billing > planMonthly:** Mensual
+- **billing > planAnnual:** Anual
+- **billing > planWeekly:** Semanal
+- **billing > openingPortal:** Abriendo facturación…
+- **legal > heading:** Legal e información
+- **legal > faq:** Preguntas frecuentes
+- **legal > terms:** Términos de uso
+- **legal > privacy:** Política de privacidad
+- **legal > acceptableUse:** Política de uso aceptable
+- **legal > billingRefunds:** Facturación y reembolsos
+- **legal > dmca:** Aviso y política de retirada DMCA
+- **legal > eula:** Acuerdo de licencia de usuario final
+- **legal > contact:** Contáctanos
+- **routine > title:** Rutina de manifestación
+- **routine > subtitle:** Intensidad de manifestación y notificaciones de rutina
+- **routine > backAria:** Volver a ajustes
+- **routine > loading:** Cargando tu rutina…
+- **routine > intensityHeading:** Intensidad de manifestación
+- **routine > intensityDescription:** Ajusta tu intensidad de manifestación
+- **routine > saveIntensity:** Guardar intensidad
+- **routine > saving:** Guardando…
+- **routine > notificationsHeading:** Notificaciones de rutina
+- **routine > notificationsDescription:** Las notificaciones te recuerdan volver a tus acciones inspiradas.
+- **routine > pushRemindersLabel:** Recordatorios y push
+- **routine > dailyTimeHeading:** Hora diaria
+- **routine > deviceDeniedHint:** Notificaciones desactivadas. Tu rutina continúa.
+- **routine > intensity > light > title:** Ligera
+- **routine > intensity > light > tagline:** La rutina recomendada.
+- **routine > intensity > light > description:** Integración ligera de manifestación, con notificaciones diarias, si optas por ellas.
+- **routine > intensity > consistent > title:** Constante
+- **routine > intensity > consistent > tagline:** Para manifestadores con experiencia.
+- **routine > intensity > consistent > description:** Intensidad de manifestación más moderada. 2 notificaciones diarias, si las seleccionas.
+- **routine > intensity > locked_in > title:** Enfocado
+- **routine > intensity > locked_in > tagline:** La rutina de mayor intensidad.
+- **routine > intensity > locked_in > description:** Para metas de manifestación más intensas. 3 notificaciones diarias, si optas por ellas.
+- **routine > alerts > single:** Alerta
+- **routine > alerts > first:** 1.ª alerta
+- **routine > alerts > second:** 2.ª alerta
+- **routine > alerts > third:** 3.ª alerta
+- **toasts > profileUpdated:** Perfil actualizado correctamente
+- **toasts > passwordUpdated:** Contraseña actualizada correctamente
+- **toasts > enterPhone:** Ingresa un número de teléfono
+- **toasts > codeSent:** ¡Código de verificación enviado!
+- **toasts > codeSendFailed:** No se pudo enviar el código.
+- **toasts > phoneVerified:** ¡Número de teléfono verificado y guardado!
+- **toasts > invalidCode:** Código inválido. Inténtalo de nuevo.
+- **toasts > usernameEmpty:** El usuario no puede estar vacío
+- **toasts > verifyPhoneFirst:** Verifica tu nuevo número de teléfono antes de actualizar
+- **toasts > userNotFound:** Usuario no encontrado
+- **toasts > usernameTaken:** El usuario ya está en uso. Elige otro.
+- **toasts > profileUpdateError:** Error al actualizar el perfil
+- **toasts > invalidPassword:** Contraseña inválida
+- **toasts > passwordUpdateError:** Error al actualizar la contraseña
+- **toasts > smsEnabled:** Notificaciones por SMS activadas
+- **toasts > smsDisabled:** Notificaciones por SMS desactivadas
+- **toasts > smsUpdateError:** Error al actualizar SMS
+- **toasts > loginRequired:** Inicia sesión para actualizar las preferencias
+- **toasts > dataTrainingEnabled:** Entrenamiento de datos activado
+- **toasts > dataTrainingDisabled:** Entrenamiento de datos desactivado
+- **toasts > dataTrainingError:** Error al actualizar datos
+- **toasts > deletionScheduled:** Tu cuenta está programada para eliminarse el {{date}}. Puedes iniciar sesión antes de esa fecha para cancelar en Ajustes.
+- **toasts > deletionFailed:** No se pudo programar la eliminación. Intenta de nuevo o escribe a soporte.
+- **toasts > deletionCancelled:** Eliminación de cuenta cancelada. Tu cuenta no se eliminará.
+- **toasts > deletionCancelFailed:** No se pudo cancelar. Intenta de nuevo o escribe a soporte.
+- **toasts > emailPrefError:** Error: {{message}}
+- **toasts > emailEnabled:** Notificaciones por correo activadas
+- **toasts > emailDisabled:** Notificaciones por correo desactivadas
+- **toasts > billingLoginRequired:** Inicia sesión para administrar la facturación
+- **toasts > playSubscriptionsFailed:** No se pudo abrir la pantalla de suscripciones de Google Play.
+- **toasts > iosSubscriptionsHint:** Administra en iPhone: Ajustes > ID de Apple > Suscripciones.
+- **toasts > portalFailed:** No se pudo abrir el portal de facturación. Inténtalo de nuevo.
+- **toasts > portalFailedFallback:** No se pudo abrir el portal. Intenta de nuevo o usa el enlace del correo.
+- **toasts > routineLoadFailed:** No se pudieron cargar los ajustes de tu rutina.
+- **toasts > routineNotifUpdateFailed:** No se pudo actualizar la preferencia de notificaciones.
+- **toasts > routineNotifOff:** Notificaciones de rutina desactivadas
+- **toasts > routineNotifDenied:** Se denegó el permiso de notificaciones.
+- **toasts > routineNotifDeniedIos:** Las notificaciones están desactivadas en Ajustes de iOS. Actívalas allí e inténtalo de nuevo.
+- **toasts > routineNotifPermissionFailed:** No se pudo solicitar el permiso de notificaciones.
+- **toasts > routineNotifOn:** Notificaciones de rutina activadas
+- **toasts > routineIntensitySaved:** Intensidad de manifestación actualizada
+- **toasts > routineIntensitySaveFailed:** No se pudo guardar tu intensidad de rutina.
+- **legalDisclaimer:** Los Términos y la Privacidad están disponibles actualmente en inglés.
+
+## Sign in, password reset & activation
+
+- **notFound > title:** 404
+- **notFound > message:** Página no encontrada
+- **notFound > redirecting:** Redirigiendo al inicio...
+- **signIn > pageTitle:** Iniciar sesión | Palette Plotting
+- **signIn > title:** Iniciar sesión
+- **signIn > description:** Inicia sesión para continuar
+- **signIn > emailOrUsernameLabel:** Correo o usuario
+- **signIn > emailOrUsernamePlaceholder:** tu@correo.com o usuario
+- **signIn > passwordLabel:** Contraseña
+- **signIn > passwordPlaceholder:** ••••••••
+- **signIn > forgotPasswordLink:** ¿Olvidaste tu clave?
+- **signIn > submit:** Iniciar sesión
+- **signIn > submitting:** Iniciando sesión...
+- **signIn > noAccount:** ¿No tienes cuenta?
+- **signIn > signUp:** Regístrate
+- **forgotPassword > checkEmailTitle:** Revisa tu correo
+- **forgotPassword > checkEmailBody:** Revisa tu correo para restablecer tu contraseña.
+- **forgotPassword > backToSignIn:** Volver a iniciar sesión
+- **forgotPassword > sendResetLink:** Enviar enlace
+- **forgotPassword > sending:** Enviando...
+- **resetPassword > title:** Restablecer contraseña
+- **resetPassword > noSessionDescription:** Haz clic en el enlace de tu correo para restablecer tu contraseña.
+- **resetPassword > description:** Ingresa tu nueva contraseña
+- **resetPassword > newPasswordLabel:** Nueva contraseña
+- **resetPassword > newPasswordPlaceholder:** Nueva contraseña
+- **resetPassword > confirmPasswordLabel:** Confirmar nueva contraseña
+- **resetPassword > confirmPasswordPlaceholder:** Confirma la contraseña
+- **resetPassword > validatingPassword:** Validando contraseña...
+- **resetPassword > submit:** Restablecer contraseña
+- **resetPassword > submitting:** Restableciendo...
+- **resetPassword > backToSignIn:** Volver a iniciar sesión
+- **activate > title:** Activa tu plan
+- **activate > subtitleWithTier:** Elegiste el plan {{tier}} ({{billing}}).
+- **activate > subtitleDefault:** Completa para activar tu suscripción.
+- **activate > billingMonthly:** mensual
+- **activate > missingInfo:** Falta información de activación. Reinicia el registro.
+- **activate > restart:** Reiniciar
+- **activate > paymentNotConfirmed:** Pago no confirmado. Asegúrate de que tu pago se haya completado.
+- **activate > goToSubscriptions:** Ir a suscripciones
+- **activate > accountCreatedTitle:** ¡Cuenta creada con éxito!
+- **activate > accountCreatedBody:** Revisa tu correo para establecer tu contraseña. Luego inicia sesión.
+- **activate > goToSignIn:** Ir a iniciar sesión
+- **activate > waitingForAccount:** Esperando la creación de la cuenta...
+- **verifyEmail > verifying:** Verificando…
+- **verifyEmail > successTitle:** Correo verificado
+- **verifyEmail > successBody:** Todo listo.
+- **verifyEmail > errorTitle:** Verificación fallida
+- **verifyEmail > missingToken:** Falta el token.
+- **verifyEmail > verificationFailed:** Verificación fallida.
+- **verifyEmail > requestNewEmail:** Solicita un nuevo correo de verificación.
+- **verifyEmail > goToDashboard:** Ir al panel
+- **toasts > usernameNotFound:** Nombre de usuario no encontrado
+- **toasts > resetLinkSent:** Enlace de restablecimiento enviado a tu correo
+- **toasts > resetLinkFailed:** No se pudo enviar el enlace.
+- **toasts > passwordResetSuccess:** Contraseña restablecida correctamente. Inicia sesión.
+- **toasts > passwordResetFailed:** No se pudo restablecer la contraseña. Inténtalo de nuevo.
+- **toasts > accountCreated:** ¡Cuenta creada! Revisa tu correo para establecer tu contraseña.
+- **toasts > activationLoadFailed:** No se pudo cargar la sesión de activación. Reinicia el registro.
+- **toasts > accountCreationSlow:** La creación de la cuenta está tardando más de lo esperado. Revisa tu correo o contacta a soporte.
+- **legalDisclaimer:** Términos y Privacidad están en inglés.
+
+## Paywall & post-purchase
+
+- **postPaywall > title:** Tu camino está listo
+- **postPaywall > buildingDashboard:** Construyendo tu panel…
+- **postPaywall > finishingSubtitle:** Casi listo — terminando tu panel.
+- **postPaywall > loadingStatusAria:** Carga
+- **postPaywall > commitmentLabel:** Di esto una vez, en voz alta:
+- **postPaywall > commitmentText:** He nombrado lo que quiero y no lo abandonaré cuando aparezca la duda. Le doy mi voz, atención y constancia. Actuaré como quien ya está en este camino. Lo que quiero merece mi sí completo.
+- **postPaywall > simsLines (line 1):** Membresía confirmada — oficial.
+- **postPaywall > simsLines (line 2):** Creando afirmaciones con tus respuestas.
+- **postPaywall > simsLines (line 3):** Dando voz a tus afirmaciones.
+- **postPaywall > simsLines (line 4):** Mezclando sonido, susurros y theta…
+- **postPaywall > simsLines (line 5):** Desbloqueando tu panel…
+- **postPaywall > toastActivateFailedIos:** Compra completada, pero no pudimos activar tu plan aún. Inténtalo de nuevo desde suscripciones.
+- **postPaywall > toastActivateFailedAndroid:** Compra completada, pero no pudimos activar tu plan aún. Inténtalo de nuevo.
+- **postPaywall > toastSetupSnag:** Tuvimos un problema al terminar la configuración. Te llevamos al panel…
+- **legacyIos > titleLine1:** Desbloquea tu prueba gratis
+- **legacyIos > titleLine2:** Empieza a manifestar
+- **legacyIos > subtitle:** Elige el plan semanal para empezar.
+- **legacyIos > loadingOptions:** Cargando opciones de suscripción…
+- **legacyIos > weekly:** Semanal
+- **legacyIos > monthly:** Mensual
+- **legacyIos > yearly:** Anual
+- **legacyIos > bestAnnualValue:** Mejor valor anual
+- **legacyIos > onlyPerMonth:** Solo {{amount}}/mes
+- **legacyIos > perWeek:** {{price}}/semana
+- **legacyIos > perMonth:** {{price}}/mes
+- **legacyIos > perYear:** {{price}}/año
+- **legacyIos > opening:** Abriendo…
+- **legacyIos > tryAgain:** Intentar de nuevo
+- **legacyIos > fallbackTitle:** No pudimos completar ese paso
+- **legacyIos > fallbackBody:** Toca Intentar de nuevo o vuelve y toca Continuar.
+- **legacyIos > terms:** Términos / EULA
+- **legacyIos > privacy:** Privacidad
+- **legacyIos > restorePurchases:** Restaurar compras
+- **legacyIos > restoring:** Restaurando…
+- **legacyIos > restore:** Restaurar
+- **legacyIos > closeAria:** Cerrar
+- **legacyIos > errorNotIosApp:** Suscripciones solo en la app iOS.
+- **legacyIos > errorSignInAgain:** Inicia sesión de nuevo y abre la suscripción.
+- **legacyIos > errorNoSession:** No hay sesión activa. Cierra sesión, inicia sesión y toca Continuar.
+- **legacyIos > errorOpenFromSignup:** Abre la suscripción en la app tras registrarte.
+- **legacyIos > errorSkippedDetail:** Usa Continuar en registro o Cuenta en Ajustes.
+- **legacyIos > errorGeneric:** Algo salió mal.
+- **legacyIos > errorPersist:** Algo salió mal. Copia el registro de depuración desde Safari si persiste.
+- **legacyIos > restoreOnlyIos:** Restaurar solo está disponible en la app de iOS.
+- **legacyIos > restoredSuccess:** Suscripción restaurada. ¡Bienvenido!
+- **legacyIos > restoreCancelled:** Restauración cancelada.
+- **legacyIos > nothingToRestore:** Nada que restaurar.
+- **legacyAndroid > title:** Desbloquea herramientas de manifestación.
+- **legacyAndroid > subtitle:** Toca Continuar para confirmar.
+- **legacyAndroid > opening:** Abriendo…
+- **legacyAndroid > tryAgain:** Intentar de nuevo
+- **legacyAndroid > fallbackTitle:** No pudimos completar ese paso
+- **legacyAndroid > fallbackBody:** Toca Intentar de nuevo o vuelve y toca Continuar.
+- **legacyAndroid > terms:** Términos / EULA
+- **legacyAndroid > privacy:** Privacidad
+- **legacyAndroid > closeAria:** Cerrar
+- **legacyAndroid > errorNotAndroidApp:** Suscripciones solo en la app Android.
+- **legacyAndroid > errorSignInAgain:** Inicia sesión de nuevo y abre la suscripción.
+- **legacyAndroid > errorNoSession:** No hay sesión activa. Cierra sesión, inicia sesión y toca Continuar.
+- **legacyAndroid > errorOpenFromSignup:** Abre la suscripción en la app tras registrarte.
+- **legacyAndroid > errorSkippedDetail:** Usa Continuar en la pantalla de registro o abre Cuenta desde Ajustes.
+- **legacyAndroid > errorGeneric:** Algo salió mal.
+- **flow > subscriptionAlreadyOpening:** La suscripción ya se está abriendo — espera unos segundos e inténtalo de nuevo.
+- **flow > subscriptionScreenMayBeOpening:** La pantalla de suscripción puede estar abriéndose. Espera e inténtalo de nuevo.
+- **flow > openingSubscriptionsTimedOut:** La suscripción tardó en abrir. Reinicia la app e inténtalo de nuevo.
+- **flow > paymentNotCompleted:** El pago no se completó.
+- **flow > couldNotOpenSubscription:** No se pudieron abrir las opciones de suscripción.
+- **flow > signInRequiredBeforeSubscribing:** Debes iniciar sesión antes de suscribirte.
+- **webWrapper > checkoutFailed:** No pudimos abrir el pago.
+- **webWrapper > checkoutClosed:** Pago cerrado. Suscríbete cuando quieras.
+- **webWrapper > viewPlans:** Ver planes
+- **webWrapper > close:** Cerrar
+- **webWrapper > notConfigured:** Pago web no disponible. Inténtalo más tarde.
+- **webWrapper > subscriptionNotCompleted:** Suscripción no completada.
+- **emailCollection > title:** Empecemos
+- **emailCollection > emailLabel:** Correo
+- **emailCollection > firstNameLabel:** Nombre
+- **emailCollection > usernameLabel:** Usuario
+- **emailCollection > passwordLabel:** Contraseña
+- **emailCollection > confirmLabel:** Confirmar
+- **emailCollection > emailPlaceholder:** tu@correo.com
+- **emailCollection > firstNamePlaceholder:** Nombre
+- **emailCollection > usernamePlaceholder:** Usuario
+- **emailCollection > passwordPlaceholder:** 8+ caracteres
+- **emailCollection > confirmPlaceholder:** Repetir
+- **emailCollection > checkingEmail:** Comprobando disponibilidad...
+- **emailCollection > checkingUsername:** Comprobando...
+- **emailCollection > emailTaken:** Este correo ya está registrado. Inicia sesión en su lugar.
+- **emailCollection > usernameTaken:** Este usuario ya está en uso. Elige otro.
+- **emailCollection > passwordMinLength:** La contraseña debe tener al menos 8 caracteres.
+- **emailCollection > passwordMismatch:** Las contraseñas no coinciden.
+- **emailCollection > passwordMismatchToast:** Las contraseñas no coinciden
+- **emailCollection > invalidEmail:** Ingresa un correo válido
+- **emailCollection > needUsername:** Ingresa un nombre de usuario
+- **emailCollection > needPassword:** Ingresa una contraseña de al menos 8 caracteres
+- **emailCollection > needFirstName:** Ingresa tu nombre
+- **emailCollection > acceptTerms:** Acepta los Términos de servicio y la Política de privacidad
+- **emailCollection > verifyEmailBlocked:** Cuenta creada, pero el inicio de sesión está bloqueado. Verifica tu correo e inicia sesión.
+- **emailCollection > subscriptionError:** No pudimos abrir las opciones de suscripción. Inténtalo en un momento.
+- **emailCollection > saveFailed:** No se pudo guardar. Inténtalo de nuevo.
+- **emailCollection > tryAgain:** Intentar de nuevo
+- **emailCollection > termsAcceptPrefix:** Acepto los
+- **emailCollection > termsOfService:** Términos de servicio
+- **emailCollection > termsAnd:** y la
+- **emailCollection > privacyPolicy:** Privacidad
+- **emailCollection > appNotificationsConsent:** Acepto notificaciones de la app (opcional). Cancela en Ajustes.
+- **emailCollection > emailMarketingConsent:** Acepto marketing por correo (opcional). Cancela en ajustes.
+- **emailCollection > smsMarketingConsent:** Acepto marketing por SMS (opcional). Cancela en ajustes.
+- **paymentProcessing > title:** Procesando pago
+- **paymentProcessing > subtitle:** Espera mientras confirmamos tu pago. Esto suele tardar unos segundos.
+- **paymentProcessing > missingInfo:** Falta información de pago. Reinicia el onboarding.
+- **paymentProcessing > verificationSlow:** La verificación del pago está tardando más de lo esperado. Contacta a soporte.
+- **paymentProcessing > verificationFailed:** No se pudo verificar el pago. Contacta a soporte.
+
+## App tools
+
+- **chat > selectCharacterFirst:** Selecciona un personaje primero para empezar a chatear.
+- **chat > goToEmbody:** Ir a Encarnar
+- **chat > messagesToday:** {{count}} / {{limit}} mensajes hoy
+- **chat > startConversation:** Inicia una conversación con {{name}}
+- **chat > system:** Sistema
+- **chat > placeholder:** Escribe tu mensaje...
+- **chat > dailyLimitReached:** Límite diario alcanzado. Tu límite se reinicia mañana.
+- **chat > errors > loadHistory:** No se pudo cargar el historial del chat
+- **chat > errors > sendFailed:** No se pudo enviar el mensaje. Inténtalo de nuevo.
+- **chat > errors > sessionExpired:** Tu sesión ha expirado. Actualiza la página e inténtalo de nuevo.
+- **chat > errors > forbidden:** No tienes permiso para enviar mensajes. Revisa el estado de tu cuenta.
+- **chat > errors > rateLimit:** Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.
+- **chat > errors > connection:** Error de conexión. Revisa tu internet e inténtalo de nuevo.
+- **chat > errors > timeout:** La solicitud expiró. Inténtalo de nuevo.
+- **demo > affirmations > maxAffirmations:** Máximo 5 afirmaciones para esta demo
+- **demo > affirmations > walkthrough > createSet > title:** Crea tu primer set
+- **demo > affirmations > walkthrough > createSet > message:** Toca "Nuevo set" para crear tu set de afirmaciones. Ponle nombre y selecciona una categoría.
+- **demo > affirmations > walkthrough > writeAffirmations > title:** Escribe tus afirmaciones
+- **demo > affirmations > walkthrough > writeAffirmations > message:** Toca el botón de editar y escribe tus afirmaciones. Presiona Enter para agregar cada una. Puedes agregar hasta 5 afirmaciones.
+- **demo > affirmations > walkthrough > chooseImages > title:** Elige imágenes del tablero
+- **demo > affirmations > walkthrough > chooseImages > message:** Toca el botón de imagen para seleccionar imágenes para tus afirmaciones. Elige 5 imágenes de las 10 opciones disponibles. La biblioteca de suscriptores tiene más de 50 imágenes.
+- **demo > affirmations > walkthrough > saveImages > title:** Guarda tus imágenes
+- **demo > affirmations > walkthrough > saveImages > message:** Toca Guardar para agregar las imágenes seleccionadas a tu set de afirmaciones.
+- **demo > affirmations > walkthrough > play > title:** Mira tu set
+- **demo > affirmations > walkthrough > play > message:** Toca Reproducir para ver tu set de afirmaciones con imágenes.
+- **demo > subliminal > recordingSavedCustomize:** ¡Grabación guardada! Ahora personaliza los ajustes de tu pista abajo.
+- **demo > subliminal > trackGenerated:** ¡Pista generada correctamente!
+- **demo > subliminal > generateTrackFailed:** No se pudo generar la pista
+- **demo > subliminal > playTrackFailed:** No se pudo reproducir la pista
+- **demo > subliminal > maxTrackLengthDemo:** La duración máxima de pista es 1 minuto para la demo.
+- **demo > subliminal > emailNotFoundForFeedback:** No encontramos tu correo para este comentario.
+- **demo > subliminal > feedbackSubmitFailed:** No se pudo enviar el comentario. Inténtalo de nuevo.
+- **demo > subliminal > micAccessFailed:** No se pudo acceder al micrófono. Revisa los permisos.
+- **demo > subliminal > walkthrough > record > title:** Graba tus afirmaciones
+- **demo > subliminal > walkthrough > record > message:** Elige el modo Freestyle o Karaoke para grabar tus afirmaciones. La función de texto a voz está disponible para suscriptores de pago.
+- **demo > subliminal > walkthrough > customize > title:** Personaliza tu pista
+- **demo > subliminal > walkthrough > customize > message:** Personaliza tu pista subliminal. Theta y Ocean vienen preseleccionados. Ajusta volumen, capas y duración, luego toca Crear pista.
+- **demo > subliminal > walkthrough > play > title:** Reproducir pista
+- **demo > subliminal > walkthrough > play > message:** ¡Tu pista está lista! Toca Reproducir para escuchar tu audio subliminal.
+- **demo > subliminal > walkthrough > signup > title:** ¿Te gusta? Accede a más.
+- **demo > subliminal > walkthrough > signup > message:** En esta demo ves menos del 15% de la app. Desbloquea subliminales, espejo, metas, hábitos y más herramientas.
+- **demo > subliminal > walkthrough > signup > actionText:** Registrarse
+- **demo > subliminal > walkthrough > signup > secondaryActionText:** Aún no, dar feedback
+- **demo > subliminal > walkthrough > feedback > title:** Comparte tu opinión
+- **demo > subliminal > walkthrough > feedback > message:** ¿Qué te impidió registrarte hoy?
+- **demo > subliminal > walkthrough > thankYou > title:** ¡Gracias!
+- **demo > subliminal > walkthrough > thankYou > message:** Agradecemos tu comentario y lo usaremos para mejorar Palette Plotting.
+- **activity > title:** Hitos de manifestación
+- **activity > milestones > tabs > inspiredActions:** Acciones inspiradas
+- **activity > milestones > tabs > desires:** Deseos
+- **activity > milestones > tabs > weeklyWins:** Victorias semanales
+- **activity > milestones > toasts > error:** Error
+- **activity > milestones > toasts > loadHistoryFailed:** No se pudo cargar el historial de acciones. Inténtalo de nuevo.
+- **activity > milestones > toasts > loadGoalsFailed:** No se pudieron cargar los deseos semanales
+- **activity > milestones > toasts > categoryRequired:** Categoría obligatoria
+- **activity > milestones > toasts > selectCategoryForGoal:** Selecciona una categoría para tu deseo
+- **activity > milestones > toasts > saveGoalFailed:** No se pudo guardar el deseo
+- **activity > milestones > toasts > updateGoalFailed:** No se pudo actualizar el deseo
+- **activity > milestones > toasts > deleteGoalFailed:** No se pudo eliminar el deseo
+- **activity > milestones > toasts > loadReviewFailed:** No se pudo cargar la revisión semanal
+- **activity > milestones > aria > completed:** Completado
+- **activity > milestones > aria > notCompleted:** No completado
+- **activity > milestones > goals > addPlaceholder:** Agregar
+- **activity > milestones > goals > category:** Categoría
+- **activity > milestones > goals > addButton:** Agregar
+- **activity > milestones > goals > loading:** Cargando deseos...
+- **activity > milestones > goals > emptyTitle:** No hay deseos para esta semana.
+- **activity > milestones > goals > emptyHint:** Agrega un deseo arriba para empezar.
+- **activity > milestones > review > loading:** Cargando victorias semanales...
+- **activity > milestones > review > inspiredActionsTitle:** Acciones inspiradas
+- **activity > milestones > review > inspiredActionsCount:** Acciones inspiradas completadas esta semana
+- **activity > milestones > review > desiresTitle:** Deseos
+- **activity > milestones > review > desiresSet:** Deseos definidos
+- **activity > milestones > review > desiresAttained:** Deseos alcanzados
+- **activity > milestones > review > completionRate:** {{pct}}% de cumplimiento
+- **activity > milestones > review > byCategoryTitle:** Deseos por categoría
+- **activity > milestones > review > categoryCompleted:** {{completed}}/{{total}} completados
+- **activity > milestones > review > emptyTitle:** No hay actividad registrada para esta semana.
+- **activity > milestones > review > emptyHint:** Empieza tus acciones inspiradas y define deseos para ver tu progreso aquí.
+- **chrono > title:** Diario de manifestación
+- **chrono > loadingTimeline:** Cargando tu línea de tiempo...
+- **chrono > emptyTimeline:** Tu línea de tiempo está esperando ser escrita.
+- **chrono > createFirstEntry:** Crea tu primera entrada
+- **chrono > timeline > description:** Reflexiona sobre tu crecimiento y desarrollo.
+- **chrono > timeline > newEntry:** Nueva entrada
+- **chrono > timeline > editEntry:** Editar entrada
+- **chrono > timeline > showLess:** Mostrar menos
+- **chrono > timeline > showMore:** Mostrar más
+- **chrono > timeline > env3d:** 3D (entorno):
+- **chrono > timeline > dayExperience:** Cómo viviste el día:
+- **chrono > timeline > winToday:** Victoria hoy:
+- **chrono > timeline > yes:** Sí
+- **chrono > timeline > no:** No
+- **chrono > timeline > env3dAria:** El entorno 3D se sintió {{rating}}
+- **chrono > timeline > dayExperienceAria:** El día se vivió como {{rating}}
+- **chrono > form > editEntry:** Editar entrada
+- **chrono > form > newEntry:** Nueva entrada
+- **chrono > form > deleteEntry:** Eliminar entrada
+- **chrono > form > date:** Fecha
+- **chrono > form > pickDate:** Elige una fecha
+- **chrono > form > titleLabel:** Título *
+- **chrono > form > titlePlaceholder:** Ponle un título a tu entrada...
+- **chrono > form > whatHappened:** ¿Qué pasó? *
+- **chrono > form > textPlaceholder:** Cuéntale a tu línea de tiempo qué pasó hoy...
+- **chrono > form > env3dQuestion:** (1) ¿Cómo estuvo el 3D (entorno externo) hoy? *
+- **chrono > form > dayExperienceQuestion:** (2) ¿Cómo viviste el día? *
+- **chrono > form > updating:** Actualizando...
+- **chrono > form > creating:** Creando...
+- **chrono > form > update:** Actualizar
+- **chrono > form > addEntry:** Agregar entrada
+- **chrono > form > deleteTitle:** Eliminar entrada
+- **chrono > form > deleteDescription:** ¿Seguro que quieres eliminar esta entrada? Esta acción no se puede deshacer.
+- **chrono > form > deleting:** Eliminando...
+- **chrono > form > delete:** Eliminar
+- **chrono > form > mood > rough:** Difícil o pesado
+- **chrono > form > mood > neutral:** Neutro
+- **chrono > form > mood > good:** Bien
+- **chrono > form > toast > titleRequired:** Título obligatorio
+- **chrono > form > toast > titleRequiredDesc:** Ponle un título a tu entrada.
+- **chrono > form > toast > entryRequired:** Entrada obligatoria
+- **chrono > form > toast > entryRequiredDesc:** Escribe algo para tu línea de tiempo.
+- **chrono > form > toast > authRequired:** Autenticación requerida
+- **chrono > form > toast > authRequiredDesc:** Inicia sesión para crear entradas.
+- **chrono > form > toast > reflectionIncomplete:** Reflexión incompleta
+- **chrono > form > toast > reflectionIncompleteDesc:** Responde ambas preguntas usando las caras de abajo.
+- **chrono > form > toast > permissionDenied:** Permiso denegado
+- **chrono > form > toast > permissionDeniedDesc:** Asegúrate de haber iniciado sesión e inténtalo de nuevo.
+- **chrono > form > toast > error:** Error
+- **chrono > form > toast > createFailed:** No se pudo crear la entrada. Inténtalo de nuevo.
+- **chrono > form > toast > deleteFailed:** No se pudo eliminar la entrada. Inténtalo de nuevo.
+- **chrono > form > toast > noSession:** No se encontró una sesión válida. Inicia sesión e inténtalo de nuevo.
+- **double > choose > settings:** Ajustes
+- **double > choose > chooseGuide:** Elige tu guía
+- **double > choose > chooseGuideSubtitle:** Elige quién te acompaña cada día
+- **double > choose > dailyPracticeChoices:** Acciones inspiradas
+- **double > choose > dailyPracticeSubtitle:** Elige cinco. Cámbialas cuando quieras.
+- **double > choose > selectedCount:** {{count}} de 5 seleccionadas
+- **double > choose > practices > rest:** Descansar y relajarse
+- **double > choose > practices > selfCare:** Autocuidado
+- **double > choose > practices > clean:** Limpiar y organizar el entorno
+- **double > choose > practices > drinkWater:** Nutrición
+- **double > choose > practices > haveFun:** Divertirse
+- **double > choose > practices > exercise:** Ejercicio
+- **double > choose > practices > glamUp:** Arreglarse
+- **double > choose > practices > connect:** Conectar con otros
+- **double > choose > practices > seen:** Ser visto y visible
+- **double > choose > practices > work:** Trabajar o estudiar
+- **double > choose > ariaSelected:** {{label}}, seleccionado
+- **double > choose > ariaNotSelected:** {{label}}, no seleccionado
+- **double > choose > weeklyCheckIn:** Revisión semanal
+- **double > choose > weeklyCheckInSubtitle:** Elige cómo quieres llegar a tu revisión semanal. Puedes cambiarlo cuando quieras.
+- **double > choose > addToCalendar:** Agregar al calendario
+- **double > choose > addToCalendarDesc:** Alertas semanales de inicio y cierre usando tu calendario.
+- **double > choose > recommended:** Recomendado
+- **double > choose > deviceAutomation:** Automatización del dispositivo
+- **double > choose > deviceAutomationDesc:** Usa Atajos de iPhone o rutinas de Android para abrir tu resumen semanal.
+- **double > choose > viewSetupSteps:** Ver pasos de configuración
+- **double > choose > advanced:** Avanzado
+- **double > choose > changeDoubleTitle:** ¿Cambiar tu doble?
+- **double > choose > changeDoubleDescription:** ¿Cambiar de {{from}} a {{to}}?
+- **double > choose > yourCurrentCharacter:** tu personaje actual
+- **double > choose > confirm:** Confirmar
+- **double > choose > toast > error:** Error
+- **double > choose > toast > saveFailed:** No se pudieron guardar las elecciones. Inténtalo de nuevo.
+- **double > choose > toast > downloaded:** Descargado
+- **double > choose > toast > calendarDownloaded:** Archivo de calendario descargado. Impórtalo en tu app de calendario.
+- **double > choose > toast > calendarFailed:** No se pudo generar el archivo de calendario. Inténtalo de nuevo.
+- **double > choose > themes > transitions:** Transiciones
+- **double > choose > themes > career:** Carrera
+- **double > choose > themes > finance:** Finanzas
+- **double > choose > themes > identity:** Identidad
+- **double > choose > themes > love:** Amor
+- **double > choose > themes > selfConcept:** Autoconcepto
+- **double > choose > themes > selfImage:** Autoimagen
+- **double > choose > themes > fitness:** Fitness
+- **double > embody > title:** Encarnar
+- **double > embody > subtitle:** Sigue el progreso diario al encarnar tu nueva historia.
+- **double > embody > pageTitle:** Encarnar | Palette Plotting
+- **double > embody > metaDescription:** Sigue el progreso diario al encarnar tu nueva historia y obtener tus deseos.
+- **double > embody > dailyPracticeTracking:** Acciones y victorias semanales
+- **double > embody > changeCharacter:** Cambiar personaje
+- **double > embody > dailyPower:** Poder diario: {{percent}}%
+- **double > embody > confirmAction:** Confirmar acción
+- **double > embody > yes:** Sí
+- **double > embody > no:** No
+- **double > embody > toast > permissionDenied:** Permiso denegado
+- **double > embody > toast > permissionDeniedDesc:** Asegúrate de haber iniciado sesión e inténtalo de nuevo.
+- **double > embody > toast > error:** Error
+- **double > embody > toast > loadProgressFailed:** No se pudo cargar el progreso diario. Inténtalo de nuevo.
+- **double > embody > toast > authRequired:** Autenticación requerida
+- **double > embody > toast > mustBeLoggedInProgress:** Debes iniciar sesión para guardar el progreso.
+- **double > embody > toast > saveProgressFailed:** No se pudo guardar el progreso. Inténtalo de nuevo.
+- **double > embody > toast > mustBeLoggedInActions:** Debes iniciar sesión para guardar acciones.
+- **double > embody > toast > saveActionFailed:** No se pudo guardar la acción. Inténtalo de nuevo.
+- **double > embody > toast > loadHistoryFailed:** No se pudo cargar el historial de acciones. Inténtalo de nuevo.
+- **journey > pageTitle:** Tu camino | Palette Plotting
+- **journey > title:** Tu camino
+- **journey > subtitle:** Reflexiona sobre tu progreso diario.
+- **journey > dailySnapshot:** Resumen diario
+- **journey > statusAligned:** Alineado
+- **journey > coherenceHint:** Afirma a diario y encarna la nueva historia para coherencia y alineación.
+- **journey > yourProgress:** Tu progreso
+- **journey > journalTitle:** Diario de manifestación
+- **journey > journalDescription:** Reflexiones e intenciones diarias.
+- **journey > changeCharacter:** Cambiar personaje
+- **freeplay > pageTitle:** Piano Tapping | Palette Plotting
+- **freeplay > title:** Piano Tapping
+- **freeplay > subtitleMobile:** Sumérgete en tu afirmación con música y color
+- **freeplay > subtitleDesktop:** Sumérgete en tus afirmaciones con música y color
+- **freeplay > affirmationSetOptional:** Set de afirmaciones (opcional)
+- **freeplay > none:** Ninguno
+- **freeplay > colorFeedback:** Color
+- **freeplay > start:** Empezar
+- **freeplay > iphoneAudioHint:** Si no escuchas el piano en iPhone, sal de la app, desactiva el modo silencio y sube el volumen.
+- **affirmationViewer > loading:** Cargando set...
+- **affirmationViewer > notFound:** Set no encontrado
+- **affirmationViewer > goToAffirmations:** Ir a Afirmaciones
+- **affirmationViewer > progress:** {{current}} de {{total}}
+- **affirmationViewer > pause:** Pausar
+- **affirmationViewer > autoPlay:** Reproducción automática
+- **affirmationViewer > speed:** Velocidad:
+- **affirmationVisualizer > title:** Afirmar y escribir
+- **affirmationVisualizer > loading:** Cargando…
+- **affirmationVisualizer > setNotFound:** Set no encontrado
+- **affirmationVisualizer > loadingSet:** Cargando set…
+- **affirmationVisualizer > notFound:** Set no encontrado.
+- **affirmationVisualizer > backToAffirmScript:** Volver a Afirmar y escribir
+- **affirmationVisualizer > subtitle:** Afirma y escribe tus deseos.
+- **affirmationVisualizer > start:** Empezar
+- **affirmationVisualizer > tapStartBefore:** Toca
+- **affirmationVisualizer > tapStartAfter:** para empezar.
+- **affirmationVisualizer > noAffirmations:** Este set no tiene afirmaciones para mostrar.
+- **affirmationVisualizer > settings:** Ajustes
+- **affirmationVisualizer > settingsSubtitle:** Velocidad, fondos, bucles
+- **affirmationVisualizer > collapseSettings:** Contraer ajustes
+- **affirmationVisualizer > expandSettings:** Expandir ajustes
+- **affirmationVisualizer > autoplayImages:** Reproducir imágenes automáticamente
+- **affirmationVisualizer > loopText:** Repetir texto
+- **affirmationVisualizer > loopTextHint:** Reinicia el guion al terminar.
+- **affirmationVisualizer > loopCounter:** Contador de bucles
+- **affirmationVisualizer > loopCounterHint:** Muestra repeticiones desde Empezar.
+- **affirmationVisualizer > imageRhythm:** Ritmo de imágenes
+- **affirmationVisualizer > imageRhythmHint:** Tiempo entre imágenes.
+- **affirmationVisualizer > scriptingSpeed:** Velocidad de escritura
+- **affirmationVisualizer > scriptingSpeedHint:** Menor = más rápido
+- **affirmationVisualizer > msPerChar:** {{ms}} ms/car
+- **affirmationVisualizer > seconds:** {{seconds}}s
+- **affirmationVisualizer > loopedAriaOne:** Se repitió 1 vez en esta sesión
+- **affirmationVisualizer > loopedAriaMany:** Se repitió {{count}} veces en esta sesión
+- **affirmationVisualizer > loopsTitle:** Bucles en esta sesión: {{count}}
+- **affirmations > pageTitle:** Afirmar y escribir | Palette Plotting
+- **affirmations > title:** Afirmar y escribir
+- **affirmations > subtitle:** Crea afirmaciones o usa sets listos.
+- **affirmations > yourCustomSets:** Tus sets personalizados
+- **affirmations > storingSets:** Guardando {{current}}/{{limit}} sets de afirmaciones
+- **affirmations > newSet:** Nuevo set
+- **affirmations > createNewSet:** Crear set
+- **affirmations > setNamePlaceholder:** Nombre del set (Riqueza, Amor...)
+- **affirmations > selectCategory:** Seleccionar categoría
+- **affirmations > generateAffirmations:** Generar afirmaciones
+- **affirmations > loading:** Cargando...
+- **affirmations > weeklyCount:** ({{current}}/{{limit}} esta semana)
+- **affirmations > generateAffirmationsAria:** Generar afirmaciones
+- **affirmations > generateHint:** ✨ Genera 5 afirmaciones según el nombre de tu set
+- **affirmations > weeklyLimitReached:** Alcanzaste tu límite semanal de {{limit}} sets generados.
+- **affirmations > generating:** Generando...
+- **affirmations > generateSet:** Generar set
+- **affirmations > createSet:** Crear set
+- **affirmations > noCustomSets:** Aún no hay sets personalizados
+- **affirmations > affirmationCount_one:** {{count}} afirmación
+- **affirmations > affirmationCount_other:** {{count}} afirmaciones
+- **affirmations > editSet:** Editar set
+- **affirmations > closeImages:** Cerrar imágenes
+- **affirmations > addImages:** Agregar imágenes
+- **affirmations > playAffirmations:** Reproducir afirmaciones
+- **affirmations > deleteSet:** Eliminar set
+- **affirmations > addAffirmationsFirst:** Agrega afirmaciones para elegir imágenes (máx. {{max}}).
+- **affirmations > selectUpToImages_one:** Selecciona hasta {{count}} imagen (una por afirmación)
+- **affirmations > selectUpToImages_other:** Selecciona hasta {{count}} imágenes (una por afirmación)
+- **affirmations > selectCategoryPlaceholder:** Seleccionar categoría
+- **affirmations > loadingLibrary:** Cargando biblioteca...
+- **affirmations > loadingImages:** Cargando imágenes...
+- **affirmations > showingImages_one:** Mostrando {{visible}} de {{total}} imagen
+- **affirmations > showingImages_other:** Mostrando {{visible}} de {{total}} imágenes
+- **affirmations > inCategory:**  en {{category}}
+- **affirmations > selectedCount:**  • {{selected}}/{{max}} seleccionadas
+- **affirmations > addImagesButton_one:** Agregar {{count}} imagen
+- **affirmations > addImagesButton_other:** Agregar {{count}} imágenes
+- **affirmations > imageAlt:** Imagen
+- **affirmations > selected:** Seleccionada
+- **affirmations > loadMore:** Cargar más ({{remaining}} restantes)
+- **affirmations > noImagesFound:** No se encontraron imágenes con tus filtros.
+- **affirmations > imageCount_one:** {{count}} imagen
+- **affirmations > imageCount_other:** {{count}} imágenes
+- **affirmations > visionBoardImageAlt:** Imagen de tablero de visión
+- **affirmations > affirmationInputPlaceholder:** Escribe la afirmación y presiona Enter...
+- **affirmations > affirmationLimitHint:** {{current}}/10 afirmaciones • Enter para agregar • {{max}} caracteres
+- **affirmations > deleteAffirmation:** Eliminar afirmación
+- **affirmations > premadeSets:** Sets prediseñados
+- **affirmations > premadeSetsSubtitle:** Afirmaciones listas para metas comunes
+- **affirmations > viewAffirmations:** Ver afirmaciones
+- **affirmations > deleteDialogTitle:** ¿Eliminar set de afirmaciones?
+- **affirmations > deleteDialogDescription:** ¿Seguro que quieres eliminar "{{name}}"? Esta acción no se puede deshacer.
+- **affirmations > thisSet:** este set
+- **affirmations > cancel:** Cancelar
+- **affirmations > delete:** Eliminar
+- **affirmations > viewTerms:** Ver Términos de servicio
+- **affirmations > toasts > loadFailed:** No se pudieron cargar los sets de afirmaciones. Inténtalo de nuevo.
+- **affirmations > toasts > noSession:** No se encontró una sesión válida. Inicia sesión e inténtalo de nuevo.
+- **affirmations > toasts > permissionDenied:** Permiso denegado. Asegúrate de haber iniciado sesión e inténtalo de nuevo.
+- **affirmations > toasts > migrationNeeded:** Se necesita una migración de base de datos. Contacta a soporte.
+- **affirmations > toasts > updateFailed:** No se pudo actualizar el set: {{message}}
+- **affirmations > toasts > createFailed:** No se pudo crear el set: {{message}}
+- **affirmations > toasts > saveFailed:** No se pudieron guardar los sets de afirmaciones. Inténtalo de nuevo.
+- **affirmations > toasts > imageLibraryFailed:** No se pudo cargar la biblioteca de imágenes. Inténtalo de nuevo.
+- **affirmations > toasts > maxImages_one:** Máximo {{max}} imagen (una por afirmación)
+- **affirmations > toasts > maxImages_other:** Máximo {{max}} imágenes (una por afirmación)
+- **affirmations > toasts > imagesAdded_one:** ¡{{count}} imagen agregada!
+- **affirmations > toasts > imagesAdded_other:** ¡{{count}} imágenes agregadas!
+- **affirmations > toasts > imageRemoved:** Imagen eliminada
+- **affirmations > toasts > enterSetName:** Ingresa un nombre para el set
+- **affirmations > toasts > selectCategory:** Selecciona una categoría
+- **affirmations > toasts > setLimitReached:** Alcanzaste el límite de {{limit}} sets personalizados de tu plan. Elimina un set o mejora tu plan para crear más.
+- **affirmations > toasts > weeklyLimitUpgrade:** Alcanzaste tu límite semanal de {{limit}} sets generados. Inténtalo la próxima semana o mejora tu plan.
+- **affirmations > toasts > weeklyLimit:** Alcanzaste tu límite semanal de {{limit}} sets generados. Inténtalo la próxima semana.
+- **affirmations > toasts > blockedDefault:** Esta herramienta no está disponible temporalmente por violaciones repetidas de las normas. El acceso se restablecerá en 24 horas.
+- **affirmations > toasts > connectFailed:** No se pudo conectar al servicio de generación de afirmaciones.
+- **affirmations > toasts > rateLimit:** Límite de solicitudes excedido. Inténtalo de nuevo en un momento.
+- **affirmations > toasts > creditsDepleted:** Créditos agotados.
+- **affirmations > toasts > genericError:** Error. Inténtalo de nuevo.
+- **affirmations > toasts > noAffirmationsReceived:** No se recibieron afirmaciones. Inténtalo de nuevo.
+- **affirmations > toasts > generatedCount:** ¡{{count}} afirmaciones generadas!
+- **affirmations > toasts > generateFailed:** No se pudieron generar afirmaciones: {{message}}
+- **affirmations > toasts > setCreated:** Set creado correctamente
+- **affirmations > toasts > enterAffirmation:** Ingresa una afirmación
+- **affirmations > toasts > maxAffirmations:** Máximo 10 afirmaciones por set
+- **affirmations > toasts > affirmationAdded:** Afirmación agregada
+- **affirmations > toasts > affirmationRemoved:** Afirmación eliminada
+- **affirmations > toasts > cannotDeletePremade:** No se pueden eliminar sets prediseñados
+- **affirmations > toasts > setDeleted:** Set eliminado
+- **affirmations > toasts > noAffirmationsInSet:** Este set aún no tiene afirmaciones
+- **affirmations > toasts > unknownError:** Error desconocido
+- **refactor > pageTitle:** Trabajo de creencias | Palette Plotting
+- **refactor > title:** Trabajo de creencias
+- **refactor > subtitle:** Explora creencias que quieres liberar o integrar.
+- **refactor > hideWeeklyLimit:** Ocultar límite semanal de generaciones
+- **refactor > showWeeklyLimit:** Mostrar límite semanal de generaciones
+- **refactor > weeklyGenerations:** Generaciones semanales:
+- **refactor > yourBeliefs:** Tus creencias ({{count}})
+- **refactor > createNew:** Crear nuevo
+- **refactor > noSavedBeliefs:** Aún no hay creencias guardadas
+- **refactor > eliminate:** Eliminar
+- **refactor > integrate:** Integrar
+- **refactor > beliefLabel:** Creencia:
+- **refactor > typeLabel:** Tipo:
+- **refactor > dateCreatedLabel:** Fecha de creación:
+- **refactor > view:** Ver
+- **refactor > enterYourBelief:** Ingresa tu creencia
+- **refactor > cancel:** Cancelar
+- **refactor > titlePlaceholder:** p. ej., Ansiedad por examen de física
+- **refactor > beliefPlaceholderEliminate:** p. ej., 'Si no saco A en mi examen de física, mi vida está arruinada'
+- **refactor > beliefPlaceholderIntegrate:** p. ej., 'Soy capaz de lograr mis metas'
+- **refactor > charactersCount:** {{count}}/250 caracteres
+- **refactor > eliminateTooltip:** Eliminar una creencia limitante
+- **refactor > integrateTooltip:** Integrar una creencia expansiva
+- **refactor > analyzing:** Analizando...
+- **refactor > analyzeBelief:** Analizar creencia
+- **refactor > disclaimer:** Trabajo de creencias puede cometer errores y no es una herramienta terapéutica. Está pensado para analizar creencias con estructura y lógica. No es una herramienta de apoyo emocional ni psicológico.
+- **refactor > eliminateBelief:** Eliminar creencia
+- **refactor > integrateBelief:** Integrar creencia
+- **refactor > png:** PNG
+- **refactor > save:** Guardar
+- **refactor > beliefNode:** Creencia
+- **refactor > modeEliminate:** Eliminar creencia limitante
+- **refactor > modeIntegrate:** Integrar creencia expansiva
+- **refactor > assumption:** Supuesto {{number}}
+- **refactor > visualizationPlaceholder:** La visualización aparecerá aquí después del análisis
+- **refactor > viewTerms:** Ver Términos de servicio
+- **refactor > toasts > enterBelief:** Ingresa una creencia
+- **refactor > toasts > selectMode:** Selecciona un modo (Eliminar o Integrar)
+- **refactor > toasts > eliminationSubscribers:** Eliminar creencias es solo para suscriptores. Suscríbete para acceder.
+- **refactor > toasts > integrationSubscribers:** Integrar creencias es solo para suscriptores. Suscríbete para acceder.
+- **refactor > toasts > weeklyCheckFailed:** No se pudo verificar el límite semanal. Inténtalo de nuevo.
+- **refactor > toasts > weeklyLimitReached:** Límite semanal de generaciones alcanzado ({{current}}/{{limit}}). Tu límite se reinicia el lunes.
+- **refactor > toasts > moderationUnavailable:** Verificación de seguridad de contenido no disponible. Inténtalo de nuevo.
+- **refactor > toasts > moderationUnavailableDetail:** Verificación de seguridad de contenido no disponible. Inténtalo de nuevo o contacta a soporte si el problema continúa.
+- **refactor > toasts > statementNotSupported:** Esta herramienta no está diseñada para procesar este tipo de declaración.
+- **refactor > toasts > moderationFailed:** Falló la verificación de seguridad de contenido. Inténtalo de nuevo.
+- **refactor > toasts > moderationFailedDetail:** Falló la verificación de seguridad de contenido. Inténtalo de nuevo o contacta a soporte si el problema continúa.
+- **refactor > toasts > blockedDefault:** Esta herramienta no está disponible temporalmente por violaciones repetidas de las normas. El acceso se restablecerá en 24 horas.
+- **refactor > toasts > genericError:** Error.
+- **refactor > toasts > connectionError:** Error de conexión. Revisa tu internet e inténtalo de nuevo.
+- **refactor > toasts > tryAgain:** Error. Inténtalo de nuevo.
+- **refactor > toasts > logFailed:** No se pudo registrar la generación. El conteo semanal puede ser inexacto.
+- **refactor > toasts > analyzedSuccess:** ¡Creencia analizada correctamente!
+- **refactor > toasts > analyzeFailed:** No se pudo analizar la creencia. Inténtalo de nuevo.
+- **refactor > toasts > preparingDownload:** Preparando descarga...
+- **refactor > toasts > exportedPng:** ¡Exportado como PNG!
+- **refactor > toasts > exportPngFailed:** No se pudo exportar el PNG
+- **refactor > toasts > permissionDenied:** Permiso denegado. Asegúrate de haber iniciado sesión e inténtalo de nuevo.
+- **refactor > toasts > loadFailed:** No se pudieron cargar las creencias guardadas. Inténtalo de nuevo.
+- **refactor > toasts > loginToSave:** Debes iniciar sesión para guardar creencias.
+- **refactor > toasts > invalidAnalysis:** Datos de análisis inválidos. Intenta analizar de nuevo.
+- **refactor > toasts > missingField:** Falta un campo obligatorio. Inténtalo de nuevo.
+- **refactor > toasts > entryExists:** La entrada ya existe. Inténtalo de nuevo.
+- **refactor > toasts > tableNotFound:** Tabla de base de datos no encontrada. Contacta a soporte.
+- **refactor > toasts > schemaError:** Error de esquema de base de datos. Contacta a soporte.
+- **refactor > toasts > saveFailed:** No se pudo guardar: {{message}}
+- **refactor > toasts > saved:** ¡Guardado!
+- **refactor > toasts > saveGenericFailed:** No se pudo guardar
+- **refactor > toasts > loginToDelete:** Debes iniciar sesión para eliminar creencias.
+- **refactor > toasts > deleteFailed:** No se pudo eliminar. Inténtalo de nuevo.
+- **refactor > toasts > deleted:** Eliminado
+- **musicComposer > pageTitle:** Fondos subliminales | Palette Plotting
+- **musicComposer > title:** Fondos subliminales
+- **musicComposer > subtitle:** Crea fondos subliminales personalizados.
+- **musicComposer > yourTracks:** Tus pistas
+- **musicComposer > tracksStored:** {{current}}/5 pistas guardadas
+- **musicComposer > newSession:** Nueva sesión
+- **musicComposer > noTracksYet:** Aún no hay pistas
+- **musicComposer > createFirstBackground:** Crea tu primer fondo subliminal
+- **musicComposer > iphonePianoHint:** Si no escuchas el piano en iPhone, sal de la app, desactiva el modo silencio y sube el volumen.
+- **musicComposer > piano:** Piano
+- **musicComposer > notes:** Notas
+- **musicComposer > record:** Grabar
+- **musicComposer > autoCorrect:** Autocorrección
+- **musicComposer > quantizeFast:** Rápido (1/8)
+- **musicComposer > quantizeMedium:** Medio (1/4)
+- **musicComposer > quantizeSlow:** Lento (1/2)
+- **musicComposer > quantizeVerySlow:** Muy lento
+- **musicComposer > maxOneMin:** Máx. 1 min
+- **musicComposer > notesCount:** {{count}} notas
+- **musicComposer > notesRecorded:** {{count}} notas grabadas
+- **musicComposer > enterMusicNotes:** Ingresar notas musicales
+- **musicComposer > notesFormatHint:** Escribe notas en formato: C4, D#5, E3, etc. (una por línea o separadas por comas)
+- **musicComposer > notesPlaceholder:** C4, D4, E4, F4, G4, A4, B4, C5
+- **musicComposer > parseNotes:** Analizar notas
+- **musicComposer > notesParsed:** {{count}} notas analizadas
+- **musicComposer > stop:** Detener
+- **musicComposer > play:** Reproducir
+- **musicComposer > clear:** Borrar
+- **musicComposer > songNamePlaceholder:** Nombre de la canción...
+- **musicComposer > save:** Guardar
+- **musicComposer > confirmOriginal:** Confirmo que esta es música original
+- **musicComposer > originalMusicOnly:** Solo música original
+- **musicComposer > copyrightDisclaimer:** Crea solo música original. Eres responsable de asegurarte de que tus composiciones no infrinjan derechos de autor existentes.
+- **musicComposer > recordMode:** Modo grabación
+- **musicComposer > speed:** Velocidad:
+- **musicComposer > affirmationSetOptional:** Set de afirmaciones (opcional)
+- **musicComposer > none:** Ninguno
+- **musicComposer > dialogTitle:** Nueva sesión
+- **musicComposer > dialogDescription:** Elige el tipo de sesión y la configuración
+- **musicComposer > sessionType:** Tipo de sesión
+- **musicComposer > pianoTapping:** Piano Tapping
+- **musicComposer > recordingSession:** Sesión de grabación
+- **musicComposer > trackName:** Nombre de la pista
+- **musicComposer > trackNamePlaceholder:** Ingresa el nombre de la pista...
+- **musicComposer > cancel:** Cancelar
+- **musicComposer > startSession:** Iniciar sesión
+- **musicComposer > deleteConfirm:** ¿Seguro que quieres eliminar "{{name}}"?
+- **musicComposer > durationMin:** {{minutes}} min
+- **musicComposer > toasts > loadTracksFailed:** No se pudieron cargar las pistas
+- **musicComposer > toasts > subscribersOnly:** Los fondos subliminales son exclusivos para suscriptores. Suscríbete para acceder.
+- **musicComposer > toasts > trackDeleted:** Pista eliminada
+- **musicComposer > toasts > deleteTrackFailed:** No se pudo eliminar la pista
+- **musicComposer > toasts > songTrimmed:** Canción recortada al límite de 1 minuto ({{count}} notas)
+- **musicComposer > toasts > parsedNotes:** {{count}} notas analizadas
+- **musicComposer > toasts > parseFailed:** No se pudieron analizar las notas: {{message}}
+- **musicComposer > toasts > noNotesToPlay:** No hay notas para reproducir
+- **musicComposer > toasts > enterSongName:** Ingresa un nombre para la canción
+- **musicComposer > toasts > noNotesToSave:** No hay notas para guardar
+- **musicComposer > toasts > confirmOriginal:** Confirma que tu música es original
+- **musicComposer > toasts > loginToSave:** Inicia sesión para guardar pistas
+- **musicComposer > toasts > trackLimitReached:** Alcanzaste el límite de 5 pistas de fondo. Elimina una para guardar una nueva.
+- **musicComposer > toasts > trackTrimmed:** Pista recortada al límite de 1 minuto ({{count}} notas)
+- **musicComposer > toasts > noValidNotes:** No hay notas válidas para guardar. Graba algunas notas primero.
+- **musicComposer > toasts > duplicateName:** Ya existe una pista con este nombre. Elige otro nombre.
+- **musicComposer > toasts > generatingAudio:** Generando audio...
+- **musicComposer > toasts > generateAudioFailed:** No se pudo generar el audio: {{message}}
+- **musicComposer > toasts > bucketNotFound:** Bucket de almacenamiento 'background-tracks' no encontrado. Créalo en Supabase Dashboard > Storage > Buckets.
+- **musicComposer > toasts > uploadFailed:** No se pudo subir el archivo de audio: {{message}}
+- **musicComposer > toasts > saveDbFailed:** No se pudo guardar la pista en la base de datos
+- **musicComposer > toasts > trackSaved:** ¡Pista guardada! Ya está disponible como sonido de fondo.
+- **musicComposer > toasts > saveFailed:** No se pudo guardar la pista: {{message}}
+- **musicComposer > toasts > enterTrackName:** Ingresa un nombre de pista para sesiones de grabación
+- **musicComposer > toasts > unknownError:** Error desconocido
+- **subliminal > pageTitle:** Creador de subliminales | Palette Plotting
+- **subliminal > title:** Creador de subliminales
+- **subliminal > subtitle:** Crea pistas con fondo y beats binaurales
+- **subliminal > hideLimits:** Ocultar límites de almacenamiento y semanales
+- **subliminal > showLimits:** Mostrar límites de almacenamiento y semanales
+- **subliminal > storage:** Almacenamiento:
+- **subliminal > weeklyCreations:** Creaciones semanales:
+- **subliminal > loading:** Cargando...
+- **subliminal > deleteTrack:** Eliminar pista
+- **subliminal > deleteDescription:** ¿Seguro que quieres eliminar "{{name}}"? Esta acción no se puede deshacer y liberará espacio de almacenamiento.
+- **subliminal > cancel:** Cancelar
+- **subliminal > delete:** Eliminar
+- **subliminal > yourTracks:** Tus pistas
+- **subliminal > create:** Crear
+- **subliminal > subliminalTrack:** Pista subliminal
+- **subliminal > subliminalBackgrounds:** Fondos subliminales
+- **subliminal > pianoTapping:** Piano Tapping
+- **subliminal > noTracksYet:** Aún no hay pistas
+- **subliminal > trackOptions:** Opciones de pista
+- **subliminal > pause:** Pausar
+- **subliminal > play:** Reproducir
+- **subliminal > turnOffLoop:** Desactivar repetición
+- **subliminal > loopPlayback:** Repetir reproducción
+- **subliminal > dismissPlayer:** Cerrar reproductor
+- **subliminal > loop:** Repetir
+- **subliminal > vocalBase:** Base vocal
+- **subliminal > nameYourTrack:** Nombra tu pista
+- **subliminal > trackNamePlaceholder:** p. ej., Motivación matutina
+- **subliminal > freestyle:** Freestyle
+- **subliminal > karaoke:** Karaoke
+- **subliminal > textToSpeech:** Texto a voz
+- **subliminal > selectAffirmationSet:** Seleccionar set de afirmaciones
+- **subliminal > chooseAffirmationSet:** Elige un set de afirmaciones
+- **subliminal > readAndRecord:** Lee y graba:
+- **subliminal > generateVoiceHint:** Genera una voz leyendo tus afirmaciones.
+- **subliminal > willGenerate:** Se generarán: {{count}} afirmaciones
+- **subliminal > generating:** Generando...
+- **subliminal > generateAudio:** Generar audio
+- **subliminal > next:** Siguiente
+- **subliminal > step1Disclaimer:** Usa solo audio que tengas permitido usar. Las grabaciones pueden repetirse—no necesitas llenar toda la pista. Karaoke: lee las afirmaciones en pantalla mientras grabas.
+- **subliminal > binauralBeats:** Beats binaurales
+- **subliminal > frequencyType:** Tipo de frecuencia
+- **subliminal > thetaRecommended:** Recomendado para enfoque profundo y relajación
+- **subliminal > frequenciesNote:** Nota: Las frecuencias son aproximaciones.
+- **subliminal > back:** Atrás
+- **subliminal > subliminalSettings:** Ajustes subliminales
+- **subliminal > affirmationVolume:** Volumen de afirmaciones
+- **subliminal > voiceNotAudible:** La voz está presente pero poco audible por debajo del 20%
+- **subliminal > binauralVolume:** Volumen binaural
+- **subliminal > backgroundVolume:** Volumen de fondo: {{percent}}%
+- **subliminal > backgroundSound:** Sonido de fondo
+- **subliminal > selectBackgroundSound:** Seleccionar sonido de fondo...
+- **subliminal > createOwnBackground:** (¿Quieres crear el tuyo?
+- **subliminal > openSubliminalBackgrounds:** Abrir Fondos subliminales
+- **subliminal > loseProgress:** . Perderás tu progreso actual.)
+- **subliminal > openBackgroundsConfirm:** ¿Abrir Fondos subliminales? Perderás tu progreso actual.
+- **subliminal > affirmationLayers:** Capas de afirmaciones: {{count}}
+- **subliminal > layersRecommended:** 3–5 recomendadas
+- **subliminal > trackLength:** Duración de la pista: {{minutes}} minutos
+- **subliminal > createTrack:** Crear pista
+- **subliminal > customSound:** {{name}} (sonido personalizado)
+- **subliminal > binauralShort > none:** Sin beat
+- **subliminal > binauralShort > delta:** Delta
+- **subliminal > binauralShort > theta:** Theta
+- **subliminal > binauralShort > alpha:** Alpha
+- **subliminal > binauralShort > beta:** Beta
+- **subliminal > binauralShort > gamma:** Gamma
+- **subliminal > binauralBeatsOptions > none > label:** Sin beat binaural
+- **subliminal > binauralBeatsOptions > none > desc:** Solo afirmaciones y fondo; sin tonos binaurales en la mezcla.
+- **subliminal > binauralBeatsOptions > delta > label:** Delta (beat 0,5-4 Hz, portadora ~200 Hz)
+- **subliminal > binauralBeatsOptions > delta > desc:** Sueño profundo, sanación, regeneración
+- **subliminal > binauralBeatsOptions > theta > label:** Theta (beat 4-8 Hz, portadora ~200 Hz)
+- **subliminal > binauralBeatsOptions > theta > desc:** Meditación, enfoque profundo, relajación profunda
+- **subliminal > binauralBeatsOptions > alpha > label:** Alpha (beat 8-13 Hz, portadora ~250 Hz)
+- **subliminal > binauralBeatsOptions > alpha > desc:** Relajación, aprendizaje, meditación ligera
+- **subliminal > binauralBeatsOptions > beta > label:** Beta (beat 13-30 Hz, portadora ~300 Hz)
+- **subliminal > binauralBeatsOptions > beta > desc:** Enfoque, concentración, alerta
+- **subliminal > binauralBeatsOptions > gamma > label:** Gamma (beat 30-100 Hz, portadora ~400 Hz)
+- **subliminal > binauralBeatsOptions > gamma > desc:** Máxima conciencia, mejora cognitiva
+- **subliminal > backgroundSounds > none:** Sin sonido de fondo
+- **subliminal > backgroundSounds > cityCorner:** Esquina urbana
+- **subliminal > backgroundSounds > fireplace:** Chimenea
+- **subliminal > backgroundSounds > goldCoins:** Monedas de oro
+- **subliminal > backgroundSounds > naturePark:** Parque natural
+- **subliminal > backgroundSounds > ocean:** Océano
+- **subliminal > backgroundSounds > rain:** Lluvia
+- **subliminal > toasts > permissionDenied:** Permiso denegado. Asegúrate de haber iniciado sesión e inténtalo de nuevo.
+- **subliminal > toasts > genericError:** Error. Inténtalo de nuevo.
+- **subliminal > toasts > loadFailed:** No se pudieron cargar las pistas: {{message}}
+- **subliminal > toasts > enterTrackName:** Ingresa un nombre para la pista
+- **subliminal > toasts > recordAffirmationsFirst:** Graba las afirmaciones primero
+- **subliminal > toasts > selectBackgroundSound:** Selecciona un sonido de fondo
+- **subliminal > toasts > ttsUpgrade:** Texto a voz requiere una mejora de plan. Mejora tu plan para acceder.
+- **subliminal > toasts > ttsCharLimit:** Texto a voz tiene un límite de 480 caracteres. Tu texto tiene {{length}} caracteres. Acorta tus afirmaciones.
+- **subliminal > toasts > loginToGenerate:** Inicia sesión para generar audio
+- **subliminal > toasts > voiceGenerated:** ¡Voz generada correctamente!
+- **subliminal > toasts > processAudioFailed:** No se pudieron procesar los datos de audio. Inténtalo de nuevo.
+- **subliminal > toasts > noAudioContent:** No se recibió contenido de audio del servidor
+- **subliminal > toasts > generateAudioFailed:** No se pudo generar el audio. Inténtalo de nuevo.
+- **subliminal > toasts > recordingNoData:** Falló la grabación. No se capturaron datos de audio.
+- **subliminal > toasts > recordingEmpty:** Falló la grabación. El archivo de audio está vacío.
+- **subliminal > toasts > recordingError:** Ocurrió un error de grabación. Inténtalo de nuevo.
+- **subliminal > toasts > recordingStarted:** Grabación iniciada
+- **subliminal > toasts > micAccessPrefix:** No se pudo acceder al micrófono. 
+- **subliminal > toasts > micAndroidSettings:** Abre Ajustes de Android → Apps → Palette Plotting → Permisos → Micrófono y permite el acceso.
+- **subliminal > toasts > micBrowserSettings:** Permite el acceso al micrófono en la configuración de tu navegador.
+- **subliminal > toasts > noMicrophone:** No se encontró micrófono en este dispositivo.
+- **subliminal > toasts > micInUse:** El micrófono está siendo usado por otra aplicación.
+- **subliminal > toasts > micCheckSettings:** Revisa la configuración de tu micrófono.
+- **subliminal > toasts > recordingStopped:** Grabación detenida
+- **subliminal > toasts > recordingSaved:** ¡Grabación guardada!
+- **subliminal > toasts > noAudioToPlay:** No hay audio para reproducir. Graba audio primero.
+- **subliminal > toasts > audioEmpty:** El archivo de audio está vacío. Graba de nuevo.
+- **subliminal > toasts > audioError:** Error de audio: {{code}} - {{message}}
+- **subliminal > toasts > audioUnsupported:** No se pudo reproducir el audio. El formato puede no ser compatible.
+- **subliminal > toasts > playingAudio:** Reproduciendo audio
+- **subliminal > toasts > playFailedPrefix:** No se pudo reproducir el audio. 
+- **subliminal > toasts > tapPlayAgain:** Toca el botón de reproducir de nuevo. Los navegadores móviles requieren interacción directa.
+- **subliminal > toasts > loadTimeout:** El audio tardó demasiado en cargar. Inténtalo de nuevo.
+- **subliminal > toasts > audioLoadFailed:** No se pudo cargar el audio. El archivo puede estar dañado. Graba de nuevo.
+- **subliminal > toasts > tapAgain:** Intenta tocar el botón de reproducir de nuevo.
+- **subliminal > toasts > playingTrack:** Reproduciendo: {{name}}
+- **subliminal > toasts > playTrackFailedPrefix:** No se pudo reproducir la pista. 
+- **subliminal > toasts > interactFirst:** Interactúa con la página primero.
+- **subliminal > toasts > playTrackFailed:** No se pudo reproducir la pista. Inténtalo de nuevo.
+- **subliminal > toasts > loginToDelete:** Debes iniciar sesión para eliminar pistas.
+- **subliminal > toasts > trackDeleted:** Pista eliminada
+- **subliminal > toasts > deleteTrackFailed:** No se pudo eliminar la pista
+- **subliminal > toasts > loginToGenerateTrack:** Debes iniciar sesión para generar pistas.
+- **subliminal > toasts > sessionExpired:** Sesión expirada. Actualiza la página e inicia sesión de nuevo.
+- **subliminal > toasts > weeklyCheckFailed:** No se pudo verificar el límite semanal. Inténtalo de nuevo.
+- **subliminal > toasts > weeklyLimitReached:** Límite semanal de generaciones alcanzado ({{current}}/{{limit}}). Tu límite se reinicia el lunes.
+- **subliminal > toasts > fileTooLargeRemaining:** El archivo es muy grande ({{size}} MB). Te quedan {{remaining}} MB. Prueba con una pista más corta.
+- **subliminal > toasts > fileTooLargeMax:** El archivo es muy grande ({{size}} MB). El tamaño máximo es {{max}} MB para tu plan. Prueba con una pista más corta.
+- **subliminal > toasts > fileLargeWarning:** El archivo es grande ({{size}} MB). La subida puede tardar un poco.
+- **subliminal > toasts > bucketNotFound:** Bucket de almacenamiento 'subliminal-tracks' no encontrado.
+- **subliminal > toasts > storagePermissionDenied:** Permiso de almacenamiento denegado. Contacta a soporte.
+- **subliminal > toasts > bucketSizeLimit:** El archivo es muy grande ({{size}} MB). El bucket tiene un límite máximo (típicamente 50 MB por archivo). Prueba con una pista más corta (actual: {{minutes}} minutos).
+- **subliminal > toasts > tierStorageLimit:** El archivo es muy grande ({{size}} MB). Te quedan {{remaining}} MB. Prueba con una pista más corta (actual: {{minutes}} minutos).
+- **subliminal > toasts > uploadFailed:** No se pudo subir el archivo.
+- **subliminal > toasts > loginAgain:** Sesión expirada. Inicia sesión de nuevo.
+- **subliminal > toasts > sessionMismatch:** Se detectó un desajuste de sesión. Actualiza la página e inténtalo de nuevo.
+- **subliminal > toasts > trackGenerated:** ¡Pista subliminal "{{name}}" generada y guardada!
+- **subliminal > toasts > generateTrackFailed:** No se pudo generar la pista. Inténtalo de nuevo.
+- **subliminal > toasts > selectAffirmationSetFirst:** Selecciona un set de afirmaciones primero
+- **subliminal > toasts > trackGeneratedSaved:** ¡Pista "{{name}}" generada y guardada!
+- **subliminal > toasts > loadTrackFailed:** No se pudo cargar la pista. Inténtalo de nuevo.
+- **subliminal > toasts > maxTrackLength:** La duración máxima de pista es {{max}} minutos para tu plan. Mejora tu plan para pistas más largas.
+- **subliminal > toasts > generationTimeout:** La generación de la pista expiró. Inténtalo de nuevo con una duración más corta.
+- **subliminal > toasts > sessionVerificationFailed:** Falló la verificación de sesión. Inicia sesión de nuevo.
+- **subliminal > toasts > loginToGenerateTracks:** Debes iniciar sesión para generar pistas. Actualiza la página e inténtalo de nuevo.
+- **subliminal > toasts > serverError:** Error del servidor ({{status}}).
+- **subliminal > toasts > unknownError:** Error desconocido
+- **mirror > pageTitle:** Trabajo con espejo | Palette Plotting
+- **mirror > metaDescription:** Trabajo con espejo — enciende tu cámara y practica afirmaciones con confianza.
+- **mirror > metaDescriptionWeb:** Vista de cámara tipo espejo. Enciende tu cámara y practica afirmaciones con confianza.
+- **mirror > title:** Trabajo con espejo
+- **mirror > subtitle:** Practica afirmaciones con tu reflejo
+- **mirror > bestInApp:** Mejor experiencia en la app.
+- **mirror > seeYourself:** Mírate
+- **mirror > stop:** Detener
+- **mirror > affirmationSet:** Set de afirmaciones
+- **mirror > scenes:** Escenas
+- **mirror > feedback:** Retroalimentación
+- **mirror > enable:** Activar
+- **mirror > displaySpeed:** Velocidad de visualización
+- **mirror > selectPlaceholder:** Seleccionar
+- **mirror > noSetsAvailable:** No hay sets disponibles
+- **mirror > initializingCamera:** Iniciando cámara...
+- **mirror > scenesOptions > none:** Ninguna
+- **mirror > scenesOptions > hearts:** Corazones
+- **mirror > scenesOptions > coins:** Monedas
+- **mirror > scenesOptions > naturePark:** Parque natural
+- **mirror > scenesOptions > rain:** Lluvia
+- **mirror > scenesOptions > summit:** Cumbre
+- **mirror > errors > httpsRequired:** El acceso a la cámara requiere una conexión segura (HTTPS). Usa HTTPS o localhost.
+- **mirror > errors > notSupported:** El acceso a la cámara no es compatible con este dispositivo o navegador. Usa un navegador moderno como Chrome, Safari o Firefox.
+- **mirror > errors > permissionDeniedSafari:** Permiso de cámara denegado. Actívalo en Ajustes > Safari > Cámara.
+- **mirror > errors > permissionDeniedNative:** Permiso de cámara denegado. Actívalo en Ajustes > Palette Plotting > Cámara.
+- **mirror > errors > noVideoTrack:** No hay pista de video disponible en la cámara.
+- **mirror > errors > unableAccess:** No se puede acceder a la cámara.
+- **mirror > errors > unableAccessAllow:** No se puede acceder a la cámara. Permite el acceso a la cámara.
+- **mirror > errors > permissionDeniedIosSafari:** Permiso de cámara denegado. Toca "Permitir" cuando aparezca el aviso, o ve a Ajustes > Safari > Cámara y actívalo para este sitio.
+- **mirror > errors > permissionDeniedIosNative:** Permiso de cámara denegado. Toca "Permitir" cuando aparezca el aviso, o ve a Ajustes > Palette Plotting > Cámara.
+- **mirror > errors > permissionDeniedBrowser:** Permiso de cámara denegado. Actívalo en la configuración de tu navegador.
+- **mirror > errors > noCameraFound:** No se encontró cámara en este dispositivo.
+- **mirror > errors > cameraInUse:** La cámara está en uso por otra aplicación. Cierra otras apps que usen la cámara.
+- **mirror > errors > securityBlocked:** Acceso a la cámara bloqueado por seguridad. Asegúrate de usar HTTPS o localhost.
+- **mirror > errors > apiNotAvailable:** La API de cámara no está disponible. Usa un navegador moderno que admita acceso a la cámara.
+- **mirror > errors > checkDeviceSettings:** No se puede acceder a la cámara. Revisa la configuración de tu dispositivo.
+- **mirror > errors > cameraOffAndroid:** La cámara está desactivada para Palette Plotting. Abre Ajustes → Apps → Palette Plotting → Permisos → Cámara → Permitir e inténtalo de nuevo.
+- **mirror > errors > permissionDeniedAndroid:** Permiso de cámara denegado. Abre Ajustes → Apps → Palette Plotting → Permisos → Cámara → Permitir, regresa aquí y toca Iniciar de nuevo.
+- **mirror > permissionHints > native:** Si no apareció el aviso, ve a Ajustes → Palette Plotting → Cámara y actívalo.
+- **mirror > permissionHints > safari:** Si no apareció el aviso, ve a Ajustes → Safari → Cámara y actívalo para este sitio.
+- **mirror > feedbackMessages > low (line 1):** ¡Un poco más fuerte!
+- **mirror > feedbackMessages > low (line 2):** ¡Hazlo realidad!
+- **mirror > feedbackMessages > low (line 3):** ¡Levanta la voz!
+- **mirror > feedbackMessages > low (line 4):** ¡Afírmalo!
+- **mirror > feedbackMessages > mid (line 1):** Así está mejor.
+- **mirror > feedbackMessages > mid (line 2):** ¡Sigue!
+- **mirror > feedbackMessages > mid (line 3):** ¡Tú puedes!
+- **mirror > feedbackMessages > mid (line 4):** ¡Tú lo logras!
+- **mirror > feedbackMessages > high (line 1):** Eso es.
+- **mirror > feedbackMessages > high (line 2):** ¡Perfecto!
+- **mirror > feedbackMessages > high (line 3):** ¡Gran energía!
+- **mirror > feedbackMessages > high (line 4):** Llévalo contigo.
+
+## Report issue & support inbox
+
+- **pageTitle:** Solicitud de ayuda
+- **supportInbox:** Bandeja de soporte
+- **tabs > create:** Ayúdame a crear
+- **tabs > support:** Soporte de app
+- **tabs > inbox:** Bandeja de entrada
+- **create > intro:** Comparte solo lo relevante. Palette Plotting crea prompts, afirmaciones o rutina.
+- **create > successTitle:** Enviado.
+- **create > successBody:** Responderemos por correo. ¿Urgente? Escribe a
+- **create > successBodySuffix:** .
+- **create > backToDashboard:** Volver al panel
+- **create > submitAnother:** Enviar otro
+- **create > focusLabel:** ¿Qué estás manifestando ahora?
+- **create > focusPlaceholder:** Cuéntanos qué estás manifestando y qué dificultades enfrentas.
+- **create > helpTypeLabel:** ¿Con qué necesitas ayuda?
+- **create > chooseOne:** Elige una opción
+- **create > footer:** Envía lo que sientas más relevante. Palette Plotting intentará responder en 24 a 48 horas. También puedes escribirnos a support@paletteplot.com.
+- **create > submit:** Enviar
+- **create > submitting:** Enviando…
+- **createHelpOptions > affirmationsOrScripting:** Afirmaciones o scripting
+- **createHelpOptions > strongSubliminal:** Crear un subliminal potente
+- **createHelpOptions > mirrorWorkGuidance:** Guía de espejo
+- **createHelpOptions > buildWeeklyRoutine:** Armar una rutina semanal
+- **createHelpOptions > notSureHelpMeChoose:** No sé — ayúdame
+- **submissionTypes > report:** Reportar un problema
+- **submissionTypes > aiFlag:** Marcar contenido generado por IA
+- **submissionTypes > featureRequest:** Solicitud de función
+- **submissionTypes > helpMeCreate:** Ayúdame a crear
+- **supportForm > successTitle:** Gracias — recibimos tu envío.
+- **supportForm > successBody:** Buscamos responder en 24–48 horas. Si necesitas algo con urgencia, también puedes escribir a
+- **supportForm > successBodySuffix:** .
+- **supportForm > submissionTypeLabel:** Tipo de envío
+- **supportForm > toolOrAreaLabel:** Herramienta o área
+- **supportForm > toolPlaceholder:** ¿Dónde aplica esto?
+- **supportForm > purchaseChannelLabel:** ¿Dónde compraste?
+- **supportForm > purchaseChannelPlaceholder:** Apple App Store, Google Play o Web
+- **supportForm > descriptionLabel:** Describe el problema o la solicitud
+- **supportForm > descriptionPlaceholder:** ¿Qué pasó, qué debería cambiar o qué ayudaría?
+- **supportForm > appleRefundNote:** Apple controla en última instancia los pagos y reembolsos; aun así haremos lo posible por ayudarte.
+- **supportForm > screenshotsLabel:** Capturas (opcional)
+- **supportForm > screenshotsHint:** Hasta {{max}} archivos · HEIC, JPG, PNG, WebP, etc. · máx. 5 MB c/u
+- **supportForm > chooseFiles:** Elegir archivos
+- **supportForm > filesSelected_one:** {{count}} archivo seleccionado
+- **supportForm > filesSelected_other:** {{count}} archivos seleccionados
+- **supportForm > noFilesSelected:** Ningún archivo seleccionado
+- **supportForm > removeFileAria:** Quitar {{name}}
+- **supportForm > contactFooter:** También puedes escribirnos a support@paletteplot.com.
+- **inbox > title:** Bandeja de entrada
+- **inbox > description:** Tus solicitudes enviadas y respuestas de Palette Plotting. Las nuevas solicitudes empiezan en las otras pestañas.
+- **inbox > refresh:** Actualizar
+- **inbox > backToRequests:** ← Volver a solicitudes
+- **inbox > loading:** Cargando…
+- **inbox > noMessages:** Aún no hay mensajes.
+- **inbox > senderSupport:** Palette Plotting
+- **inbox > senderYou:** Tú
+- **inbox > yourReply:** Tu respuesta
+- **inbox > replyPlaceholder:** Responder en esta conversación…
+- **inbox > sending:** Enviando…
+- **inbox > sendReply:** Enviar respuesta
+- **inbox > empty:** Aún no hay solicitudes. Envía en otras pestañas; las respuestas aparecerán aquí.
+- **inbox > newReplyAria:** Nueva respuesta
+- **inbox > supportRepliedPrefix:** Palette Plotting respondió · 
+- **inbox > submittedPrefix:** Enviado {{when}}
+- **inbox > todayAt:** Hoy a las {{time}}
+- **inbox > yesterdayAt:** Ayer a las {{time}}
+- **inbox > caseTypes > helpMeCreate:** Ayúdame a crear
+- **inbox > caseTypes > appSupportFeedback:** Soporte de app
+- **inbox > subtypes > request:** Solicitud
+- **inbox > subtypes > supportRequest:** Solicitud de soporte
+- **toasts > maxAttachments:** Puedes agregar hasta {{max}} imágenes.
+- **toasts > unsupportedImage:** {{name}} no es un tipo de imagen compatible.
+- **toasts > fileTooLarge:** {{name}} es demasiado grande (máx. 5 MB por archivo).
+- **toasts > chooseSubmissionType:** Elige un tipo de envío.
+- **toasts > chooseToolOrArea:** Elige dónde aplica esto.
+- **toasts > choosePurchaseChannel:** Selecciona dónde compraste (Apple App Store, Google Play o Web).
+- **toasts > descriptionMinLength:** Escribe al menos {{min}} caracteres en la descripción.
+- **toasts > uploadFailed:** Error al subir la imagen
+- **toasts > requestFailed:** La solicitud falló
+- **toasts > submitted:** Enviado
+- **toasts > shareManifestationFocus:** Comparte qué estás intentando manifestar o cambiar.
+- **toasts > chooseHelpType:** Elige con qué necesitas ayuda.
+- **toasts > addMoreDetail:** Agrega un poco más de detalle.
+- **toasts > loadInboxFailed:** No se pudo cargar la bandeja.
+- **toasts > loadConversationFailed:** No se pudo cargar la conversación.
+- **toasts > replySent:** Respuesta enviada
+- **toasts > sendReplyFailed:** No se pudo enviar la respuesta.
+
+## FAQ, contact & pricing
+
+- **pricing > title:** Precios
+- **pricing > subtitle:** Una membresía con acceso total en web y app.
+- **pricing > planHeader:** Plan
+- **pricing > priceHeader:** Precio
+- **pricing > plans > weekly > label:** Semanal
+- **pricing > plans > weekly > cadence:** por semana
+- **pricing > plans > monthly > label:** Mensual
+- **pricing > plans > monthly > cadence:** por mes
+- **pricing > plans > annual > label:** Anual
+- **pricing > plans > annual > cadence:** por año
+- **pricing > prices > weekly:** $5.99
+- **pricing > prices > monthly:** $19.99
+- **pricing > prices > annual:** $149.99
+- **pricing > pricesSubjectToChange:** Los precios pueden cambiar.
+- **pricing > legalPrefix:** Consulta nuestra
+- **pricing > billingPolicy:** Pagos y reembolsos
+- **pricing > legalAnd:** y los
+- **pricing > termsOfService:** Términos de servicio
+- **pricing > whatsIncluded:** Qué incluye
+- **pricing > features > subliminal > title:** Creador de subliminales
+- **pricing > features > subliminal > description:** Crea subliminales con tu propia voz, beats binaurales, sonidos de fondo y voces en capas.
+- **pricing > features > mirror > title:** Espejo
+- **pricing > features > mirror > description:** Sumérgete en escenas y sonidos de trabajo con espejo digital mientras fortaleces tu autoconcepto con tus afirmaciones.
+- **pricing > features > affirmations > title:** Afirmar y escribir
+- **pricing > features > affirmations > description:** Muestra tus afirmaciones personalizadas en una pantalla tipo teleprompter, cuenta tus repeticiones y visualiza.
+- **pricing > features > beliefs > title:** Aborda creencias limitantes
+- **pricing > features > beliefs > description:** Desconstruye creencias limitantes e integra creencias expansivas.
+- **pricing > features > journal > title:** Diario y progreso
+- **pricing > features > journal > description:** Diario, acciones inspiradas y listas de manifestación.
+- **pricing > features > coach > title:** Coach digital de manifestación
+- **pricing > features > coach > description:** Pregunta lo que temes decir y recibe apoyo cuando el 3D pese.
+- **contact > title:** Contáctanos
+- **contact > subtitle:** Nos encantaría saber de ti. Envíanos un correo y responderemos lo antes posible.
+- **contact > getInTouch:** Ponte en contacto
+- **contact > email:** Correo
+- **contact > phone:** Teléfono
+- **contact > address:** Dirección
+- **contact > addressLine1:** 1 North State Street Ste 1500
+- **contact > addressLine2:** Chicago, IL 60602
+- **faq > title:** Preguntas frecuentes
+- **faq > subtitle:** Respuestas sobre Palette Plotting
+- **faq > items > whatIs > question:** ¿Qué es Palette Plotting?
+- **faq > items > whatIs > answer:** Palette Plotting es una plataforma digital de crecimiento personal que te ayuda a ganar impulso, reflexionar con un diario, crear herramientas de audio, explorar patrones de mentalidad y trabajar con sugerencias guiadas diseñadas para claridad y progreso. Para un recorrido breve de cada herramienta en el contexto de la práctica de manifestación, lee ¿Qué es Palette Plotting?.
+- **faq > items > whatIs > linkWhatIs:** ¿Qué es Palette Plotting?
+- **faq > items > notTherapy > question:** ¿Palette Plotting es terapia o apoyo médico?
+- **faq > items > notTherapy > answer:** No. Palette Plotting no ofrece asesoramiento médico, psicológico, legal ni financiero. En emergencia, contacta servicios adecuados.
+- **faq > items > whoCanUse > question:** ¿Quién puede usar Palette Plotting?
+- **faq > items > whoCanUse > answer:** Los usuarios deben tener 18 años o más.
+- **faq > items > automated > question:** ¿Palette Plotting usa funciones automatizadas?
+- **faq > items > automated > answer:** Algunas funciones usan respuestas automáticas para reflexión, prompts o audio. Son herramientas extra, no asesoramiento profesional.
+- **faq > items > privacy > question:** ¿Mi contenido es privado?
+- **faq > items > privacy > answer:** Sí. Tus diarios, reflexiones, creaciones de audio y notas son privados.
+- **faq > items > plans > question:** ¿Qué planes de suscripción hay disponibles?
+- **faq > items > plans > answer:** Palette Plotting ofrece planes mensual y anual. Reembolsos de compras iOS dependen de Apple; otros, de Palette Plotting. Consulta la política de reembolsos.
+- **faq > items > plans > linkBilling:** Pagos y reembolsos
+- **faq > items > cancel > question:** ¿Puedo cancelar mi suscripción?
+- **faq > items > cancel > answer:** Sí. Cancela cuando quieras en ajustes. Tu plan sigue activo hasta el fin del período.
+- **faq > items > sellData > question:** ¿Venderán mi información?
+- **faq > items > sellData > answer:** No. No vendemos tus datos personales.
+- **faq > items > deleteAccount > question:** ¿Cómo elimino mi cuenta?
+- **faq > items > deleteAccount > answer:** Puedes solicitar la eliminación desde la app o contactando a: support@paletteplot.com
+- **faq > items > acceptableUse > question:** ¿Qué pasa si violo la Política de uso aceptable?
+- **faq > items > acceptableUse > answer:** Podemos limitar o suspender tu acceso para mantener un entorno seguro y respetuoso.
+- **faq > items > legalTerms > question:** ¿Dónde puedo leer los términos legales?
+- **faq > items > legalTerms > answer:** Los enlaces a Términos, Privacidad y Uso aceptable están en la app y el sitio. Para copyright, ve la política DMCA.
+- **faq > items > legalTerms > linkTerms:** Términos de uso
+- **faq > items > legalTerms > linkPrivacy:** Política de privacidad
+- **faq > items > legalTerms > linkAcceptableUse:** Política de uso aceptable
+- **faq > items > legalTerms > linkDmca:** Política de aviso y retiro DMCA
+- **home > meta > title:** Inicio | Palette Plotting
+- **home > meta > description:** Palette Plotting te ayuda a crear subliminales, afirmaciones, trabajo con espejo, scripting y rutinas de manifestación en un solo lugar.
+- **home > meta > ogDescription:** Crea subliminales, afirmaciones, trabajo con espejo, scripting y rutinas de manifestación con Palette Plotting.
+- **home > meta > twitterDescription:** Crea subliminales, afirmaciones, trabajo con espejo, scripting y rutinas de manifestación con Palette Plotting.
+- **home > header > community:** Comunidad
+- **home > header > faq:** FAQ
+- **home > header > blog:** Blog
+- **home > header > signIn:** Iniciar sesión
+- **home > header > downloadApp:** Descargar app
+- **home > header > yourAccount:** Tu cuenta
+- **home > header > dashboard:** Panel
+- **home > header > logOut:** Cerrar sesión
+- **home > header > user:** Usuario
+- **home > header > mainNav:** Principal
+- **home > hero > manifestEverything:** Manifiesta todo
+- **home > hero > manifestPrefix:** Manifiesta
+- **home > hero > loveSp:** amor y SP
+- **home > hero > abundance:** abundancia
+- **home > hero > fitness:** fitness
+- **home > hero > joy:** alegría
+- **home > hero > freeTrialLine:** Empieza tu prueba gratis ahora
+- **home > hero > subhead1:** Subliminales + afirmación robótica y scripting
+- **home > hero > subhead2:** Espejo + creencias
+- **home > hero > subhead3:** Coach digital de manifestación y más
+- **home > hero > awardLine:** La app de manifestación más completa
+- **home > hero > ctaHeroMobile:** Empieza tu prueba gratis
+- **home > hero > ctaDownload:** Descarga la app y empieza tu prueba gratis
+- **home > hero > exploreApp:** Explora la app
+- **home > hero > freeTrialUnderBadges:** Empieza tu prueba gratis en el App Store
+- **home > manifestPanel > headlineLine1:** Una app para manifestar
+- **home > manifestPanel > headlineLine2:** lo que quieres
+- **home > manifestPanel > manifestListAria:** Lo que puedes manifestar
+- **home > manifestPanel > rows (line 1) (line 1):** amor y sp
+- **home > manifestPanel > rows (line 1) (line 2):** cuerpo soñado
+- **home > manifestPanel > rows (line 2) (line 1):** glow up
+- **home > manifestPanel > rows (line 2) (line 2):** bienestar
+- **home > manifestPanel > rows (line 3) (line 1):** autoconcepto
+- **home > manifestPanel > rows (line 3) (line 2):** disciplina
+- **home > manifestPanel > rows (line 4) (line 1):** dinero
+- **home > manifestPanel > rows (line 4) (line 2):** enfoque
+- **home > manifestPanel > rows (line 5) (line 1):** educación
+- **home > manifestPanel > rows (line 5) (line 2):** reinicio de vida
+- **home > featureStripKeys (line 1):** subliminal
+- **home > featureStripKeys (line 2):** mirror
+- **home > featureStripKeys (line 3):** affirmations
+- **home > featureStripKeys (line 4):** beliefs
+- **home > featureStripKeys (line 5):** journal
+- **home > featureStripKeys (line 6):** coach
+- **home > practiceSection > headlineLine1:** Todo lo que necesitas para
+- **home > practiceSection > headlineLine2:** la nueva historia
+- **home > practiceSection > body:** Palette Plotting reúne tu manifestación en un solo lugar — para que no estés manejando notas, listas subliminales al azar, capturas, notas de voz, diarios y métodos dispersos cuando aparece la duda. Úsala para escribir la historia, escucharla, verla, repetirla y vivir en el final.
+- **home > practiceSection > focusAreasAria:** Áreas de enfoque
+- **home > practiceSection > pills (line 1) > label:** Amor, SP, autoconcepto
+- **home > practiceSection > pills (line 1) > category:** Autoconcepto
+- **home > practiceSection > pills (line 1) > color:** pink
+- **home > practiceSection > pills (line 2) > label:** Abundancia
+- **home > practiceSection > pills (line 2) > category:** Ley de la asunción
+- **home > practiceSection > pills (line 2) > color:** green
+- **home > practiceSection > pills (line 3) > label:** Confianza
+- **home > practiceSection > pills (line 3) > category:** Autoconcepto
+- **home > practiceSection > pills (line 3) > color:** blue
+- **home > practiceSection > pills (line 4) > label:** Paz
+- **home > practiceSection > pills (line 4) > category:** Autoconcepto
+- **home > practiceSection > pills (line 4) > color:** yellow
+- **home > stats (line 1) > value:** 10+
+- **home > stats (line 1) > label:** herramientas
+- **home > stats (line 2) > value:** 30
+- **home > stats (line 2) > label:** subliminales al mes
+- **home > stats (line 3) > value:** 5
+- **home > stats (line 3) > label:** escenas con espejo
+- **home > stats (line 4) > value:** 4
+- **home > stats (line 4) > label:** opciones de guía IA
+- **home > testimonials > headlineLine1:** Resultados de nuestros
+- **home > testimonials > headlineLine2:** usuarios y testers
+- **home > testimonials > carouselAria:** Testimonios de usuarios
+- **home > testimonials > previous:** Testimonio anterior
+- **home > testimonials > next:** Siguiente testimonio
+- **home > testimonials > pagesAria:** Páginas de testimonios
+- **home > testimonials > pageN:** Testimonio {{n}}
+- **home > testimonials > starsAria:** 5 de 5 estrellas
+- **home > testimonials > items (line 1) > quote:** Cuando dudo y el 3D pesa, antes dejaba mi rutina de SP. Ahora hago scripting y espejo aquí y sigo en mi historia.
+- **home > testimonials > items (line 1) > name:** Maya T.
+- **home > testimonials > items (line 1) > role:** SP y autoconcepto
+- **home > testimonials > items (line 2) > quote:** Mi cerebro todavía quiere discutir antes de empezar mi afirmación robótica. Pero esta app, el teleprompter y el contador de repeticiones me ayudan a terminar la sesión en lugar de luchar sola.
+- **home > testimonials > items (line 2) > name:** Devon K.
+- **home > testimonials > items (line 2) > role:** Ley de la asunción · scripting
+- **home > testimonials > items (line 3) > quote:** Los subliminales de YouTube nunca funcionaban porque no era mi voz ni mis palabras exactas. Hice uno aquí con mis afirmaciones + binaurales y es el único que repito sin aburrirme en 2 días.
+- **home > testimonials > items (line 3) > name:** Jade L.
+- **home > testimonials > items (line 3) > role:** Subliminales · afirmación
+- **home > download > headingMobile:** Descarga la app
+- **home > download > headingDesktop:** Descarga la app y empieza tu prueba gratis
+- **home > download > scanPhone:** Escanea con tu teléfono.
+- **home > download > tapInstall:** Toca para instalar en tu teléfono.
+- **home > download > qrUnavailable:** No disponible
+- **home > download > qrError:** QR no disponible. Usa los badges abajo.
+- **home > download > appleStore:** Apple App Store
+- **home > download > googlePlay:** Google Play
+- **home > download > qrAltAppStore:** Código QR para abrir Palette Plotting en el App Store
+- **home > download > qrAltGooglePlay:** Código QR para abrir Palette Plotting en Google Play
+- **home > newsletter > heading:** Tips en tu bandeja
+- **home > newsletter > subtitle:** Recibe consejos, novedades y promos.
+- **home > newsletter > placeholder:** Correo electrónico
+- **home > newsletter > subscribe:** Suscribirme
+- **home > newsletter > subscribing:** Suscribiendo…
+- **home > newsletter > successHeading:** Ya estás en la lista
+- **home > newsletter > successBody:** Suscripción lista. Recibe tips, novedades y promociones en tu correo.
+- **home > newsletter > consent:** Al suscribirte aceptas recibir correos de marketing de Palette Plotting. Cancela cuando quieras.
+- **home > newsletter > errorEmpty:** Ingresa tu correo electrónico.
+- **home > newsletter > errorInvalid:** Ingresa un correo electrónico válido.
+- **home > newsletter > errorGeneric:** Algo salió mal. Inténtalo de nuevo.
+- **home > footer > company:** PALETTE PLOTTING LLC
+- **home > footer > copyright:** © {{year}} Palette Plotting LLC. Todos los derechos reservados.
+- **home > footer > whatIs:** ¿Qué es Palette Plotting?
+- **home > footer > faq:** FAQ
+- **home > footer > community:** Comunidad
+- **home > footer > billing:** Facturación
+- **home > footer > contact:** Contacto
+- **home > footer > terms:** Términos de uso
+- **home > footer > privacy:** Privacidad
+- **home > footer > acceptableUse:** Uso aceptable
+- **home > footer > footerNav:** Pie de página
+- **home > stickyBarAria:** Descargar Palette Plotting
+
+## Push notifications (server-sent)
+
+### Manifestation routine reminder
+
+- **Notification title:** ¡Es hora de manifestar!
+- **Notification subtitle:** Vuelve a la app para hacer tu rutina de manifestación.
+- **Notification body:** Tus sueños te esperan. Volvamos a tu práctica de manifestación ahora.
+
+### Support request reply
+
+- **Notification body:** Respondimos a tu solicitud de ayuda.
+- **App name in header (all locales):** Palette Plotting
+
+---
+
+## Language switcher (always shown in these forms)
+
+On welcome and Settings, language names are **not** translated:
+
+- English
+- Español
+- Português
+
+---
+
+## English-only surfaces (user may still see)
+
+These items are **not** in locale files; users may still see English for:
+
+- Full Terms of Service, Privacy Policy, EULA, DMCA, Billing & Refunds, and Acceptable Use legal pages
+- Native RevenueCat paywall and web checkout (configured in RevenueCat dashboard)
+- Blog posts and long marketing pages not wired to i18n
+- User-generated content (affirmation text, chat messages, journal entries)
+- Chat character names: River, Sage, Rose, Oliver
+- Supabase/auth or payment-provider error messages returned verbatim from the server
+- Settings legal-tab disclaimer (localized): see Common section above
+
+**Total localized strings (es-419):** 1614

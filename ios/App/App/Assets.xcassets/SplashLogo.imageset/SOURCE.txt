@@ -1,0 +1,3 @@
+Source: public/welcome-logo.png (transparent — native splash / LaunchScreen only).
+Do NOT use welcome-logo for AppIcon.appiconset (App Store rejects transparent icons).
+App Store icon source: public/apple-ios-logo.png → AppIcon.appiconset/AppIcon-512@2x.png

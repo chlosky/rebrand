@@ -1,0 +1,166 @@
+import { useCallback, useEffect, useState } from "react";
+import { Camera, Loader2, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  BOARD_IMAGE_THEMES,
+  filterLibraryByTheme,
+  loadBoardImageLibrary,
+  type BoardImageTheme,
+} from "@/lib/boards/imageLibrary";
+import { listUserUploads, uploadBoardImage } from "@/lib/boards/api";
+import type { BoardImageAsset } from "@/lib/boards/types";
+
+type BoardImagePickerProps = {
+  userId: string;
+  onPickImage: (url: string) => void;
+  onScanPhysical?: () => void;
+  embedded?: boolean;
+};
+
+type Tab = "library" | "uploads";
+
+export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded }: BoardImagePickerProps) {
+  const [tab, setTab] = useState<Tab>("library");
+  const [theme, setTheme] = useState<BoardImageTheme | "all">("all");
+  const [library, setLibrary] = useState<BoardImageAsset[]>([]);
+  const [uploads, setUploads] = useState<{ path: string; signedUrl: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  const refreshUploads = useCallback(async () => {
+    const list = await listUserUploads(userId);
+    setUploads(list);
+  }, [userId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const imgs = await loadBoardImageLibrary();
+        if (!cancelled) setLibrary(imgs);
+        await refreshUploads();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshUploads]);
+
+  const filtered = theme === "all" ? library : filterLibraryByTheme(library, theme);
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadBoardImage(userId, file);
+      await refreshUploads();
+      onPickImage(url);
+      setTab("uploads");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className={cn("flex h-full flex-col bg-transparent", !embedded && "border-r border-neutral-200 bg-white")}>
+      <div className="flex border-b border-neutral-200">
+        {(["library", "uploads"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={cn(
+              "flex-1 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide",
+              tab === t ? "border-b-2 border-neutral-900 text-neutral-900" : "text-neutral-500",
+            )}
+            onClick={() => setTab(t)}
+          >
+            {t === "library" ? "Library" : "My photos"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "library" && (
+        <div className="border-b border-neutral-100 p-2">
+          <select
+            className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-xs"
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as BoardImageTheme | "all")}
+          >
+            <option value="all">All themes</option>
+            {BOARD_IMAGE_THEMES.map((th) => (
+              <option key={th} value={th}>
+                {th}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {tab === "uploads" && (
+        <div className="space-y-2 border-b border-neutral-100 p-2">
+          {onScanPhysical && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="w-full gap-2 text-xs"
+              onClick={onScanPhysical}
+            >
+              <Camera className="h-4 w-4" />
+              Scan physical board (OCR)
+            </Button>
+          )}
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            Upload photo
+            <input type="file" accept="image/*" className="sr-only" onChange={onFileChange} disabled={uploading} />
+          </label>
+          <p className="mt-1 text-[10px] leading-snug text-neutral-500">Private to your account only.</p>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto p-2">
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
+          </div>
+        ) : tab === "library" ? (
+          <div className="grid grid-cols-2 gap-2">
+            {filtered.map((img) => (
+              <button
+                key={img.id}
+                type="button"
+                className="group overflow-hidden rounded-md border border-neutral-200 text-left hover:ring-2 hover:ring-neutral-900/20"
+                onClick={() => onPickImage(img.url)}
+              >
+                <img src={img.url} alt={img.description} className="aspect-square w-full object-cover" loading="lazy" />
+                <span className="block truncate px-1 py-1 text-[10px] text-neutral-600">{img.description}</span>
+              </button>
+            ))}
+          </div>
+        ) : uploads.length === 0 ? (
+          <p className="px-1 py-4 text-center text-xs text-neutral-500">No uploads yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {uploads.map((u) => (
+              <button
+                key={u.path}
+                type="button"
+                className="overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
+                onClick={() => onPickImage(u.signedUrl)}
+              >
+                <img src={u.signedUrl} alt="" className="aspect-square w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

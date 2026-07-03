@@ -1,0 +1,27 @@
+{
+  "continue": "Continue",
+  "back": "Back",
+  "signIn": "Sign In",
+  "alreadyHaveAccountSignIn": "Already have an account? Sign in",
+  "save": "Save",
+  "cancel": "Cancel",
+  "close": "Close",
+  "loading": "Loading…",
+  "error": "Something went wrong",
+  "legalEnglishDisclaimer": "",
+  "edgeErrors": {
+    "permissionDenied": "Permission denied. Please ensure you're logged in and try again.",
+    "genericRetry": "An error occurred. Please try again.",
+    "databaseError": "Database error. Please try again.",
+    "serviceUnavailable": "Service temporarily unavailable. Please try again.",
+    "unknownError": "Unknown error",
+    "noCharacterSelected": "No character selected. Please select a character first.",
+    "failedToGenerateMessage": "Failed to generate message",
+    "noMessageGenerated": "No message generated",
+    "dailyMessageLimit": "You've reached your daily message limit ({{limit}} messages). Resets at midnight.",
+    "userIdAndMessageRequired": "User ID and message are required.",
+    "connectionError": "Connection error. Check your network and try again.",
+    "unauthorized": "You are not authorized. Please sign in and try again.",
+    "invalidRequest": "Invalid request. Please try again."
+  }
+}

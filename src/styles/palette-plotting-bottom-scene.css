@@ -1,0 +1,127 @@
+/* Palette Plotting onboarding — cozy studio floor, acrylic swatches (not a stock photo). */
+
+.palette-plot-bottom-scene {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  height: min(46vh, 500px);
+  min-height: 210px;
+  overflow: hidden;
+}
+
+.palette-plot-bottom-scene__wash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(245, 240, 234, 0.98) 0%,
+    rgba(250, 248, 245, 0.72) 38%,
+    transparent 100%
+  );
+}
+
+.palette-plot-bottom-scene__blanket {
+  position: absolute;
+  left: 50%;
+  bottom: -12%;
+  width: min(120vw, 720px);
+  height: min(52vh, 380px);
+  transform: translateX(-50%);
+  border-radius: 48% 48% 0 0 / 28% 28% 0 0;
+  background: radial-gradient(
+    ellipse 80% 70% at 50% 100%,
+    rgba(232, 180, 184, 0.22) 0%,
+    rgba(253, 232, 240, 0.35) 35%,
+    rgba(255, 255, 255, 0.5) 70%,
+    transparent 100%
+  );
+  filter: blur(1px);
+}
+
+.palette-plot-bottom-scene__knit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42%;
+  opacity: 0.35;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 3px,
+    rgba(120, 113, 108, 0.04) 3px,
+    rgba(120, 113, 108, 0.04) 4px
+  );
+  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);
+  mask-image: linear-gradient(to top, black 30%, transparent 100%);
+}
+
+.palette-plot-bottom-scene__swatches {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 420px);
+  height: 72%;
+  transform: translateX(-50%);
+}
+
+.palette-plot-swatch {
+  position: absolute;
+  border-radius: 10px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.65) inset,
+    0 8px 24px rgba(24, 24, 27, 0.1),
+    0 2px 6px rgba(24, 24, 27, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  outline: 1px solid rgba(24, 24, 27, 0.05);
+}
+
+.palette-plot-bottom-scene__headphones {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: min(42vw, 200px);
+  height: auto;
+  transform: translateX(-50%);
+  opacity: 0.14;
+  color: #78716c;
+}
+
+.palette-plot-bottom-scene__whisper {
+  position: absolute;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+  width: min(90vw, 22rem);
+  transform: translateX(-50%);
+  text-align: center;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-size: 11px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  color: rgba(82, 82, 91, 0.72);
+  -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);
+  mask-image: linear-gradient(to top, black 70%, transparent 100%);
+}
+
+@media (min-width: 768px) {
+  .palette-plot-bottom-scene {
+    height: min(40vh, 440px);
+  }
+
+  .palette-plot-bottom-scene__whisper {
+    bottom: 2rem;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .palette-plot-bottom-scene {
+    height: min(42vh, 420px);
+    min-height: 190px;
+  }
+}

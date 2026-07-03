@@ -1,0 +1,74 @@
+/* Fixed bottom scene — underlaid under footer buttons, does not affect layout. */
+
+.setup-bottom-scene-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  height: min(44vh, 480px);
+  min-height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.setup-bottom-scene-overlay img {
+  width: min(100%, 540px);
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0.92;
+
+  -webkit-mask-image: linear-gradient(to top, black 62%, transparent 100%);
+  mask-image: linear-gradient(to top, black 62%, transparent 100%);
+}
+
+@media (max-width: 420px) {
+  .setup-bottom-scene-overlay {
+    height: min(40vh, 420px);
+    min-height: 180px;
+  }
+}
+
+/* Extend scene through the bottom home-indicator / in-app browser inset (mobile landing). */
+.setup-bottom-scene-overlay--flush-inlet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.setup-bottom-scene-overlay--flush-inlet img {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 3;
+  transform: translateX(-50%);
+  width: min(100vw, 540px);
+  height: calc(
+    min(44vh, 480px) + var(--mobile-landing-bottom-extend, max(env(safe-area-inset-bottom, 0px), 34px))
+  );
+  min-height: calc(200px + var(--mobile-landing-bottom-extend, max(env(safe-area-inset-bottom, 0px), 34px)));
+  max-width: none;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0.92;
+  -webkit-mask-image: linear-gradient(to top, black 62%, transparent 100%);
+  mask-image: linear-gradient(to top, black 62%, transparent 100%);
+}
+
+@media (max-width: 420px) {
+  .setup-bottom-scene-overlay--flush-inlet img {
+    height: calc(
+      min(40vh, 420px) + var(--mobile-landing-bottom-extend, max(env(safe-area-inset-bottom, 0px), 34px))
+    );
+    min-height: calc(180px + var(--mobile-landing-bottom-extend, max(env(safe-area-inset-bottom, 0px), 34px)));
+  }
+}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate PWA Icons from Logo</title>
+</head>
+<body>
+  <h1>PWA Icon Generator</h1>
+  <p>This will generate square icons from your Palette Plotting logo. Click the buttons to generate and download icons.</p>
+  
+  <div style="margin: 20px 0;">
+    <button onclick="generateIcon(192)">Generate 192x192 Icon</button>
+    <button onclick="generateIcon(512)">Generate 512x512 Icon</button>
+  </div>
+
+  <canvas id="canvas" style="border: 1px solid #ccc; display: none;"></canvas>
+  <img id="logo" src="/PalettePlottingLogoV1.png" style="display: none;" onload="handleLogoLoad()" onerror="handleLogoError()">
+  <div id="status" style="margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 4px; display: none;"></div>
+
+  <script>
+    let logoLoaded = false;
+    
+    function handleLogoLoad() {
+      logoLoaded = true;
+      const statusDiv = document.getElementById('status');
+      statusDiv.style.display = 'block';
+      statusDiv.style.background = '#d4edda';
+      statusDiv.style.color = '#155724';
+      statusDiv.textContent = '✓ Logo loaded successfully! Ready to generate icons.';
+    }
+    
+    function handleLogoError() {
+      logoLoaded = false;
+      const statusDiv = document.getElementById('status');
+      statusDiv.style.display = 'block';
+      statusDiv.style.background = '#f8d7da';
+      statusDiv.style.color = '#721c24';
+      statusDiv.textContent = '✗ Failed to load logo. Please ensure the file exists at /PalettePlottingLogoV1.png';
+    }
+    
+    function generateIcon(size) {
+      const canvas = document.getElementById('canvas');
+      const logoImg = document.getElementById('logo');
+      
+      if (!logoLoaded || !logoImg.complete || logoImg.naturalWidth === 0) {
+        alert('Logo image not loaded. Please ensure the logo file exists at /PalettePlottingLogoV1.png and refresh the page.');
+        return;
+      }
+      
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill with black background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, size, size);
+      
+      // Calculate dimensions to fit logo in square while maintaining aspect ratio
+      const logoAspect = logoImg.naturalWidth / logoImg.naturalHeight;
+      let drawWidth, drawHeight, offsetX, offsetY;
+      
+      if (logoAspect > 1) {
+        // Logo is wider than tall
+        drawWidth = size * 0.9; // Use 90% of canvas width
+        drawHeight = drawWidth / logoAspect;
+        offsetX = (size - drawWidth) / 2;
+        offsetY = (size - drawHeight) / 2;
+      } else {
+        // Logo is taller than wide or square
+        drawHeight = size * 0.9; // Use 90% of canvas height
+        drawWidth = drawHeight * logoAspect;
+        offsetX = (size - drawWidth) / 2;
+        offsetY = (size - drawHeight) / 2;
+      }
+      
+      // Draw the logo centered on black background
+      ctx.drawImage(logoImg, offsetX, offsetY, drawWidth, drawHeight);
+      
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `icon-${size}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

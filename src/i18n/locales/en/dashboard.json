@@ -1,0 +1,207 @@
+{
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "manifestationCharge": {
+    "needsPersistence": "Needs Persistence",
+    "lockedIn": "Magnetic",
+    "aligned": "Aligned",
+    "percentToday": "{{pct}}% aligned today"
+  },
+  "sections": {
+    "inspiredActions": "Inspired Actions",
+    "manifestationCharge": "Manifestation Charge",
+    "tools": "Tools",
+    "dailyPractice": "Inspired Actions"
+  },
+  "home": {
+    "subtitle": "Everything you need to manifest, in one place.",
+    "pageTitle": "Dashboard | Palette Plotting",
+    "defaultName": "there"
+  },
+  "inspiredActions": {
+    "footer": "Affirm daily & embody the new story for coherence and alignment."
+  },
+  "appearance": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "profile": {
+    "defaultUser": "User",
+    "yourAccount": "Your Account"
+  },
+  "nav": {
+    "home": "Home",
+    "affirmScript": "Affirm & Script",
+    "yourJourney": "Your Journey",
+    "settings": "Settings",
+    "appearance": "Appearance",
+    "talkToGuide": "Talk to Guide",
+    "help": "Help",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "signOutError": "Error signing out"
+  },
+  "tools": {
+    "boards": {
+      "title": "Boards",
+      "description": "Canva-style vision boards — focus, mood, and The Plan"
+    },
+    "affirmScript": {
+      "title": "Affirm & Script",
+      "description": "Build affirmation sequences and visual goals"
+    },
+    "subliminalMaker": {
+      "title": "Subliminal Maker",
+      "description": "Create custom audio for daily listening"
+    },
+    "mirrorWork": {
+      "title": "Mirror Work",
+      "description": "Practice affirmations with real-time reflection"
+    },
+    "beliefWork": {
+      "title": "Belief Work",
+      "description": "Explore beliefs you want to release or integrate"
+    },
+    "embody": {
+      "title": "Embody",
+      "description": "Track daily progress in your new story"
+    },
+    "yourJourney": {
+      "title": "Your Journey",
+      "description": "Journal, reflections, and guide chat"
+    }
+  },
+  "supportTools": {
+    "dashboard": "Dashboard (home)",
+    "affirmationVisualizer": "Affirmation Visualizer",
+    "talkToGuide": "Talk to Guide (Chat)",
+    "musicComposer": "Music Composer",
+    "tapIn": "Tap-in / Piano",
+    "activityTracking": "Activity tracking",
+    "journal": "Manifestation journal",
+    "settingsAccount": "Settings / Account",
+    "billing": "Billing / subscriptions",
+    "other": "Other (new tool or not listed)"
+  },
+  "mobileMenu": {
+    "toggleAria": "Toggle menu",
+    "dashboard": "Dashboard",
+    "getApp": "Get App",
+    "getTheApp": "Get the App"
+  },
+  "billingChannels": {
+    "apple": "Apple App Store",
+    "googlePlay": "Google Play",
+    "web": "Web (card / checkout)"
+  },
+  "workspace": {
+    "pageTitle": "Workspace | Palette Plotting",
+    "tabs": {
+      "library": "Library",
+      "community": "Community",
+      "tips": "Tips",
+      "create": "Create",
+      "projects": "Projects"
+    },
+    "library": {
+      "heading": "Library",
+      "lead": "Short reads with swatches, visuals, and plotting teasers — not the full system.",
+      "marketingNote": "Marketing updates are optional in Your Account. Planning reminders unlock with Pro.",
+      "categories": {
+        "lifeRebrand": "Life rebrand",
+        "moodboard": "Moodboarding",
+        "homeOrg": "Home organization",
+        "office": "Office & work"
+      }
+    },
+    "community": {
+      "pageTitle": "Community | Palette Plotting",
+      "submitPageTitle": "Submit setup | Palette Plotting",
+      "title": "Community",
+      "feedSubtitle": "Team updates, featured setups, and poll winners — curated here only.",
+      "dailyPrompts": "Today's plot prompts",
+      "dailyPromptsHint": "Reflection starters — reply via Submit your setup, not in the feed.",
+      "promptSubmitCta": "Submit a response →",
+      "submitSetup": "Submit your setup",
+      "activePoll": "Community poll",
+      "tapToVote": "Tap to vote",
+      "votes": "votes",
+      "voteRecorded": "Vote recorded.",
+      "voteError": "Could not record vote.",
+      "loadError": "Could not load community.",
+      "emptyFeed": "Nothing published yet — check back soon.",
+      "backToWorkspace": "Back to workspace",
+      "imageTypeError": "Please choose an image file (JPG, PNG, WebP, HEIC).",
+      "imageSizeError": "Image must be under 5 MB.",
+      "submitTitle": "Submit your setup",
+      "submitLead": "Share your vision board rebrand, moodboard, or org setup for review. Submissions do not appear in the feed until we feature them.",
+      "categoryLabel": "What are you sharing?",
+      "mediumLabel": "Where does this live?",
+      "titleLabel": "Short title (optional)",
+      "titlePlaceholder": "Spring rebrand wall, WFH desk reset…",
+      "storyLabel": "Tell us about it",
+      "storyPlaceholder": "What changed, what you are plotting next, anything we should know when reviewing…",
+      "photosLabel": "Photos (1–3)",
+      "featureOptInLabel": "Okay to feature if selected",
+      "featureOptInHint": "We may showcase your setup in the feed, a poll, or monthly spotlights (e.g. free month for best setup). You can decline later by emailing support.",
+      "sendSubmission": "Send for review",
+      "submitted": "Submitted — we will review it separately from the feed.",
+      "postError": "Could not submit — try again.",
+      "bodyTooShort": "Add a bit more detail (at least 10 characters).",
+      "needPhoto": "Add at least one photo.",
+      "yourSubmissions": "Your submissions",
+      "noSubmissionsYet": "Nothing submitted yet.",
+      "submitCategories": {
+        "vision_board_rebrand": "Vision board rebrand",
+        "moodboard": "Moodboard",
+        "home_organization": "Home organization",
+        "office_organization": "Office organization"
+      },
+      "submitMediums": {
+        "in_app": "In the Palette Plotting app",
+        "off_app": "Off-app (wall, acrylic, physical board)",
+        "both": "Both app and physical"
+      },
+      "submissionStatus": {
+        "pending": "Pending review",
+        "reviewed": "Reviewed",
+        "featured": "Featured",
+        "declined": "Not selected"
+      },
+      "feedKinds": {
+        "announcement": "Update",
+        "featured_setup": "Featured setup",
+        "poll_winner": "Poll winner",
+        "tip": "Tip"
+      }
+    },
+    "create": {
+      "prompt": "What do you want to create today?",
+      "placeholder": "A calm home office, a vision board for spring, a kanban for the launch…",
+      "openBoards": "Open plotting desk",
+      "starters": {
+        "vision": "Vision board",
+        "home": "Home plan",
+        "kanban": "Kanban",
+        "mood": "Moodboard"
+      }
+    },
+    "projects": {
+      "title": "Your boards",
+      "subtitle": "Jump back into a workspace you've already started.",
+      "open": "Open boards",
+      "empty": "No workspaces yet — start from Create when you're ready."
+    },
+    "locked": {
+      "createTitle": "Create is for members",
+      "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Pro.",
+      "projectsTitle": "Projects are for members",
+      "projectsBody": "Your saved boards live here once you're on Pro — Library stays free.",
+      "upgrade": "Unlock plotting tools"
+    },
+    "proDashboardLink": "Open full tool dashboard"
+  }
+}

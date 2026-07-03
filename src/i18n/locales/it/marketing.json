@@ -1,0 +1,316 @@
+{
+  "pricing": {
+    "billingPolicy": "Politica di fatturazione e rimborso",
+    "features": {
+      "affirmations": {
+        "description": "Visualizza le tue affermazioni personalizzate su uno schermo di lettura, conta le ripetizioni e visualizza.",
+        "title": "Afferma roboticamente e fai scripting della tua vita"
+      },
+      "beliefs": {
+        "description": "Decostruisci convinzioni limitanti e integra convinzioni espansive.",
+        "title": "Affronta le convinzioni limitanti"
+      },
+      "coach": {
+        "description": "Fai domande che hai paura di fare ad altri e ricevi supporto quando vacilli a causa delle circostanze 3D.",
+        "title": "Coach digitale di manifestazione"
+      },
+      "journal": {
+        "description": "Tieni un diario, documenta le azioni ispirate e monitora i progressi con liste di manifestazione.",
+        "title": "Diario e monitoraggio"
+      },
+      "mirror": {
+        "description": "Immergiti nelle scene e nei suoni del mirror work digitale mentre costruisci il tuo concetto di sé con le tue affermazioni.",
+        "title": "Mirror work"
+      },
+      "subliminal": {
+        "description": "Crea subliminali con la tua voce, battiti binaurali, suoni di sottofondo e voci stratificate.",
+        "title": "Creatore di subliminali"
+      }
+    },
+    "legalAnd": "e",
+    "legalPrefix": "Consulta la nostra",
+    "planHeader": "Piano",
+    "plans": {
+      "annual": {
+        "cadence": "all’anno",
+        "label": "Annuale"
+      },
+      "monthly": {
+        "cadence": "al mese",
+        "label": "Mensile"
+      },
+      "weekly": {
+        "cadence": "a settimana",
+        "label": "Settimanale"
+      }
+    },
+    "priceHeader": "Prezzo",
+    "prices": {
+      "annual": "$149.99",
+      "monthly": "$19.99",
+      "weekly": "$5.99"
+    },
+    "pricesSubjectToChange": "I prezzi possono cambiare.",
+    "subtitle": "Un abbonamento con accesso completo a tutti gli strumenti Palette Plotting su web e mobile.",
+    "termsOfService": "Termini di servizio",
+    "title": "Prezzi",
+    "whatsIncluded": "Cosa include"
+  },
+  "contact": {
+    "address": "Indirizzo",
+    "addressLine1": "1 North State Street Ste 1500",
+    "addressLine2": "Chicago, IL 60602",
+    "email": "Email",
+    "getInTouch": "Mettiti in contatto",
+    "phone": "Telefono",
+    "subtitle": "Ci farebbe piacere sentirti. Inviaci un’e-mail e risponderemo il prima possibile.",
+    "title": "Contattaci"
+  },
+  "faq": {
+    "items": {
+      "acceptableUse": {
+        "answer": "Potremmo limitare o sospendere il tuo accesso per mantenere un ambiente sicuro e rispettoso.",
+        "question": "Cosa succede se violo la Politica di uso accettabile?"
+      },
+      "automated": {
+        "answer": "Alcune funzionalità possono usare risposte automatiche o generate dal sistema per supportare la tua riflessione, i prompt o la creazione audio. Sono strumenti supplementari, non consulenza professionale.",
+        "question": "Palette Plotting usa funzionalità automatizzate?"
+      },
+      "cancel": {
+        "answer": "Sì. Puoi annullare in qualsiasi momento dalle impostazioni dell’account. Il piano resta attivo fino alla fine del periodo di fatturazione.",
+        "question": "Posso annullare l’abbonamento?"
+      },
+      "deleteAccount": {
+        "answer": "Puoi richiedere l’eliminazione tramite l’app o contattando: support@paletteplot.com",
+        "question": "Come elimino il mio account?"
+      },
+      "legalTerms": {
+        "answer": "I link ai Termini di utilizzo, all’Informativa sulla privacy e alla Politica di uso accettabile sono nell’app e sul sito. Per questioni di copyright, consulta la nostra Politica di notifica e rimozione DMCA.",
+        "linkAcceptableUse": "Politica di uso accettabile",
+        "linkDmca": "Politica di notifica e rimozione DMCA",
+        "linkPrivacy": "Informativa sulla privacy",
+        "linkTerms": "Termini di utilizzo",
+        "question": "Dove posso leggere i termini legali?"
+      },
+      "notTherapy": {
+        "answer": "No. Palette Plotting non fornisce consulenza di salute mentale, medica, psicologica, legale o finanziaria. Se hai bisogno di supporto clinico o di emergenza, contatta i servizi appropriati.",
+        "question": "Palette Plotting è terapia o supporto medico?"
+      },
+      "plans": {
+        "answer": "Palette Plotting offre opzioni di abbonamento mensili e annuali. I rimborsi per gli acquisti in-app iOS sono a discrezione di Apple. I rimborsi per tutti gli acquisti non Apple sono a discrezione di Palette Plotting. Consulta la Politica di fatturazione e rimborso per i dettagli.",
+        "linkBilling": "Politica di fatturazione e rimborso",
+        "question": "Quali piani di abbonamento sono disponibili?"
+      },
+      "privacy": {
+        "answer": "Sì. I tuoi diari, riflessioni, audio creati e note sono privati.",
+        "question": "Il mio contenuto è privato?"
+      },
+      "sellData": {
+        "answer": "No. Non vendiamo i tuoi dati personali.",
+        "question": "Venderete le mie informazioni?"
+      },
+      "whatIs": {
+        "answer": "Palette Plotting è una piattaforma digitale di crescita personale che ti aiuta a creare slancio, riflettere con il journaling, creare strumenti audio, esplorare schemi di mindset e usare suggerimenti guidati pensati per chiarezza e progresso. Per una panoramica sintetica di ogni strumento nel contesto della manifestazione, leggi Che cos’è Palette Plotting?",
+        "linkWhatIs": "Che cos’è Palette Plotting?",
+        "question": "Che cos’è Palette Plotting?"
+      },
+      "whoCanUse": {
+        "answer": "Gli utenti devono avere almeno 18 anni.",
+        "question": "Chi può usare Palette Plotting?"
+      }
+    },
+    "subtitle": "Trova risposte alle domande frequenti su Palette Plotting",
+    "title": "Domande frequenti"
+  },
+  "home": {
+    "download": {
+      "appleStore": "Apple App Store",
+      "googlePlay": "Google Play",
+      "headingDesktop": "Scarica l’app e avvia la prova gratuita",
+      "headingMobile": "Scarica l’app",
+      "qrAltAppStore": "Codice QR per aprire Palette Plotting nell’App Store",
+      "qrAltGooglePlay": "Codice QR per aprire Palette Plotting su Google Play",
+      "qrError": "Codici QR non disponibili. Usa i badge degli store qui sotto.",
+      "qrUnavailable": "Non disponibile",
+      "scanPhone": "Scansiona con il telefono.",
+      "tapInstall": "Tocca per installare sul telefono."
+    },
+    "featureStripKeys": [
+      "subliminal",
+      "mirror",
+      "affirmations",
+      "beliefs",
+      "journal",
+      "coach"
+    ],
+    "footer": {
+      "acceptableUse": "Politica di uso accettabile",
+      "billing": "Fatturazione",
+      "community": "Community",
+      "company": "PALETTE PLOTTING LLC",
+      "contact": "Contatto",
+      "copyright": "© {{year}} Palette Plotting LLC. Tutti i diritti riservati.",
+      "faq": "FAQ",
+      "footerNav": "Footer",
+      "privacy": "Informativa sulla privacy",
+      "terms": "Termini di utilizzo",
+      "whatIs": "Che cos’è Palette Plotting?"
+    },
+    "header": {
+      "blog": "Blog",
+      "community": "Community",
+      "dashboard": "Dashboard",
+      "downloadApp": "Scarica l’app",
+      "faq": "FAQ",
+      "logOut": "Esci",
+      "mainNav": "Principale",
+      "signIn": "Accedi",
+      "user": "Utente",
+      "yourAccount": "Il tuo account"
+    },
+    "hero": {
+      "abundance": "Abbondanza",
+      "awardLine": "L’app di manifestazione più completa",
+      "ctaDownload": "Scarica l’app e avvia la prova gratuita",
+      "ctaHeroMobile": "Inizia la prova gratuita",
+      "exploreApp": "Esplora l’app",
+      "fitness": "Fitness",
+      "freeTrialLine": "Inizia ora la prova gratuita",
+      "freeTrialUnderBadges": "Inizia la prova gratuita nell’App Store",
+      "joy": "Gioia",
+      "loveSp": "Amore",
+      "manifestEverything": "Manifesta tutto",
+      "manifestPrefix": "Manifesta",
+      "subhead1": "Subliminali + affermazione robotica e scripting",
+      "subhead2": "Mirror work + lavoro sulle convinzioni",
+      "subhead3": "Coach digitale di manifestazione + altro"
+    },
+    "manifestPanel": {
+      "headlineLine1": "Un’app per manifestare",
+      "headlineLine2": "ciò che vuoi",
+      "manifestListAria": "Cosa puoi manifestare",
+      "rows": [
+        [
+          "amore & SP",
+          "corpo dei sogni"
+        ],
+        [
+          "glow up",
+          "benessere"
+        ],
+        [
+          "concetto di sé",
+          "disciplina"
+        ],
+        [
+          "denaro",
+          "focus"
+        ],
+        [
+          "istruzione",
+          "reset della vita"
+        ]
+      ]
+    },
+    "meta": {
+      "description": "Palette Plotting ti aiuta a creare subliminali, affermazioni, mirror work, scripting e routine di manifestazione in un unico posto.",
+      "ogDescription": "Crea subliminali, affermazioni, mirror work, scripting e routine di manifestazione con Palette Plotting.",
+      "title": "Home | Palette Plotting",
+      "twitterDescription": "Crea subliminali, affermazioni, mirror work, scripting e routine di manifestazione con Palette Plotting."
+    },
+    "newsletter": {
+      "consent": "Iscrivendoti accetti di ricevere email di marketing da Palette Plotting. Puoi annullare l’iscrizione in qualsiasi momento.",
+      "errorEmpty": "Inserisci il tuo indirizzo e-mail.",
+      "errorGeneric": "Qualcosa è andato storto. Riprova.",
+      "errorInvalid": "Inserisci un indirizzo e-mail valido.",
+      "heading": "Consigli nella tua inbox",
+      "placeholder": "Indirizzo e-mail",
+      "subscribe": "Iscriviti",
+      "subscribing": "Iscrizione in corso…",
+      "subtitle": "Resta costante, scopri le nuove funzionalità e ricevi promozioni speciali.",
+      "successBody": "Grazie per l’iscrizione. Controlla la tua inbox per consigli di manifestazione, nuove funzionalità e promozioni speciali.",
+      "successHeading": "Sei nella lista"
+    },
+    "practiceSection": {
+      "body": "Palette Plotting riunisce la tua manifestazione in un unico posto — così non devi saltare tra note, playlist subliminali casuali, screenshot, memo vocali, diari e metodi sparsi quando arriva il dubbio. Usalo per scrivere la storia, ascoltarla, vederla, ripeterla e vivere nel risultato finale.",
+      "focusAreasAria": "Aree di focus",
+      "headlineLine1": "Tutto ciò che ti serve per",
+      "headlineLine2": "la nuova storia",
+      "pills": [
+        {
+          "category": "Concetto di sé",
+          "color": "pink",
+          "label": "Amore, SP, concetto di sé"
+        },
+        {
+          "category": "Law of Assumption",
+          "color": "green",
+          "label": "Abbondanza"
+        },
+        {
+          "category": "Concetto di sé",
+          "color": "blue",
+          "label": "Confidence"
+        },
+        {
+          "category": "Concetto di sé",
+          "color": "yellow",
+          "label": "Pace"
+        }
+      ]
+    },
+    "stats": [
+      {
+        "label": "strumenti di manifestazione",
+        "value": "10+"
+      },
+      {
+        "label": "subliminali al mese",
+        "value": "30"
+      },
+      {
+        "label": "scene di mirror work",
+        "value": "5"
+      },
+      {
+        "label": "opzioni guida IA",
+        "value": "4"
+      }
+    ],
+    "stickyBarAria": "Scarica Palette Plotting",
+    "testimonials": {
+      "carouselAria": "Testimonianze utenti",
+      "headlineLine1": "Risultati dei nostri",
+      "headlineLine2": "utenti e tester",
+      "items": [
+        {
+          "name": "Maya T.",
+          "quote": "Quando vacillo e il 3D diventa troppo rumoroso, prima abbandonavo tutta la mia routine SP e cercavo un nuovo metodo o andavo in crash. Ora faccio scripting e mirror work qui e resto davvero nella mia storia invece di scorrere TikTok sulla manifestazione alle 2 di notte.",
+          "role": "SP e concetto di sé"
+        },
+        {
+          "name": "Devon K.",
+          "quote": "Il mio cervello vuole ancora discutere prima ancora che inizi con l’affermazione robotica. Ma questa app, lo schermo di lettura e il contatore delle ripetizioni mi aiutano a finire la sessione invece di lottare da sola.",
+          "role": "Law of Assumption · scripting"
+        },
+        {
+          "name": "Jade L.",
+          "quote": "I subliminali di YouTube non funzionavano mai davvero perché non erano la mia voce né le mie parole esatte. Ne ho creato uno qui con le mie affermazioni + battiti binaurali, ed è l’unico che riesco a mettere in loop senza annoiarmi dopo 2 giorni.",
+          "role": "subliminali · affermazione"
+        }
+      ],
+      "next": "Testimonianza successiva",
+      "pageN": "Testimonianza {{n}}",
+      "pagesAria": "Pagine testimonianze",
+      "previous": "Testimonianza precedente",
+      "starsAria": "5 stelle su 5"
+    }
+  },
+  "community": {
+    "eyebrow": "Community",
+    "title": "Unisciti alla community",
+    "body": "Connettiti con Palette Plotting su Discord e TikTok — aggiornamenti, conversazioni sulla manifestazione e ciò che stiamo costruendo.",
+    "discordTitle": "Discord ufficiale di Palette Plotting",
+    "tiktokTitle": "TikTok ufficiale di Palette Plotting"
+  }
+}

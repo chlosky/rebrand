@@ -1,0 +1,29 @@
+---
+description: RevenueCat paywall localization — underscore locale adapter only; dashboard export is source of truth
+globs: src/services/revenueCat*.ts,src/lib/locale.ts,src/pages/onboarding/*Paywall*.tsx,src/components/LanguageSwitcher.tsx,src/contexts/AuthContext.tsx
+alwaysApply: false
+---
+
+# RevenueCat paywall localization
+
+Do not modify RevenueCat paywall copy or create app-side paywall translation overrides. The RevenueCat dashboard export/import is the source of truth for paywall localization.
+
+Keep internal app i18n locales as BCP-47: `en`, `es-419`, `pt-BR`.
+
+Only change the RevenueCat locale adapter (`revenueCatUILocaleForApp` / `resolveRevenueCatUILocale`). RevenueCat Paywall Localization uses underscore locale IDs:
+
+- `en` → `en_US`
+- `es-419` → `es_419`
+- `pt-BR` → `pt_BR`
+
+Pass adapter output to RC APIs only (`preferredUILocaleOverride`, `overridePreferredUILocale`, `selectedLocale`, `defaultLocale`). That is a switchboard, not a translator.
+
+Do not:
+
+- send `es-419` or `pt-BR` (hyphens) to RevenueCat paywall UI
+- map `es-419` to `es` or `es_MX` for RevenueCat
+- rename or re-import dashboard localization keys
+- manually override paywall copy in-app
+- touch exported/imported RevenueCat paywall text
+
+App `paywall.json` strings are only for legacy shell UI (Continue, Restore, errors around the RC modal) — not for overriding RC paywall content.

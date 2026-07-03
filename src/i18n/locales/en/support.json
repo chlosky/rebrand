@@ -1,0 +1,112 @@
+{
+  "pageTitle": "Help Request",
+  "supportInbox": "Support Inbox",
+  "tabs": {
+    "create": "Help Me Create",
+    "support": "App Support & Feedback",
+    "inbox": "Inbox"
+  },
+  "workspaceFree": {
+    "intro": "Feature requests and inbox are open on the free plan. Help Me Create — personalized plotting support — is for Pro members.",
+    "introPro": "Help, feedback, and your support inbox.",
+    "createLockedTitle": "Help Me Create is for Pro",
+    "createLockedBody": "Personalized help building affirmations, routines, and plotting support unlocks with Palette Plotting Pro.",
+    "upgrade": "Unlock plotting tools"
+  },
+  "create": {
+    "intro": "Share only what feels relevant. Palette Plotting will turn this into app-ready prompts, affirmations, or a routine.",
+    "successTitle": "Submitted.",
+    "successBody": "We'll reply by in-app inbox (best if you set notifications on) and/or email. If you need something urgently, you can also email",
+    "successBodySuffix": ".",
+    "backToDashboard": "Back to dashboard",
+    "submitAnother": "Submit another",
+    "focusLabel": "What are you manifesting right now?",
+    "focusPlaceholder": "Let us know what you are manifesting and what difficulties you're facing.",
+    "helpTypeLabel": "What do you need help with?",
+    "chooseOne": "Choose one",
+    "footer": "Please submit what feels most relevant. Palette Plotting will aim to reply within 24 to 48 hours of your request. You may also reach out to us at support@paletteplot.com.",
+    "submit": "Submit",
+    "submitting": "Submitting…"
+  },
+  "createHelpOptions": {
+    "affirmationsOrScripting": "Affirmations or scripting",
+    "strongSubliminal": "Make a strong subliminal",
+    "mirrorWorkGuidance": "Mirror work guidance",
+    "buildWeeklyRoutine": "Build a weekly routine",
+    "notSureHelpMeChoose": "Not sure — help me choose"
+  },
+  "submissionTypes": {
+    "report": "Report an issue",
+    "aiFlag": "Flag AI-generated content",
+    "featureRequest": "Feature request",
+    "helpMeCreate": "Help Me Create"
+  },
+  "supportForm": {
+    "successTitle": "Thanks — we received your submission.",
+    "successBody": "We aim to respond within 24–48 hours by in-app inbox (best if you set notifications on) and/or email. If you need something urgently, you can also email",
+    "successBodySuffix": ".",
+    "submissionTypeLabel": "Submission type",
+    "toolOrAreaLabel": "Tool or area",
+    "toolPlaceholder": "Where does this apply?",
+    "purchaseChannelLabel": "Where did you purchase?",
+    "purchaseChannelPlaceholder": "Apple App Store, Google Play, or Web",
+    "descriptionLabel": "Describe the issue or request",
+    "descriptionPlaceholder": "What happened, what should change, or what would help?",
+    "appleRefundNote": "Apple ultimately controls payments and refunds; however we will try our best to help you.",
+    "screenshotsLabel": "Screenshots (optional)",
+    "screenshotsHint": "Up to {{max}} files · HEIC, JPG, PNG, WebP, etc. · max 5 MB each",
+    "chooseFiles": "Choose files",
+    "filesSelected_one": "{{count}} file selected",
+    "filesSelected_other": "{{count}} files selected",
+    "noFilesSelected": "No files selected",
+    "removeFileAria": "Remove {{name}}",
+    "contactFooter": "You may also reach out to us at support@paletteplot.com."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "description": "Your submitted requests and replies from Palette Plotting. New requests start on the other tabs.",
+    "refresh": "Refresh",
+    "backToRequests": "← Back to requests",
+    "loading": "Loading…",
+    "noMessages": "No messages yet.",
+    "senderSupport": "Palette Plotting",
+    "senderYou": "You",
+    "yourReply": "Your reply",
+    "replyPlaceholder": "Reply in this conversation…",
+    "sending": "Sending…",
+    "sendReply": "Send reply",
+    "empty": "No requests yet. Submit on Help Me Create or App Support & Feedback — replies will show up here.",
+    "newReplyAria": "New reply",
+    "supportRepliedPrefix": "Palette Plotting replied · ",
+    "submittedPrefix": "Submitted {{when}}",
+    "todayAt": "Today at {{time}}",
+    "yesterdayAt": "Yesterday at {{time}}",
+    "caseTypes": {
+      "helpMeCreate": "Help Me Create",
+      "appSupportFeedback": "App Support & Feedback"
+    },
+    "subtypes": {
+      "request": "Request",
+      "supportRequest": "Support request"
+    }
+  },
+  "toasts": {
+    "maxAttachments": "You can add up to {{max}} images.",
+    "unsupportedImage": "{{name}} is not a supported image type.",
+    "fileTooLarge": "{{name}} is too large (max 5 MB per file).",
+    "chooseSubmissionType": "Please choose a submission type.",
+    "chooseToolOrArea": "Please choose where this applies.",
+    "choosePurchaseChannel": "Please select where you purchased (Apple App Store, Google Play, or Web).",
+    "descriptionMinLength": "Please enter at least {{min}} characters in the description.",
+    "uploadFailed": "Image upload failed",
+    "requestFailed": "Request failed",
+    "submitted": "Submitted",
+    "shareManifestationFocus": "Please share what you're trying to manifest or shift.",
+    "chooseHelpType": "Please choose what you need help with.",
+    "addMoreDetail": "Please add a bit more detail.",
+    "loadInboxFailed": "Could not load inbox.",
+    "loadConversationFailed": "Could not load conversation.",
+    "replySent": "Reply sent",
+    "sendReplyFailed": "Could not send reply."
+  }
+}

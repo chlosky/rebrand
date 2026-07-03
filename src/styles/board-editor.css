@@ -1,0 +1,36 @@
+.board-editor-main {
+  min-height: 0;
+}
+
+.board-artboard-host canvas {
+  display: block;
+}
+
+.board-desktop-grid {
+  min-height: 0;
+}
+
+.board-grid-cell {
+  min-height: 0;
+}
+
+.board-mobile-carousel {
+  min-height: 0;
+}
+
+@media (max-width: 767px) {
+  .board-artboard-host:not(.min-h-0) {
+    min-height: 55vh;
+  }
+
+  .board-mobile-carousel .board-artboard-host {
+    min-height: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .board-grid-cell .board-artboard-host {
+    min-height: 0;
+    height: 100%;
+  }
+}

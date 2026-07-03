@@ -1,0 +1,535 @@
+{
+  "version": 1,
+  "themes": [
+    "Identity",
+    "Career & Money",
+    "Love & Relationships",
+    "Home & Space",
+    "Beauty & Wellness",
+    "Travel & Adventure",
+    "Organization & Plan",
+    "Aesthetic & Mood"
+  ],
+  "images": [
+    {
+      "id": "board-education-college-acceptance",
+      "theme": "Career & Money",
+      "category": "Education",
+      "url": "/affirmationimagelibrary/Education/College Acceptance.webp",
+      "description": "College Acceptance",
+      "tags": [
+        "education"
+      ]
+    },
+    {
+      "id": "board-education-good-grades",
+      "theme": "Career & Money",
+      "category": "Education",
+      "url": "/affirmationimagelibrary/Education/Good Grades.webp",
+      "description": "Good Grades",
+      "tags": [
+        "education"
+      ]
+    },
+    {
+      "id": "board-education-graduation",
+      "theme": "Career & Money",
+      "category": "Education",
+      "url": "/affirmationimagelibrary/Education/Graduation.webp",
+      "description": "Graduation",
+      "tags": [
+        "education"
+      ]
+    },
+    {
+      "id": "board-home-city-life",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/City Life.webp",
+      "description": "City Life",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-cozy-living-room",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Cozy Living Room.webp",
+      "description": "Cozy Living Room",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-green-apt",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Green Apt.webp",
+      "description": "Green Apt",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-house-keys",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/House Keys.webp",
+      "description": "House Keys",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-house",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/House.webp",
+      "description": "House",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-luxe-bedroom",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Luxe Bedroom.webp",
+      "description": "Luxe Bedroom",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-neutral-lofty-apt",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Neutral Lofty Apt.webp",
+      "description": "Neutral Lofty Apt",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-new-apt",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/New Apt.webp",
+      "description": "New Apt",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-pink-apt",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Pink Apt.webp",
+      "description": "Pink Apt",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-home-wilderness-retreat",
+      "theme": "Home & Space",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Wilderness Retreat.webp",
+      "description": "Wilderness Retreat",
+      "tags": [
+        "home"
+      ]
+    },
+    {
+      "id": "board-mentality-brainpower",
+      "theme": "Identity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Brainpower.webp",
+      "description": "Brainpower",
+      "tags": [
+        "mentality"
+      ]
+    },
+    {
+      "id": "board-mentality-candle-peace",
+      "theme": "Identity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Candle - Peace.webp",
+      "description": "Candle - Peace",
+      "tags": [
+        "mentality"
+      ]
+    },
+    {
+      "id": "board-mentality-creativity",
+      "theme": "Identity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Creativity.webp",
+      "description": "Creativity",
+      "tags": [
+        "mentality"
+      ]
+    },
+    {
+      "id": "board-mentality-discipline",
+      "theme": "Identity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Discipline.webp",
+      "description": "Discipline",
+      "tags": [
+        "mentality"
+      ]
+    },
+    {
+      "id": "board-mentality-pen-to-paper",
+      "theme": "Identity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Pen to Paper.webp",
+      "description": "Pen to Paper",
+      "tags": [
+        "mentality"
+      ]
+    },
+    {
+      "id": "board-mentality-to-do-list-discipline",
+      "theme": "Identity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/To Do List - Discipline.webp",
+      "description": "To Do List - Discipline",
+      "tags": [
+        "mentality"
+      ]
+    },
+    {
+      "id": "board-relationships-baby",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Baby.webp",
+      "description": "Baby",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-coffee",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Coffee.webp",
+      "description": "Coffee",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-family",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Family.webp",
+      "description": "Family",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-friends-1",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Friends 1.webp",
+      "description": "Friends 1",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-friends-2",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Friends 2.webp",
+      "description": "Friends 2",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-friends-3",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Friends 3.webp",
+      "description": "Friends 3",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-hands-held",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Hands Held.webp",
+      "description": "Hands Held",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-love",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Love.webp",
+      "description": "Love",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-relationships-wedding",
+      "theme": "Love & Relationships",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Wedding.webp",
+      "description": "Wedding",
+      "tags": [
+        "relationships"
+      ]
+    },
+    {
+      "id": "board-travel-beach",
+      "theme": "Travel & Adventure",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Beach.webp",
+      "description": "Beach",
+      "tags": [
+        "travel"
+      ]
+    },
+    {
+      "id": "board-travel-passport",
+      "theme": "Travel & Adventure",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Passport.webp",
+      "description": "Passport",
+      "tags": [
+        "travel"
+      ]
+    },
+    {
+      "id": "board-travel-plane-1",
+      "theme": "Travel & Adventure",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Plane 1.webp",
+      "description": "Plane 1",
+      "tags": [
+        "travel"
+      ]
+    },
+    {
+      "id": "board-travel-suitcases-1",
+      "theme": "Travel & Adventure",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Suitcases 1.webp",
+      "description": "Suitcases 1",
+      "tags": [
+        "travel"
+      ]
+    },
+    {
+      "id": "board-travel-suitcases-2",
+      "theme": "Travel & Adventure",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Suitcases 2.webp",
+      "description": "Suitcases 2",
+      "tags": [
+        "travel"
+      ]
+    },
+    {
+      "id": "board-wealth-abundance-jar",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Abundance - Jar.webp",
+      "description": "Abundance - Jar",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-blue-car",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Blue Car.webp",
+      "description": "Blue Car",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-business-orders",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Business - Orders.webp",
+      "description": "Business - Orders",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-car-keys",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Car Keys.webp",
+      "description": "Car Keys",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-corner-office",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Corner Office.webp",
+      "description": "Corner Office",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-digital-nomad",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Digital Nomad.webp",
+      "description": "Digital Nomad",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-gifts",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Gifts.webp",
+      "description": "Gifts",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-green-car",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Green Car.webp",
+      "description": "Green Car",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-luxury-closet",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Luxury Closet.webp",
+      "description": "Luxury Closet",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-money",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Money.webp",
+      "description": "Money",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-notifications-more-followers",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Notifications - More Followers.webp",
+      "description": "Notifications - More Followers",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wealth-yellow-car",
+      "theme": "Career & Money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Yellow Car.webp",
+      "description": "Yellow Car",
+      "tags": [
+        "wealth"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-gym",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Gym.webp",
+      "description": "Gym",
+      "tags": [
+        "wellness & beauty"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-healthy-meals",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Healthy Meals.webp",
+      "description": "Healthy Meals",
+      "tags": [
+        "wellness & beauty"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-long-hair-1",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Long Hair 1.webp",
+      "description": "Long Hair 1",
+      "tags": [
+        "wellness & beauty"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-long-hair-2",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Long Hair 2.webp",
+      "description": "Long Hair 2",
+      "tags": [
+        "wellness & beauty"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-skin-care-routine",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Skin Care Routine.webp",
+      "description": "Skin Care Routine",
+      "tags": [
+        "wellness & beauty"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-vanity",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Vanity.webp",
+      "description": "Vanity",
+      "tags": [
+        "wellness & beauty"
+      ]
+    },
+    {
+      "id": "board-wellness-beauty-yoga",
+      "theme": "Beauty & Wellness",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Yoga.webp",
+      "description": "Yoga",
+      "tags": [
+        "wellness & beauty"
+      ]
+    }
+  ]
+}

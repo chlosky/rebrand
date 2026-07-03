@@ -1,0 +1,572 @@
+{
+  "welcome": {
+    "signUp": "Step inside",
+    "enterStudio": "Step inside",
+    "ctaSubtext": "You're early — the studio takes ~3 minutes to set up",
+    "freeTrialLine": "Step inside when you're ready",
+    "nativeTitle": "A private room for plotting your next chapter",
+    "nativeTitleLead": "A private room for ",
+    "nativeTitleAccent": "plotting your next chapter",
+    "nativeDescription": "Boards, affirmations, structures, and tracking — one quiet workspace for the life you're building in secret first.",
+    "awardLine1": "Not another loud",
+    "awardLine2": "productivity",
+    "awardLine3": "app",
+    "webHeadline1": "You're early to something",
+    "webHeadlineAccent": "most people haven't found yet",
+    "toolRows": {
+      "row1": ["Plotting boards", "Affirmations", "Structures"],
+      "row2": ["Clippings & color", "Companion", "Your journey"],
+      "row3": ["Home & office", "Moodboards", "Tracking"]
+    },
+    "webSteps": {
+      "desire": { "title": "Pick your plot", "subtitle": "Life · Home · Office · Mood — no wrong door" },
+      "makeYours": { "title": "Choose your acrylics", "subtitle": "Board colors, layouts, and clippings that feel like you" },
+      "listen": { "title": "Stay in the room", "subtitle": "Reminders and rituals that don't shout" }
+    },
+    "webToolbar": {
+      "boards": "Boards",
+      "clippings": "Clippings",
+      "structures": "Structures",
+      "marks": "Marks"
+    },
+    "communityProof": "People who plot in private, then show up different in public",
+    "mockupScreenAlt": "Palette Plotting workspace preview",
+    "mockupPreviewAria": "Palette Plotting app preview"
+  },
+  "plottingScene": {
+    "whispers": {
+      "0": "Most people scroll past this. You didn't.",
+      "1": "The girls who plot in private win in public.",
+      "2": "Rebrands happen quietly, then all at once.",
+      "3": "You're in the studio now. Lock in.",
+      "4": "Organization-queen behavior starts here.",
+      "5": "Weird-girl money is just a plan with taste.",
+      "6": "Nobody has to know you're rebranding yet."
+    }
+  },
+  "setup": {
+    "name": {
+      "title": "First things first — what do we call you in here?",
+      "firstNameLabel": "First name",
+      "firstNamePlaceholder": "Your first name",
+      "saveError": "Could not save your name. Check your connection and try again."
+    },
+    "desireCategory": {
+      "title": "What are you plotting toward?",
+      "subtitle": "Pick one lane — we'll get specific in a moment."
+    },
+    "primaryIntent": {
+      "title": "What kind of plot are you building?",
+      "subtitle": "No wrong answers. Mix everything later — this just sets your starter desk.",
+      "options": {
+        "life_rebranding": {
+          "title": "Life plotting & vision boards",
+          "description": "The quiet rebrand — identity, desire, and the four-board ritual."
+        },
+        "home_organization": {
+          "title": "Home organization",
+          "description": "The household command center nobody else has to see yet."
+        },
+        "office_work": {
+          "title": "Office, projects & industrial",
+          "description": "Kanban, timelines, OKRs — systems for people who plan in color."
+        },
+        "moodboarding": {
+          "title": "Moodboarding",
+          "description": "Aesthetic grids, interiors, travel — plot the vibe before the life catches up."
+        }
+      }
+    },
+    "homeFocus": {
+      "title": "What's your home focus?",
+      "subtitle": "Pick the area you want your starter boards built around.",
+      "options": {
+        "home_plan_routines": "Home plan & routines",
+        "home_chores_cleaning": "Chores & cleaning",
+        "home_meal_planning": "Meal planning",
+        "home_family_kids": "Family & kids",
+        "home_seasonal_reset": "Seasonal reset"
+      }
+    },
+    "officePlanning": {
+      "title": "Choose your planning system",
+      "subtitle": "Trusted by PMs, planners, and lean teams — pick your primary board mode.",
+      "systems": {
+        "kanban": {
+          "title": "Kanban",
+          "description": "Visual flow with WIP-friendly columns — from software to factory floor."
+        },
+        "gantt": {
+          "title": "Gantt timeline",
+          "description": "Tasks across time with phases, dependencies, and milestones."
+        },
+        "eisenhower": {
+          "title": "Eisenhower matrix",
+          "description": "Urgent × important quadrants — executive prioritization."
+        },
+        "okrs": {
+          "title": "OKRs",
+          "description": "Objectives and measurable key results — team-ready framing."
+        },
+        "five_s": {
+          "title": "5S workplace",
+          "description": "Sort, set, shine, standardize, sustain — lean discipline."
+        }
+      }
+    },
+    "moodboardFocus": {
+      "title": "What's your moodboard for?",
+      "subtitle": "We'll open gallery-style boards tuned to this vibe.",
+      "options": {
+        "mood_aesthetic_style": "Aesthetic & style",
+        "mood_interiors_space": "Interiors & space",
+        "mood_travel_inspo": "Travel inspo",
+        "mood_events_weddings": "Events & weddings",
+        "mood_brand_creative": "Brand & creative"
+      }
+    },
+    "conditionalSpecificity": {
+      "subtitle": "We'll shape your starter plot around this.",
+      "fallbackHeadline": "A quick detail",
+      "fallbackMessage": "Go back and pick a focus area to unlock this step.",
+      "customLabel": "Describe your rebrand focus",
+      "customPlaceholder": "e.g., Soft life era, new career chapter",
+      "spPerson": {
+        "headline": "Is there a specific person connected to this rebrand?",
+        "nameLabel": "What should we call them?",
+        "namePlaceholder": "e.g., Alex",
+        "choices": {
+          "yes": "Yes",
+          "no": "No",
+          "complicated": "It's complicated",
+          "prefer_not": "Prefer not to say"
+        }
+      },
+      "categories": {
+        "Finances": {
+          "headline": "What money shift are you plotting?",
+          "options": {
+            "consistentIncome": "Consistent income",
+            "debtFreedom": "Debt freedom",
+            "moreSales": "More sales",
+            "luxuryEase": "Luxury & ease",
+            "financialSafety": "Financial safety"
+          }
+        },
+        "Self-Love": {
+          "headline": "How do you want to see yourself?",
+          "options": {
+            "beautiful": "Beautiful",
+            "desired": "Desired",
+            "radiant": "Radiant",
+            "expensive": "Expensive",
+            "seen": "Seen"
+          }
+        },
+        "Career": {
+          "headline": "What career chapter are you stepping into?",
+          "options": {
+            "newJob": "New job",
+            "promotion": "Promotion",
+            "higherPay": "Higher pay",
+            "dreamOpportunity": "Dream opportunity"
+          }
+        },
+        "Business": {
+          "headline": "What business result matters most?",
+          "options": {
+            "moreSales": "More sales",
+            "moreCustomersClients": "More customers/clients",
+            "launchSuccess": "Launch success",
+            "audienceGrowth": "Audience growth"
+          }
+        },
+        "Confidence": {
+          "headline": "Which identity shift fits best?",
+          "options": {
+            "confidence": "Confidence",
+            "visibility": "Visibility",
+            "selfTrust": "Self-trust",
+            "magnetism": "Magnetism"
+          }
+        },
+        "Learning": {
+          "headline": "What outcome are you studying toward?",
+          "options": {
+            "betterGrades": "Better grades",
+            "examSuccess": "Exam success",
+            "collegeAcceptance": "College acceptance",
+            "scholarship": "Scholarship",
+            "focusStudying": "Focus studying"
+          }
+        },
+        "Discipline": {
+          "headline": "What are you building consistency around?",
+          "options": {
+            "morningRoutine": "Morning routine",
+            "fitness": "Fitness",
+            "studying": "Studying",
+            "work": "Work",
+            "selfCare": "Self-care"
+          }
+        },
+        "Productivity": {
+          "headline": "Where do you want more focus?",
+          "options": {
+            "workProjects": "Work projects",
+            "studying": "Studying",
+            "creativeWork": "Creative work",
+            "contentCreation": "Content creation",
+            "dailyRoutine": "Daily routine"
+          }
+        },
+        "Fitness": {
+          "headline": "What body or fitness shift are you plotting?",
+          "options": {
+            "strength": "Strength",
+            "shapeTone": "Shape & tone",
+            "energy": "Energy",
+            "confidence": "Confidence",
+            "consistentWorkouts": "Consistent workouts"
+          }
+        },
+        "Nutrition": {
+          "headline": "What wellness shift do you want?",
+          "options": {
+            "moreEnergy": "More energy",
+            "betterRest": "Better rest",
+            "emotionalEase": "Emotional ease",
+            "balance": "Balance",
+            "softerRoutines": "Softer routines"
+          }
+        },
+        "Organization": {
+          "headline": "What part of your life are you resetting?",
+          "options": {
+            "mySpace": "My space",
+            "mySchedule": "My schedule",
+            "myRoutines": "My routines",
+            "myEnvironment": "My environment",
+            "myPriorities": "My priorities"
+          }
+        }
+      }
+    },
+    "currentFriction": {
+      "title": "What's slowing the rebrand down?",
+      "subtitle": "Name it once so we can build around it — no journaling required.",
+      "placeholder": "The thing you keep working around…"
+    },
+    "toolPreference": {
+      "title": "What do you want within reach on day one?",
+      "subtitle": "Pick what feels true — you can add more once you're inside."
+    },
+    "toolPreferenceOptions": {
+      "powerful_affirmations": "Affirmation practice",
+      "daily_wins_progress": "Habit & progress tracking"
+    },
+    "workspaceTemplate": {
+      "title": "Choose your first board layout",
+      "subtitle": "Like picking acrylic sheets off the wall — you can rearrange anytime.",
+      "titleByIntent": {
+        "life_rebranding": "Choose your vision board layout",
+        "home_organization": "Choose your home board layout",
+        "moodboarding": "Choose your moodboard layout"
+      },
+      "subtitleByIntent": {
+        "life_rebranding": "The signature vision boards + plan — pick the four-board vibe you want.",
+        "home_organization": "Household boards with checklists and visual zones.",
+        "moodboarding": "Gallery-forward boards for inspo and creative direction."
+      },
+      "options": {
+        "four-board-rebrand": {
+          "name": "Vision Board + Plan",
+          "description": "Three vision boards and one plan board — the signature four-board plot."
+        },
+        "soft-life-reset": {
+          "name": "Glow, Home & Peace",
+          "description": "Beauty, environment, and calm rituals with a plan board."
+        },
+        "career-girl": {
+          "name": "Ambition & Wealth",
+          "description": "Career vision, money goals, and confidence with a plan board."
+        },
+        "minimal-plan": {
+          "name": "One Vision + Plan",
+          "description": "One hero vision board and a dedicated plan board."
+        },
+        "home-plan-routines": {
+          "name": "Home Plan & Routines",
+          "description": "Weekly rhythms, zones, and family flow."
+        },
+        "home-chores-cleaning": {
+          "name": "Chores & Cleaning",
+          "description": "Chore charts, supplies, and reset zones."
+        },
+        "home-meal-planning": {
+          "name": "Meal Planning",
+          "description": "Menus, groceries, and kitchen rhythm."
+        },
+        "home-family-kids": {
+          "name": "Family & Kids",
+          "description": "Schedules, activities, and household command."
+        },
+        "home-seasonal-reset": {
+          "name": "Seasonal Reset",
+          "description": "Holiday, declutter, and seasonal home projects."
+        },
+        "office-kanban": {
+          "name": "Kanban Flow",
+          "description": "Backlog → To Do → Doing → Done."
+        },
+        "office-gantt": {
+          "name": "Gantt Timeline",
+          "description": "Tasks mapped across time."
+        },
+        "office-eisenhower": {
+          "name": "Eisenhower Matrix",
+          "description": "Urgent × Important quadrants."
+        },
+        "office-okrs": {
+          "name": "OKRs",
+          "description": "Objectives with measurable key results."
+        },
+        "office-five-s": {
+          "name": "5S Workplace",
+          "description": "Lean floor discipline — Sort through Sustain."
+        },
+        "mood-aesthetic-style": {
+          "name": "Aesthetic & Style",
+          "description": "Outfits, palettes, and vibe references."
+        },
+        "mood-interiors-space": {
+          "name": "Interiors & Space",
+          "description": "Rooms, furniture, and renovation mood."
+        },
+        "mood-travel-inspo": {
+          "name": "Travel Inspo",
+          "description": "Destinations, stays, and trip aesthetics."
+        },
+        "mood-events-weddings": {
+          "name": "Events & Weddings",
+          "description": "Ceremony, decor, and vendor vision."
+        },
+        "mood-brand-creative": {
+          "name": "Brand & Creative",
+          "description": "Logo, typography, and campaign looks."
+        }
+      }
+    },
+    "guide": {
+      "title": "Choose a guide",
+      "subtitle": "An AI companion for questions while you rebrand."
+    },
+    "attribution": {
+      "title": "How'd you find us?",
+      "subtitle": "No wrong answer — it just helps us know where our people come from.",
+      "options": {
+        "tiktok": "TikTok",
+        "instagram": "Instagram",
+        "app_store": "App Store / Google Play",
+        "friend": "A friend told me",
+        "youtube": "YouTube",
+        "search": "Google / search",
+        "other": "Somewhere else"
+      }
+    },
+    "intensity": {
+      "title": "How intense is your plan?",
+      "titleByIntent": {
+        "life_rebranding": "How intense is your rebrand?",
+        "home_organization": "How intense is your reset?",
+        "office_work": "How intense is your planning?",
+        "moodboarding": "How often do you want to plot?"
+      },
+      "subtitle": "Set your pace and optional nudges.",
+      "setRoutine": "Set my pace",
+      "notificationsQuestion": "Want nudges back to your boards when you drift?",
+      "notificationsHint": "Quiet reminders to your workspace — only if you opt in.",
+      "yes": "Yes",
+      "notNow": "Not now",
+      "dailyTime": "Daily notification time",
+      "customizeInSettings": "You can change this anytime in Settings.",
+      "light": {
+        "title": "Light",
+        "tagline": "The easy-start rhythm.",
+        "description": "A soft cadence with optional daily reminders."
+      },
+      "consistent": {
+        "title": "Consistent",
+        "tagline": "For girls who show up daily.",
+        "description": "Steadier check-ins with up to 2 daily reminders, if selected."
+      },
+      "lockedIn": {
+        "title": "Locked In",
+        "tagline": "Maximum momentum.",
+        "description": "High-touch rhythm with up to 3 daily reminders, if selected."
+      },
+      "alerts": {
+        "alert": "Alert",
+        "first": "1st Alert",
+        "second": "2nd Alert",
+        "third": "3rd Alert"
+      }
+    },
+    "notifications": {
+      "title": "Turn on additional permissions",
+      "subtitle": "Help us improve Palette Plotting."
+    },
+    "tracking": {
+      "title": "Help us improve Palette Plotting (optional)",
+      "body": "Palette Plotting uses app activity data to measure ad performance and improve experience. Will you help us improve Palette Plotting?",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "email": {
+      "title": "Save your plot",
+      "titleLine1": "Save your plot &",
+      "titleLine2": "start your free trial",
+      "subtitle": "Create your account to lock in your rebrand workspace. Everything saves to this email.",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "emailPlaceholder": "you@email.com",
+      "passwordPlaceholder": "8+ characters",
+      "invalidEmail": "Please enter a valid email address",
+      "needFirstName": "We need your first name from earlier in setup.",
+      "passwordLength": "Please enter a password with at least 8 characters",
+      "acceptTerms": "Please accept the Terms of Service and Privacy Policy",
+      "subscriptionError": "Could not open subscription options. Try again in a moment.",
+      "tryAgain": "Try again",
+      "checkingAvailability": "Checking availability…",
+      "wrongEmailHint": "Wrong email?",
+      "signOutToChangeEmail": "Sign out to use a different address.",
+      "signOutToChangeEmailToast": "Sign out first to use a different email address.",
+      "signOutFailed": "Could not sign out. Try again.",
+      "sessionExpired": "Your session expired. Enter your email and password again.",
+      "hidePassword": "Hide password",
+      "showPassword": "Show password",
+      "termsAcceptPrefix": "I accept the",
+      "termsOfService": "Terms of Service",
+      "termsAnd": "and",
+      "privacyPolicy": "Privacy Policy",
+      "emailMarketingConsent": "Send me rebrand tips and updates. By checking this box, you consent to marketing communications. You can opt out anytime."
+    },
+    "affirmationRead": {
+      "title": "Say it like it's already yours",
+      "subtitle": "The lines that match the version of you that's coming."
+    },
+    "embody": {
+      "title": "How will you embody your rebrand each day?",
+      "subtitle": "Choose exactly five — they become your daily actions on your dashboard. ({{count}} of {{required}} selected)"
+    },
+    "embodyOptions": {
+      "embody_rest": "Rest & Relax",
+      "embody_self_care": "Self-care",
+      "embody_clean_environment": "Clean & organize environment",
+      "embody_nutrition": "Nutrition",
+      "embody_have_fun": "Have fun",
+      "embody_move": "Exercise",
+      "embody_glam_up": "Glam Up",
+      "embody_connect": "Connect with others",
+      "embody_seen": "Be seen & visible.",
+      "embody_work_or_study": "Work or study"
+    },
+    "plotSynthesis": {
+      "title": "You're cleared for the studio.",
+      "subtitle": "Here's what we set up from what you told us — yours once you subscribe.",
+      "items": {
+        "workspace": "Your plotting workspace, colored and laid out your way.",
+        "affirmations": "Affirmation sets tuned to your focus.",
+        "tracking": "Milestones and progress on your journey tab."
+      }
+    },
+    "plotLoading": {
+      "title": "Preparing your room…",
+      "subtitle": "Laying out boards, color, and your first plot.",
+      "loading": "Loading",
+      "hint": "You're not starting from zero — something is already being built for you.",
+      "testimonials": {
+        "row1": [
+          { "quote": "Finally feels like my Pinterest board came to life.", "author": "Jordan M." },
+          { "quote": "I stopped doom-scrolling and started plotting my era.", "author": "Riley T." },
+          { "quote": "The aesthetic + plan combo is exactly what I needed.", "author": "Casey L." },
+          { "quote": "My rebrand actually looks like me now.", "author": "Morgan P." }
+        ],
+        "row2": [
+          { "quote": "Seeing it all in one place changed how I show up.", "author": "Dev S." },
+          { "quote": "Reminders on my plotted goals keep me honest.", "author": "Avery K." },
+          { "quote": "Small daily wins on the plan board add up fast.", "author": "Quinn R." },
+          { "quote": "I open this more than any other app on my phone.", "author": "Jamie H." }
+        ]
+      }
+    },
+    "beginJourney": {
+      "lead": "This isn't another loud habit app.",
+      "subtitle": "It's your private plotting studio. Let's set it up."
+    }
+  },
+  "legacy": {
+    "threeActs": {
+      "title": "Your Self-Concept Suite",
+      "subtitle": "A flexible framework for quantum leaps",
+      "tools": {
+        "subliminalMaker": { "title": "Subliminal Maker", "description": "Custom subliminals with binaural beats" },
+        "mirrorWork": { "title": "Mirror Work", "description": "Immersive Mirror Work" },
+        "affirmScript": { "title": "Affirm & Script", "description": "Custom affirmations and visuals" },
+        "beliefWork": { "title": "Belief Work", "description": "Deconstruct self-limiting beliefs" },
+        "habitTracking": { "title": "Habit Tracking", "description": "Track daily progress on goals" },
+        "manifestationJournal": { "title": "Manifestation Journal", "description": "Daily journaling and notes" },
+        "pianoTapping": { "title": "Piano Tapping", "description": "Tactile integration of goals" }
+      }
+    },
+    "double": {
+      "title": "Choose a Guide",
+      "subtitle": "An AI companion to help fuel momentum through chats",
+      "characters": {
+        "river": { "name": "River", "themes": ["Transitions", "Career"] },
+        "sage": { "name": "Sage", "themes": ["Finance", "Identity"] },
+        "rose": { "name": "Rose", "themes": ["Love", "Self Concept"] },
+        "oliver": { "name": "Oliver", "themes": ["Self Image", "Fitness"] }
+      }
+    },
+    "digitalMirror": {
+      "title": "Mirror Work",
+      "subtitle": "Guided sessions meant to grow self-confidence",
+      "imageAlt": "Mirror Work"
+    },
+    "subliminalMaker": {
+      "title": "Subliminal Maker",
+      "subtitle": "Create custom subliminal audio tracks",
+      "imageAlt": "Subliminal Maker"
+    },
+    "manifestationTools": {
+      "title": "Interactive Manifestation Tools",
+      "subtitle": "Use experimental techniques for manifestation",
+      "imageAlt": "Interactive Manifestation Tools"
+    },
+    "habitTracking": {
+      "title": "Habit & Momentum Tracking",
+      "subtitle": "Track your progress and build lasting habits",
+      "imageAlt": "Habit & Momentum Tracking"
+    },
+    "onboardingQuestions": {
+      "title": "Rebrand Focus",
+      "question": "What are you plotting?",
+      "selectUpTo3": "Select up to 3 options",
+      "options": {
+        "Career": "Career",
+        "Business": "Business",
+        "Learning": "School / Exams",
+        "Finances": "Money",
+        "Productivity": "Focus",
+        "Organization": "Life Reset",
+        "Confidence": "Self-Concept",
+        "Self-Love": "Beauty / Glow Up",
+        "Connections": "Love / SP",
+        "Fitness": "Body / Fitness",
+        "Nutrition": "Wellness",
+        "Discipline": "Discipline"
+      }
+    }
+  }
+}

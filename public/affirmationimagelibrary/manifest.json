@@ -1,0 +1,316 @@
+{
+  "images": [
+    {
+      "id": "education-college-acceptance",
+      "category": "Education",
+      "url": "/affirmationimagelibrary/Education/College Acceptance.webp",
+      "description": "College Acceptance"
+    },
+    {
+      "id": "education-good-grades",
+      "category": "Education",
+      "url": "/affirmationimagelibrary/Education/Good Grades.webp",
+      "description": "Good Grades"
+    },
+    {
+      "id": "education-graduation",
+      "category": "Education",
+      "url": "/affirmationimagelibrary/Education/Graduation.webp",
+      "description": "Graduation"
+    },
+    {
+      "id": "home-city-life",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/City Life.webp",
+      "description": "City Life"
+    },
+    {
+      "id": "home-cozy-living-room",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Cozy Living Room.webp",
+      "description": "Cozy Living Room"
+    },
+    {
+      "id": "home-green-apt",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Green Apt.webp",
+      "description": "Green Apt"
+    },
+    {
+      "id": "home-house-keys",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/House Keys.webp",
+      "description": "House Keys"
+    },
+    {
+      "id": "home-house",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/House.webp",
+      "description": "House"
+    },
+    {
+      "id": "home-luxe-bedroom",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Luxe Bedroom.webp",
+      "description": "Luxe Bedroom"
+    },
+    {
+      "id": "home-neutral-lofty-apt",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Neutral Lofty Apt.webp",
+      "description": "Neutral Lofty Apt"
+    },
+    {
+      "id": "home-new-apt",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/New Apt.webp",
+      "description": "New Apt"
+    },
+    {
+      "id": "home-pink-apt",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Pink Apt.webp",
+      "description": "Pink Apt"
+    },
+    {
+      "id": "home-wilderness-retreat",
+      "category": "Home",
+      "url": "/affirmationimagelibrary/Home/Wilderness Retreat.webp",
+      "description": "Wilderness Retreat"
+    },
+    {
+      "id": "mentality-brainpower",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Brainpower.webp",
+      "description": "Brainpower"
+    },
+    {
+      "id": "mentality-candle-peace",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Candle - Peace.webp",
+      "description": "Candle - Peace"
+    },
+    {
+      "id": "mentality-creativity",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Creativity.webp",
+      "description": "Creativity"
+    },
+    {
+      "id": "mentality-discipline",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Discipline.webp",
+      "description": "Discipline"
+    },
+    {
+      "id": "mentality-pen-to-paper",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/Pen to Paper.webp",
+      "description": "Pen to Paper"
+    },
+    {
+      "id": "mentality-to-do-list-discipline",
+      "category": "Mentality",
+      "url": "/affirmationimagelibrary/Mentality/To Do List - Discipline.webp",
+      "description": "To Do List - Discipline"
+    },
+    {
+      "id": "relationships-baby",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Baby.webp",
+      "description": "Baby"
+    },
+    {
+      "id": "relationships-coffee",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Coffee.webp",
+      "description": "Coffee"
+    },
+    {
+      "id": "relationships-family",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Family.webp",
+      "description": "Family"
+    },
+    {
+      "id": "relationships-friends-1",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Friends 1.webp",
+      "description": "Friends 1"
+    },
+    {
+      "id": "relationships-friends-2",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Friends 2.webp",
+      "description": "Friends 2"
+    },
+    {
+      "id": "relationships-friends-3",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Friends 3.webp",
+      "description": "Friends 3"
+    },
+    {
+      "id": "relationships-hands-held",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Hands Held.webp",
+      "description": "Hands Held"
+    },
+    {
+      "id": "relationships-love",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Love.webp",
+      "description": "Love"
+    },
+    {
+      "id": "relationships-wedding",
+      "category": "Relationships",
+      "url": "/affirmationimagelibrary/Relationships/Wedding.webp",
+      "description": "Wedding"
+    },
+    {
+      "id": "travel-beach",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Beach.webp",
+      "description": "Beach"
+    },
+    {
+      "id": "travel-passport",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Passport.webp",
+      "description": "Passport"
+    },
+    {
+      "id": "travel-plane-1",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Plane 1.webp",
+      "description": "Plane 1"
+    },
+    {
+      "id": "travel-suitcases-1",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Suitcases 1.webp",
+      "description": "Suitcases 1"
+    },
+    {
+      "id": "travel-suitcases-2",
+      "category": "Travel",
+      "url": "/affirmationimagelibrary/Travel/Suitcases 2.webp",
+      "description": "Suitcases 2"
+    },
+    {
+      "id": "wealth-abundance-jar",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Abundance - Jar.webp",
+      "description": "Abundance - Jar"
+    },
+    {
+      "id": "wealth-blue-car",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Blue Car.webp",
+      "description": "Blue Car"
+    },
+    {
+      "id": "wealth-business-orders",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Business - Orders.webp",
+      "description": "Business - Orders"
+    },
+    {
+      "id": "wealth-car-keys",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Car Keys.webp",
+      "description": "Car Keys"
+    },
+    {
+      "id": "wealth-corner-office",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Corner Office.webp",
+      "description": "Corner Office"
+    },
+    {
+      "id": "wealth-digital-nomad",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Digital Nomad.webp",
+      "description": "Digital Nomad"
+    },
+    {
+      "id": "wealth-gifts",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Gifts.webp",
+      "description": "Gifts"
+    },
+    {
+      "id": "wealth-green-car",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Green Car.webp",
+      "description": "Green Car"
+    },
+    {
+      "id": "wealth-luxury-closet",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Luxury Closet.webp",
+      "description": "Luxury Closet"
+    },
+    {
+      "id": "wealth-money",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Money.webp",
+      "description": "Money"
+    },
+    {
+      "id": "wealth-notifications-more-followers",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Notifications - More Followers.webp",
+      "description": "Notifications - More Followers"
+    },
+    {
+      "id": "wealth-yellow-car",
+      "category": "Wealth",
+      "url": "/affirmationimagelibrary/Wealth/Yellow Car.webp",
+      "description": "Yellow Car"
+    },
+    {
+      "id": "wellness-beauty-gym",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Gym.webp",
+      "description": "Gym"
+    },
+    {
+      "id": "wellness-beauty-healthy-meals",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Healthy Meals.webp",
+      "description": "Healthy Meals"
+    },
+    {
+      "id": "wellness-beauty-long-hair-1",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Long Hair 1.webp",
+      "description": "Long Hair 1"
+    },
+    {
+      "id": "wellness-beauty-long-hair-2",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Long Hair 2.webp",
+      "description": "Long Hair 2"
+    },
+    {
+      "id": "wellness-beauty-skin-care-routine",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Skin Care Routine.webp",
+      "description": "Skin Care Routine"
+    },
+    {
+      "id": "wellness-beauty-vanity",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Vanity.webp",
+      "description": "Vanity"
+    },
+    {
+      "id": "wellness-beauty-yoga",
+      "category": "Wellness & Beauty",
+      "url": "/affirmationimagelibrary/Wellness & Beauty/Yoga.webp",
+      "description": "Yoga"
+    }
+  ]
+}

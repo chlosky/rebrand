@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    color-scheme: light only;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 330 100% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 45%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 20%));
+    --gradient-secondary: linear-gradient(135deg, hsl(330 100% 65%), hsl(330 80% 72%));
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    
+    --glow-primary: 0 0 40px hsla(330 100% 65% / 0.15);
+    --glow-secondary: 0 0 30px hsla(330 80% 72% / 0.2);
+
+    --slider-track: 0 0% 91%;
+    --slider-range: 330 80% 65%;
+    --slider-range-glow: 330 90% 78%;
+    --slider-thumb-border: 0 0% 82%;
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sv-visualizer-top: 330 70% 55%;
+    --sv-visualizer-bottom: 330 60% 72%;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 85%;
+    --primary-foreground: 0 0% 8%;
+
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 0 0% 25%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 0% 85%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 85%), hsl(0 0% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 80%), hsl(0 0% 70%));
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 12%) 100%);
+    
+    --glow-primary: 0 0 40px hsla(0 0% 100% / 0.1);
+    --glow-secondary: 0 0 30px hsla(0 0% 100% / 0.15);
+
+    /* Track = unfilled (right of thumb); range = filled (left of thumb) */
+    --slider-track: 0 0% 38%;
+    --slider-range: 0 0% 8%;
+    --slider-range-glow: 0 0% 22%;
+    --slider-thumb-border: 0 0% 72%;
+
+    /* Dark mode: light grey visualizer */
+    --sv-visualizer-top: 0 0% 82%;
+    --sv-visualizer-bottom: 0 0% 55%;
+  }
+}
+
+@layer components {
+  .slider-range-fill {
+    background-color: hsl(var(--slider-range));
+    box-shadow:
+      0 0 18px hsl(var(--slider-range-glow) / 0.42),
+      0 0 8px hsl(var(--slider-range-glow) / 0.28),
+      inset 0 1px 0 hsl(var(--slider-range-glow) / 0.35);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Hide scrollbars globally while keeping functionality */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Smooth page transitions */
+  #root {
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}
+
+@layer utilities {
+  /* Smooth navigation transitions */
+  .transition-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .transition-soft {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Smooth page transitions */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Safe area padding for PWA status bar (not used on tool-page-shell — see ToolPageSafeAreaInlet) */
+  .safe-area-top:not(.tool-page-shell) {
+    padding-top: env(safe-area-inset-top);
+    position: relative;
+  }
+
+  .tool-page-shell {
+    position: relative;
+  }
+  
+  /* Marketing site: black safe-area (not app --background white) */
+  :root[data-marketing-site="true"] .safe-area-top::before {
+    background-color: #000000 !important;
+  }
+
+  /* Top safe area follows active appearance tokens (light stays white via --background) */
+  .safe-area-top:not(.tool-page-shell)::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background-color: hsl(var(--background));
+    z-index: 40;
+    pointer-events: none;
+  }
+  
+  /* Dark tool pages — match toolPageHeader / shell (#0f0d14) */
+  .dark .safe-area-top:not(.tool-page-shell)::before {
+    background-color: #0f0d14;
+  }
+}
+
+/* Mobile dashboard tiles — glassmorphism (TEMP: all appearances). */
+.dashboard-glass-tile {
+  --glass-blur: 24px;
+  --glass-saturate: 185%;
+  --glass-border: rgba(255, 255, 255, 0.58);
+  --glass-bg-top: rgba(255, 255, 255, 0.44);
+  --glass-bg-mid: rgba(255, 255, 255, 0.16);
+  --glass-bg-bottom: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 12px 40px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08);
+  --glass-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  --glass-inset-bottom: inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+
+  background: linear-gradient(
+    145deg,
+    var(--glass-bg-top) 0%,
+    var(--glass-bg-mid) 52%,
+    var(--glass-bg-bottom) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow), var(--glass-inset-top), var(--glass-inset-bottom) !important;
+}
+
+.dashboard-glass-tile:active,
+.dashboard-glass-tile:hover {
+  --glass-bg-top: rgba(255, 255, 255, 0.52);
+  --glass-bg-mid: rgba(255, 255, 255, 0.22);
+  --glass-shadow: 0 16px 48px rgba(15, 23, 42, 0.18), 0 6px 16px rgba(15, 23, 42, 0.1);
+}
+
+/* Tool board tiles: original 56px / 64px footprint — tighter shadow so rows don't look taller */
+.dashboard-glass-tile.dashboard-glass-tile--compact {
+  --glass-shadow: 0 4px 14px rgba(15, 23, 42, 0.1), 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-glass-tile.dashboard-glass-tile--compact:active,
+.dashboard-glass-tile.dashboard-glass-tile--compact:hover {
+  --glass-shadow: 0 6px 18px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+/* Light + dark — same glass tokens on dashboard tiles */
+:root[data-app-appearance="light"] .dashboard-glass-tile,
+:root.dark .dashboard-glass-tile,
+:root[data-app-appearance="dark"] .dashboard-glass-tile {
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-bg-top: rgba(255, 255, 255, 0.14);
+  --glass-bg-mid: rgba(255, 255, 255, 0.07);
+  --glass-bg-bottom: rgba(255, 255, 255, 0.03);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.28);
+  --glass-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --glass-inset-bottom: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Mobile dashboard (native + mobile web): dark glass tiles always — not tied to local night. */
+.dashboard-mobile-dark-tiles .dashboard-glass-tile {
+  --glass-border: rgba(255, 255, 255, 0.22) !important;
+  --glass-bg-top: rgba(255, 255, 255, 0.14) !important;
+  --glass-bg-mid: rgba(255, 255, 255, 0.07) !important;
+  --glass-bg-bottom: rgba(255, 255, 255, 0.03) !important;
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.28) !important;
+  --glass-inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  --glass-inset-bottom: inset 0 -1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.dashboard-mobile-dark-tiles .dashboard-glass-tile:active,
+.dashboard-mobile-dark-tiles .dashboard-glass-tile:hover {
+  --glass-bg-top: rgba(255, 255, 255, 0.18) !important;
+  --glass-bg-mid: rgba(255, 255, 255, 0.09) !important;
+  --glass-shadow: 0 16px 48px rgba(0, 0, 0, 0.52), 0 6px 16px rgba(0, 0, 0, 0.32) !important;
+}
+
+/* Outside Tailwind layers: Android WebView / Chrome default video overlay (huge play button).
+   Prior rules lived under @utilities with a typo (::--) so the overlay selector never matched. */
+video::-webkit-media-controls,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-overlay-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls-timeline,
+video::-webkit-media-controls-current-time-display,
+video::-webkit-media-controls-time-remaining-display {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+video.mirror-live-video {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+video.mirror-live-video::-webkit-media-controls,
+video.mirror-live-video::-webkit-media-controls-enclosure,
+video.mirror-live-video::-webkit-media-controls-overlay-enclosure,
+video.mirror-live-video::-webkit-media-controls-panel,
+video.mirror-live-video::-webkit-media-controls-play-button,
+video.mirror-live-video::-webkit-media-controls-start-playback-button,
+video.mirror-live-video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* WebPaywall: RC embed inside onboarding card; wider on desktop */
+.web-rc-paywall-host {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Broken/missing RevenueCat dashboard hero images (see revenueCatPaywallMedia.ts) */
+.web-rc-paywall-host [data-rc-hidden-paywall-media="true"] {
+  display: none !important;
+}
+
+/* Marketing site pages (FAQ, blog, legal) on black — not dashboard/login */
+.marketing-site .marketing-site-body .text-muted-foreground {
+  color: rgb(255 255 255 / 0.6);
+}
+
+.marketing-site .marketing-site-body .text-foreground {
+  color: rgb(255 255 255);
+}
+
+.marketing-site .marketing-site-body .bg-card {
+  background-color: rgb(255 255 255 / 0.05);
+  border-color: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255);
+}
+
+.marketing-site .marketing-site-body .border-border,
+.marketing-site .marketing-site-body .border-border\/60 {
+  border-color: rgb(255 255 255 / 0.12);
+}
+
+.marketing-site .marketing-site-body .bg-muted\/30 {
+  background-color: rgb(255 255 255 / 0.06);
+}
+
+.marketing-site .marketing-site-body .bg-muted\/50 {
+  background-color: rgb(255 255 255 / 0.08);
+}
+
+.marketing-site .marketing-site-body .hover\:bg-muted\/50:hover {
+  background-color: rgb(255 255 255 / 0.1);
+}
+
+.marketing-site .marketing-site-body .prose {
+  color: rgb(255 255 255 / 0.85);
+}
+
+.marketing-site .marketing-site-body .prose :where(h1, h2, h3, h4, strong) {
+  color: rgb(255 255 255);
+}
+
+.marketing-site .marketing-site-body .prose :where(a) {
+  color: rgb(251 113 133);
+}

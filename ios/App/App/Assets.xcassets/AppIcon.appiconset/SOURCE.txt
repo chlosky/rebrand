@@ -1,0 +1,2 @@
+Source: public/apple-ios-logo.png (opaque, white edges — App Store / home screen icon).
+NEVER copy welcome-logo.png here — Apple rejects transparent app icons.

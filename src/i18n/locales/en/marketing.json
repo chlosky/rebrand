@@ -1,0 +1,329 @@
+{
+  "pricing": {
+    "title": "Pricing",
+    "subtitle": "One membership with full access to every Palette Plotting tool on web and mobile.",
+    "planHeader": "Plan",
+    "priceHeader": "Price",
+    "plans": {
+      "weekly": {
+        "label": "Weekly",
+        "cadence": "per week"
+      },
+      "monthly": {
+        "label": "Monthly",
+        "cadence": "per month"
+      },
+      "annual": {
+        "label": "Annual",
+        "cadence": "per year"
+      }
+    },
+    "prices": {
+      "weekly": "$5.99",
+      "monthly": "$19.99",
+      "annual": "$149.99"
+    },
+    "pricesSubjectToChange": "Prices subject to change.",
+    "legalPrefix": "See our",
+    "billingPolicy": "Billing & Refund Policy",
+    "legalAnd": "and",
+    "termsOfService": "Terms of Service",
+    "whatsIncluded": "What's included",
+    "features": {
+      "boards": {
+        "title": "4-Board Life System",
+        "description": "Three focus boards plus The Plan — drag-and-drop artboards, themed images, private uploads, and AI action reminders."
+      },
+      "subliminal": {
+        "title": "Subliminal Maker",
+        "description": "Make subliminals with your own voice, binaural beats, background sounds, and layered vocals."
+      },
+      "mirror": {
+        "title": "Mirror Work",
+        "description": "Immerse yourself into digital mirror work's scenes and sounds, as you build self-concept with your affirmations."
+      },
+      "affirmations": {
+        "title": "Robotic Affirm & Script Your Life",
+        "description": "Have your custom affirmations shown on a teleprompter-like screen, count your reps, and visualize."
+      },
+      "beliefs": {
+        "title": "Address Self-Limiting Beliefs",
+        "description": "Deconstruct self-limiting beliefs and integrate expansionary beliefs."
+      },
+      "journal": {
+        "title": "Journal & Track",
+        "description": "Journal, document inspired action, and track your progress with manifesting lists."
+      },
+      "coach": {
+        "title": "Digital Manifesting Coach",
+        "description": "Ask questions you're scared to ask anyone else, and get advice when you're wavering due to 3D circumstances."
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We'd love to hear from you. Send us an email and we'll respond as soon as possible.",
+    "getInTouch": "Get in Touch",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "addressLine1": "1 North State Street Ste 1500",
+    "addressLine2": "Chicago, IL 60602"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about Palette Plotting",
+    "items": {
+      "whatIs": {
+        "question": "What is Palette Plotting?",
+        "answer": "Palette Plotting is a digital personal growth platform that helps you build momentum, reflect through journaling, create audio-based tools, explore mindset patterns, and work with guided suggestions designed for clarity and progress. For a concise tour of each tool in the context of manifestation practice, read What is Palette Plotting?.",
+        "linkWhatIs": "What is Palette Plotting?"
+      },
+      "notTherapy": {
+        "question": "Is Palette Plotting therapy or medical support?",
+        "answer": "No. Palette Plotting is not a provider of mental-health, medical, psychological, legal, or financial advice. If you need clinical or emergency support, contact appropriate services."
+      },
+      "whoCanUse": {
+        "question": "Who can use Palette Plotting?",
+        "answer": "Users must be 18 years or older."
+      },
+      "automated": {
+        "question": "Does Palette Plotting use automated features?",
+        "answer": "Some features may use automated or system-generated responses to support your reflection, prompts, or audio creation. These are supplemental tools, not professional advice."
+      },
+      "privacy": {
+        "question": "Is my content private?",
+        "answer": "Yes. Your journals, reflections, audio creations, and notes are private."
+      },
+      "plans": {
+        "question": "What subscription plans are available?",
+        "answer": "Palette Plotting offers monthly and annual subscription options. Refunds for iOS in-app purchases are at Apple's discretion. Refunds for all non-Apple purchases are at Palette Plotting's discretion. See Billing & Refund Policy for details.",
+        "linkBilling": "Billing & Refund Policy"
+      },
+      "cancel": {
+        "question": "Can I cancel my subscription?",
+        "answer": "Yes. You may cancel anytime through your account settings. Your plan remains active until the end of the billing period."
+      },
+      "sellData": {
+        "question": "Will you sell my information?",
+        "answer": "No. We do not sell your personal data."
+      },
+      "deleteAccount": {
+        "question": "How do I delete my account?",
+        "answer": "You may request deletion through the app or by contacting: support@paletteplot.com"
+      },
+      "acceptableUse": {
+        "question": "What happens if I violate the Acceptable Use Policy?",
+        "answer": "We may limit or suspend your access to maintain a safe and respectful environment."
+      },
+      "legalTerms": {
+        "question": "Where can I read the legal terms?",
+        "answer": "Links to the Terms of Use, Privacy Policy, and Acceptable Use Policy appear in the app and on our website. For copyright concerns, please see our DMCA Notice & Takedown Policy.",
+        "linkTerms": "Terms of Use",
+        "linkPrivacy": "Privacy Policy",
+        "linkAcceptableUse": "Acceptable Use Policy",
+        "linkDmca": "DMCA Notice & Takedown Policy"
+      }
+    }
+  },
+  "home": {
+    "meta": {
+      "title": "Home | Palette Plotting",
+      "description": "Palette Plotting is your digital 4-board life system — three focus boards plus The Plan, with drag-and-drop editing, reminders, and more tools when you need them.",
+      "ogDescription": "Organize your life on four boards. Digital companion to acrylic boards at paletteplot.com.",
+      "twitterDescription": "Three focus boards + The Plan. Drag-and-drop editor, themed images, AI reminders, iCal export."
+    },
+    "header": {
+      "community": "Community",
+      "faq": "FAQ",
+      "blog": "Blog",
+      "signIn": "Sign in",
+      "downloadApp": "Download app",
+      "yourAccount": "Your Account",
+      "dashboard": "Dashboard",
+      "logOut": "Log out",
+      "user": "User",
+      "mainNav": "Main"
+    },
+    "hero": {
+      "headline1": "Organize your life",
+      "headline2Prefix": "on",
+      "headline2Accent": "four boards",
+      "headline3Prefix": "Three focus boards",
+      "headline3Connector": "+",
+      "headline3Accent": "The Plan",
+      "freeTrialLine": "Free on the web · pairs with acrylic boards at paletteplot.com",
+      "subhead1": "Canva-style drag-and-drop editor",
+      "subhead2": "Themed image library + your private photos",
+      "subhead3": "AI action reminders · email · SMS · iCal export",
+      "awardLine": "The viral 4-board system — now digital",
+      "ctaHeroMobile": "Start your boards",
+      "ctaDownload": "Start your boards free",
+      "ctaAppSecondary": "Get the mobile app",
+      "exploreApp": "Explore the app",
+      "freeTrialUnderBadges": "Also available on iOS and Android"
+    },
+    "manifestPanel": {
+      "headlineLine1": "One workspace for",
+      "headlineLine2": "what you're building",
+      "manifestListAria": "Board focus areas",
+      "rows": [
+        [
+          "identity",
+          "career & money"
+        ],
+        [
+          "love & life",
+          "home & space"
+        ],
+        [
+          "beauty & glow",
+          "travel & adventure"
+        ],
+        [
+          "health",
+          "the plan"
+        ],
+        [
+          "habits",
+          "next steps"
+        ]
+      ]
+    },
+    "featureStripKeys": [
+      "boards",
+      "subliminal",
+      "mirror",
+      "affirmations",
+      "beliefs",
+      "journal",
+      "coach"
+    ],
+    "practiceSection": {
+      "headlineLine1": "Built for the",
+      "headlineLine2": "4-board method",
+      "body": "Palette Plotting is a life-organization and moodboard system — not a scattered vision-board app. Plot three focus areas, lock in The Plan, and keep affirmations, audio tools, and journaling in the same membership when you want them.",
+      "focusAreasAria": "Board themes",
+      "pills": [
+        {
+          "label": "Identity & Glow Up",
+          "category": "Self Concept",
+          "color": "pink"
+        },
+        {
+          "label": "Career & Money",
+          "category": "Law of Assumption",
+          "color": "green"
+        },
+        {
+          "label": "Love & Life",
+          "category": "Self Concept",
+          "color": "blue"
+        },
+        {
+          "label": "The Plan",
+          "category": "Self Concept",
+          "color": "yellow"
+        }
+      ]
+    },
+    "stats": [
+      {
+        "value": "4",
+        "label": "boards in your system"
+      },
+      {
+        "value": "50+",
+        "label": "themed starter images"
+      },
+      {
+        "value": "AI",
+        "label": "plan extraction"
+      },
+      {
+        "value": "10+",
+        "label": "bonus tools included"
+      }
+    ],
+    "testimonials": {
+      "headlineLine1": "Results from our",
+      "headlineLine2": "Users & Testers",
+      "carouselAria": "User testimonials",
+      "previous": "Previous testimonial",
+      "next": "Next testimonial",
+      "pagesAria": "Testimonial pages",
+      "pageN": "Testimonial {{n}}",
+      "starsAria": "5 out of 5 stars",
+      "items": [
+        {
+          "quote": "I had the acrylic boards on my wall but kept screenshotting Pinterest at 2am anyway. Having the same four-board structure on my laptop finally made the system stick — Focus boards for vibes, The Plan for what I actually do this week.",
+          "name": "Maya T.",
+          "role": "4-board system"
+        },
+        {
+          "quote": "The drag-and-drop editor feels like Canva but purpose-built. I dumped my career board images in, pulled themes with AI, and scheduled email nudges for the plan steps I'd been avoiding.",
+          "name": "Devon K.",
+          "role": "Career & money board"
+        },
+        {
+          "quote": "I still use subliminals and affirmations here when I want them — but Boards is the home base. It's organization first, not another manifestation rabbit hole.",
+          "name": "Jade L.",
+          "role": "Focus boards + tools"
+        }
+      ]
+    },
+    "download": {
+      "headingMobile": "Take boards on the go",
+      "headingDesktop": "Web first — mobile app too",
+      "scanPhone": "Scan with your phone.",
+      "tapInstall": "Tap to install on your phone.",
+      "qrUnavailable": "Unavailable",
+      "qrError": "QR codes unavailable. Use the store badges below.",
+      "appleStore": "Apple App Store",
+      "googlePlay": "Google Play",
+      "qrAltAppStore": "QR code to open Palette Plotting on the App Store",
+      "qrAltGooglePlay": "QR code to open Palette Plotting on Google Play"
+    },
+    "newsletter": {
+      "heading": "Tips in your inbox",
+      "subtitle": "Stay consistent, hear about new features, and get special promotions.",
+      "placeholder": "Email address",
+      "subscribe": "Subscribe",
+      "subscribing": "Subscribing…",
+      "successHeading": "You're on the list",
+      "successBody": "Thanks for subscribing. Watch your inbox for board tips, new features, and special promotions.",
+      "consent": "By subscribing you agree to receive marketing emails from Palette Plotting. Unsubscribe anytime.",
+      "errorEmpty": "Please enter your email address.",
+      "errorInvalid": "Please enter a valid email address.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
+    "footer": {
+      "company": "PALETTE PLOTTING LLC",
+      "copyright": "© {{year}} Palette Plotting LLC. All rights reserved.",
+      "whatIs": "What is Palette Plotting?",
+      "faq": "FAQ",
+      "community": "Community",
+      "billing": "Billing",
+      "contact": "Contact",
+      "terms": "Terms of Use",
+      "privacy": "Privacy Policy",
+      "acceptableUse": "Acceptable Use Policy",
+      "footerNav": "Footer"
+    },
+    "stickyBarAria": "Download Palette Plotting"
+  },
+  "community": {
+    "eyebrow": "Community",
+    "title": "Join the community",
+    "body": "Connect with Palette Plotting on Discord and TikTok — updates, manifestation talk, and what we're building next.",
+    "discordTitle": "Official Palette Plotting Discord",
+    "tiktokTitle": "Official Palette Plotting TikTok"
+  },
+  "mobileLanding": {
+    "cta": "Download now & start for free today",
+    "meta": {
+      "title": "Download Palette Plotting",
+      "description": "Download Palette Plotting — subliminals, affirmations, mirror work, and your manifesting coach in one app."
+    }
+  }
+}

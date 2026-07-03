@@ -1,0 +1,105 @@
+{
+  "pageTitle": "Pedido de ajuda",
+  "supportInbox": "Caixa",
+  "tabs": {
+    "create": "Dicas",
+    "support": "Suporte",
+    "inbox": "Caixa"
+  },
+  "create": {
+    "intro": "Compartilhe só o essencial. A Palette Plotting pode criar prompts, afirmações ou uma rotina.",
+    "successTitle": "Enviado.",
+    "successBody": "Responderemos pela caixa no app (melhor se você ativou as notificações) e/ou por e-mail. Urgente? Escreva para",
+    "successBodySuffix": ".",
+    "backToDashboard": "Voltar ao painel",
+    "submitAnother": "Enviar outro",
+    "focusLabel": "O que você está manifestando agora?",
+    "focusPlaceholder": "Conte o que você está manifestando e o que está difícil.",
+    "helpTypeLabel": "Com o que você precisa de ajuda?",
+    "chooseOne": "Escolha uma opção",
+    "footer": "Envie o mais relevante. A Palette Plotting tentará responder em 24 a 48 horas. Você também pode escrever para support@paletteplot.com.",
+    "submit": "Enviar",
+    "submitting": "Enviando…"
+  },
+  "createHelpOptions": {
+    "affirmationsOrScripting": "Afirmações ou scripting",
+    "strongSubliminal": "Criar um subliminar forte",
+    "mirrorWorkGuidance": "Guia de espelho",
+    "buildWeeklyRoutine": "Montar uma rotina semanal",
+    "notSureHelpMeChoose": "Não sei — me ajude"
+  },
+  "submissionTypes": {
+    "report": "Reportar um problema",
+    "aiFlag": "Sinalizar conteúdo gerado por IA",
+    "featureRequest": "Pedido de recurso",
+    "helpMeCreate": "Dicas"
+  },
+  "supportForm": {
+    "successTitle": "Obrigado — recebemos seu envio.",
+    "successBody": "Buscamos responder em 24–48 horas pela caixa no app (melhor se você ativou as notificações) e/ou por e-mail. Se precisar de algo com urgência, você também pode escrever para",
+    "successBodySuffix": ".",
+    "submissionTypeLabel": "Tipo de pedido",
+    "toolOrAreaLabel": "Ferramenta ou área",
+    "toolPlaceholder": "Escolha uma área",
+    "purchaseChannelLabel": "Onde você comprou?",
+    "purchaseChannelPlaceholder": "Apple App Store, Google Play ou Web",
+    "descriptionLabel": "Descreva o problema ou pedido",
+    "descriptionPlaceholder": "O que aconteceu, o que deveria mudar ou o que ajudaria você?",
+    "appleRefundNote": "A Apple controla pagamentos e reembolsos; mesmo assim faremos o possível para ajudar.",
+    "screenshotsLabel": "Prints (opcional)",
+    "screenshotsHint": "Até {{max}} arquivos • HEIC, JPG, PNG, WebP • máx. 5 MB cada",
+    "chooseFiles": "Escolher arquivos",
+    "filesSelected_one": "{{count}} arquivo selecionado",
+    "filesSelected_other": "{{count}} arquivos selecionados",
+    "noFilesSelected": "Nenhum arquivo",
+    "removeFileAria": "Remover {{name}}",
+    "contactFooter": "Você também pode escrever para support@paletteplot.com."
+  },
+  "inbox": {
+    "title": "Caixa de entrada",
+    "description": "Aqui ficam seus pedidos e as respostas da Palette Plotting. Novos pedidos são enviados pelas outras abas.",
+    "refresh": "Atualizar",
+    "backToRequests": "← Voltar aos pedidos",
+    "loading": "Carregando…",
+    "noMessages": "Ainda não há mensagens.",
+    "senderSupport": "Palette Plotting",
+    "senderYou": "Você",
+    "yourReply": "Sua resposta",
+    "replyPlaceholder": "Responder nesta conversa…",
+    "sending": "Enviando…",
+    "sendReply": "Enviar resposta",
+    "empty": "Nenhum pedido ainda. Envie em outras abas; respostas aparecem aqui.",
+    "newReplyAria": "Nova resposta",
+    "supportRepliedPrefix": "Palette Plotting respondeu · ",
+    "submittedPrefix": "Enviado {{when}}",
+    "todayAt": "Hoje às {{time}}",
+    "yesterdayAt": "Ontem às {{time}}",
+    "caseTypes": {
+      "helpMeCreate": "Dicas",
+      "appSupportFeedback": "Suporte"
+    },
+    "subtypes": {
+      "request": "Pedido",
+      "supportRequest": "Pedido de suporte"
+    }
+  },
+  "toasts": {
+    "maxAttachments": "Você pode adicionar até {{max}} imagens.",
+    "unsupportedImage": "{{name}} não é um tipo de imagem compatível.",
+    "fileTooLarge": "{{name}} é grande demais (máx. 5 MB por arquivo).",
+    "chooseSubmissionType": "Escolha um tipo de pedido.",
+    "chooseToolOrArea": "Escolha uma área.",
+    "choosePurchaseChannel": "Selecione onde você comprou (Apple App Store, Google Play ou Web).",
+    "descriptionMinLength": "Digite pelo menos {{min}} caracteres na descrição.",
+    "uploadFailed": "Falha ao enviar a imagem",
+    "requestFailed": "Falha na solicitação",
+    "submitted": "Enviado",
+    "shareManifestationFocus": "Compartilhe o que você está tentando manifestar ou mudar.",
+    "chooseHelpType": "Escolha com o que você precisa de ajuda.",
+    "addMoreDetail": "Adicione um pouco mais de detalhe.",
+    "loadInboxFailed": "Não foi possível carregar a caixa de entrada.",
+    "loadConversationFailed": "Não foi possível carregar a conversa.",
+    "replySent": "Resposta enviada",
+    "sendReplyFailed": "Não foi possível enviar a resposta."
+  }
+}

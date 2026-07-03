@@ -1,0 +1,462 @@
+workflows:
+  ios-simulator-workflow:
+    name: iOS Simulator Build (Quick Launch)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    triggering:
+      events: []
+    environment:
+      vars:
+        XCODE_SCHEME: "App"
+        VITE_REVENUECAT_IOS_API_KEY: "appl_mVsxTYvnkpFUmLDLcZgPlzBLzpB"
+        # TikTok App Events SDK — Events Manager "Initialize app" → TikTokConfig(accessToken:appId:tiktokAppId:)
+        #   TIKTOK_IOS_APP_SECRET     → App Secret      → plist TikTokAccessToken → accessToken
+        #   TIKTOK_IOS_APP_ID         → App ID (numeric) → plist TikTokAppId         → appId
+        #   TIKTOK_IOS_TIKTOK_APP_ID  → TikTok App ID   → plist TikTokTikTokAppId  → tiktokAppId
+        # Legacy: TIKTOK_IOS_ACCESS_TOKEN accepted as App Secret if APP_SECRET unset
+      groups:
+        - Production
+      # Use Codemagic-supported Xcode (15.4 was removed from their pool). Paywall uses
+      # @revenuecat/purchases-capacitor-ui (RevenueCatUI.presentPaywall).
+      node: 22.11.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm ci
+      - name: Xcode toolchain (verify)
+        script: |
+          xcodebuild -version
+          xcode-select -print-path
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          ./node_modules/.bin/cap sync ios
+      - name: Inject TikTok SDK credentials
+        script: |
+          PLIST="ios/App/App/Info.plist"
+          APP_SECRET="${TIKTOK_IOS_APP_SECRET:-${TIKTOK_IOS_ACCESS_TOKEN:-}}"
+          if [ -n "$APP_SECRET" ] && [ -n "${TIKTOK_IOS_APP_ID:-}" ] && [ -n "${TIKTOK_IOS_TIKTOK_APP_ID:-}" ]; then
+            /usr/libexec/PlistBuddy -c "Set :TikTokAccessToken $APP_SECRET" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Set :TikTokAppId ${TIKTOK_IOS_APP_ID}" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Set :TikTokTikTokAppId ${TIKTOK_IOS_TIKTOK_APP_ID}" "$PLIST"
+            echo "✓ TikTok SDK credentials injected (App Secret, App ID, TikTok App ID)"
+          else
+            echo "⚠️  Set TIKTOK_IOS_APP_SECRET, TIKTOK_IOS_APP_ID, TIKTOK_IOS_TIKTOK_APP_ID in Codemagic (encrypt)"
+          fi
+      - name: Verify TikTok SDK configuration
+        script: |
+          PLIST="ios/App/App/Info.plist"
+          TOKEN=$(/usr/libexec/PlistBuddy -c "Print :TikTokAccessToken" "$PLIST" 2>/dev/null || echo "")
+          APP_ID=$(/usr/libexec/PlistBuddy -c "Print :TikTokAppId" "$PLIST" 2>/dev/null || echo "")
+          TT_APP_ID=$(/usr/libexec/PlistBuddy -c "Print :TikTokTikTokAppId" "$PLIST" 2>/dev/null || echo "")
+          ATT=$(/usr/libexec/PlistBuddy -c "Print :NSUserTrackingUsageDescription" "$PLIST" 2>/dev/null || echo "")
+          if [ -z "$ATT" ]; then
+            echo "✗ NSUserTrackingUsageDescription missing (required per TikTok SDK)"
+            exit 1
+          fi
+          if [ -z "$TOKEN" ] || [ -z "$APP_ID" ] || [ -z "$TT_APP_ID" ] || echo "$TOKEN" | grep -q '^REPLACE_' || echo "$APP_ID" | grep -q '^REPLACE_' || echo "$TT_APP_ID" | grep -q '^REPLACE_'; then
+            echo "⚠️  TikTok credentials missing or placeholder — SDK will not initialize"
+          else
+            echo "✓ TikTok App Secret, App ID, and TikTok App ID present (values not printed)"
+          fi
+          echo "✓ NSUserTrackingUsageDescription present"
+      - name: Build for iOS Simulator
+        script: |
+          cd ios/App
+          echo "Selecting an available iPhone Simulator device..."
+          SIMULATOR_UDID=$(
+            xcrun simctl list devices available |
+              awk -F '[()]' '/iPhone/ && $2 ~ /[0-9A-F-]{36}/ { print $2; exit }'
+          )
+          if [ -z "$SIMULATOR_UDID" ]; then
+            echo "Error: No available iPhone Simulator UDID found."
+            xcrun simctl list devices available || true
+            exit 1
+          fi
+          echo "Using simulator UDID: $SIMULATOR_UDID"
+          if [ -f "App.xcworkspace" ]; then
+            echo "Using workspace: App.xcworkspace"
+            xcodebuild build \
+              -workspace App.xcworkspace \
+              -scheme App \
+              -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+              -configuration Debug \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
+          else
+            echo "Workspace not found, using project directly"
+            xcodebuild build \
+              -project App.xcodeproj \
+              -scheme App \
+              -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+              -configuration Debug \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
+          fi
+      - name: Find and prepare .app bundle
+        script: |
+          cd ios/App
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "App.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            APP_PATH=$(find build -name "App.app" -type d | head -1)
+          fi
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App.app not found"
+            exit 1
+          fi
+          echo "Found app at: $APP_PATH"
+          mkdir -p ../../build/simulator
+          cp -R "$APP_PATH" ../../build/simulator/
+    artifacts:
+      - build/simulator/*.app
+    publishing:
+      email:
+        recipients:
+          - user@example.com
+        notify:
+          success: true
+          failure: false
+
+  # Android: unsigned debug APK for emulator / Quick Launch (no Play signing). Mirror production VITE_* in Codemagic UI.
+  android-emulator-workflow:
+    name: Android Emulator Build (Quick Launch)
+    max_build_duration: 120
+    instance_type: linux_x2
+    triggering:
+      events: []
+    environment:
+      node: 22.11.0
+      java: 21
+      groups:
+        - Production
+      vars:
+        PACKAGE_NAME: "com.paletteplotting.app"
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm ci
+      - name: Java and Android SDK (verify)
+        script: |
+          java -version
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+      - name: Verify OneSignal app id for native build
+        script: |
+          ONESIGNAL_ID="${VITE_ONESIGNAL_APP_ID:-${VITE_PUBLIC_ONESIGNAL_APP_ID:-}}"
+          if [ -z "$ONESIGNAL_ID" ]; then
+            echo "✗ VITE_ONESIGNAL_APP_ID missing — set in Codemagic Production group (must be VITE_ prefix, not ONESIGNAL_APP_ID alone)"
+            exit 1
+          fi
+          echo "VITE_ONESIGNAL_APP_ID length: ${#VITE_ONESIGNAL_APP_ID}"
+          echo "VITE_PUBLIC_ONESIGNAL_APP_ID length: ${#VITE_PUBLIC_ONESIGNAL_APP_ID}"
+          echo "✓ OneSignal app id present in build env (values not printed)"
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Verify OneSignal app id inlined in Vite bundle
+        script: |
+          ONESIGNAL_ID="${VITE_ONESIGNAL_APP_ID:-${VITE_PUBLIC_ONESIGNAL_APP_ID:-}}"
+          if grep -Rqs "$ONESIGNAL_ID" dist/assets/*.js; then
+            echo "✓ OneSignal app id was inlined into dist/assets/*.js"
+          else
+            echo "✗ OneSignal app id was in shell env but not found in dist/assets/*.js"
+            echo "  Check Production group: variable must be named VITE_ONESIGNAL_APP_ID and exposed to build"
+            exit 1
+          fi
+      - name: Sync Capacitor Android
+        script: |
+          ./node_modules/.bin/cap sync android
+      - name: Verify Android project structure
+        script: |
+          ls -la android/app/ || echo "android/app directory not found"
+          test -f android/gradlew || (echo "✗ Error: android/gradlew not found" && exit 1)
+          echo "✓ Android project ready"
+      - name: Gradle SDK location
+        script: |
+          echo "sdk.dir=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" > android/local.properties
+      - name: Build debug APK for emulator
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+      - name: List APK outputs
+        script: |
+          find android/app/build/outputs -name "*.apk" -type f | sort
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - user@example.com
+        notify:
+          success: true
+          failure: false
+
+  ios-workflow:
+    name: iOS Build Workflow
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    triggering:
+      events: []
+    integrations:
+      app_store_connect: Codemagic
+    environment:
+      vars:
+        XCODE_SCHEME: "App"
+        CM_APPLE_DEVELOPER_TEAM_ID: "WLPRRC5XX9"
+        PROVISIONING_PROFILE_SPECIFIER: "Palette Plotting provisioning"
+        VITE_REVENUECAT_IOS_API_KEY: "appl_mVsxTYvnkpFUmLDLcZgPlzBLzpB"
+        # OneSignal: set in Codemagic UI (encrypted) for native push + in-app messaging.
+        # VITE_ONESIGNAL_APP_ID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        # TikTok App Events SDK — Events Manager "Initialize app" → TikTokConfig(accessToken:appId:tiktokAppId:)
+        #   TIKTOK_IOS_APP_SECRET     → App Secret      → plist TikTokAccessToken → accessToken
+        #   TIKTOK_IOS_APP_ID         → App ID (numeric) → plist TikTokAppId         → appId
+        #   TIKTOK_IOS_TIKTOK_APP_ID  → TikTok App ID   → plist TikTokTikTokAppId  → tiktokAppId
+        # Legacy: TIKTOK_IOS_ACCESS_TOKEN accepted as App Secret if APP_SECRET unset
+      groups:
+        - Production
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.paletteplotting.app
+      node: 22.11.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm ci
+      - name: Xcode toolchain (verify)
+        script: |
+          xcodebuild -version
+          xcode-select -print-path
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          ./node_modules/.bin/cap sync ios
+      - name: Inject TikTok SDK credentials
+        script: |
+          PLIST="ios/App/App/Info.plist"
+          APP_SECRET="${TIKTOK_IOS_APP_SECRET:-${TIKTOK_IOS_ACCESS_TOKEN:-}}"
+          if [ -n "$APP_SECRET" ] && [ -n "${TIKTOK_IOS_APP_ID:-}" ] && [ -n "${TIKTOK_IOS_TIKTOK_APP_ID:-}" ]; then
+            /usr/libexec/PlistBuddy -c "Set :TikTokAccessToken $APP_SECRET" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Set :TikTokAppId ${TIKTOK_IOS_APP_ID}" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Set :TikTokTikTokAppId ${TIKTOK_IOS_TIKTOK_APP_ID}" "$PLIST"
+            echo "✓ TikTok SDK credentials injected (App Secret, App ID, TikTok App ID)"
+          else
+            echo "✗ Set TIKTOK_IOS_APP_SECRET, TIKTOK_IOS_APP_ID, TIKTOK_IOS_TIKTOK_APP_ID in Codemagic Production group (encrypt)"
+            exit 1
+          fi
+      - name: Verify TikTok SDK configuration
+        script: |
+          PLIST="ios/App/App/Info.plist"
+          TOKEN=$(/usr/libexec/PlistBuddy -c "Print :TikTokAccessToken" "$PLIST" 2>/dev/null || echo "")
+          APP_ID=$(/usr/libexec/PlistBuddy -c "Print :TikTokAppId" "$PLIST" 2>/dev/null || echo "")
+          TT_APP_ID=$(/usr/libexec/PlistBuddy -c "Print :TikTokTikTokAppId" "$PLIST" 2>/dev/null || echo "")
+          ATT=$(/usr/libexec/PlistBuddy -c "Print :NSUserTrackingUsageDescription" "$PLIST" 2>/dev/null || echo "")
+          if [ -z "$ATT" ]; then
+            echo "✗ NSUserTrackingUsageDescription missing (required per TikTok SDK)"
+            exit 1
+          fi
+          if [ -z "$TOKEN" ] || [ -z "$APP_ID" ] || [ -z "$TT_APP_ID" ] || echo "$TOKEN" | grep -q '^REPLACE_' || echo "$APP_ID" | grep -q '^REPLACE_' || echo "$TT_APP_ID" | grep -q '^REPLACE_'; then
+            echo "✗ TikTok credentials missing or placeholder — fix Production group vars"
+            exit 1
+          fi
+          echo "✓ TikTok App Secret, App ID, and TikTok App ID present (values not printed)"
+          echo "✓ NSUserTrackingUsageDescription present"
+      - name: Verify iOS project structure
+        script: |
+          ls -la ios/App/ || echo "ios/App directory not found"
+          if [ -f "ios/App/App.xcworkspace" ]; then
+            echo "✓ Workspace found at ios/App/App.xcworkspace"
+          elif [ -d "ios/App/App.xcodeproj" ]; then
+            echo "✓ Project found at ios/App/App.xcodeproj"
+            echo "Workspace should be created by Capacitor sync"
+          else
+            echo "✗ Error: iOS project not found"
+            exit 1
+          fi
+      - name: Set up code signing settings on Xcode project
+        script: |
+          # Check if Apple Developer Team ID is configured
+          if [ -z "${CM_APPLE_DEVELOPER_TEAM_ID}" ]; then
+            echo "⚠️  WARNING: CM_APPLE_DEVELOPER_TEAM_ID not set"
+            echo "⚠️  Code signing will fail. Set up Apple Developer account in Codemagic UI to continue."
+            echo "⚠️  You can test the build up to this point without an Apple Developer account."
+          else
+            echo "✓ Apple Developer Team ID found: ${CM_APPLE_DEVELOPER_TEAM_ID}"
+            xcode-project use-profiles
+          fi
+      - name: Build ipa for distribution
+        script: |
+          if [ -z "${CM_APPLE_DEVELOPER_TEAM_ID}" ]; then
+            echo "⚠️  Skipping archive build - Apple Developer Team ID not configured"
+            echo "⚠️  To enable builds:"
+            echo "   1. Set up Apple Developer account ($99/year)"
+            echo "   2. Configure code signing in Codemagic UI"
+            echo "   3. Team ID will be automatically set"
+            exit 0
+          fi
+          cd ios/App
+          if [ -f "App.xcworkspace" ]; then
+            echo "Using workspace: App.xcworkspace"
+            xcodebuild archive \
+              -workspace App.xcworkspace \
+              -scheme App \
+              -archivePath ../../build/App.xcarchive \
+              -destination 'generic/platform=iOS' \
+              -configuration Release \
+              -allowProvisioningUpdates \
+              -allowProvisioningDeviceRegistration
+          else
+            echo "Workspace not found, using project directly"
+            xcodebuild archive \
+              -project App.xcodeproj \
+              -scheme App \
+              -archivePath ../../build/App.xcarchive \
+              -destination 'generic/platform=iOS' \
+              -configuration Release \
+              -allowProvisioningUpdates \
+              -allowProvisioningDeviceRegistration
+          fi
+      - name: Export IPA
+        script: |
+          if [ -z "${CM_APPLE_DEVELOPER_TEAM_ID}" ]; then
+            echo "⚠️  Skipping IPA export - Apple Developer Team ID not configured"
+            exit 0
+          fi
+          # Generate export_options.plist dynamically
+          cat > export_options.plist << 'PLISTEOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>WLPRRC5XX9</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.paletteplotting.app</key>
+                  <string>Palette Plotting provisioning</string>
+              </dict>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>uploadSymbols</key>
+              <true/>
+          </dict>
+          </plist>
+          PLISTEOF
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist export_options.plist \
+            -exportPath build/ipa
+    artifacts:
+      - build/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - user@example.com  # Change to your email
+        notify:
+          success: true
+          failure: false
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+
+  # Android: build signed AAB (upload to Play optional — see publishing comment below).
+  # Prereqs in Codemagic UI:
+  # 1) Teams → Code signing identities → Android → add upload keystore; reference name must match `android_signing` below.
+  # 2) Environment variables / group: Production (same as iOS) — must include VITE_ONESIGNAL_APP_ID,
+  #    VITE_REVENUECAT_ANDROID_API_KEY, Supabase URL/anon key, etc.
+  #    Push: add android/app/google-services.json (Firebase), then set VITE_ANDROID_PUSH_REGISTER=true in env so Android can call PushNotifications.register() without crashing.
+  android-workflow:
+    name: Android Release (AAB)
+    max_build_duration: 120
+    instance_type: linux_x2
+    triggering:
+      events: []
+    environment:
+      android_signing:
+        - paletteplotting_android
+      node: 22.11.0
+      java: 21
+      groups:
+        - Production
+      vars:
+        PACKAGE_NAME: "com.paletteplotting.app"
+        # OneSignal: set in Codemagic Production group (encrypted) — required for routine push after OS permission grant.
+        # VITE_ONESIGNAL_APP_ID: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm ci
+      - name: Verify OneSignal app id for native build
+        script: |
+          ONESIGNAL_ID="${VITE_ONESIGNAL_APP_ID:-${VITE_PUBLIC_ONESIGNAL_APP_ID:-}}"
+          if [ -z "$ONESIGNAL_ID" ]; then
+            echo "✗ VITE_ONESIGNAL_APP_ID missing — set in Codemagic Production group (must be VITE_ prefix, not ONESIGNAL_APP_ID alone)"
+            exit 1
+          fi
+          echo "VITE_ONESIGNAL_APP_ID length: ${#VITE_ONESIGNAL_APP_ID}"
+          echo "VITE_PUBLIC_ONESIGNAL_APP_ID length: ${#VITE_PUBLIC_ONESIGNAL_APP_ID}"
+          echo "✓ OneSignal app id present in build env (values not printed)"
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Verify OneSignal app id inlined in Vite bundle
+        script: |
+          ONESIGNAL_ID="${VITE_ONESIGNAL_APP_ID:-${VITE_PUBLIC_ONESIGNAL_APP_ID:-}}"
+          if grep -Rqs "$ONESIGNAL_ID" dist/assets/*.js; then
+            echo "✓ OneSignal app id was inlined into dist/assets/*.js"
+          else
+            echo "✗ OneSignal app id was in shell env but not found in dist/assets/*.js"
+            echo "  Check Production group: variable must be named VITE_ONESIGNAL_APP_ID and exposed to build"
+            exit 1
+          fi
+      - name: Sync Capacitor Android
+        script: |
+          ./node_modules/.bin/cap sync android
+      - name: Verify TikTok SDK configuration
+        script: |
+          AAR="android/app/libs/tiktok-business-android-sdk-1.6.1.aar"
+          if [ ! -f "$AAR" ]; then
+            echo "✗ TikTok AAR missing at $AAR — commit android/app/libs/tiktok-business-android-sdk-1.6.1.aar"
+            exit 1
+          fi
+          if [ -z "${TIKTOK_ANDROID_APP_SECRET:-}" ] || [ -z "${TIKTOK_ANDROID_TIKTOK_APP_ID:-}" ]; then
+            echo "✗ Set TIKTOK_ANDROID_APP_SECRET and TIKTOK_ANDROID_TIKTOK_APP_ID in Codemagic Production group (encrypt)"
+            echo "  Optional: TIKTOK_ANDROID_APP_ID (defaults to com.paletteplotting.app via Gradle)"
+            exit 1
+          fi
+          echo "✓ TikTok AAR present; Gradle will inject credentials from CI env at build time (values not printed)"
+      - name: Gradle SDK location
+        script: |
+          echo "sdk.dir=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" > android/local.properties
+      - name: Build Android App Bundle (release)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+    publishing:
+      email:
+        recipients:
+          - user@example.com
+        notify:
+          success: true
+          failure: false
+      # Uncomment after adding Play Console API access + Codemagic variable `GCLOUD_SERVICE_ACCOUNT_CREDENTIALS` (service account JSON).
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal
+      #   submit_as_draft: false

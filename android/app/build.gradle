@@ -1,0 +1,101 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.paletteplotting.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.paletteplotting.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 264
+        versionName "1.0.18"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+        // TikTok App Events SDK — Codemagic Production env → generated res (handles special chars in App Secret).
+        def tiktokAppSecret = System.getenv("TIKTOK_ANDROID_APP_SECRET") ?: "REPLACE_WITH_APP_SECRET"
+        def tiktokAppId = System.getenv("TIKTOK_ANDROID_APP_ID") ?: "com.paletteplotting.app"
+        def tiktokTtAppId = System.getenv("TIKTOK_ANDROID_TIKTOK_APP_ID") ?: "REPLACE_WITH_TIKTOK_APP_ID"
+        resValue "string", "tiktok_app_secret", tiktokAppSecret
+        resValue "string", "tiktok_app_id", tiktokAppId
+        resValue "string", "tiktok_tiktok_app_id", tiktokTtAppId
+    }
+    // Codemagic sets CM_* when `android_signing` is listed in codemagic.yaml — without this, release AABs are unsigned.
+    signingConfigs {
+        release {
+            def cmKeystore = System.getenv("CM_KEYSTORE_PATH")
+            if (cmKeystore != null && !cmKeystore.isEmpty()) {
+                storeFile file(cmKeystore)
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildTypes {
+        release {
+            // R8: Play gets deobfuscation mapping bundled with the AAB. shrinkResources off — Capacitor serves from assets.
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Native (.so) crash stacks: include symbol tables in the bundle (recommended by Play Console).
+            ndk {
+                debugSymbolLevel "SYMBOL_TABLE"
+            }
+            def cmKeystore = System.getenv("CM_KEYSTORE_PATH")
+            if (cmKeystore != null && !cmKeystore.isEmpty()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+
+    // NativeMirror: CameraX + ML Kit selfie segmentation (GPU/NNAPI accelerated)
+    implementation "androidx.camera:camera-core:1.4.1"
+    implementation "androidx.camera:camera-camera2:1.4.1"
+    implementation "androidx.camera:camera-lifecycle:1.4.1"
+    implementation "com.google.mlkit:segmentation-selfie:16.0.0-beta6"
+    implementation "com.google.guava:guava:33.4.0-android"
+
+    // TikTok App Events SDK (manual AAR in app/libs/)
+    implementation files('libs/tiktok-business-android-sdk-1.6.1.aar')
+    implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-common-java8:2.3.1'
+    implementation 'com.android.billingclient:billing:6.1.0'
+    implementation 'com.android.installreferrer:installreferrer:2.2'
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
