@@ -16,6 +16,10 @@ export async function postStripePurchaseToRevenueCat(
   appUserId: string,
   fetchToken: string | null | undefined,
 ): Promise<boolean> {
+  if (Deno.env.get("SYNC_WEB_STRIPE_TO_REVENUECAT") !== "true") {
+    return false;
+  }
+
   if (!fetchToken || typeof fetchToken !== "string" || !fetchToken.trim()) return false;
 
   const apiKey = Deno.env.get("REVENUECAT_STRIPE_APP_PUBLIC_API_KEY")?.trim();

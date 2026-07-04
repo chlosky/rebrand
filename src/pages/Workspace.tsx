@@ -39,6 +39,7 @@ import { WorkspaceHeader, workspaceShellClass } from "@/components/workspace/Wor
 
 import { ProgressMilestonesTabs } from "@/components/ProgressMilestonesTabs";
 import { LibraryReader } from "@/components/workspace/LibraryReader";
+import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 
 import {
 
@@ -50,9 +51,9 @@ import {
 
 
 
-type WorkspaceTab = "library" | "journey" | "new-board" | "create" | "projects";
+type WorkspaceTab = "library" | "journey" | "new-board" | "create" | "images" | "projects";
 
-const WORKSPACE_TABS: WorkspaceTab[] = ["library", "journey", "new-board", "create", "projects"];
+const WORKSPACE_TABS: WorkspaceTab[] = ["library", "journey", "new-board", "create", "images", "projects"];
 
 
 
@@ -412,6 +413,20 @@ export default function Workspace() {
         label={t("workspace.tabs.create")}
 
         onClick={() => setTab("create")}
+
+        dark={dark}
+
+      />
+
+      <TabButton
+
+        active={tab === "images"}
+
+        locked={!hasPro}
+
+        label={t("workspace.tabs.imageLibrary")}
+
+        onClick={() => setTab("images")}
 
         dark={dark}
 
@@ -889,6 +904,78 @@ export default function Workspace() {
 
 
 
+  if (tab === "images") {
+
+    panel = (
+
+      <div className="relative min-h-[22rem]">
+
+        <div
+
+          className={cn(
+
+            "min-h-[22rem] overflow-hidden rounded-2xl border shadow-sm",
+
+            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
+
+          )}
+
+        >
+
+          <div className="border-b px-5 py-4">
+
+            <h2 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
+
+              {t("workspace.imageLibrary.title")}
+
+            </h2>
+
+            <p className={cn("mt-1 text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
+
+              {t("workspace.imageLibrary.subtitle")}
+
+            </p>
+
+          </div>
+
+          {hasPro && user?.id ? (
+
+            <div className="h-[min(52vh,28rem)]">
+
+              <BoardImagePicker embedded userId={user.id} />
+
+            </div>
+
+          ) : null}
+
+        </div>
+
+        {!hasPro && !loading ? (
+
+          <LockedOverlay
+
+            dark={dark}
+
+            title={t("workspace.locked.imageLibraryTitle")}
+
+            body={t("workspace.locked.imageLibraryBody")}
+
+            onUpgrade={goUpgrade}
+
+            upgradeLabel={t("workspace.locked.upgrade")}
+
+          />
+
+        ) : null}
+
+      </div>
+
+    );
+
+  }
+
+
+
   if (tab === "projects") {
 
     panel = (
@@ -1078,6 +1165,12 @@ export default function Workspace() {
         {tab === "library" && !activeGuide ? (
           <h1 className={cn("mb-2 font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
             {t("workspace.library.heading")}
+          </h1>
+        ) : null}
+
+        {tab === "images" && hasPro ? (
+          <h1 className={cn("mb-2 font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
+            {t("workspace.tabs.imageLibrary")}
           </h1>
         ) : null}
 

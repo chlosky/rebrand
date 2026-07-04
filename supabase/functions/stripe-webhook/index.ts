@@ -357,7 +357,9 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
   const tierChanged = oldTier && oldTier !== tier;
   
   // Determine new status
-  const newStatus = subscription.status === 'active' ? 'active' : 
+  const isTrialing = subscription.status === 'trialing';
+  const newStatus = isTrialing ? 'trialing' :
+                    subscription.status === 'active' ? 'active' : 
                     subscription.status === 'past_due' ? 'past_due' :
                     subscription.status === 'canceled' ? 'canceled' : 'active';
   
@@ -365,6 +367,11 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
   const isResubscription = oldStatus === 'canceled' && newStatus === 'active';
 
   const billingPeriod = billingPeriodFromStripeSubscription(subscription);
+  const nowSec = Date.now() / 1000;
+  const trialEnd = subscription.trial_end as number | undefined;
+  const trialStart = subscription.trial_start as number | undefined;
+  const onTrial = isTrialing || (typeof trialEnd === 'number' && trialEnd > nowSec);
+  const hadTrial = typeof trialStart === 'number' && trialStart > 0;
 
   // Update user_plans table (single source of truth for tiers)
   const { error: planError } = await supabase
@@ -376,9 +383,9 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
       last_payment_source: 'stripe',
-      status: subscription.status === 'active' ? 'active' : 
-              subscription.status === 'past_due' ? 'past_due' :
-              subscription.status === 'canceled' ? 'canceled' : 'active',
+      status: newStatus,
+      on_trial: onTrial,
+      ...(hadTrial ? { had_trial: true } : {}),
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString(),
     }, {
@@ -712,14 +719,19 @@ async function handleInvoicePaymentSucceeded(supabase: any, invoice: any) {
     return;
   }
 
+  const updateFields: Record<string, unknown> = {
+    last_payment_source: 'stripe',
+    current_period_end: new Date(invoice.period_end * 1000).toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  if (typeof invoice.amount_paid === 'number' && invoice.amount_paid > 0) {
+    updateFields.status = 'active';
+    updateFields.on_trial = false;
+  }
+
   const { error: planError } = await supabase
     .from('user_plans')
-    .update({
-      status: 'active',
-      last_payment_source: 'stripe',
-      current_period_end: new Date(invoice.period_end * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateFields)
     .eq('user_id', planRow.user_id);
 
   if (planError) {
@@ -767,9 +779,13 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
   const userId = session.metadata?.user_id;
   if (!userId) {
     // New flow: payment-first onboarding (no auth user yet).
-    // Step 1: Only proceed if payment is completed
-    if (session.payment_status !== "paid") {
-      console.log('Skipping checkout.session.completed - payment not completed:', session.payment_status);
+    // Step 1: Only proceed if checkout completed (paid or subscription trial)
+    const checkoutOk =
+      session.payment_status === "paid" ||
+      (session.mode === "subscription" &&
+        session.payment_status === "no_payment_required");
+    if (!checkoutOk) {
+      console.log('Skipping checkout.session.completed - checkout not completed:', session.payment_status);
       return;
     }
 
@@ -930,6 +946,10 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
       // Determine current_period_end
       let currentPeriodEndIso: string | null = null;
       let subscriptionStatus: string | null = null;
+      let subscriptionOnTrial = false;
+      let subscriptionHadTrial = false;
+      let subscriptionBillingPeriod: "monthly" | "annual" | "weekly" =
+        billing === "annual" ? "annual" : billing === "weekly" ? "weekly" : "monthly";
 
       if (subscriptionId) {
         try {
@@ -939,6 +959,9 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
           if (subResp.ok) {
             const sub = await subResp.json();
             subscriptionStatus = sub.status || null;
+            subscriptionOnTrial = sub.status === "trialing";
+            subscriptionHadTrial = typeof sub.trial_start === "number" && sub.trial_start > 0;
+            subscriptionBillingPeriod = billingPeriodFromStripeSubscription(sub);
             if (sub.current_period_end) {
               currentPeriodEndIso = new Date(sub.current_period_end * 1000).toISOString();
             }
@@ -1030,7 +1053,14 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
       }
 
       // 3D) Guarantee user_plans exists (critical)
-      const planStatus = subscriptionStatus === "past_due" ? "past_due" : subscriptionStatus === "canceled" ? "canceled" : "active";
+      const planStatus =
+        subscriptionStatus === "trialing"
+          ? "trialing"
+          : subscriptionStatus === "past_due"
+            ? "past_due"
+            : subscriptionStatus === "canceled"
+              ? "canceled"
+              : "active";
       
       // Try upsert first (preferred method)
       let planErr = null;
@@ -1039,10 +1069,13 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
           id: finalUserId, // Set id to user_id to satisfy FK constraint on id column (migration should have removed this, but handle it)
           user_id: finalUserId,
           tier: safeTier,
+          billing_period: subscriptionBillingPeriod,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           last_payment_source: "stripe",
           status: planStatus,
+          on_trial: subscriptionOnTrial,
+          had_trial: subscriptionHadTrial || subscriptionOnTrial,
           current_period_end: currentPeriodEndIso,
           updated_at: new Date().toISOString(),
         },
@@ -1149,15 +1182,22 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
 
   let periodEnd: Date | null = null;
   let subscriptionId: string | null = null;
+  let planStatus = 'active';
+  let onTrial = false;
+  let hadTrial = false;
+  let billingPeriod: 'monthly' | 'annual' | 'weekly' =
+    session.metadata?.billing === 'annual'
+      ? 'annual'
+      : session.metadata?.billing === 'weekly'
+        ? 'weekly'
+        : 'monthly';
 
   if (session.mode === 'subscription') {
-    // Subscription mode - get subscription details
     subscriptionId = typeof session.subscription === 'string'
       ? session.subscription
       : session.subscription?.id;
 
     if (subscriptionId) {
-      // Get subscription details to get period end
       const subscriptionResponse = await fetch(
         `https://api.stripe.com/v1/subscriptions/${subscriptionId}`,
         {
@@ -1170,24 +1210,37 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
       if (subscriptionResponse.ok) {
         const subscription = await subscriptionResponse.json();
         periodEnd = new Date(subscription.current_period_end * 1000);
+        billingPeriod = billingPeriodFromStripeSubscription(subscription);
+        onTrial = subscription.status === 'trialing';
+        hadTrial = typeof subscription.trial_start === 'number' && subscription.trial_start > 0;
+        planStatus =
+          subscription.status === 'trialing'
+            ? 'trialing'
+            : subscription.status === 'past_due'
+              ? 'past_due'
+              : subscription.status === 'canceled'
+                ? 'canceled'
+                : 'active';
       }
     }
   } else {
-    // Payment mode (one-time, annual) - set period end to 1 year from now
     periodEnd = new Date();
     periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    billingPeriod = 'annual';
   }
 
-  // Update user_plans table (single source of truth for tiers)
   const { error: planError } = await supabase
     .from('user_plans')
     .upsert({
       user_id: userId,
       tier: tier,
+      billing_period: billingPeriod,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
       last_payment_source: 'stripe',
-      status: 'active',
+      status: planStatus,
+      on_trial: onTrial,
+      had_trial: hadTrial || onTrial,
       current_period_end: periodEnd ? periodEnd.toISOString() : null,
       updated_at: new Date().toISOString(),
     }, {

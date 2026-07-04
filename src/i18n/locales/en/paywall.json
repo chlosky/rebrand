@@ -1,20 +1,20 @@
 {
   "postPaywall": {
-    "title": "Your path is ready",
-    "buildingDashboard": "Building your dashboard…",
-    "finishingSubtitle": "Almost there — finishing your dashboard.",
+    "title": "Your workspace is ready",
+    "buildingDashboard": "Opening your workspace…",
+    "finishingSubtitle": "Almost there — setting up your boards.",
     "loadingStatusAria": "Loading status",
-    "commitmentLabel": "Say this once, out loud:",
-    "commitmentText": "I have named what I am building, and I will keep showing up for it when doubt shows up. I commit to giving my rebrand my attention and my follow-through. What I am plotting deserves more than a passing thought; it deserves my full yes.",
+    "commitmentLabel": "Quick reminder:",
+    "commitmentText": "You have a place to put the boards, plans, images, and structures you are building. Start simple, then keep arranging.",
     "simsLines": [
-      "Making it official — membership locked in.",
-      "Building your four-board workspace from your setup…",
-      "Setting up your starter boards and plan layout…",
-      "Unlocking your dashboard — almost there."
+      "Confirming your trial…",
+      "Setting up your four-board workspace…",
+      "Adding your starter boards and plan layout…",
+      "Opening your workspace — almost there."
     ],
     "toastActivateFailedIos": "Purchase completed, but we could not activate your plan yet. Try again from subscriptions.",
     "toastActivateFailedAndroid": "Purchase completed, but we could not activate your plan yet. Please try again.",
-    "toastSetupSnag": "We hit a snag finishing setup. Taking you to the dashboard…"
+    "toastSetupSnag": "We hit a snag finishing setup. Taking you to your workspace…"
   },
   "legacyIos": {
     "titleLine1": "Unlock your free trial",
@@ -140,5 +140,19 @@
     "missingInfo": "Missing payment information. Please restart onboarding.",
     "verificationSlow": "Payment verification is taking longer than expected. Please contact support.",
     "verificationFailed": "Unable to verify payment. Please contact support."
+  },
+  "webStripe": {
+    "headline": "Start your board workspace",
+    "subtitle": "Create boards for life plotting, home organization, moodboards, and project planning.",
+    "priceLine": "3 days free, then $9.99/month.",
+    "cancelLine": "Cancel anytime.",
+    "cta": "Start 3-Day Trial",
+    "secondaryCta": "Not now",
+    "features": [
+      "Four-board workspace",
+      "Clippings, color, text, and notes",
+      "Structures for plans, projects, zones, timelines, and resets",
+      "Save and export your boards"
+    ]
   }
 }

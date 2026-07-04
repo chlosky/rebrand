@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
-import { STANDARD_BOARD_COUNT } from "@/lib/boards/starterTemplates";
 
 export type BoardZoomPreset = "fit" | 1 | 1.25 | 1.5;
 
@@ -19,7 +18,6 @@ type BoardToolbarProps = {
   editorRef: React.RefObject<BoardCanvasHandle | null>;
   className?: string;
   orientation?: "vertical" | "horizontal";
-  boardCount?: number;
   zoomPreset?: BoardZoomPreset;
   onZoomPresetChange?: (preset: BoardZoomPreset) => void;
   canUndo?: boolean;
@@ -33,7 +31,6 @@ export function BoardToolbar({
   editorRef,
   className,
   orientation = "vertical",
-  boardCount,
   zoomPreset,
   onZoomPresetChange,
   canUndo = false,
@@ -112,14 +109,7 @@ export function BoardToolbar({
           Select an item · click brings it forward · Delete removes it
         </div>
       )}
-      {horizontal && boardCount !== undefined && (
-        <span className="hidden text-[10px] text-neutral-500 lg:inline">
-          {boardCount === STANDARD_BOARD_COUNT
-            ? "3 focus boards + The Plan"
-            : `${boardCount} boards · scroll for more`}
-          {" · "}click to edit
-        </span>
-      )}
+
       {showZoom && (
         <>
           <span className="mx-1 hidden h-6 w-px bg-neutral-200 md:block" aria-hidden />

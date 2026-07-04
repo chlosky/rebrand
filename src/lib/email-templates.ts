@@ -87,7 +87,7 @@ function replaceTemplateVariables(template: string, variables: EmailTemplateVari
   // Default values for common variables
   const defaults: Partial<EmailTemplateVariables> = {
     app_url: window.location.origin,
-    privacy_policy_url: `${window.location.origin}/privacy`,
+    privacy_policy_url: `${window.location.origin}/policies/privacy`,
     tiktok_url: 'https://tiktok.com/@paletteplotting',
     youtube_url: 'https://youtube.com/@paletteplotting',
     instagram_url: 'https://instagram.com/paletteplotting',

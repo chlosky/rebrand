@@ -44,7 +44,7 @@ interface WeeklyGoal {
 }
 
 export type ProgressMilestonesTabsProps = {
-  /** When false (e.g. Your Journey), tab state is local only — no `location.hash` reads/writes. */
+  /** When false (e.g. Reminders page), tab state is local only — no `location.hash` reads/writes. */
   syncHash?: boolean;
 };
 

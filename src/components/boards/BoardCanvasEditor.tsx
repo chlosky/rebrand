@@ -6,14 +6,56 @@ import {
   useRef,
   useState,
 } from "react";
-import { Canvas, FabricImage, FabricText, Group, IText, Rect, StaticCanvas, Textbox, type FabricObject } from "fabric";
-import { boardFillForKey } from "@/lib/boards/colors";
+import { Canvas, FabricImage, FabricText, Group, IText, Rect, StaticCanvas, Textbox, ActiveSelection, type FabricObject } from "fabric";
+import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
 import type { BoardLayoutMode } from "@/lib/boards/types";
 import { cn } from "@/lib/utils";
 import { BoardMarksQuickSelector, type BoardMarksQuickAction } from "@/components/boards/BoardMarksQuickSelector";
 
 export const ARTBOARD_WIDTH = 1080;
 export const ARTBOARD_HEIGHT = 1350;
+
+const DECAL_INK = "#111111";
+const DECAL_MUTED = "rgba(17,17,17,0.58)";
+const DECAL_LINE = "rgba(17,17,17,0.82)";
+
+const makeDecalLine = (
+  left: number,
+  top: number,
+  width: number,
+  height = 3,
+  fill = DECAL_LINE,
+) =>
+  new Rect({
+    left,
+    top,
+    width,
+    height,
+    fill,
+    rx: height / 2,
+    ry: height / 2,
+    selectable: false,
+    evented: false,
+  });
+
+const makeDecalText = (
+  text: string,
+  left: number,
+  top: number,
+  fontSize = 24,
+  fill = DECAL_INK,
+  fontWeight: string | number = 700,
+) =>
+  new FabricText(text.toUpperCase(), {
+    left,
+    top,
+    fontSize,
+    fontFamily: "system-ui, sans-serif",
+    fill,
+    fontWeight,
+    selectable: false,
+    evented: false,
+  });
 
 export type BoardDiagramType =
   | "eisenhower"
@@ -86,12 +128,33 @@ type BoardCanvasEditorProps = {
   cellFit?: "contain" | "cover";
   /** Fit to cell (default) or fixed canvas scale — e.g. 1 = 100% */
   viewZoom?: "fit" | number;
+  /** When false (e.g. inactive grid cell), radial menu and keyboard shortcuts are disabled. */
+  isActive?: boolean;
   onSave: (layout: Record<string, unknown>) => void;
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
+  onBoardColorPick?: (hex: string) => void;
+  onRequestImagePick?: () => void;
 };
 
 export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditorProps>(
-  function BoardCanvasEditor({ layoutJson, colorKey, boardId, layoutMode = "vision", readOnly = false, embedded = false, cellFit = "contain", viewZoom = "fit", onSave, onHistoryChange }, ref) {
+  function BoardCanvasEditor(
+    {
+      layoutJson,
+      colorKey,
+      boardId,
+      layoutMode = "vision",
+      readOnly = false,
+      embedded = false,
+      cellFit = "contain",
+      viewZoom = "fit",
+      isActive = true,
+      onSave,
+      onHistoryChange,
+      onBoardColorPick,
+      onRequestImagePick,
+    },
+    ref,
+  ) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasWrapRef = useRef<HTMLDivElement>(null);
     const canvasElRef = useRef<HTMLCanvasElement>(null);
@@ -100,11 +163,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const historyTimerRef = useRef<number>();
     const loadedBoardRef = useRef<string | null>(null);
     const restoringHistoryRef = useRef(false);
+    const suppressHistoryRef = useRef(false);
     const historyRef = useRef<{ snapshots: string[]; index: number }>({ snapshots: [], index: -1 });
     const onHistoryChangeRef = useRef(onHistoryChange);
     const [quickSelector, setQuickSelector] = useState<QuickSelectorState | null>(null);
+    const isActiveRef = useRef(isActive);
+    isActiveRef.current = isActive;
 
     onHistoryChangeRef.current = onHistoryChange;
+
+    useEffect(() => {
+      if (!isActive) setQuickSelector(null);
+    }, [isActive]);
 
     const scheduleSave = useCallback(() => {
       const canvas = fabricRef.current;
@@ -133,23 +203,45 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [notifyHistoryChange, snapshotCanvas],
     );
 
+    const commitHistorySnapshot = useCallback(() => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly || restoringHistoryRef.current || suppressHistoryRef.current) return;
+      const json = snapshotCanvas(canvas);
+      const h = historyRef.current;
+      if (h.snapshots.length === 0 || h.index < 0) {
+        h.snapshots = [json];
+        h.index = 0;
+        notifyHistoryChange();
+        return;
+      }
+      if (h.snapshots[h.index] === json) return;
+      h.snapshots = h.snapshots.slice(0, h.index + 1);
+      h.snapshots.push(json);
+      if (h.snapshots.length > 40) {
+        h.snapshots.shift();
+      }
+      h.index = h.snapshots.length - 1;
+      notifyHistoryChange();
+    }, [notifyHistoryChange, readOnly, snapshotCanvas]);
+
+    const flushPendingHistory = useCallback(() => {
+      window.clearTimeout(historyTimerRef.current);
+      commitHistorySnapshot();
+    }, [commitHistorySnapshot]);
+
     const recordHistory = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly || restoringHistoryRef.current) return;
       window.clearTimeout(historyTimerRef.current);
-      historyTimerRef.current = window.setTimeout(() => {
-        const json = snapshotCanvas(canvas);
-        const h = historyRef.current;
-        if (h.snapshots[h.index] === json) return;
-        h.snapshots = h.snapshots.slice(0, h.index + 1);
-        h.snapshots.push(json);
-        if (h.snapshots.length > 40) {
-          h.snapshots.shift();
-        }
-        h.index = h.snapshots.length - 1;
-        notifyHistoryChange();
-      }, 250);
-    }, [notifyHistoryChange, readOnly, snapshotCanvas]);
+      historyTimerRef.current = window.setTimeout(commitHistorySnapshot, 250);
+    }, [commitHistorySnapshot, readOnly]);
+
+    const commitHistorySnapshotRef = useRef(commitHistorySnapshot);
+    commitHistorySnapshotRef.current = commitHistorySnapshot;
+    const recordHistoryRef = useRef(recordHistory);
+    recordHistoryRef.current = recordHistory;
+    const scheduleSaveRef = useRef(scheduleSave);
+    scheduleSaveRef.current = scheduleSave;
 
     const applyHistorySnapshot = useCallback(
       async (index: number) => {
@@ -172,16 +264,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     );
 
     const undo = useCallback(() => {
+      flushPendingHistory();
       const h = historyRef.current;
       if (h.index <= 0) return;
       void applyHistorySnapshot(h.index - 1);
-    }, [applyHistorySnapshot]);
+    }, [applyHistorySnapshot, flushPendingHistory]);
 
     const redo = useCallback(() => {
+      flushPendingHistory();
       const h = historyRef.current;
       if (h.index >= h.snapshots.length - 1) return;
       void applyHistorySnapshot(h.index + 1);
-    }, [applyHistorySnapshot]);
+    }, [applyHistorySnapshot, flushPendingHistory]);
 
     const canUndo = useCallback(() => historyRef.current.index > 0, []);
     const canRedo = useCallback(
@@ -189,10 +283,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [],
     );
 
+    useEffect(() => {
+      if (isActive) notifyHistoryChange();
+    }, [isActive, notifyHistoryChange]);
+
     const closeQuickSelector = useCallback(() => setQuickSelector(null), []);
 
     const openQuickSelectorFromEvent = useCallback((canvas: Canvas, e: Event, target?: FabricObject) => {
-      if (readOnly) return;
+      if (readOnly || !isActiveRef.current) return;
       const wrap = canvasWrapRef.current;
       if (!wrap) return;
       let clientX: number | undefined;
@@ -298,19 +396,24 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let onContextMenu: ((e: MouseEvent) => void) | undefined;
 
       if (!readOnly) {
-        const onHistoryEvent = () => {
-          recordHistory();
-          scheduleSave();
+        const onHistoryDebounced = () => {
+          recordHistoryRef.current();
+          scheduleSaveRef.current();
         };
-        canvas.on("object:modified", onHistoryEvent);
-        canvas.on("object:added", onHistoryEvent);
-        canvas.on("object:removed", onHistoryEvent);
-        canvas.on("text:changed", onHistoryEvent);
-        canvas.on("editing:exited", onHistoryEvent);
+        const onHistoryImmediate = () => {
+          commitHistorySnapshotRef.current();
+          scheduleSaveRef.current();
+        };
+        canvas.on("object:modified", onHistoryDebounced);
+        canvas.on("object:added", onHistoryImmediate);
+        canvas.on("object:removed", onHistoryImmediate);
+        canvas.on("text:changed", onHistoryDebounced);
+        canvas.on("editing:exited", onHistoryDebounced);
         canvas.on("mouse:down", (opt) => {
           const e = opt.e as MouseEvent;
           const isLeftEmpty = e.button === 0 && !opt.target && !e.ctrlKey && !e.metaKey && !e.shiftKey;
           if (isLeftEmpty) {
+            if (!isActiveRef.current) return;
             e.preventDefault();
             e.stopPropagation();
             openQuickSelectorRef.current(canvas, e, undefined);
@@ -325,14 +428,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           }
           const objects = canvas.getObjects();
           if (objects[objects.length - 1] !== root) {
+            suppressHistoryRef.current = true;
             canvas.bringObjectToFront(root);
             canvas.requestRenderAll();
-            recordHistory();
-            scheduleSave();
+            window.setTimeout(() => {
+              suppressHistoryRef.current = false;
+            }, 0);
           }
         });
 
         onContextMenu = (e: MouseEvent) => {
+          if (!isActiveRef.current) return;
           e.preventDefault();
           openQuickSelectorRef.current(canvas, e, canvas.findTarget(e) ?? undefined);
         };
@@ -351,7 +457,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         fabricRef.current = null;
         loadedBoardRef.current = null;
       };
-    }, [colorKey, embedded, fitCanvas, readOnly, recordHistory, scheduleSave]);
+    }, [colorKey, embedded, fitCanvas, readOnly]);
+
+    useEffect(() => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return;
+      const interactive = isActive;
+      canvas.selection = interactive;
+      canvas.skipTargetFind = !interactive;
+      canvas.forEachObject((obj) => {
+        obj.selectable = interactive;
+        obj.evented = interactive;
+      });
+      if (!interactive) canvas.discardActiveObject();
+      canvas.requestRenderAll();
+    }, [isActive, readOnly]);
 
     useEffect(() => {
       const canvas = fabricRef.current;
@@ -670,294 +790,173 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         w: number,
         h: number,
         items: string[] = [],
-        accent = "#2563EB",
+        accent = DECAL_INK,
       ) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
+
         const left = x * ARTBOARD_WIDTH;
         const top = y * ARTBOARD_HEIGHT;
         const width = w * ARTBOARD_WIDTH;
         const height = h * ARTBOARD_HEIGHT;
 
-        const frame = new Rect({
-          left,
-          top,
-          width,
-          height,
-          fill: "rgba(255,255,255,0.72)",
-          stroke: accent,
-          strokeWidth: 2,
-          rx: 10,
-          ry: 10,
-        });
-        canvas.add(frame);
+        const objects: FabricObject[] = [];
 
-        if (diagram === "eisenhower") {
-          const labels = items.length >= 4 ? items.slice(0, 4) : ["Do first", "Schedule", "Delegate", "Drop"];
-          const hw = width / 2 - 6;
-          const hh = height / 2 - 6;
+        const addLine = (lx: number, ly: number, lw: number, lh = 3, fill = DECAL_LINE) => {
+          objects.push(makeDecalLine(lx, ly, lw, lh, fill));
+        };
+
+        const addText = (
+          text: string,
+          lx: number,
+          ly: number,
+          size = 24,
+          fill = DECAL_INK,
+          weight: string | number = 700,
+        ) => {
+          objects.push(makeDecalText(text, lx, ly, size, fill, weight));
+        };
+
+        if (diagram === "kanban") {
+          const labels = items.length >= 3 ? items.slice(0, 3) : ["TO DO", "IN PROGRESS", "DONE"];
+          const colW = width / labels.length;
+
           labels.forEach((label, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-            const cell = new Rect({
-              left: left + 8 + col * (hw + 4),
-              top: top + 8 + row * (hh + 4),
-              width: hw,
-              height: hh,
-              fill: i === 0 ? `${accent}18` : "#ffffffcc",
-              stroke: "#e5e5e5",
-              strokeWidth: 1,
-              rx: 6,
-              ry: 6,
-            });
-            const t = new FabricText(label, {
-              left: cell.left! + 8,
-              top: cell.top! + 8,
-              fontSize: 16,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#404040",
-              fontWeight: "600",
-              width: hw - 16,
-            });
-            canvas.add(cell, t);
+            addText(label, i * colW + 8, 0, 22);
+            if (i > 0) addLine(i * colW, 42, 3, height - 42);
           });
-        } else if (diagram === "checklist") {
-          const rows = items.length ? items.slice(0, 8) : ["Morning reset", "Afternoon block", "Evening close"];
-          const rowH = Math.min(44, (height - 24) / rows.length);
-          rows.forEach((item, i) => {
-            const rowTop = top + 12 + i * rowH;
-            const box = new Rect({
-              left: left + 12,
-              top: rowTop,
-              width: 18,
-              height: 18,
-              fill: "#fff",
-              stroke: accent,
-              strokeWidth: 1.5,
-              rx: 3,
-              ry: 3,
-            });
-            const t = new FabricText(item, {
-              left: left + 38,
-              top: rowTop - 2,
-              fontSize: 18,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#262626",
-              width: width - 50,
-            });
-            canvas.add(box, t);
-          });
-        } else if (diagram === "zones") {
-          const zones = items.length ? items.slice(0, 3) : ["Zone A", "Zone B", "Zone C"];
-          const zoneH = height / zones.length;
-          zones.forEach((zone, i) => {
-            const zTop = top + i * zoneH;
-            const band = new Rect({
-              left: left + 8,
-              top: zTop + 4,
-              width: width - 16,
-              height: zoneH - 8,
-              fill: i === 1 ? `${accent}22` : "#ffffffaa",
-              stroke: "#e5e5e5",
-              strokeWidth: 1,
-              rx: 6,
-              ry: 6,
-            });
-            const t = new FabricText(zone, {
-              left: left + 20,
-              top: zTop + zoneH / 2 - 10,
-              fontSize: 20,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#171717",
-              fontWeight: "600",
-            });
-            canvas.add(band, t);
-          });
-        } else if (diagram === "timeline") {
-          const tasks = items.length ? items.slice(0, 5) : ["Phase 1", "Phase 2", "Milestone"];
-          const rowH = Math.min(48, (height - 20) / tasks.length);
-          tasks.forEach((task, i) => {
-            const rowTop = top + 16 + i * rowH;
-            const barW = width * (0.55 - i * 0.08);
-            const bar = new Rect({
-              left: left + width * 0.22 + i * (width * 0.06),
-              top: rowTop + 10,
-              width: barW,
-              height: 14,
-              fill: accent,
-              opacity: 0.75,
-              rx: 7,
-              ry: 7,
-            });
-            const t = new FabricText(task, {
-              left: left + 12,
-              top: rowTop,
-              fontSize: 16,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#404040",
-              fontWeight: "500",
-            });
-            canvas.add(bar, t);
-          });
-        } else if (diagram === "kanban") {
-          const cols = items.length >= 2 ? items.slice(0, 4) : ["Backlog", "To Do", "Doing", "Done"];
-          const colW = (width - 20) / cols.length;
-          cols.forEach((title, i) => {
-            const cx = left + 6 + i * (colW + 4);
-            const header = new Rect({
-              left: cx,
-              top: top + 8,
-              width: colW,
-              height: 26,
-              fill: accent,
-              opacity: 0.88,
-              rx: 5,
-              ry: 5,
-            });
-            const ht = new FabricText(title, {
-              left: cx + 6,
-              top: top + 13,
-              fontSize: 12,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#ffffff",
-              fontWeight: "600",
-            });
-            canvas.add(header, ht);
-            for (let c = 0; c < 2; c++) {
-              const card = new Rect({
-                left: cx,
-                top: top + 40 + c * 48,
-                width: colW,
-                height: 40,
-                fill: "#ffffff",
-                stroke: "#e5e5e5",
-                strokeWidth: 1,
-                rx: 4,
-                ry: 4,
-              });
-              canvas.add(card);
-            }
-          });
-        } else if (diagram === "okrs") {
-          const krs = items.length >= 2 ? items.slice(1, 4) : ["Key result 1", "Key result 2", "Key result 3"];
-          const objective = items[0] ?? "Objective";
-          const objBox = new Rect({
-            left: left + 8,
-            top: top + 8,
-            width: width - 16,
-            height: 44,
-            fill: `${accent}22`,
-            stroke: accent,
-            strokeWidth: 1.5,
-            rx: 6,
-            ry: 6,
-          });
-          const objText = new FabricText(objective, {
-            left: left + 16,
-            top: top + 20,
-            fontSize: 17,
-            fontFamily: "system-ui, sans-serif",
-            fill: "#171717",
-            fontWeight: "600",
-            width: width - 32,
-          });
-          canvas.add(objBox, objText);
-          krs.forEach((kr, i) => {
-            const rowTop = top + 60 + i * 36;
-            const track = new Rect({
-              left: left + 12,
-              top: rowTop + 18,
-              width: width - 24,
-              height: 8,
-              fill: "#e5e5e5",
-              rx: 4,
-              ry: 4,
-            });
-            const fill = new Rect({
-              left: left + 12,
-              top: rowTop + 18,
-              width: (width - 24) * (0.25 + i * 0.1),
-              height: 8,
-              fill: accent,
-              opacity: 0.7,
-              rx: 4,
-              ry: 4,
-            });
-            const t = new FabricText(kr, {
-              left: left + 12,
-              top: rowTop,
-              fontSize: 14,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#404040",
-            });
-            canvas.add(track, fill, t);
-          });
-        } else if (diagram === "five_s") {
-          const steps = items.length >= 5 ? items.slice(0, 5) : ["Sort", "Set", "Shine", "Standardize", "Sustain"];
-          const stepH = (height - 16) / steps.length;
-          steps.forEach((step, i) => {
-            const rowTop = top + 8 + i * stepH;
-            const band = new Rect({
-              left: left + 8,
-              top: rowTop + 2,
-              width: width - 16,
-              height: stepH - 4,
-              fill: i === 2 ? `${accent}18` : "#ffffffbb",
-              stroke: "#e5e5e5",
-              strokeWidth: 1,
-              rx: 5,
-              ry: 5,
-            });
-            const num = new FabricText(String(i + 1), {
-              left: left + 16,
-              top: rowTop + stepH / 2 - 8,
-              fontSize: 14,
-              fontFamily: "system-ui, sans-serif",
-              fill: accent,
-              fontWeight: "700",
-            });
-            const t = new FabricText(step, {
-              left: left + 36,
-              top: rowTop + stepH / 2 - 9,
-              fontSize: 15,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#262626",
-              fontWeight: "500",
-            });
-            canvas.add(band, num, t);
-          });
-        } else if (diagram === "gantt") {
-          const tasks = items.length ? items.slice(0, 6) : ["Kickoff", "Build", "Ship"];
-          const rowH = Math.min(40, (height - 16) / tasks.length);
-          tasks.forEach((task, i) => {
-            const rowTop = top + 10 + i * rowH;
-            const t = new FabricText(task, {
-              left: left + 8,
-              top: rowTop + 4,
-              fontSize: 13,
-              fontFamily: "system-ui, sans-serif",
-              fill: "#525252",
-              width: width * 0.28,
-            });
-            const barLeft = left + width * 0.3 + i * (width * 0.05);
-            const barW = width * (0.45 - i * 0.06);
-            const bar = new Rect({
-              left: barLeft,
-              top: rowTop + 6,
-              width: barW,
-              height: 12,
-              fill: accent,
-              opacity: 0.8,
-              rx: 6,
-              ry: 6,
-            });
-            canvas.add(t, bar);
+
+          addLine(0, 38, width, 3);
+          addLine(0, height - 3, width, 3, "rgba(17,17,17,0.35)");
+        }
+
+        if (diagram === "checklist") {
+          const rows = items.length ? items.slice(0, 6) : ["Task", "Task", "Task", "Task"];
+          addText("Checklist", 0, 0, 22);
+
+          rows.forEach((label, i) => {
+            const rowTop = 44 + i * 42;
+            objects.push(
+              new Rect({
+                left: 0,
+                top: rowTop,
+                width: 18,
+                height: 18,
+                fill: "transparent",
+                stroke: DECAL_LINE,
+                strokeWidth: 2,
+                rx: 2,
+                ry: 2,
+                selectable: false,
+                evented: false,
+              }),
+            );
+            addLine(34, rowTop + 8, width - 34, 2, "rgba(17,17,17,0.42)");
+            if (label && label !== "Task") addText(label, 34, rowTop - 7, 16, DECAL_MUTED, 600);
           });
         }
 
+        if (diagram === "zones") {
+          const zones = items.length ? items.slice(0, 4) : ["Zone 1", "Zone 2", "Zone 3"];
+          addText("Zones", 0, 0, 22);
+
+          const rowH = (height - 42) / zones.length;
+          zones.forEach((zone, i) => {
+            const rowTop = 42 + i * rowH;
+            addText(zone, 0, rowTop + rowH / 2 - 12, 18, DECAL_MUTED, 600);
+            addLine(width * 0.28, rowTop + rowH / 2, width * 0.72, 2, "rgba(17,17,17,0.38)");
+            if (i > 0) addLine(0, rowTop, width, 2, "rgba(17,17,17,0.28)");
+          });
+        }
+
+        if (diagram === "eisenhower") {
+          const labels = items.length >= 4 ? items.slice(0, 4) : ["Do First", "Schedule", "Delegate", "Drop"];
+
+          addLine(width / 2, 0, 3, height);
+          addLine(0, height / 2, width, 3);
+
+          labels.forEach((label, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            addText(label, col * (width / 2) + 18, row * (height / 2) + 18, 18);
+          });
+        }
+
+        if (diagram === "timeline") {
+          const labels = items.length ? items.slice(0, 5) : ["Start", "Middle", "Milestone", "Finish"];
+          const yMid = height / 2;
+
+          addText("Timeline", 0, 0, 22);
+          addLine(0, yMid, width, 3);
+
+          labels.forEach((label, i) => {
+            const tickX = (width / Math.max(labels.length - 1, 1)) * i;
+            addLine(tickX, yMid - 14, 3, 28);
+            addText(label, Math.max(0, tickX - 26), yMid + 24, 14, DECAL_MUTED, 600);
+          });
+        }
+
+        if (diagram === "gantt") {
+          const rows = items.length ? items.slice(0, 5) : ["Phase 1", "Phase 2", "Phase 3"];
+          addText("Schedule", 0, 0, 22);
+
+          rows.forEach((row, i) => {
+            const rowTop = 46 + i * 38;
+            addText(row, 0, rowTop - 5, 14, DECAL_MUTED, 600);
+            addLine(width * 0.28, rowTop + 4, width * 0.68, 2, "rgba(17,17,17,0.22)");
+
+            const barLeft = width * (0.32 + i * 0.08);
+            const barWidth = width * (0.34 - i * 0.03);
+            addLine(barLeft, rowTop, barWidth, 10, accent);
+          });
+        }
+
+        if (diagram === "okrs") {
+          const labels = items.length >= 4 ? items.slice(0, 4) : ["Objective", "KR 1", "KR 2", "KR 3"];
+          addText(labels[0], 0, 0, 22);
+          addLine(0, 36, width, 3);
+
+          labels.slice(1).forEach((label, i) => {
+            const rowTop = 62 + i * 42;
+            addText(label, 0, rowTop - 5, 16, DECAL_MUTED, 700);
+            addLine(width * 0.22, rowTop + 5, width * 0.72, 2, "rgba(17,17,17,0.25)");
+            addLine(width * 0.22, rowTop + 5, width * (0.18 + i * 0.08), 6, DECAL_INK);
+          });
+        }
+
+        if (diagram === "five_s") {
+          const steps = items.length >= 5 ? items.slice(0, 5) : ["Sort", "Set", "Shine", "Standardize", "Sustain"];
+          const colW = width / steps.length;
+
+          addLine(0, 0, width, 3);
+          addLine(0, height - 3, width, 3);
+
+          steps.forEach((step, i) => {
+            if (i > 0) addLine(i * colW, 0, 3, height);
+            addText(step, i * colW + 8, height / 2 - 12, 14, DECAL_INK, 700);
+          });
+        }
+
+        if (!objects.length) return;
+
+        const group = new Group(objects, {
+          left,
+          top,
+          subTargetCheck: false,
+          objectCaching: true,
+          cornerStyle: "circle",
+          borderColor: "rgba(17,17,17,0.45)",
+          cornerColor: "#111111",
+          transparentCorners: false,
+        });
+
+        canvas.add(group);
+        canvas.setActiveObject(group);
         canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
       },
-      [readOnly],
+      [readOnly, recordHistory, scheduleSave],
     );
 
     const mergeLayoutObjects = useCallback(async (
@@ -1002,6 +1001,23 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       recordHistory();
       scheduleSave();
     }, [readOnly, recordHistory, scheduleSave]);
+
+    const selectAllObjects = useCallback(() => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return;
+      const objects = canvas.getObjects().filter((o) => o.selectable !== false && o.evented !== false);
+      if (!objects.length) {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        return;
+      }
+      if (objects.length === 1) {
+        canvas.setActiveObject(objects[0]);
+      } else {
+        canvas.setActiveObject(new ActiveSelection(objects, { canvas }));
+      }
+      canvas.requestRenderAll();
+    }, [readOnly]);
 
     const editMarkSelected = useCallback(() => {
       const canvas = fabricRef.current;
@@ -1080,7 +1096,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         const active = canvas?.getActiveObject() as { isEditing?: boolean } | undefined;
         if (active?.isEditing) return;
+        if (!isActiveRef.current) return;
 
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+          e.preventDefault();
+          selectAllObjects();
+          return;
+        }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
           e.preventDefault();
           if (e.shiftKey) redo();
@@ -1099,7 +1121,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       };
       window.addEventListener("keydown", onKeyDown);
       return () => window.removeEventListener("keydown", onKeyDown);
-    }, [readOnly, deleteSelected, redo, undo]);
+    }, [readOnly, deleteSelected, redo, selectAllObjects, undo]);
 
     const handleQuickPick = useCallback(
       (action: BoardMarksQuickAction) => {
@@ -1108,11 +1130,20 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         setQuickSelector(null);
         if (action === "statement") addTextAtPoint(normX, normY);
         else if (action === "sticky") addStickyNoteAtPoint(normX, normY);
+        else if (action === "image") onRequestImagePick?.();
         else if (action === "edit") editMarkSelected();
         else if (action === "color") cycleMarkColor();
         else if (action === "delete") deleteSelected();
       },
-      [addStickyNoteAtPoint, addTextAtPoint, cycleMarkColor, deleteSelected, editMarkSelected, quickSelector],
+      [
+        addStickyNoteAtPoint,
+        addTextAtPoint,
+        cycleMarkColor,
+        deleteSelected,
+        editMarkSelected,
+        onRequestImagePick,
+        quickSelector,
+      ],
     );
 
     useEffect(() => {
@@ -1137,6 +1168,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let touchStartY = 0;
 
       const onTouchStart = (e: TouchEvent) => {
+        if (!isActiveRef.current) return;
         if (e.touches.length !== 1) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
@@ -1214,13 +1246,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           )}
         >
           <canvas ref={canvasElRef} />
-          {!readOnly && quickSelector && (
+          {!readOnly && isActive && quickSelector && (
             <BoardMarksQuickSelector
               x={quickSelector.x}
               y={quickSelector.y}
               mode={quickSelector.mode}
               onPick={handleQuickPick}
               onClose={closeQuickSelector}
+              boardColorOptions={BOARD_QUICK_PICK_COLORS}
+              activeBoardFill={boardFillForKey(colorKey)}
+              onBoardColorPick={onBoardColorPick}
             />
           )}
         </div>

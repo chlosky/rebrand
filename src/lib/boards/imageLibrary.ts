@@ -18,7 +18,7 @@ let cachedManifest: BoardImageAsset[] | null = null;
 export async function loadBoardImageLibrary(): Promise<BoardImageAsset[]> {
   if (cachedManifest) return cachedManifest;
 
-  const response = await fetch("/boardimagelibrary/manifest.json", { cache: "force-cache" });
+  const response = await fetch("/boardimagelibrary/manifest.generated.json", { cache: "no-store" });
   if (!response.ok) {
     throw new Error("Failed to load board image library");
   }

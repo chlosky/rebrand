@@ -1,7 +1,14 @@
-import { Palette, StickyNote, Trash2, Type } from "lucide-react";
+import { ImagePlus, Palette, StickyNote, Trash2, Type } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type BoardMarksQuickAction = "statement" | "sticky" | "edit" | "color" | "delete";
+export type BoardMarksQuickAction =
+  | "statement"
+  | "sticky"
+  | "image"
+  | "edit"
+  | "color"
+  | "delete";
 
 type BoardMarksQuickSelectorProps = {
   x: number;
@@ -9,30 +16,44 @@ type BoardMarksQuickSelectorProps = {
   mode: "empty" | "object";
   onPick: (action: BoardMarksQuickAction) => void;
   onClose: () => void;
+  boardColorOptions?: { hex: string; label: string }[];
+  activeBoardFill?: string;
+  onBoardColorPick?: (hex: string) => void;
 };
 
-const WHEEL = 132;
+const WHEEL = 176;
 const CENTER = WHEEL / 2;
-const RADIUS = 46;
+const ITEM_RADIUS = 54;
+const SWATCH_RADIUS = 74;
 
-const EMPTY_ITEMS: { id: BoardMarksQuickAction; label: string; Icon: typeof Type; angle: number }[] = [
-  { id: "statement", label: "Text", Icon: Type, angle: -90 },
-  { id: "sticky", label: "Note", Icon: StickyNote, angle: 90 },
+const EMPTY_ITEMS: { id: BoardMarksQuickAction; label: string; Icon: LucideIcon; angle: number }[] = [
+  { id: "statement", label: "Text", Icon: Type, angle: -110 },
+  { id: "image", label: "Image", Icon: ImagePlus, angle: 0 },
+  { id: "sticky", label: "Note", Icon: StickyNote, angle: 110 },
 ];
 
 const OBJECT_ITEMS: {
   id: BoardMarksQuickAction;
   label: string;
-  Icon: typeof Type;
+  Icon: LucideIcon;
   angle: number;
   accent?: string;
 }[] = [
   { id: "edit", label: "Edit", Icon: Type, angle: -90 },
-  { id: "color", label: "Color", Icon: Palette, angle: 30 },
+  { id: "color", label: "Recolor", Icon: Palette, angle: 30 },
   { id: "delete", label: "Delete", Icon: Trash2, angle: 150, accent: "text-red-300" },
 ];
 
-export function BoardMarksQuickSelector({ x, y, mode, onPick, onClose }: BoardMarksQuickSelectorProps) {
+export function BoardMarksQuickSelector({
+  x,
+  y,
+  mode,
+  onPick,
+  onClose,
+  boardColorOptions = [],
+  activeBoardFill,
+  onBoardColorPick,
+}: BoardMarksQuickSelectorProps) {
   const items = mode === "object" ? OBJECT_ITEMS : EMPTY_ITEMS;
 
   return (
@@ -58,8 +79,8 @@ export function BoardMarksQuickSelector({ x, y, mode, onPick, onClose }: BoardMa
 
           {items.map(({ id, label, Icon, angle, accent }) => {
             const rad = (angle * Math.PI) / 180;
-            const left = CENTER + Math.cos(rad) * RADIUS;
-            const top = CENTER + Math.sin(rad) * RADIUS;
+            const left = CENTER + Math.cos(rad) * ITEM_RADIUS;
+            const top = CENTER + Math.sin(rad) * ITEM_RADIUS;
 
             return (
               <button
@@ -81,6 +102,40 @@ export function BoardMarksQuickSelector({ x, y, mode, onPick, onClose }: BoardMa
               </button>
             );
           })}
+
+          {mode === "empty" && boardColorOptions.length > 0 && (
+            <>
+              {boardColorOptions.slice(0, 8).map((pick, index) => {
+                const start = 205;
+                const step = 130 / Math.max(boardColorOptions.slice(0, 8).length - 1, 1);
+                const angle = start + index * step;
+                const rad = (angle * Math.PI) / 180;
+                const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
+                const top = CENTER + Math.sin(rad) * SWATCH_RADIUS;
+                const active = activeBoardFill?.toLowerCase() === pick.hex.toLowerCase();
+
+                return (
+                  <button
+                    key={pick.hex}
+                    type="button"
+                    title={`Board color: ${pick.label}`}
+                    aria-label={`Set board color to ${pick.label}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBoardColorPick?.(pick.hex);
+                      onClose();
+                    }}
+                    className={cn(
+                      "absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-white/50 transition-transform",
+                      "hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                      active && "scale-110 ring-2 ring-white",
+                    )}
+                    style={{ left, top, backgroundColor: pick.hex }}
+                  />
+                );
+              })}
+            </>
+          )}
         </div>
       </div>
     </>

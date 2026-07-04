@@ -15,7 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Capacitor } from "@capacitor/core";
 
-export default function YourJourney() {
+export default function Reminders() {
   const { t } = useTranslation(["tools", "dashboard"]);
   const isMobile = useIsMobile();
   const { user, isLoading: authLoading } = useAuth();
@@ -53,12 +53,6 @@ export default function YourJourney() {
       setReminders([]);
     }
   }, [user?.id, loadReminders]);
-
-  const isStandalone =
-    (typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as unknown as { standalone?: boolean }).standalone === true)) ||
-    Capacitor.isNativePlatform();
 
   useEffect(() => {
     const prevTitle = document.title;

@@ -26,12 +26,7 @@ import {
 } from "@/lib/startWebStripeCheckout";
 import { Check, Loader2 } from "lucide-react";
 
-const VALUE_PROPS = [
-  "Vision, home, office & mood boards",
-  "The Plan with AI action reminders",
-  "Journal, milestones & progress tracking",
-  "Sync across web and mobile",
-];
+
 
 type PremiumPricing = {
   monthly: number;
@@ -42,7 +37,17 @@ function formatUsd(amount: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 }
 
-function WebPaywallShell({ children }: { children: ReactNode }) {
+function WebPaywallShell({
+  children,
+  headline = "",
+  subtitle = "",
+  features = [] as string[],
+}: {
+  children: ReactNode;
+  headline?: string;
+  subtitle?: string;
+  features?: string[];
+}) {
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -70,14 +75,17 @@ function WebPaywallShell({ children }: { children: ReactNode }) {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 md:flex-row md:items-stretch md:gap-10 md:px-8 md:py-12">
         <aside className="hidden md:flex md:w-[42%] md:flex-col md:justify-center md:pr-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Palette Plotting</p>
+          {headline ? (
           <h1 className="font-welcome-serif mt-3 text-4xl font-normal leading-[1.08] tracking-[-0.02em] text-zinc-900">
-            Unlock your full workspace
+            {headline}
           </h1>
-          <p className="mt-4 max-w-sm text-base leading-relaxed text-zinc-600">
-            Your starter plot is ready. Subscribe to save boards, use every tool, and sync across devices.
-          </p>
+          ) : null}
+          {subtitle ? (
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-zinc-600">{subtitle}</p>
+          ) : null}
+          {features.length > 0 ? (
           <ul className="mt-8 space-y-3">
-            {VALUE_PROPS.map((item) => (
+            {features.map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-sm text-zinc-700">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white">
                   <Check className="h-3 w-3" strokeWidth={3} />
@@ -86,15 +94,12 @@ function WebPaywallShell({ children }: { children: ReactNode }) {
               </li>
             ))}
           </ul>
+          ) : null}
         </aside>
 
         <main className="flex flex-1 flex-col items-center justify-center">
           <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-5 shadow-[0_8px_40px_rgba(0,0,0,0.06)] sm:p-6 md:max-w-lg">
-            <div className="mb-4 text-center md:hidden">
-              <h1 className="font-welcome-serif text-2xl font-normal text-zinc-900">Unlock your workspace</h1>
-              <p className="mt-2 text-sm text-zinc-500">Start your membership — cancel anytime.</p>
-            </div>
-            {children}
+{children}
           </div>
         </main>
       </div>
@@ -107,7 +112,7 @@ function WebPaywallStripe() {
   const { t } = useTranslation("paywall");
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
-  const [billing, setBilling] = useState<WebStripeBillingPeriod>("annual");
+  const billing: WebStripeBillingPeriod = "monthly";
   const [pricing, setPricing] = useState<PremiumPricing | null>(null);
   const [pricingLoading, setPricingLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -193,57 +198,27 @@ function WebPaywallStripe() {
     return <div className="min-h-screen" style={{ backgroundColor: WELCOME_LIGHT_BASE }} />;
   }
 
-  const monthlyPrice = pricing?.monthly ?? null;
-  const annualPrice = pricing?.annual ?? null;
-  const annualPerMonth = annualPrice != null && annualPrice > 0 ? annualPrice / 12 : null;
+  const headline = t("webStripe.headline");
+  const subtitle = t("webStripe.subtitle");
+  const priceLine = t("webStripe.priceLine");
+  const cancelLine = t("webStripe.cancelLine");
+  const cta = t("webStripe.cta");
+  const features = t("webStripe.features", { returnObjects: true }) as string[];
 
   return (
-    <WebPaywallShell>
+    <WebPaywallShell headline={headline} subtitle={subtitle} features={features}>
+      <div className="mb-4 text-center md:hidden">
+        <h1 className="font-welcome-serif text-2xl font-normal text-zinc-900">{headline}</h1>
+        <p className="mt-2 text-sm text-zinc-500">{subtitle}</p>
+      </div>
       <div className="space-y-5">
-        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-zinc-100 p-1">
-          <button
-            type="button"
-            onClick={() => setBilling("monthly")}
-            className={cn(
-              "rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-              billing === "monthly" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600",
-            )}
-          >
-            {t("legacyIos.monthly")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBilling("annual")}
-            className={cn(
-              "rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
-              billing === "annual" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600",
-            )}
-          >
-            {t("legacyIos.yearly")}
-          </button>
-        </div>
-
         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-5 text-center">
           {pricingLoading ? (
             <Loader2 className="mx-auto h-6 w-6 animate-spin text-zinc-400" />
-          ) : billing === "monthly" ? (
-            <>
-              <p className="text-3xl font-semibold tabular-nums text-zinc-900">
-                {monthlyPrice != null && monthlyPrice > 0 ? formatUsd(monthlyPrice) : "—"}
-              </p>
-              <p className="mt-1 text-sm text-zinc-500">Billed monthly</p>
-            </>
           ) : (
             <>
-              <p className="text-3xl font-semibold tabular-nums text-zinc-900">
-                {annualPrice != null && annualPrice > 0 ? formatUsd(annualPrice) : "—"}
-              </p>
-              <p className="mt-1 text-sm text-zinc-500">Billed annually</p>
-              {annualPerMonth != null && annualPerMonth > 0 ? (
-                <p className="mt-2 text-xs font-medium text-zinc-500">
-                  {t("legacyIos.onlyPerMonth", { amount: formatUsd(annualPerMonth) })}
-                </p>
-              ) : null}
+              <p className="text-2xl font-semibold tabular-nums text-zinc-900">{priceLine}</p>
+              <p className="mt-2 text-sm text-zinc-500">{cancelLine}</p>
             </>
           )}
         </div>
@@ -260,12 +235,12 @@ function WebPaywallStripe() {
               {t("legacyIos.opening")}
             </>
           ) : (
-            "Continue to checkout"
+            cta
           )}
         </Button>
 
         <p className="text-center text-[11px] leading-relaxed text-zinc-500">
-          Secure checkout powered by Stripe. Cancel anytime from your account settings.
+          Secure checkout powered by Stripe. {cancelLine}
         </p>
       </div>
     </WebPaywallShell>

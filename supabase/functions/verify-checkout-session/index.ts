@@ -43,8 +43,12 @@ serve(async (req) => {
 
     const session = await response.json();
 
-    // Check if payment is successful
-    const isPaid = session.payment_status === "paid" && session.status === "complete";
+    // Paid checkout, or subscription with trial / no immediate charge
+    const checkoutOk =
+      session.payment_status === "paid" ||
+      (session.mode === "subscription" &&
+        session.payment_status === "no_payment_required");
+    const isPaid = session.status === "complete" && checkoutOk;
 
     return new Response(
       JSON.stringify({ 

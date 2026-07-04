@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import {
   BookImage,
@@ -42,18 +42,130 @@ export const PLOT_STRUCTURES: {
   { type: "five_s", title: "5S strip", hint: "Workspace lean reset" },
 ];
 
+export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
+  checklist: { x: 0.14, y: 0.24, w: 0.62, h: 0.26 },
+  zones: { x: 0.12, y: 0.24, w: 0.68, h: 0.24 },
+  eisenhower: { x: 0.16, y: 0.24, w: 0.58, h: 0.32 },
+  kanban: { x: 0.1, y: 0.28, w: 0.78, h: 0.18 },
+  timeline: { x: 0.1, y: 0.34, w: 0.78, h: 0.16 },
+  gantt: { x: 0.12, y: 0.26, w: 0.72, h: 0.26 },
+  okrs: { x: 0.14, y: 0.24, w: 0.66, h: 0.28 },
+  five_s: { x: 0.1, y: 0.34, w: 0.78, h: 0.12 },
+};
+
+const decalInk = "bg-neutral-900";
+
+export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
+  if (type === "kanban") {
+    return (
+      <div className="mt-2 flex h-8 items-end gap-0 border-b border-neutral-900/70 pb-0.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="relative flex flex-1 flex-col items-center gap-0.5">
+            {i > 0 && <span className={`absolute bottom-0 left-0 top-0 w-px ${decalInk}`} />}
+            <span className={`h-0.5 w-4/5 ${decalInk}`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === "checklist") {
+    return (
+      <div className="mt-2 space-y-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 shrink-0 border border-neutral-900/80" />
+            <span className={`h-px flex-1 ${decalInk} opacity-40`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === "eisenhower") {
+    return (
+      <div className="relative mt-2 h-8">
+        <span className={`absolute left-1/2 top-0 h-full w-px -translate-x-1/2 ${decalInk}`} />
+        <span className={`absolute left-0 top-1/2 h-px w-full -translate-y-1/2 ${decalInk}`} />
+      </div>
+    );
+  }
+  if (type === "timeline") {
+    return (
+      <div className="relative mt-3 h-4">
+        <span className={`absolute left-0 top-1/2 h-px w-full -translate-y-1/2 ${decalInk}`} />
+        {[0, 1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`absolute top-0 h-2 w-px ${decalInk}`}
+            style={{ left: `${i * 33}%` }}
+          />
+        ))}
+      </div>
+    );
+  }
+  if (type === "gantt") {
+    return (
+      <div className="mt-2 space-y-1">
+        {[0.35, 0.55, 0.45].map((w, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className={`h-px flex-1 ${decalInk} opacity-25`} />
+            <span className={`h-1 ${decalInk}`} style={{ width: `${w * 100}%`, maxWidth: "2.5rem" }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === "okrs") {
+    return (
+      <div className="mt-2 space-y-1">
+        <span className={`block h-px w-full ${decalInk}`} />
+        {[0.3, 0.45, 0.25].map((w, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className={`h-px flex-1 ${decalInk} opacity-25`} />
+            <span className={`h-1 ${decalInk}`} style={{ width: `${w * 100}%`, maxWidth: "2rem" }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === "zones") {
+    return (
+      <div className="mt-2 space-y-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className={`h-px w-3 ${decalInk} opacity-50`} />
+            <span className={`h-px flex-1 ${decalInk} opacity-30`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === "five_s") {
+    return (
+      <div className="relative mt-2 flex h-6 border-y border-neutral-900/70">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="relative flex flex-1 items-center justify-center">
+            {i > 0 && <span className={`absolute bottom-0 left-0 top-0 w-px ${decalInk}`} />}
+            <span className={`h-0.5 w-2/3 ${decalInk}`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
 const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
-  { id: "companion", label: "Companion", Icon: MessageCircleHeart },
-  { id: "clippings", label: "Clippings", Icon: BookImage },
-  { id: "structures", label: "Structures", Icon: Shapes },
-  { id: "marks", label: "Marks", Icon: PenLine },
+  { id: "companion", label: "Guide", Icon: MessageCircleHeart },
+  { id: "clippings", label: "Images", Icon: BookImage },
+  { id: "structures", label: "Layouts", Icon: Shapes },
+  { id: "marks", label: "Text / Notes", Icon: PenLine },
 ];
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
   companion: "Tell me the feeling of this board — I'll plot color, words, and structures with you.",
-  clippings: "Images from the library or your camera roll.",
+  clippings: "Browse the image library or upload from your camera roll.",
   structures: "Drop planning grids onto the board — mix freely on any board.",
-  marks: "Right-click empty space to add · right-click a mark to edit or recolor.",
+  marks: "Tap empty board space to add · hold items to edit.",
 };
 
 type BoardPlottingWorkbenchProps = {
@@ -75,8 +187,9 @@ export function BoardPlottingWorkbench({
   onPickImage,
   onScanPhysical,
 }: BoardPlottingWorkbenchProps) {
-  const [openTab, setOpenTab] = useState<PlotDockTab | null>("companion");
+  const [openTab, setOpenTab] = useState<PlotDockTab | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const lastOpenTabRef = useRef<PlotDockTab | null>(null);
   const activeBoardFill = boardFillForKey(activeBoard.color_key);
   const [hexDraft, setHexDraft] = useState(activeBoardFill);
 
@@ -99,26 +212,78 @@ export function BoardPlottingWorkbench({
     void onBoardColorChange(activeBoardId, hex);
   };
 
+  const showTab = (tab: PlotDockTab) => {
+    lastOpenTabRef.current = tab;
+    setOpenTab(tab);
+  };
+
   const pickTab = (tab: PlotDockTab) => {
     if (collapsed) {
       setCollapsed(false);
-      setOpenTab(tab);
+      showTab(tab);
       return;
     }
-    setOpenTab((prev) => (prev === tab ? null : tab));
+    if (openTab === tab) {
+      setOpenTab(null);
+      return;
+    }
+    showTab(tab);
   };
 
   const toggleCollapsed = () => {
-    setCollapsed((prev) => !prev);
+    setCollapsed((prev) => {
+      if (prev) {
+        setOpenTab((current) => current ?? lastOpenTabRef.current);
+      }
+      return !prev;
+    });
   };
 
   const placeStructure = (type: BoardDiagramType, items?: string[]) => {
-    editorRef.current?.addDiagramOverlay(type, 0.1, 0.38, 0.8, 0.48, items);
+    const placement = STRUCTURE_DECAL_SIZE[type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+    editorRef.current?.addDiagramOverlay(type, placement.x, placement.y, placement.w, placement.h, items);
     setOpenTab(null);
   };
 
   const markBtn =
     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-200/60";
+
+  const boardColorStrip = (
+    <div className="border-b border-stone-300/50 px-3 py-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Board color</p>
+        <label className="relative flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center">
+          <span
+            className="h-7 w-7 rounded-full ring-2 ring-stone-300/80 ring-offset-1"
+            style={{ backgroundColor: activeBoardFill }}
+            aria-hidden
+          />
+          <input
+            type="color"
+            value={activeBoardFill}
+            onChange={(e) => applyBoardHex(e.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            aria-label="Pick board color"
+          />
+        </label>
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {BOARD_QUICK_PICK_COLORS.map((pick) => (
+          <button
+            key={pick.hex}
+            type="button"
+            title={`${pick.label} · ${pick.hex}`}
+            onClick={() => applyQuickPick(pick.hex)}
+            className={cn(
+              "aspect-square rounded-md ring-1 ring-stone-300/60 transition-transform hover:scale-105",
+              activeBoardFill === pick.hex && "ring-2 ring-stone-900",
+            )}
+            style={{ backgroundColor: pick.hex }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex h-full min-h-0 max-h-full shrink-0 self-stretch border-r border-stone-300/80 bg-[#f3f0eb]">
@@ -135,24 +300,22 @@ export function BoardPlottingWorkbench({
           {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
         {DOCK_TABS.map(({ id, label, Icon }) => {
-          const active = openTab === id;
+          const active = !collapsed && openTab === id;
           return (
             <button
               key={id}
               type="button"
               title={label}
+              aria-pressed={active}
               onClick={() => pickTab(id)}
               className={cn(
                 "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
-                active ? "bg-stone-900 text-white shadow-sm" : "text-stone-600 hover:bg-stone-200/70 hover:text-stone-900",
-              )}
-              style={
                 active
-                  ? { boxShadow: `inset 3px 0 0 0 ${boardFillForKey(activeBoard.color_key)}` }
-                  : undefined
-              }
+                  ? "bg-transparent text-stone-900 ring-2 ring-stone-900 ring-offset-1 ring-offset-[#f3f0eb]"
+                  : "text-stone-600 hover:bg-stone-200/70 hover:text-stone-900",
+              )}
             >
-              <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.25 : 1.75} />
             </button>
           );
         })}
@@ -166,6 +329,8 @@ export function BoardPlottingWorkbench({
             </p>
             <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{TAB_INTROS[openTab]}</p>
           </header>
+
+          {boardColorStrip}
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {openTab === "companion" && (
@@ -194,6 +359,7 @@ export function BoardPlottingWorkbench({
                     >
                       <span className="text-xs font-semibold text-stone-900">{s.title}</span>
                       <span className="mt-0.5 block text-[10px] text-stone-500">{s.hint}</span>
+                      <StructureDecalPreview type={s.type} />
                     </button>
                   ))}
                 </div>
@@ -214,52 +380,6 @@ export function BoardPlottingWorkbench({
                   <button type="button" className={markBtn} onClick={() => editorRef.current?.deleteSelected()}>
                     <Trash2 className="h-4 w-4" /> Remove selected
                   </button>
-                </div>
-                <div className="border-t border-stone-300/50 pt-2">
-                  <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Board color</p>
-                  <div className="mb-2 flex items-center gap-2 px-1">
-                    <label className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center">
-                      <span
-                        className="h-9 w-9 rounded-full ring-2 ring-stone-300/80 ring-offset-1"
-                        style={{ backgroundColor: activeBoardFill }}
-                        aria-hidden
-                      />
-                      <input
-                        type="color"
-                        value={activeBoardFill}
-                        onChange={(e) => applyBoardHex(e.target.value)}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        aria-label="Pick board color"
-                      />
-                    </label>
-                    <input
-                      type="text"
-                      value={hexDraft}
-                      onChange={(e) => setHexDraft(e.target.value)}
-                      onBlur={() => applyBoardHex(hexDraft)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") applyBoardHex(hexDraft);
-                      }}
-                      spellCheck={false}
-                      className="min-w-0 flex-1 rounded-md border border-stone-300/80 bg-white px-2 py-1.5 font-mono text-[11px] uppercase text-stone-800"
-                      aria-label="Board color hex code"
-                    />
-                  </div>
-                  <div className="grid grid-cols-7 gap-1.5 px-1">
-                    {BOARD_QUICK_PICK_COLORS.map((pick) => (
-                      <button
-                        key={pick.hex}
-                        type="button"
-                        title={`${pick.label} · ${pick.hex}`}
-                        onClick={() => applyQuickPick(pick.hex)}
-                        className={cn(
-                          "aspect-square rounded-md ring-1 ring-stone-300/60 transition-transform hover:scale-105",
-                          activeBoardFill === pick.hex && "ring-2 ring-stone-900",
-                        )}
-                        style={{ backgroundColor: pick.hex }}
-                      />
-                    ))}
-                  </div>
                 </div>
                 <p className="flex items-center gap-1 px-2 text-[10px] text-stone-500">
                   <Layers className="h-3 w-3" />

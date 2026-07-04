@@ -1,6 +1,5 @@
-import { LayoutGrid, type LucideIcon } from "lucide-react";
+import { Bell, LayoutGrid, type LucideIcon } from "lucide-react";
 import type { IconType } from "react-icons";
-import { GiJourney } from "react-icons/gi";
 import type { TFunction } from "i18next";
 
 export interface Feature {
@@ -19,10 +18,10 @@ export function getDashboardFeatures(t: TFunction<"dashboard">): Feature[] {
       path: "/dashboard/boards",
     },
     {
-      icon: GiJourney,
+      icon: Bell,
       title: t("tools.yourJourney.title"),
       description: t("tools.yourJourney.description"),
-      path: "/dashboard/your-journey",
+      path: "/dashboard/reminders",
     },
   ];
 }

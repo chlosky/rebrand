@@ -35,7 +35,7 @@
   "nav": {
     "home": "Home",
     "boards": "Boards",
-    "yourJourney": "Your Journey",
+    "yourJourney": "Reminders",
     "settings": "Settings",
     "appearance": "Appearance",
     "help": "Help",
@@ -49,8 +49,8 @@
       "description": "Vision boards with drag-and-drop editing — focus, mood, and The Plan"
     },
     "yourJourney": {
-      "title": "Your Journey",
-      "description": "Journal, milestones, and weekly progress"
+      "title": "Reminders",
+      "description": "Email reminders, journal, and weekly progress"
     }
   },
   "supportTools": {
@@ -78,9 +78,10 @@
       "library": "Library",
       "community": "Community",
       "tips": "Tips",
-      "yourJourney": "Your Journey",
+      "yourJourney": "Reminders",
       "newBoard": "Start a New Board",
       "create": "Create",
+      "imageLibrary": "Image Library",
       "projects": "Projects"
     },
     "journey": {
@@ -175,6 +176,10 @@
         "mood": "Moodboard"
       }
     },
+    "imageLibrary": {
+      "title": "Your image library",
+      "subtitle": "Upload clippings and photos here. They stay in your account and show up when you add images on boards."
+    },
     "projects": {
       "title": "Your boards",
       "subtitle": "Jump back into a workspace you've already started.",
@@ -184,10 +189,12 @@
     "locked": {
       "createTitle": "Create is for members",
       "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Pro.",
-      "journeyTitle": "Your Journey is for members",
-      "journeyBody": "Progress tracking, weekly goals, and journal unlock with Palette Plotting Pro.",
+      "journeyTitle": "Reminders are for members",
+      "journeyBody": "Plan reminders, progress tracking, and journal unlock with Palette Plotting Pro.",
       "newBoardTitle": "Boards are for members",
       "newBoardBody": "Start a new board on the plotting desk once you are on Pro — Library stays free.",
+      "imageLibraryTitle": "Image Library is for members",
+      "imageLibraryBody": "Upload and organize clippings here once you are on Pro — then drop them onto boards from the radial menu.",
       "projectsTitle": "Projects are for members",
       "projectsBody": "Your saved boards live here once you're on Pro — Library stays free.",
       "upgrade": "Unlock plotting tools"

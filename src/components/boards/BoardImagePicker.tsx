@@ -13,7 +13,7 @@ import type { BoardImageAsset } from "@/lib/boards/types";
 
 type BoardImagePickerProps = {
   userId: string;
-  onPickImage: (url: string) => void;
+  onPickImage?: (url: string) => void;
   onScanPhysical?: () => void;
   embedded?: boolean;
 };
@@ -59,7 +59,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
     try {
       const url = await uploadBoardImage(userId, file);
       await refreshUploads();
-      onPickImage(url);
+      onPickImage?.(url);
       setTab("uploads");
     } finally {
       setUploading(false);
@@ -137,7 +137,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
                 key={img.id}
                 type="button"
                 className="group overflow-hidden rounded-md border border-neutral-200 text-left hover:ring-2 hover:ring-neutral-900/20"
-                onClick={() => onPickImage(img.url)}
+                onClick={() => onPickImage?.(img.url)}
               >
                 <img src={img.url} alt={img.description} className="aspect-square w-full object-cover" loading="lazy" />
                 <span className="block truncate px-1 py-1 text-[10px] text-neutral-600">{img.description}</span>
@@ -153,7 +153,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
                 key={u.path}
                 type="button"
                 className="overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
-                onClick={() => onPickImage(u.signedUrl)}
+                onClick={() => onPickImage?.(u.signedUrl)}
               >
                 <img src={u.signedUrl} alt="" className="aspect-square w-full object-cover" />
               </button>

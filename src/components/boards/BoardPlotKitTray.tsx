@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import type { RefObject } from "react";
-import { BookImage, MessageCircleHeart, PenLine, Shapes } from "lucide-react";
+import { BookImage, MessageCircleHeart, Shapes } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey, normalizeBoardColorHex } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
-import { PLOT_STRUCTURES, type PlotDockTab } from "@/components/boards/BoardPlottingWorkbench";
+import { PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE, StructureDecalPreview, type PlotDockTab } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardCompanionPanel } from "@/components/boards/BoardCompanionPanel";
 import { cn } from "@/lib/utils";
 
 const TAB_LABELS: Record<PlotDockTab, string> = {
-  companion: "Companion",
-  clippings: "Clippings",
+  companion: "Guide",
+  clippings: "Images",
   structures: "Structures",
   marks: "Marks",
 };
@@ -72,7 +72,6 @@ export function BoardPlotKitTray({
             { id: "companion" as const, Icon: MessageCircleHeart },
             { id: "clippings" as const, Icon: BookImage },
             { id: "structures" as const, Icon: Shapes },
-            { id: "marks" as const, Icon: PenLine },
           ] as const
         ).map(({ id, Icon }) => (
           <button
@@ -128,13 +127,22 @@ export function BoardPlotKitTray({
                     key={s.type}
                     type="button"
                     onClick={() => {
-                      editorRef.current?.addDiagramOverlay(s.type, 0.08, 0.35, 0.84, 0.5, s.items);
+                      const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+                      editorRef.current?.addDiagramOverlay(
+                        s.type,
+                        placement.x,
+                        placement.y,
+                        placement.w,
+                        placement.h,
+                        s.items,
+                      );
                       close();
                     }}
                     className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
                   >
                     <span className="text-sm font-semibold text-stone-900">{s.title}</span>
                     <span className="mt-0.5 block text-xs text-stone-500">{s.hint}</span>
+                    <StructureDecalPreview type={s.type} />
                   </button>
                 ))}
               </div>

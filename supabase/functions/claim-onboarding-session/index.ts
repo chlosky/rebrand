@@ -176,7 +176,10 @@ serve(async (req) => {
       });
     }
 
-    if (cs.payment_status !== "paid") {
+    const checkoutOk =
+      cs.payment_status === "paid" ||
+      (cs.mode === "subscription" && cs.payment_status === "no_payment_required");
+    if (!checkoutOk) {
       return new Response(JSON.stringify({ error: "Payment not completed" }), {
         status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -202,6 +205,8 @@ serve(async (req) => {
     // Determine current_period_end (for subscription mode)
     let currentPeriodEndIso: string | null = null;
     let subscriptionStatus: string | null = null;
+    let subscriptionOnTrial = false;
+    let subscriptionHadTrial = false;
 
     if (subscriptionId) {
       const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
@@ -211,6 +216,8 @@ serve(async (req) => {
       if (subResp.ok) {
         const sub = await subResp.json();
         subscriptionStatus = sub.status || null;
+        subscriptionOnTrial = sub.status === "trialing";
+        subscriptionHadTrial = typeof sub.trial_start === "number" && sub.trial_start > 0;
         if (sub.current_period_end) {
           currentPeriodEndIso = new Date(sub.current_period_end * 1000).toISOString();
         }
@@ -252,11 +259,13 @@ serve(async (req) => {
 
     // 2) Upsert entitlement (user_plans is the gating source of truth)
     const planStatus =
-      subscriptionStatus === "past_due"
-        ? "past_due"
-        : subscriptionStatus === "canceled"
-        ? "canceled"
-        : "active";
+      subscriptionStatus === "trialing"
+        ? "trialing"
+        : subscriptionStatus === "past_due"
+          ? "past_due"
+          : subscriptionStatus === "canceled"
+            ? "canceled"
+            : "active";
 
     // Upsert user_plans - don't include id, let PostgreSQL generate it via DEFAULT
     // The onConflict uses user_id (which has UNIQUE constraint) to match existing rows
@@ -266,10 +275,13 @@ serve(async (req) => {
         {
           user_id: user.id,
           tier,
+          billing_period: billing ?? "monthly",
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           last_payment_source: "stripe",
           status: planStatus,
+          on_trial: subscriptionOnTrial,
+          had_trial: subscriptionHadTrial || subscriptionOnTrial,
           current_period_end: currentPeriodEndIso,
           updated_at: new Date().toISOString(),
         },

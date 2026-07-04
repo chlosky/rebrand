@@ -14,7 +14,7 @@ type BoardReminderPanelProps = {
   userId: string;
   reminders: BoardReminder[];
   onRefresh: () => void;
-  /** Inline card on Your Journey — not a boards-page sidebar. */
+  /** Inline card on Reminders — not a boards-page sidebar. */
   embedded?: boolean;
 };
 

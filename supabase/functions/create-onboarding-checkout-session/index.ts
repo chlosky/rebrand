@@ -155,6 +155,11 @@ serve(async (req) => {
       formParts.push(`subscription_data[metadata][app_user_id]=${encodeValue(obUserId)}`);
     }
 
+    // 3-day trial for monthly web launch offer
+    if (billing === "monthly") {
+      formParts.push(`subscription_data[trial_period_days]=${encodeValue("3")}`);
+    }
+
     // Enable promo codes in Checkout
     formParts.push(`allow_promotion_codes=true`);
 

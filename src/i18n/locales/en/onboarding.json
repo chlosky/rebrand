@@ -4,30 +4,50 @@
     "enterStudio": "Get started",
     "ctaSubtext": "Takes about 3 minutes to set up",
     "freeTrialLine": "Start free",
-    "nativeTitle": "Plot your rebrand in one place",
-    "nativeTitleLead": "Plot your rebrand ",
+    "nativeTitle": "Plot your boards in one place",
+    "nativeTitleLead": "Plot your boards ",
     "nativeTitleAccent": "in one place",
-    "nativeDescription": "Boards, structures, and tracking — all in one workspace.",
+    "nativeDescription": "Boards, structures, clippings, color, and The Plan — all in one workspace.",
     "awardLine1": "One workspace",
-    "awardLine2": "for your whole",
-    "awardLine3": "rebrand",
-    "webHeadline1": "Your whole rebrand,",
+    "awardLine2": "for the boards",
+    "awardLine3": "you are building",
+    "webHeadline1": "Your boards,",
     "webHeadlineAccent": "in one workspace",
     "toolRows": {
-      "row1": ["Plotting boards", "Structures"],
-      "row2": ["Clippings & color", "Companion", "Your journey"],
-      "row3": ["Home & office", "Moodboards", "Tracking"]
+      "row1": [
+        "Plotting boards",
+        "Structures"
+      ],
+      "row2": [
+        "Clippings & color",
+        "Guide",
+        "The Plan"
+      ],
+      "row3": [
+        "Home & office",
+        "Moodboards",
+        "Progress"
+      ]
     },
     "webSteps": {
-      "desire": { "title": "Pick your plot", "subtitle": "Life · Home · Office · Mood — no wrong door" },
-      "makeYours": { "title": "Choose your acrylics", "subtitle": "Board colors, layouts, and clippings that feel like you" },
-      "listen": { "title": "Stay on track", "subtitle": "Reminders that keep you moving" }
+      "desire": {
+        "title": "Pick your board path",
+        "subtitle": "Life · Home · Office · Mood — start where you are"
+      },
+      "makeYours": {
+        "title": "Build the board",
+        "subtitle": "Add color, clippings, notes, and clean structure"
+      },
+      "listen": {
+        "title": "Keep it moving",
+        "subtitle": "Use The Plan to turn the board into next steps"
+      }
     },
     "webToolbar": {
       "boards": "Boards",
       "clippings": "Clippings",
       "structures": "Structures",
-      "marks": "Marks"
+      "marks": "Text & Notes"
     },
     "communityProof": "",
     "mockupScreenAlt": "Palette Plotting workspace preview",
@@ -38,39 +58,39 @@
   },
   "setup": {
     "name": {
-      "title": "First things first — what do we call you in here?",
+      "title": "First things first — what should we call you?",
       "firstNameLabel": "First name",
       "firstNamePlaceholder": "Your first name",
       "saveError": "Could not save your name. Check your connection and try again."
     },
     "focusCategories": {
       "title": "What are you plotting?",
-      "subtitle": "Pick up to three — these become your focus boards."
+      "subtitle": "Pick up to three. These become your starting boards."
     },
     "primaryIntent": {
       "title": "What are you setting up?",
-      "subtitle": "You can mix everything later — this just sets your starting point.",
+      "subtitle": "Choose a starting point. You can mix boards, clippings, structures, and plans later.",
       "options": {
         "life_rebranding": {
           "title": "Life plotting & vision boards",
-          "description": "Identity, goals, and the signature four-board vision system."
+          "description": "Identity, goals, routines, money, love, space, and the plan behind it."
         },
         "home_organization": {
           "title": "Home organization",
-          "description": "Your household command center — schedules, chores, and zones."
+          "description": "Routines, chores, meal plans, zones, resets, and household boards."
         },
         "office_work": {
           "title": "Office & projects",
-          "description": "Kanban, timelines, OKRs — systems for people who plan in color."
+          "description": "Kanban, timelines, priorities, OKRs, and project boards."
         },
         "moodboarding": {
           "title": "Moodboarding",
-          "description": "Aesthetic grids, interiors, travel — plot the vibe first."
+          "description": "Interiors, style, travel, events, brand ideas, and visual direction."
         }
       }
     },
     "homeFocus": {
-      "title": "What's your home focus?",
+      "title": "What is your home focus?",
       "subtitle": "Pick the area you want your starter boards built around.",
       "options": {
         "home_plan_routines": "Home plan & routines",
@@ -81,34 +101,34 @@
       }
     },
     "officePlanning": {
-      "title": "Choose your planning system",
-      "subtitle": "Trusted by PMs, planners, and lean teams — pick your primary board mode.",
+      "title": "Choose your starting structure",
+      "subtitle": "Pick the structure you want on your first board. You can add more later.",
       "systems": {
         "kanban": {
           "title": "Kanban",
-          "description": "Visual flow with WIP-friendly columns — from software to factory floor."
+          "description": "Move tasks from To Do to Done."
         },
         "gantt": {
           "title": "Gantt timeline",
-          "description": "Tasks across time with phases, dependencies, and milestones."
+          "description": "Map tasks across a timeline."
         },
         "eisenhower": {
-          "title": "Eisenhower matrix",
-          "description": "Urgent × important quadrants — executive prioritization."
+          "title": "Priority grid",
+          "description": "Sort what matters now, next, later, or not at all."
         },
         "okrs": {
           "title": "OKRs",
-          "description": "Objectives and measurable key results — team-ready framing."
+          "description": "Set the goal and the results that show it is moving."
         },
         "five_s": {
-          "title": "5S workplace",
-          "description": "Sort, set, shine, standardize, sustain — lean discipline."
+          "title": "5S reset",
+          "description": "Reset a space or workflow step by step."
         }
       }
     },
     "moodboardFocus": {
-      "title": "What's your moodboard for?",
-      "subtitle": "We'll open gallery-style boards tuned to this vibe.",
+      "title": "What is your moodboard for?",
+      "subtitle": "We will start you with boards that match that direction.",
       "options": {
         "mood_aesthetic_style": "Aesthetic & style",
         "mood_interiors_space": "Interiors & space",
@@ -118,11 +138,11 @@
       }
     },
     "focusDetails": {
-      "subtitle": "We'll shape your starter boards around this.",
+      "subtitle": "We will shape your starter boards around this.",
       "fallbackHeadline": "A quick detail",
       "fallbackMessage": "Go back and pick a focus area to unlock this step.",
       "customLabel": "Describe your focus",
-      "customPlaceholder": "e.g., Soft life era, new career chapter",
+      "customPlaceholder": "e.g., soft life reset, new career chapter, apartment setup",
       "categories": {
         "Identity": {
           "headline": "What identity shift are you plotting?",
@@ -232,25 +252,27 @@
       "placeholder": "The thing you keep working around…"
     },
     "toolPreference": {
-      "title": "What do you want within reach on day one?",
-      "subtitle": "Pick what feels true — you can add more once you're inside."
+      "title": "How do you want to use your boards first?",
+      "subtitle": "Choose the tool you are most likely to open again."
     },
     "toolPreferenceOptions": {
       "boards_workspace": "Board review & planning",
       "daily_wins_progress": "Habit & progress tracking"
     },
     "workspaceTemplate": {
-      "title": "Choose your first board layout",
-      "subtitle": "Like picking acrylic sheets off the wall — you can rearrange anytime.",
+      "title": "Choose your first board setup",
+      "subtitle": "Pick a starting layout. You can rearrange everything later.",
       "titleByIntent": {
-        "life_rebranding": "Choose your vision board layout",
-        "home_organization": "Choose your home board layout",
-        "moodboarding": "Choose your moodboard layout"
+        "life_rebranding": "Choose your vision board setup",
+        "home_organization": "Choose your home board setup",
+        "office_work": "Choose your project board setup",
+        "moodboarding": "Choose your moodboard setup"
       },
       "subtitleByIntent": {
-        "life_rebranding": "The signature vision boards + plan — pick the four-board vibe you want.",
-        "home_organization": "Household boards with checklists and visual zones.",
-        "moodboarding": "Gallery-forward boards for inspo and creative direction."
+        "life_rebranding": "Start with vision boards and The Plan.",
+        "home_organization": "Start with household boards, zones, and checklists.",
+        "office_work": "Start with project boards and planning structures.",
+        "moodboarding": "Start with image-forward boards for visual direction."
       },
       "options": {
         "four-board-rebrand": {
@@ -426,37 +448,61 @@
       "emailMarketingConsent": "Send me rebrand tips and updates. By checking this box, you consent to marketing communications. You can opt out anytime."
     },
     "plotSynthesis": {
-      "title": "You're cleared for the studio.",
-      "subtitle": "Here's what we set up from what you told us — yours once you subscribe.",
+      "title": "Your workspace is ready.",
+      "subtitle": "Here is what we set up from what you told us.",
       "items": {
-        "workspace": "Your plotting workspace, colored and laid out your way.",
-        "boards": "Daily board review and plan steps.",
-        "tracking": "Milestones and progress on your journey tab."
+        "workspace": "A board workspace built around your starting path.",
+        "boards": "Starter boards with color, structure, and room to edit.",
+        "tracking": "The Plan and progress tools to help you keep moving."
       }
     },
     "plotLoading": {
-      "title": "Preparing your room…",
-      "subtitle": "Laying out boards, color, and your first plot.",
+      "title": "Setting up your boards…",
+      "subtitle": "Adding boards, color, structure, and your first plan.",
       "loading": "Loading",
-      "hint": "You're not starting from zero — something is already being built for you.",
+      "hint": "You are not starting from a blank page.",
       "testimonials": {
         "row1": [
-          { "quote": "Finally feels like my moodboard came to life.", "author": "Jordan M." },
-          { "quote": "I stopped doom-scrolling and started plotting my era.", "author": "Riley T." },
-          { "quote": "The aesthetic + plan combo is exactly what I needed.", "author": "Casey L." },
-          { "quote": "My rebrand actually looks like me now.", "author": "Morgan P." }
+          {
+            "quote": "Finally feels like my moodboard came to life.",
+            "author": "Jordan M."
+          },
+          {
+            "quote": "I stopped doom-scrolling and started plotting my era.",
+            "author": "Riley T."
+          },
+          {
+            "quote": "The aesthetic + plan combo is exactly what I needed.",
+            "author": "Casey L."
+          },
+          {
+            "quote": "My rebrand actually looks like me now.",
+            "author": "Morgan P."
+          }
         ],
         "row2": [
-          { "quote": "Seeing it all in one place changed how I show up.", "author": "Dev S." },
-          { "quote": "Reminders on my plotted goals keep me honest.", "author": "Avery K." },
-          { "quote": "Small daily wins on the plan board add up fast.", "author": "Quinn R." },
-          { "quote": "I open this more than any other app on my phone.", "author": "Jamie H." }
+          {
+            "quote": "Seeing it all in one place changed how I show up.",
+            "author": "Dev S."
+          },
+          {
+            "quote": "Reminders on my plotted goals keep me honest.",
+            "author": "Avery K."
+          },
+          {
+            "quote": "Small daily wins on the plan board add up fast.",
+            "author": "Quinn R."
+          },
+          {
+            "quote": "I open this more than any other app on my phone.",
+            "author": "Jamie H."
+          }
         ]
       }
     },
     "beginJourney": {
-      "lead": "Your plot is taking shape.",
-      "subtitle": "Let's finish setting up your studio."
+      "lead": "Your boards are taking shape.",
+      "subtitle": "Let's finish setting up your workspace."
     }
   }
 }

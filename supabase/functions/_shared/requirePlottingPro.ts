@@ -11,7 +11,7 @@ export async function userHasActivePlottingPro(
     .maybeSingle();
 
   if (error || !data) return false;
-  if (data.status !== "active") return false;
+  if (data.status !== "active" && data.status !== "trialing") return false;
   if (data.current_period_end && new Date(data.current_period_end) <= new Date()) return false;
   return true;
 }

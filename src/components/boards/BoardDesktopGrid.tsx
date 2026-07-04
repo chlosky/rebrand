@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
@@ -38,7 +38,21 @@ const TITLE_BAR_PX = 32;
 
 const MIN_CELL_WIDTH_PX = 120;
 
+type RegisteredBoardCanvasEditorProps = ComponentProps<typeof BoardCanvasEditor> & {
+  registerEditor: (boardId: string, handle: BoardCanvasHandle | null) => void;
+};
 
+function RegisteredBoardCanvasEditor({
+  boardId,
+  registerEditor,
+  ...rest
+}: RegisteredBoardCanvasEditorProps) {
+  const setRef = useCallback(
+    (handle: BoardCanvasHandle | null) => registerEditor(boardId, handle),
+    [boardId, registerEditor],
+  );
+  return <BoardCanvasEditor ref={setRef} {...rest} />;
+}
 
 type CellSize = { width: number; height: number };
 
@@ -447,12 +461,9 @@ export function BoardDesktopGrid({
 
                   <div className="relative min-h-0 flex-1 overflow-hidden" style={{ height: cellSize.height }}>
 
-                    <BoardCanvasEditor
-
-                      ref={(handle) => registerEditor(board.id, handle)}
-
+                    <RegisteredBoardCanvasEditor
                       boardId={board.id}
-
+                      registerEditor={registerEditor}
                       colorKey={board.color_key}
 
                       layoutMode={board.layout_mode ?? "vision"}
@@ -462,6 +473,8 @@ export function BoardDesktopGrid({
                       onSave={getSaveHandler(board.id)}
 
                       onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
+
+                      isActive={board.id === activeId}
 
                       embedded
 

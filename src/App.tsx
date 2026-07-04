@@ -25,7 +25,7 @@ import RoutineReminderSettings from "./pages/RoutineReminderSettings";
 import Boards from "./pages/features/Boards";
 import ActivityTracking from "./pages/features/ActivityTracking";
 import Chrono from "./pages/features/Chrono";
-import YourJourney from "./pages/features/YourJourney";
+import Reminders from "./pages/features/Reminders";
 import ReportAppIssue from "./pages/ReportAppIssue";
 import AdminSupportInbox from "./pages/admin/AdminSupportInbox";
 import EmailCollection from "./pages/onboarding/EmailCollection";
@@ -327,7 +327,8 @@ const App = () => {
                 <Route path="settings/routine-reminders" element={<RoutineReminderSettings />} />
                 <Route path="report-issue" element={<ReportAppIssue />} />
                 <Route path="admin/support" element={<AdminSupportInbox />} />
-                <Route path="your-journey" element={<ProToolRoute><YourJourney /></ProToolRoute>} />
+                <Route path="reminders" element={<ProToolRoute><Reminders /></ProToolRoute>} />
+                <Route path="your-journey" element={<Navigate to="/dashboard/reminders" replace />} />
                 <Route path="boards" element={<ProToolRoute><Boards /></ProToolRoute>} />
                 <Route path="timeline" element={<ProToolRoute><Chrono /></ProToolRoute>} />
                 <Route path="activity-tracking" element={<ProToolRoute><ActivityTracking /></ProToolRoute>} />

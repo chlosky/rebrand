@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ComponentProps } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BoardCanvasEditor, type BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
@@ -22,7 +22,25 @@ type BoardMobileCarouselProps = {
     patch: { title_color?: string | null; title_font?: string | null },
   ) => void | Promise<void>;
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
+  onBoardColorChange?: (boardId: string, colorKey: string) => void | Promise<void>;
+  onRequestImagePick?: () => void;
 };
+
+type RegisteredBoardCanvasEditorProps = ComponentProps<typeof BoardCanvasEditor> & {
+  registerEditor: (boardId: string, handle: BoardCanvasHandle | null) => void;
+};
+
+function RegisteredBoardCanvasEditor({
+  boardId,
+  registerEditor,
+  ...rest
+}: RegisteredBoardCanvasEditorProps) {
+  const setRef = useCallback(
+    (handle: BoardCanvasHandle | null) => registerEditor(boardId, handle),
+    [boardId, registerEditor],
+  );
+  return <BoardCanvasEditor ref={setRef} {...rest} />;
+}
 
 export function BoardMobileCarousel({
   boards,
@@ -36,6 +54,8 @@ export function BoardMobileCarousel({
   onRenameBoard,
   onTitleStyleChange,
   onHistoryChange,
+  onBoardColorChange,
+  onRequestImagePick,
 }: BoardMobileCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const saveHandlers = useRef(new Map<string, (layout: Record<string, unknown>) => void>());
@@ -122,16 +142,19 @@ export function BoardMobileCarousel({
               )}
             </div>
             <div className="relative min-h-0 flex-1 overflow-hidden px-1 pb-1">
-              <BoardCanvasEditor
-                ref={(handle) => registerEditor(board.id, handle)}
+              <RegisteredBoardCanvasEditor
                 boardId={board.id}
+                registerEditor={registerEditor}
                 colorKey={board.color_key}
                 layoutMode={board.layout_mode ?? "vision"}
                 layoutJson={board.layout_json}
                 onSave={getSaveHandler(board.id)}
                 onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
+                isActive={board.id === activeId}
                 embedded
                 cellFit="cover"
+                onBoardColorPick={(hex) => void onBoardColorChange?.(board.id, hex)}
+                onRequestImagePick={board.id === activeId ? onRequestImagePick : undefined}
               />
             </div>
           </div>
@@ -174,7 +197,7 @@ export function BoardMobileCarousel({
       </div>
 
       <p className="shrink-0 pb-0.5 text-center text-[10px] text-neutral-400">
-        Swipe between boards · tap an item, then Delete on the bar above
+        Swipe boards · tap empty space to add · hold items to edit
       </p>
     </div>
   );

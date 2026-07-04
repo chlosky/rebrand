@@ -18,7 +18,7 @@ async function userHasActiveStripePlan(userId: string): Promise<boolean> {
   const status = typeof data.status === "string" ? data.status.trim().toLowerCase() : "";
   const source = typeof data.last_payment_source === "string" ? data.last_payment_source.trim().toLowerCase() : "";
 
-  if (status !== "active" || !SUBSCRIBED_TIERS.has(tier)) return false;
+  if (!["active", "trialing"].includes(status) || !SUBSCRIBED_TIERS.has(tier)) return false;
   if (source && source !== "stripe" && source !== "web") return false;
   return true;
 }

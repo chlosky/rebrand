@@ -24,6 +24,8 @@ import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { BoardPrintDialog } from "@/components/boards/BoardPrintDialog";
 import { BoardPhysicalScanDialog } from "@/components/boards/BoardPhysicalScanDialog";
 import { BoardImportDialog } from "@/components/boards/BoardImportDialog";
+import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import "@/styles/board-editor.css";
 
@@ -33,6 +35,7 @@ export default function Boards() {
   const isMobile = useIsMobile();
   const editorMapRef = useRef(new Map<string, BoardCanvasHandle>());
   const activeEditorRef = useRef<BoardCanvasHandle | null>(null);
+  const [imagePickOpen, setImagePickOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState<BoardWorkspaceWithBoards | null>(null);
@@ -44,15 +47,22 @@ export default function Boards() {
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
 
   const handleHistoryChange = useCallback((state: { canUndo: boolean; canRedo: boolean }) => {
-    setUndoRedo(state);
+    setUndoRedo((prev) =>
+      prev.canUndo === state.canUndo && prev.canRedo === state.canRedo ? prev : state,
+    );
   }, []);
 
   const syncUndoRedoFromEditor = useCallback((handle: BoardCanvasHandle | null) => {
-    setUndoRedo({
-      canUndo: handle?.canUndo() ?? false,
-      canRedo: handle?.canRedo() ?? false,
+    setUndoRedo((prev) => {
+      const canUndo = handle?.canUndo() ?? false;
+      const canRedo = handle?.canRedo() ?? false;
+      if (prev.canUndo === canUndo && prev.canRedo === canRedo) return prev;
+      return { canUndo, canRedo };
     });
   }, []);
+
+  const activeBoardIdRef = useRef(activeBoardId);
+  activeBoardIdRef.current = activeBoardId;
 
   const selectBoard = useCallback(
     (id: string) => {
@@ -64,17 +74,20 @@ export default function Boards() {
     [syncUndoRedoFromEditor],
   );
 
-  const registerEditor = useCallback(
-    (boardId: string, handle: BoardCanvasHandle | null) => {
-      if (handle) editorMapRef.current.set(boardId, handle);
-      else editorMapRef.current.delete(boardId);
-      if (boardId === activeBoardId) {
-        activeEditorRef.current = handle;
-        syncUndoRedoFromEditor(handle);
-      }
-    },
-    [activeBoardId, syncUndoRedoFromEditor],
-  );
+  const registerEditor = useCallback((boardId: string, handle: BoardCanvasHandle | null) => {
+    if (handle) editorMapRef.current.set(boardId, handle);
+    else editorMapRef.current.delete(boardId);
+    if (boardId === activeBoardIdRef.current) {
+      activeEditorRef.current = handle;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!activeBoardId) return;
+    const handle = editorMapRef.current.get(activeBoardId) ?? null;
+    activeEditorRef.current = handle;
+    syncUndoRedoFromEditor(handle);
+  }, [activeBoardId, syncUndoRedoFromEditor]);
 
   const activeBoard = useMemo(
     () => workspace?.boards.find((b) => b.id === activeBoardId) ?? workspace?.boards[0] ?? null,
@@ -187,6 +200,10 @@ export default function Boards() {
     }
   }, []);
 
+  const openQuickImagePicker = useCallback(() => {
+    setImagePickOpen(true);
+  }, []);
+
   const handleAddBoard = async () => {
     if (!workspace || !user?.id) return;
     const focusCount = workspace.boards.filter((b) => b.role === "focus").length;
@@ -246,7 +263,6 @@ export default function Boards() {
             <LayoutGrid className="h-5 w-5 text-neutral-700" />
             <div>
               <h1 className="text-sm font-semibold text-neutral-900">Boards</h1>
-              <p className="text-[11px] text-neutral-500">Three focus boards + The Plan</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -285,7 +301,6 @@ export default function Boards() {
             editorRef={activeEditorRef}
             orientation="horizontal"
             className="shrink-0"
-            boardCount={!isMobile ? boards.length : undefined}
             zoomPreset={!isMobile ? boardZoom : undefined}
             onZoomPresetChange={!isMobile ? setBoardZoom : undefined}
             canUndo={undoRedo.canUndo}
@@ -315,6 +330,8 @@ export default function Boards() {
               onRenameBoard={handleRenameBoard}
               onTitleStyleChange={handleTitleStyleChange}
               onHistoryChange={handleHistoryChange}
+              onBoardColorChange={handleBoardColorFromAi}
+              onRequestImagePick={openQuickImagePicker}
             />
             <BoardPlotKitTray
               activeBoard={activeBoard}
@@ -357,6 +374,25 @@ export default function Boards() {
 
         {activeBoard && workspace && (
           <>
+            <Sheet open={imagePickOpen} onOpenChange={setImagePickOpen}>
+              <SheetContent side="bottom" className="h-[min(72vh,520px)] rounded-t-2xl p-0">
+                <SheetHeader className="border-b px-4 py-3 text-left">
+                  <SheetTitle className="font-welcome-serif text-base font-normal">Pick an image</SheetTitle>
+                </SheetHeader>
+                <div className="h-[calc(min(72vh,520px)-3.25rem)]">
+                  <BoardImagePicker
+                    embedded
+                    userId={user.id}
+                    onPickImage={(url) => {
+                      void handlePickImage(url).then(() => {
+                        setImagePickOpen(false);
+                        toast.success("Image added to board");
+                      });
+                    }}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
             <BoardPrintDialog
               open={downloadOpen}
               onOpenChange={setDownloadOpen}
