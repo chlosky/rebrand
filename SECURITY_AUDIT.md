@@ -25,34 +25,23 @@
 
 All tables have RLS enabled with proper policies:
 
-#### User Data Tables:
-- ✅ `profiles` - Users can only access their own profile
-- ✅ `user_affirmation_sets` - Users can only access their own sets
-- ✅ `belief_refactor_entries` - Users can only access their own entries
-- ✅ `subliminal_tracks` - Users can only access their own tracks
-- ✅ `chrono_entries` - Users can only access their own entries
-- ✅ `user_character_preferences` - Users can only access their own preferences
-- ✅ `character_messages` - Users can only access their own messages
-- ✅ `user_message_limits` - Users can only access their own limits
-- ✅ `user_stories` - Users can only access their own stories
-- ✅ `subscriptions` - Users can only access their own subscriptions
-- ✅ `user_plans` - Users can only access their own plans
-- ✅ `user_roles` - Users can only view their own roles
-- ✅ `notifications` - Users can only access their own notifications
-- ✅ `user_gamification_stats` - Users can only access their own stats
-- ✅ `notification_settings` - Users can only access their own settings
-- ✅ `user_notification_preferences` - Users can only access their own preferences
-- ✅ `referral_codes` - Public read, user-specific redemptions
-- ✅ `code_redemptions` - Users can only access their own redemptions
+#### User Data Tables (baseline schema):
+- ✅ `profiles` — users can only access their own profile
+- ✅ `user_preferences` — users can only access their own preferences
+- ✅ `user_plans` — users can only access their own plans
+- ✅ `journal_entries` — users can only access their own entries
+- ✅ `user_daily_progress` — users can only access their own progress
+- ✅ `user_action_history` — users can only access their own history
+- ✅ `board_workspaces`, `boards`, `board_items`, `board_reminders` — workspace-scoped RLS with Pro gating
+- ✅ `onboarding_sessions`, `user_setup_path` — session/user scoped
+- ✅ `support_cases`, `inbox_threads`, `inbox_messages` — user/support scoped
+- ✅ `user_roles` — users can only view their own roles
+- ✅ `community_posts`, `community_polls` — public read with authenticated write policies
 
-#### Public/Admin Tables (with appropriate RLS):
-- ✅ `premade_affirmation_sets` - Public read, admin write
-- ✅ `premade_affirmations` - Public read, admin write
-- ✅ `system_announcements` - Public read, admin write
-- ✅ `feature_flags` - Public read, admin write
-- ✅ `organizations` - Organization-specific access
-- ✅ `organization_members` - Organization-specific access
-- ✅ `organization_presets` - Organization-specific access
+#### Public / admin tables:
+- ✅ `email_captures` — anonymous insert/update for marketing capture
+- ✅ `feature_flags`, `gamification_settings` — public read, admin write
+- ✅ `admin_users` — admin-only operations via `has_role`
 
 **All policies use `auth.uid() = user_id` pattern for user-specific data.**
 

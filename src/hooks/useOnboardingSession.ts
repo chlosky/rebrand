@@ -18,8 +18,6 @@ export type OnboardingSession = {
   email_consent: boolean | null;
   sms_consent: boolean | null;
   app_notifications_consent?: boolean | null;
-  character_id: string | null;
-  /** App shell (`light` | `dark`) persisted as a typed column, not onboarding_answers JSON. */
   shell_appearance?: string | null;
   /** Merged JSON: legacy keys + `setup_journey_v1` (full setup path answers) for personalization. */
   onboarding_answers: Record<string, unknown>;

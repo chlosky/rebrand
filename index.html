@@ -16,9 +16,7 @@
   var assets;
   if (path === "/onboarding/welcome") {
     assets = [
-      ["/apple-ios-logo-hero.png", "high"],
-      ["/marketing/welcome-mockup-screens/subliminal-maker-tracks.png", "high"],
-      ["/marketing/iphone-mockup-frame-hero.png", "auto"],
+      ["/marketing/iphone-mockup-frame-hero.png", "high"],
     ];
   } else {
     return;
@@ -89,7 +87,7 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
     if (/Capacitor/i.test(navigator.userAgent)) {
       document.documentElement.classList.add("capacitor-native");
       var stored = localStorage.getItem("theme");
-      var isDark = stored !== "light";
+      var isDark = stored === "dark";
       if (isDark) document.documentElement.classList.add("dark");
       document.documentElement.style.colorScheme = isDark ? "dark" : "light";
       var bg = isDark ? "#0f0d14" : "#ffffff";
@@ -159,13 +157,13 @@ background-color: #0f0d14;
 }
 </style>
 <title>Palette Plotting</title>
-<meta name="description" content="Palette Plotting: Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools. Start your personal growth journey today." />
+<meta name="description" content="Palette Plotting — digital boards for life rebranding, planning, journaling, and daily progress. Organize moodboards, plans, and routines in one workspace." />
 <meta name="author" content="Palette Plotting" />
-<meta name="keywords" content="affirmations, self-improvement, personal growth, goal setting, reflection, visualization, audio creation, Mirror Work, subliminal audio, AI affirmations" />
+<meta name="keywords" content="vision boards, mood boards, life planning, journaling, goal tracking, digital boards, workspace planning, Palette Plotting" />
 <link rel="canonical" href="https://paletteplot.com" />
 
 <meta property="og:title" content="Palette Plotting" />
-<meta property="og:description" content="Palette Plotting: Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools. Start your personal growth journey today." />
+<meta property="og:description" content="Palette Plotting — digital boards for life rebranding, planning, journaling, and daily progress." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://paletteplot.com" />
 <meta property="og:site_name" content="Palette Plotting" />
@@ -173,10 +171,10 @@ background-color: #0f0d14;
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@paletteplotting" />
 <meta name="twitter:title" content="Palette Plotting" />
-<meta name="twitter:description" content="Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools." />
+<meta name="twitter:description" content="Digital boards for life rebranding, planning, journaling, and daily progress." />
 
 <!-- PWA Meta Tags -->
-<meta name="theme-color" content="#000000" />
+<meta name="theme-color" content="#ffffff" />
     <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -294,7 +292,7 @@ var path = pathname === '/' ? '/' : pathname.replace(/\/$/, '') || '/';
 if (path === '/login') return false;
 if (path.indexOf('/dashboard') === 0) return false;
 if (path.indexOf('/onboarding') === 0) return false;
-var exact = ['/', '/mobilelanding', '/mobilelandingBR', '/mobilelandingmimi', '/mobilelandingjonni', '/faq', '/what-is-palette-plotting', '/terms', '/privacy', '/acceptable-use', '/contact', '/community', '/billing', '/pricingplans', '/dmca', '/quiz/blocking-manifestation'];
+var exact = ['/', '/mobilelanding', '/mobilelandingBR', '/mobilelandingmimi', '/mobilelandingjonni', '/faq', '/what-is-palette-plotting', '/terms', '/privacy', '/acceptable-use', '/contact', '/community', '/billing', '/pricingplans', '/dmca', '/quiz/life-rebrand'];
 if (exact.indexOf(path) !== -1) return true;
 if (path.indexOf('/blog') === 0) return true;
 return false;
@@ -306,21 +304,17 @@ return;
 
 var path = window.location.pathname.replace(/\/$/, '') || '/';
 if (path.indexOf('/onboarding') === 0) {
-var onboardingShellBg = 'linear-gradient(180deg, #020104 0%, #050308 48%, #020104 100%)';
-themeMeta.setAttribute('content', '#020104');
+themeMeta.setAttribute('content', '#ffffff');
 var appleOnboarding = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-if (appleOnboarding) appleOnboarding.setAttribute('content', 'black-translucent');
-document.documentElement.style.colorScheme = 'dark';
-document.documentElement.style.setProperty('background', onboardingShellBg, 'important');
-document.documentElement.style.setProperty('background-color', '#020104', 'important');
+if (appleOnboarding) appleOnboarding.setAttribute('content', 'default');
+document.documentElement.style.colorScheme = 'light';
+document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
 if (document.body) {
-document.body.style.setProperty('background', onboardingShellBg, 'important');
-document.body.style.setProperty('background-color', '#020104', 'important');
+document.body.style.setProperty('background-color', '#ffffff', 'important');
 }
 var onboardingRoot = document.getElementById('root');
 if (onboardingRoot) {
-onboardingRoot.style.setProperty('background', onboardingShellBg, 'important');
-onboardingRoot.style.setProperty('background-color', '#020104', 'important');
+onboardingRoot.style.setProperty('background-color', '#ffffff', 'important');
 }
 return;
 }
@@ -400,10 +394,10 @@ setTimeout(syncStatusBar, 500);
 });
 })();
 </script>
-<link rel="apple-touch-icon" href="/icon-196.png" />
-<link rel="icon" type="image/png" sizes="196x196" href="/icon-196.png?v=5" />
-<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=5" />
-<link rel="shortcut icon" href="/icon-196.png?v=5" />
+<link rel="apple-touch-icon" href="/icon-196.png?v=6" />
+<link rel="icon" type="image/png" sizes="196x196" href="/icon-196.png?v=6" />
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=6" />
+<link rel="shortcut icon" href="/icon-196.png?v=6" />
 
 <link rel="preconnect" href="https://fonts.cdnfonts.com">
 <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
@@ -439,7 +433,7 @@ setTimeout(syncStatusBar, 500);
     "price": "0",
     "priceCurrency": "USD"
   },
-  "description": "Build confidence with AI-powered affirmations, Mirror Work, subliminal audio creation, and daily reflection tools. Start your personal growth journey today.",
+  "description": "Digital boards for life rebranding, planning, journaling, and daily progress.",
   "url": "https://paletteplot.com"
 }
 </script>

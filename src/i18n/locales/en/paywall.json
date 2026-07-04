@@ -5,13 +5,12 @@
     "finishingSubtitle": "Almost there — finishing your dashboard.",
     "loadingStatusAria": "Loading status",
     "commitmentLabel": "Say this once, out loud:",
-    "commitmentText": "I have named what I want, and I will not abandon it when doubt shows up. I commit to giving my desire my voice, my attention, and my follow-through. I will not wait to feel ready — I will act like the person who is already on this path. What I want deserves more than a passing thought; it deserves my full yes.",
+    "commitmentText": "I have named what I am building, and I will keep showing up for it when doubt shows up. I commit to giving my rebrand my attention and my follow-through. What I am plotting deserves more than a passing thought; it deserves my full yes.",
     "simsLines": [
-      "Making it official — membership locked in, overthinking not required.",
-      "Writing affirmations from your setup — we actually used your answers.",
-      "Giving your affirmations a voice — loop-friendly by design.",
-      "Layering sound, whispers & theta into your starter track…",
-      "Unlocking your dashboard — built from everything you shared, almost there."
+      "Making it official — membership locked in.",
+      "Building your four-board workspace from your setup…",
+      "Setting up your starter boards and plan layout…",
+      "Unlocking your dashboard — almost there."
     ],
     "toastActivateFailedIos": "Purchase completed, but we could not activate your plan yet. Try again from subscriptions.",
     "toastActivateFailedAndroid": "Purchase completed, but we could not activate your plan yet. Please try again.",
@@ -19,7 +18,7 @@
   },
   "legacyIos": {
     "titleLine1": "Unlock your free trial",
-    "titleLine2": "Start manifesting",
+    "titleLine2": "Start your membership",
     "subtitle": "Choose a weekly plan to claim your free trial.",
     "loadingOptions": "Loading subscription options…",
     "weekly": "Weekly",
@@ -53,7 +52,7 @@
     "nothingToRestore": "Nothing to restore."
   },
   "legacyAndroid": {
-    "title": "Unlock Your Manifestation Stack Today.",
+    "title": "Unlock Palette Plotting Pro Today.",
     "subtitle": "Tap Continue to confirm your plan.",
     "opening": "Opening…",
     "tryAgain": "Try again",

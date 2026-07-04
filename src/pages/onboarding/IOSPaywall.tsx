@@ -15,8 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { IosAppHeader } from "@/components/IosAppHeader";
 import {
   WelcomeCosmicBackground,
-  WELCOME_DEEP_BLACK_BASE,
-  WELCOME_DEEP_BLACK_SHELL_BG,
+  WELCOME_LIGHT_BASE,
+  WELCOME_LIGHT_SHELL_BG,
 } from "@/components/onboarding/WelcomeCosmicBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { shouldUseRevenueCatPaywallUi } from "@/lib/iosRevenueCatUiGate";
@@ -60,9 +60,8 @@ async function openExternalUrl(url: string) {
  */
 const IOSPaywall = () => {
   const { t } = useTranslation(["paywall", "common"]);
-  const appLocale = resolveAppLocale(i18n.language);
-  const termsUrl = legalTermsUrl(appLocale);
-  const privacyUrl = legalPrivacyUrl(appLocale);
+  const termsUrl = legalTermsUrl();
+  const privacyUrl = legalPrivacyUrl();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -128,19 +127,20 @@ const IOSPaywall = () => {
   }, []);
 
   useEffect(() => {
-    const shellBg = WELCOME_DEEP_BLACK_SHELL_BG;
+    const shellBg = WELCOME_LIGHT_SHELL_BG;
     const html = document.documentElement;
     const body = document.body;
     const root = document.getElementById("root");
     const themeMeta = document.querySelector('meta[name="theme-color"]');
 
     html.style.setProperty("background", shellBg, "important");
-    html.style.setProperty("background-color", WELCOME_DEEP_BLACK_BASE, "important");
+    html.style.setProperty("background-color", WELCOME_LIGHT_BASE, "important");
+    html.style.colorScheme = "light";
     body.style.setProperty("background", shellBg, "important");
-    body.style.setProperty("background-color", WELCOME_DEEP_BLACK_BASE, "important");
+    body.style.setProperty("background-color", WELCOME_LIGHT_BASE, "important");
     root?.style.setProperty("background", shellBg, "important");
-    root?.style.setProperty("background-color", WELCOME_DEEP_BLACK_BASE, "important");
-    themeMeta?.setAttribute("content", WELCOME_DEEP_BLACK_BASE);
+    root?.style.setProperty("background-color", WELCOME_LIGHT_BASE, "important");
+    themeMeta?.setAttribute("content", WELCOME_LIGHT_BASE);
 
     return () => {
       html.style.removeProperty("background");
@@ -313,7 +313,7 @@ const IOSPaywall = () => {
     const r = await restore();
     if (r.success) {
       toast.success(t("paywall:legacyIos.restoredSuccess"));
-      setTimeout(() => navigate("/dashboard"), 500);
+      setTimeout(() => navigate("/dashboard/boards"), 500);
     } else {
       const msg = r.error || t("paywall:legacyIos.nothingToRestore");
       if (msg.toLowerCase().includes("cancel")) {
@@ -458,14 +458,14 @@ const IOSPaywall = () => {
 
   return (
     <div
-      className="relative min-h-screen font-sans text-white antialiased"
-      style={{ backgroundColor: WELCOME_DEEP_BLACK_BASE }}
+      className="relative min-h-screen font-sans text-foreground antialiased"
+      style={{ backgroundColor: WELCOME_LIGHT_BASE }}
     >
       <WelcomeCosmicBackground
         className="pointer-events-none fixed inset-0 z-0"
-        tone="deep-black"
+        tone="light"
       />
-      <IosAppHeader signOutInsteadOfLogin={!!user} cosmicShell />
+      <IosAppHeader signOutInsteadOfLogin={!!user} />
 
       <div
         className="relative z-10 mx-auto flex max-w-lg flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4"

@@ -20,7 +20,7 @@ export const useNativeCamera = () => {
     // Native iOS: higher quality. Native Android WebView: keep resolution modest so BodyPix + canvas scenes stay smooth.
     if (isNative && Capacitor.getPlatform() === 'ios') {
       try {
-        // Use higher quality on native for better Mirror Work experience
+        // Use higher quality on native for board photo uploads
         const nativeConstraints: MediaStreamConstraints = {
           video: {
             facingMode: 'user',

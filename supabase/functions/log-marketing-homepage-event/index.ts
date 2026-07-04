@@ -65,9 +65,7 @@ function readGeo(req: Request): { country_code: string | null; region: string | 
 function readAllowedHosts(): string[] {
   const base = [
     "paletteplot.com",
-    "paletteplot.com",
-    "themanifestingsetup.com",
-    "www.themanifestingsetup.com",
+    "www.paletteplot.com",
     "localhost",
     "127.0.0.1",
   ];

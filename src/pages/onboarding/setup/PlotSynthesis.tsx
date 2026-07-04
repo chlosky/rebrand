@@ -4,20 +4,14 @@ import { readSetupDraft } from "@/lib/setupDraft";
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useIsNativeApp } from "@/hooks/use-native-app";
-import {
-  BarChart3,
-  ChevronRight,
-  LayoutGrid,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SETUP_GLASS_PANEL_CLASS, SETUP_CHOICE_ICON_WRAP_CLASS, SETUP_CHOICE_LABEL_CLASS } from "@/lib/onboardingSetupTheme";
+import { SETUP_GLASS_PANEL_CLASS, SETUP_CHOICE_LABEL_CLASS } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
 
-const TOOL_SYNTHESIS: Record<string, { Icon: LucideIcon; key: string }> = {
-  powerful_affirmations: { Icon: Sparkles, key: "affirmations" },
-  daily_wins_progress: { Icon: BarChart3, key: "tracking" },
+const TOOL_SYNTHESIS: Record<string, string> = {
+  boards_workspace: "boards",
+  daily_wins_progress: "tracking",
 };
 
 export default function SetupPlotSynthesis() {
@@ -27,18 +21,16 @@ export default function SetupPlotSynthesis() {
   const isNative = useIsNativeApp();
   const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
   const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
-  const items = useMemo((): { Icon: LucideIcon; text: string }[] => {
+  const items = useMemo((): string[] => {
     const draft = readSetupDraft();
 
-    const stack: { Icon: LucideIcon; text: string }[] = [
-      { Icon: LayoutGrid, text: t("setup.plotSynthesis.items.workspace") },
-    ];
+    const stack: string[] = [t("setup.plotSynthesis.items.workspace")];
 
     const prefs = Array.isArray(draft.toolPreferences) ? draft.toolPreferences : [];
     for (const pref of prefs) {
-      const row = TOOL_SYNTHESIS[pref];
-      if (row) {
-        stack.push({ Icon: row.Icon, text: t(`setup.plotSynthesis.items.${row.key}`) });
+      const key = TOOL_SYNTHESIS[pref];
+      if (key) {
+        stack.push(t(`setup.plotSynthesis.items.${key}`));
       }
     }
 
@@ -62,7 +54,7 @@ export default function SetupPlotSynthesis() {
         />
 
         <div className="space-y-3">
-          {items.map(({ Icon, text }) => (
+          {items.map((text) => (
             <div
               key={text}
               className={cn(
@@ -70,12 +62,7 @@ export default function SetupPlotSynthesis() {
                 "flex w-full min-h-[3.25rem] items-center justify-between gap-3 px-4 py-4",
               )}
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span className={cn(SETUP_CHOICE_ICON_WRAP_CLASS, "h-9 w-9")}>
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </span>
-                <span className={cn(SETUP_CHOICE_LABEL_CLASS, "leading-snug")}>{text}</span>
-              </div>
+              <span className={cn(SETUP_CHOICE_LABEL_CLASS, "min-w-0 flex-1 leading-snug")}>{text}</span>
               <ChevronRight className="h-5 w-5 shrink-0 text-zinc-300" />
             </div>
           ))}

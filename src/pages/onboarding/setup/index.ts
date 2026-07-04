@@ -1,16 +1,13 @@
 export { default as SetupName } from "./Name";
 export { default as SetupEmail } from "./Email";
-export { default as SetupDesireCategory } from "./DesireCategory";
+export { default as SetupFocusCategories } from "./FocusCategories";
 export { default as SetupPrimaryIntent } from "./PrimaryIntent";
 export { default as SetupHomeFocus } from "./HomeFocus";
 export { default as SetupOfficePlanningSystem } from "./OfficePlanningSystem";
 export { default as SetupMoodboardFocus } from "./MoodboardFocus";
 export { default as SetupCurrentFriction } from "./CurrentFriction";
-export { default as SetupAffirmationRead } from "./AffirmationRead";
-export { default as SetupEmbodyDailyIdentity } from "./EmbodyDailyIdentity";
 export { default as SetupBeginJourney } from "./BeginJourney";
-export { default as SetupConditionalSpecificity } from "./ConditionalSpecificity";
-export { default as SetupGuide } from "./Guide";
+export { default as SetupFocusDetails } from "./FocusDetails";
 export { default as SetupToolPreference } from "./ToolPreference";
 export { default as SetupWorkspaceTemplate } from "./WorkspaceTemplate";
 export { default as SetupPlotLoading } from "./PlotLoading";
@@ -18,4 +15,3 @@ export { default as SetupPlotSynthesis } from "./PlotSynthesis";
 export { default as SetupNotificationPrePermission } from "./NotificationPrePermission";
 export { default as SetupIntensity } from "./Intensity";
 export { default as SetupAttribution } from "./Attribution";
-

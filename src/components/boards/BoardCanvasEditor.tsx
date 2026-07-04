@@ -4,11 +4,13 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
-import { Canvas, FabricImage, FabricText, Rect, StaticCanvas, type FabricObject } from "fabric";
+import { Canvas, FabricImage, FabricText, Group, IText, Rect, StaticCanvas, Textbox, type FabricObject } from "fabric";
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { BoardLayoutMode } from "@/lib/boards/types";
 import { cn } from "@/lib/utils";
+import { BoardMarksQuickSelector, type BoardMarksQuickAction } from "@/components/boards/BoardMarksQuickSelector";
 
 export const ARTBOARD_WIDTH = 1080;
 export const ARTBOARD_HEIGHT = 1350;
@@ -42,8 +44,10 @@ export type BoardCanvasHandle = {
   addImageFromFile: (file: File, options?: ImageFitOptions) => Promise<{ width: number; height: number }>;
   mergeLayoutObjects: (layoutJson: Record<string, unknown>, offset?: { x: number; y: number }) => Promise<void>;
   deleteSelected: () => void;
-  bringForward: () => void;
-  sendBackward: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
   getLayoutJson: () => Record<string, unknown>;
 };
 
@@ -51,6 +55,24 @@ export type ImageFitOptions = {
   fit?: "default" | "cover";
   sendToBack?: boolean;
 };
+
+type QuickSelectorState = {
+  x: number;
+  y: number;
+  normX: number;
+  normY: number;
+  mode: "empty" | "object";
+};
+
+const MARK_COLOR_CYCLE = [
+  { text: "#171717", note: { fill: "#FFF9C4", stroke: "#E8D44D" } },
+  { text: "#171717", note: { fill: "#FCE7F3", stroke: "#F472B6" } },
+  { text: "#171717", note: { fill: "#DBEAFE", stroke: "#60A5FA" } },
+  { text: "#171717", note: { fill: "#DCFCE7", stroke: "#4ADE80" } },
+  { text: "#2563EB" },
+  { text: "#DC2626" },
+  { text: "#FFFFFF" },
+];
 
 type BoardCanvasEditorProps = {
   layoutJson: Record<string, unknown>;
@@ -60,16 +82,29 @@ type BoardCanvasEditorProps = {
   readOnly?: boolean;
   /** Tighter layout when shown in grid / carousel cells */
   embedded?: boolean;
+  /** Fill embedded cell by cropping (cover) or letterboxing (contain). */
+  cellFit?: "contain" | "cover";
+  /** Fit to cell (default) or fixed canvas scale — e.g. 1 = 100% */
+  viewZoom?: "fit" | number;
   onSave: (layout: Record<string, unknown>) => void;
+  onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
 };
 
 export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditorProps>(
-  function BoardCanvasEditor({ layoutJson, colorKey, boardId, layoutMode = "vision", readOnly = false, embedded = false, onSave }, ref) {
+  function BoardCanvasEditor({ layoutJson, colorKey, boardId, layoutMode = "vision", readOnly = false, embedded = false, cellFit = "contain", viewZoom = "fit", onSave, onHistoryChange }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const canvasWrapRef = useRef<HTMLDivElement>(null);
     const canvasElRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<Canvas | null>(null);
     const saveTimerRef = useRef<number>();
+    const historyTimerRef = useRef<number>();
     const loadedBoardRef = useRef<string | null>(null);
+    const restoringHistoryRef = useRef(false);
+    const historyRef = useRef<{ snapshots: string[]; index: number }>({ snapshots: [], index: -1 });
+    const onHistoryChangeRef = useRef(onHistoryChange);
+    const [quickSelector, setQuickSelector] = useState<QuickSelectorState | null>(null);
+
+    onHistoryChangeRef.current = onHistoryChange;
 
     const scheduleSave = useCallback(() => {
       const canvas = fabricRef.current;
@@ -80,18 +115,164 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       }, 700);
     }, [onSave, readOnly]);
 
+    const notifyHistoryChange = useCallback(() => {
+      const h = historyRef.current;
+      onHistoryChangeRef.current?.({
+        canUndo: h.index > 0,
+        canRedo: h.index >= 0 && h.index < h.snapshots.length - 1,
+      });
+    }, []);
+
+    const snapshotCanvas = useCallback((canvas: Canvas) => JSON.stringify(canvas.toJSON()), []);
+
+    const resetHistory = useCallback(
+      (canvas: Canvas) => {
+        historyRef.current = { snapshots: [snapshotCanvas(canvas)], index: 0 };
+        notifyHistoryChange();
+      },
+      [notifyHistoryChange, snapshotCanvas],
+    );
+
+    const recordHistory = useCallback(() => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly || restoringHistoryRef.current) return;
+      window.clearTimeout(historyTimerRef.current);
+      historyTimerRef.current = window.setTimeout(() => {
+        const json = snapshotCanvas(canvas);
+        const h = historyRef.current;
+        if (h.snapshots[h.index] === json) return;
+        h.snapshots = h.snapshots.slice(0, h.index + 1);
+        h.snapshots.push(json);
+        if (h.snapshots.length > 40) {
+          h.snapshots.shift();
+        }
+        h.index = h.snapshots.length - 1;
+        notifyHistoryChange();
+      }, 250);
+    }, [notifyHistoryChange, readOnly, snapshotCanvas]);
+
+    const applyHistorySnapshot = useCallback(
+      async (index: number) => {
+        const canvas = fabricRef.current;
+        const h = historyRef.current;
+        const json = h.snapshots[index];
+        if (!canvas || !json) return;
+        restoringHistoryRef.current = true;
+        const bg = boardFillForKey(colorKey);
+        await canvas.loadFromJSON(JSON.parse(json));
+        canvas.backgroundColor = bg;
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        restoringHistoryRef.current = false;
+        h.index = index;
+        notifyHistoryChange();
+        scheduleSave();
+      },
+      [colorKey, notifyHistoryChange, scheduleSave],
+    );
+
+    const undo = useCallback(() => {
+      const h = historyRef.current;
+      if (h.index <= 0) return;
+      void applyHistorySnapshot(h.index - 1);
+    }, [applyHistorySnapshot]);
+
+    const redo = useCallback(() => {
+      const h = historyRef.current;
+      if (h.index >= h.snapshots.length - 1) return;
+      void applyHistorySnapshot(h.index + 1);
+    }, [applyHistorySnapshot]);
+
+    const canUndo = useCallback(() => historyRef.current.index > 0, []);
+    const canRedo = useCallback(
+      () => historyRef.current.index >= 0 && historyRef.current.index < historyRef.current.snapshots.length - 1,
+      [],
+    );
+
+    const closeQuickSelector = useCallback(() => setQuickSelector(null), []);
+
+    const openQuickSelectorFromEvent = useCallback((canvas: Canvas, e: Event, target?: FabricObject) => {
+      if (readOnly) return;
+      const wrap = canvasWrapRef.current;
+      if (!wrap) return;
+      let clientX: number | undefined;
+      let clientY: number | undefined;
+      if ("clientX" in e && typeof e.clientX === "number") {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      } else if ("touches" in e && e.touches[0]) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if ("changedTouches" in e && e.changedTouches[0]) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      }
+      if (clientX == null || clientY == null) return;
+      const rect = wrap.getBoundingClientRect();
+      const pointer = canvas.getScenePoint(e as MouseEvent);
+
+      if (target) {
+        let root = target;
+        while (root.group) {
+          root = root.group;
+        }
+        canvas.setActiveObject(root);
+        const objects = canvas.getObjects();
+        if (objects[objects.length - 1] !== root) {
+          canvas.bringObjectToFront(root);
+        }
+        canvas.requestRenderAll();
+      }
+
+      setQuickSelector({
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+        normX: Math.min(1, Math.max(0, pointer.x / ARTBOARD_WIDTH)),
+        normY: Math.min(1, Math.max(0, pointer.y / ARTBOARD_HEIGHT)),
+        mode: target ? "object" : "empty",
+      });
+    }, [readOnly]);
+
+    const openQuickSelectorRef = useRef(openQuickSelectorFromEvent);
+    openQuickSelectorRef.current = openQuickSelectorFromEvent;
+
     const fitCanvas = useCallback((canvas: Canvas) => {
       const container = containerRef.current;
+      const wrap = canvasWrapRef.current;
       if (!container) return;
-      const pad = embedded ? 8 : 32;
-      const maxW = container.clientWidth - pad;
-      const maxH = container.clientHeight - pad;
-      const scale = Math.min(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT, 1);
-      const zoom = scale > 0 ? scale : 0.5;
+      const pad = embedded ? 0 : 32;
+      const maxW = Math.max(container.clientWidth - pad, 1);
+      const maxH = Math.max(container.clientHeight - pad, 1);
+      const containScale = Math.min(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT);
+      const coverScale = Math.max(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT);
+      const baseScale =
+        embedded && cellFit === "cover"
+          ? coverScale
+          : Math.min(containScale, embedded ? Infinity : 1);
+      const zoom =
+        viewZoom === "fit"
+          ? baseScale > 0
+            ? baseScale
+            : 0.5
+          : typeof viewZoom === "number"
+            ? containScale * viewZoom
+            : baseScale > 0
+              ? baseScale
+              : 0.5;
       canvas.setZoom(zoom);
-      canvas.setDimensions({ width: ARTBOARD_WIDTH * zoom, height: ARTBOARD_HEIGHT * zoom });
+      const scaledW = ARTBOARD_WIDTH * zoom;
+      const scaledH = ARTBOARD_HEIGHT * zoom;
+      canvas.setDimensions({ width: scaledW, height: scaledH });
+      const canvasEl = canvas.getElement();
+      if (embedded && cellFit === "cover" && wrap) {
+        canvasEl.style.marginLeft = `${(maxW - scaledW) / 2}px`;
+        canvasEl.style.marginTop = `${(maxH - scaledH) / 2}px`;
+      } else {
+        canvasEl.style.marginLeft = "";
+        canvasEl.style.marginTop = "";
+      }
       canvas.requestRenderAll();
-    }, [embedded]);
+    }, [cellFit, embedded, viewZoom]);
 
     useEffect(() => {
       if (!canvasElRef.current) return;
@@ -108,20 +289,74 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const onResize = () => fitCanvas(canvas);
       window.addEventListener("resize", onResize);
 
+      let containerObserver: ResizeObserver | undefined;
+      if (embedded && containerRef.current) {
+        containerObserver = new ResizeObserver(() => fitCanvas(canvas));
+        containerObserver.observe(containerRef.current);
+      }
+
+      let onContextMenu: ((e: MouseEvent) => void) | undefined;
+
       if (!readOnly) {
-        canvas.on("object:modified", scheduleSave);
-        canvas.on("object:added", scheduleSave);
-        canvas.on("object:removed", scheduleSave);
+        const onHistoryEvent = () => {
+          recordHistory();
+          scheduleSave();
+        };
+        canvas.on("object:modified", onHistoryEvent);
+        canvas.on("object:added", onHistoryEvent);
+        canvas.on("object:removed", onHistoryEvent);
+        canvas.on("text:changed", onHistoryEvent);
+        canvas.on("editing:exited", onHistoryEvent);
+        canvas.on("mouse:down", (opt) => {
+          const e = opt.e as MouseEvent;
+          const isLeftEmpty = e.button === 0 && !opt.target && !e.ctrlKey && !e.metaKey && !e.shiftKey;
+          if (isLeftEmpty) {
+            e.preventDefault();
+            e.stopPropagation();
+            openQuickSelectorRef.current(canvas, e, undefined);
+            return;
+          }
+
+          const target = opt.target;
+          if (!target) return;
+          let root = target;
+          while (root.group) {
+            root = root.group;
+          }
+          const objects = canvas.getObjects();
+          if (objects[objects.length - 1] !== root) {
+            canvas.bringObjectToFront(root);
+            canvas.requestRenderAll();
+            recordHistory();
+            scheduleSave();
+          }
+        });
+
+        onContextMenu = (e: MouseEvent) => {
+          e.preventDefault();
+          openQuickSelectorRef.current(canvas, e, canvas.findTarget(e) ?? undefined);
+        };
+        canvas.upperCanvasEl.addEventListener("contextmenu", onContextMenu);
       }
 
       return () => {
+        if (onContextMenu) {
+          canvas.upperCanvasEl.removeEventListener("contextmenu", onContextMenu);
+        }
         window.removeEventListener("resize", onResize);
+        containerObserver?.disconnect();
         window.clearTimeout(saveTimerRef.current);
+        window.clearTimeout(historyTimerRef.current);
         canvas.dispose();
         fabricRef.current = null;
         loadedBoardRef.current = null;
       };
-    }, [colorKey, fitCanvas, readOnly, scheduleSave]);
+    }, [colorKey, embedded, fitCanvas, readOnly, recordHistory, scheduleSave]);
+
+    useEffect(() => {
+      const canvas = fabricRef.current;
+      if (canvas) fitCanvas(canvas);
+    }, [cellFit, fitCanvas, viewZoom]);
 
     useEffect(() => {
       const canvas = fabricRef.current;
@@ -141,18 +376,20 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
           canvas.requestRenderAll();
+          resetHistory(canvas);
         });
       } else {
         canvas.clear();
         canvas.backgroundColor = bg;
         canvas.requestRenderAll();
+        resetHistory(canvas);
       }
-    }, [boardId, colorKey, layoutJson]);
+    }, [boardId, colorKey, layoutJson, resetHistory]);
 
-    const addText = useCallback((text = "Your statement") => {
+    const addText = useCallback((text = "") => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const t = new FabricText(text, {
+      const t = new IText(text, {
         left: ARTBOARD_WIDTH * 0.15,
         top: ARTBOARD_HEIGHT * 0.2,
         fontSize: 42,
@@ -163,16 +400,23 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-    }, [readOnly]);
+      requestAnimationFrame(() => {
+        t.enterEditing();
+        t.selectAll();
+      });
+      scheduleSave();
+    }, [readOnly, scheduleSave]);
 
     const addStickyNote = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const w = 280;
       const h = 200;
+      const left = ARTBOARD_WIDTH * 0.1;
+      const top = ARTBOARD_HEIGHT * 0.35;
       const rect = new Rect({
-        left: ARTBOARD_WIDTH * 0.1,
-        top: ARTBOARD_HEIGHT * 0.35,
+        left: 0,
+        top: 0,
         width: w,
         height: h,
         fill: "#FFF9C4",
@@ -180,18 +424,97 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         strokeWidth: 1,
         rx: 8,
         ry: 8,
+        selectable: false,
+        evented: false,
       });
-      const label = new FabricText("Next step…", {
-        left: (rect.left ?? 0) + 16,
-        top: (rect.top ?? 0) + 16,
+      const note = new Textbox("", {
+        left: 16,
+        top: 16,
+        width: w - 32,
         fontSize: 22,
         fontFamily: "system-ui, sans-serif",
         fill: "#171717",
+        splitByGrapheme: true,
       });
-      canvas.add(rect, label);
-      canvas.setActiveObject(label);
+      const sticky = new Group([rect, note], {
+        left,
+        top,
+        subTargetCheck: true,
+      });
+      canvas.add(sticky);
+      canvas.setActiveObject(note);
       canvas.requestRenderAll();
-    }, [readOnly]);
+      requestAnimationFrame(() => {
+        note.enterEditing();
+      });
+      scheduleSave();
+    }, [readOnly, scheduleSave]);
+
+    const addTextAtPoint = useCallback((normX: number, normY: number) => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return;
+      const t = new IText("", {
+        left: normX * ARTBOARD_WIDTH,
+        top: normY * ARTBOARD_HEIGHT,
+        fontSize: 42,
+        fontFamily: "system-ui, sans-serif",
+        fill: "#171717",
+        fontWeight: "600",
+        originX: "center",
+        originY: "center",
+      });
+      canvas.add(t);
+      canvas.setActiveObject(t);
+      canvas.requestRenderAll();
+      requestAnimationFrame(() => {
+        t.enterEditing();
+        t.selectAll();
+      });
+      scheduleSave();
+    }, [readOnly, scheduleSave]);
+
+    const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return;
+      const w = 280;
+      const h = 200;
+      const left = normX * ARTBOARD_WIDTH - w / 2;
+      const top = normY * ARTBOARD_HEIGHT - h / 2;
+      const rect = new Rect({
+        left: 0,
+        top: 0,
+        width: w,
+        height: h,
+        fill: "#FFF9C4",
+        stroke: "#E8D44D",
+        strokeWidth: 1,
+        rx: 8,
+        ry: 8,
+        selectable: false,
+        evented: false,
+      });
+      const note = new Textbox("", {
+        left: 16,
+        top: 16,
+        width: w - 32,
+        fontSize: 22,
+        fontFamily: "system-ui, sans-serif",
+        fill: "#171717",
+        splitByGrapheme: true,
+      });
+      const sticky = new Group([rect, note], {
+        left,
+        top,
+        subTargetCheck: true,
+      });
+      canvas.add(sticky);
+      canvas.setActiveObject(note);
+      canvas.requestRenderAll();
+      requestAnimationFrame(() => {
+        note.enterEditing();
+      });
+      scheduleSave();
+    }, [readOnly, scheduleSave]);
 
     const placeImage = (canvas: Canvas, img: FabricImage, options?: ImageFitOptions) => {
       const fit = options?.fit ?? "default";
@@ -312,8 +635,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const top = y * ARTBOARD_HEIGHT;
         const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
         const rect = new Rect({
-          left,
-          top,
+          left: 0,
+          top: 0,
           width: w,
           height: h,
           fill,
@@ -321,16 +644,19 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           strokeWidth: 1,
           rx: 8,
           ry: 8,
+          selectable: false,
+          evented: false,
         });
-        const label = new FabricText(text, {
-          left: left + 14,
-          top: top + 14,
+        const note = new Textbox(text, {
+          left: 14,
+          top: 14,
+          width: w - 28,
           fontSize: 20,
           fontFamily: "system-ui, sans-serif",
           fill: "#171717",
-          width: w - 28,
+          splitByGrapheme: true,
         });
-        canvas.add(rect, label);
+        canvas.add(new Group([rect, note], { left, top, subTargetCheck: true }));
         canvas.requestRenderAll();
       },
       [readOnly],
@@ -673,29 +999,183 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       active.forEach((o) => canvas.remove(o));
       canvas.discardActiveObject();
       canvas.requestRenderAll();
+      recordHistory();
+      scheduleSave();
+    }, [readOnly, recordHistory, scheduleSave]);
+
+    const editMarkSelected = useCallback(() => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return;
+      const active = canvas.getActiveObject();
+      if (!active) return;
+
+      let textObj: IText | Textbox | null = null;
+      if (active instanceof IText || active instanceof Textbox) {
+        textObj = active;
+      } else if (active instanceof Group) {
+        const found = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
+        textObj = found instanceof Textbox || found instanceof IText ? found : null;
+      } else if (active.group instanceof Group) {
+        const found = active.group.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
+        textObj = found instanceof Textbox || found instanceof IText ? found : null;
+      }
+
+      if (!textObj || !("enterEditing" in textObj)) return;
+      canvas.setActiveObject(textObj);
+      textObj.enterEditing();
+      if (textObj instanceof IText) textObj.selectAll();
+      canvas.requestRenderAll();
     }, [readOnly]);
 
-    const bringForward = useCallback(() => {
+    const cycleMarkColor = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const active = canvas.getActiveObject();
-      if (active) {
-        canvas.bringObjectForward(active);
-        canvas.requestRenderAll();
-        scheduleSave();
-      }
-    }, [readOnly, scheduleSave]);
+      if (!active) return;
 
-    const sendBackward = useCallback(() => {
-      const canvas = fabricRef.current;
-      if (!canvas || readOnly) return;
-      const active = canvas.getActiveObject();
-      if (active) {
-        canvas.sendObjectBackwards(active);
-        canvas.requestRenderAll();
-        scheduleSave();
+      let root: FabricObject = active;
+      while (root.group) root = root.group;
+
+      if (root instanceof Group) {
+        const rect = root.getObjects().find((o) => o instanceof Rect);
+        const text = root.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
+        if (!(rect instanceof Rect)) return;
+        const noteColors = MARK_COLOR_CYCLE.filter((c) => c.note);
+        const currentFill = String(rect.fill ?? "");
+        let idx = noteColors.findIndex((c) => c.note!.fill === currentFill);
+        const next = noteColors[(idx + 1) % noteColors.length];
+        if (next.note) {
+          rect.set({ fill: next.note.fill, stroke: next.note.stroke });
+        }
+        if (text instanceof Textbox || text instanceof IText) {
+          text.set("fill", next.text);
+        }
+      } else if (active instanceof IText || active instanceof Textbox || active instanceof FabricText) {
+        const currentFill = String(active.fill ?? "#171717").toLowerCase();
+        let idx = MARK_COLOR_CYCLE.findIndex((c) => c.text?.toLowerCase() === currentFill);
+        const next = MARK_COLOR_CYCLE[(idx + 1) % MARK_COLOR_CYCLE.length];
+        if (next.text) active.set("fill", next.text);
+      } else {
+        return;
       }
-    }, [readOnly, scheduleSave]);
+
+      canvas.requestRenderAll();
+      recordHistory();
+      scheduleSave();
+    }, [readOnly, recordHistory, scheduleSave]);
+
+    useEffect(() => {
+      if (readOnly) return;
+      const onKeyDown = (e: KeyboardEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.tagName === "SELECT" ||
+            target.isContentEditable)
+        ) {
+          return;
+        }
+        const canvas = fabricRef.current;
+        const active = canvas?.getActiveObject() as { isEditing?: boolean } | undefined;
+        if (active?.isEditing) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+          e.preventDefault();
+          redo();
+          return;
+        }
+        if (e.key !== "Delete" && e.key !== "Backspace") return;
+        if (!canvas?.getActiveObjects().length) return;
+        e.preventDefault();
+        deleteSelected();
+      };
+      window.addEventListener("keydown", onKeyDown);
+      return () => window.removeEventListener("keydown", onKeyDown);
+    }, [readOnly, deleteSelected, redo, undo]);
+
+    const handleQuickPick = useCallback(
+      (action: BoardMarksQuickAction) => {
+        if (!quickSelector) return;
+        const { normX, normY } = quickSelector;
+        setQuickSelector(null);
+        if (action === "statement") addTextAtPoint(normX, normY);
+        else if (action === "sticky") addStickyNoteAtPoint(normX, normY);
+        else if (action === "edit") editMarkSelected();
+        else if (action === "color") cycleMarkColor();
+        else if (action === "delete") deleteSelected();
+      },
+      [addStickyNoteAtPoint, addTextAtPoint, cycleMarkColor, deleteSelected, editMarkSelected, quickSelector],
+    );
+
+    useEffect(() => {
+      if (!quickSelector) return;
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          closeQuickSelector();
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+      return () => window.removeEventListener("keydown", onKeyDown);
+    }, [closeQuickSelector, quickSelector]);
+
+    useEffect(() => {
+      if (readOnly) return;
+      const wrap = canvasWrapRef.current;
+      if (!wrap) return;
+
+      let longPressTimer: number | undefined;
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      const onTouchStart = (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        longPressTimer = window.setTimeout(() => {
+          const canvas = fabricRef.current;
+          if (!canvas) return;
+          if (navigator.vibrate) navigator.vibrate(10);
+          openQuickSelectorRef.current(canvas, e, canvas.findTarget(e) ?? undefined);
+        }, 420);
+      };
+
+      const onTouchMove = (e: TouchEvent) => {
+        if (!longPressTimer || !e.touches[0]) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        if (dx * dx + dy * dy > 64) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = undefined;
+        }
+      };
+
+      const onTouchEnd = () => {
+        if (longPressTimer) window.clearTimeout(longPressTimer);
+        longPressTimer = undefined;
+      };
+
+      wrap.addEventListener("touchstart", onTouchStart, { passive: true });
+      wrap.addEventListener("touchmove", onTouchMove, { passive: true });
+      wrap.addEventListener("touchend", onTouchEnd);
+      wrap.addEventListener("touchcancel", onTouchEnd);
+
+      return () => {
+        if (longPressTimer) window.clearTimeout(longPressTimer);
+        wrap.removeEventListener("touchstart", onTouchStart);
+        wrap.removeEventListener("touchmove", onTouchMove);
+        wrap.removeEventListener("touchend", onTouchEnd);
+        wrap.removeEventListener("touchcancel", onTouchEnd);
+      };
+    }, [readOnly]);
 
     useImperativeHandle(ref, () => ({
       addText,
@@ -708,21 +1188,41 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       addImageFromFile,
       mergeLayoutObjects,
       deleteSelected,
-      bringForward,
-      sendBackward,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
       getLayoutJson: () => (fabricRef.current?.toJSON() as Record<string, unknown>) ?? {},
-    }), [addDiagramOverlay, addImageFromFile, addImageFromUrl, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, bringForward, deleteSelected, mergeLayoutObjects, sendBackward]);
+    }), [addDiagramOverlay, addImageFromFile, addImageFromUrl, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, canRedo, canUndo, deleteSelected, mergeLayoutObjects, redo, undo]);
 
     return (
       <div
         ref={containerRef}
+        style={embedded ? { backgroundColor: boardFillForKey(colorKey) } : undefined}
         className={cn(
-          "board-artboard-host flex h-full w-full items-center justify-center bg-[#ebe8e3]",
-          embedded ? "min-h-0 p-1" : "min-h-[420px] p-4",
+          "board-artboard-host h-full w-full",
+          embedded
+            ? "min-h-0 overflow-hidden p-0"
+            : "flex min-h-[420px] items-center justify-center bg-[#ebe8e3] p-4",
         )}
       >
-        <div className="relative h-full w-full min-h-[140px] overflow-hidden rounded-sm shadow-[0_2px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]">
+        <div
+          ref={canvasWrapRef}
+          className={cn(
+            "relative h-full w-full overflow-hidden",
+            embedded ? "flex items-start justify-center" : "min-h-[140px] rounded-sm shadow-[0_2px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]",
+          )}
+        >
           <canvas ref={canvasElRef} />
+          {!readOnly && quickSelector && (
+            <BoardMarksQuickSelector
+              x={quickSelector.x}
+              y={quickSelector.y}
+              mode={quickSelector.mode}
+              onPick={handleQuickPick}
+              onClose={closeQuickSelector}
+            />
+          )}
         </div>
       </div>
     );

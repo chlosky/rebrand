@@ -1,35 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, LayoutGrid, Loader2, Plus, Printer, ScanLine, Smartphone } from "lucide-react";
+import { ArrowLeft, Copy, Download, LayoutGrid, Loader2, Plus, ScanLine, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTheme } from "@/contexts/ThemeContext";
+import { BoardToolbar, type BoardZoomPreset } from "@/components/boards/BoardToolbar";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
-import { BoardReminderPanel } from "@/components/boards/BoardReminderPanel";
 import { BoardDesktopGrid } from "@/components/boards/BoardDesktopGrid";
 import { BoardPlottingWorkbench } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardPlotKitTray } from "@/components/boards/BoardPlotKitTray";
 import { BoardMobileCarousel } from "@/components/boards/BoardMobileCarousel";
 import {
   addBoard,
-  createWorkspaceFromTemplate,
   deleteBoard,
-  fetchBoardReminders,
+  ensureDefaultWorkspace,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
   saveBoardLayout,
   updateBoardMeta,
 } from "@/lib/boards/api";
-import type { BoardReminder, BoardWorkspaceWithBoards } from "@/lib/boards/types";
-import type { BoardStarterTemplate } from "@/lib/boards/starterTemplates";
-import { BoardTemplatePicker } from "@/components/boards/BoardTemplatePicker";
+import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { BoardPrintDialog } from "@/components/boards/BoardPrintDialog";
 import { BoardPhysicalScanDialog } from "@/components/boards/BoardPhysicalScanDialog";
 import { BoardImportDialog } from "@/components/boards/BoardImportDialog";
-import { BoardWallpaperDialog } from "@/components/boards/BoardWallpaperDialog";
 import { toast } from "sonner";
 import "@/styles/board-editor.css";
 
@@ -37,35 +31,49 @@ export default function Boards() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { theme } = useTheme();
   const editorMapRef = useRef(new Map<string, BoardCanvasHandle>());
   const activeEditorRef = useRef<BoardCanvasHandle | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [needsTemplate, setNeedsTemplate] = useState(false);
   const [workspace, setWorkspace] = useState<BoardWorkspaceWithBoards | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
-  const [reminders, setReminders] = useState<BoardReminder[]>([]);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showReminders, setShowReminders] = useState(!isMobile);
-  const [printOpen, setPrintOpen] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
+  const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
 
-  const selectBoard = useCallback((id: string) => {
-    setActiveBoardId(id);
-    activeEditorRef.current = editorMapRef.current.get(id) ?? null;
+  const handleHistoryChange = useCallback((state: { canUndo: boolean; canRedo: boolean }) => {
+    setUndoRedo(state);
   }, []);
+
+  const syncUndoRedoFromEditor = useCallback((handle: BoardCanvasHandle | null) => {
+    setUndoRedo({
+      canUndo: handle?.canUndo() ?? false,
+      canRedo: handle?.canRedo() ?? false,
+    });
+  }, []);
+
+  const selectBoard = useCallback(
+    (id: string) => {
+      setActiveBoardId(id);
+      const handle = editorMapRef.current.get(id) ?? null;
+      activeEditorRef.current = handle;
+      syncUndoRedoFromEditor(handle);
+    },
+    [syncUndoRedoFromEditor],
+  );
 
   const registerEditor = useCallback(
     (boardId: string, handle: BoardCanvasHandle | null) => {
       if (handle) editorMapRef.current.set(boardId, handle);
       else editorMapRef.current.delete(boardId);
-      if (boardId === activeBoardId) activeEditorRef.current = handle;
+      if (boardId === activeBoardId) {
+        activeEditorRef.current = handle;
+        syncUndoRedoFromEditor(handle);
+      }
     },
-    [activeBoardId],
+    [activeBoardId, syncUndoRedoFromEditor],
   );
 
   const activeBoard = useMemo(
@@ -78,15 +86,11 @@ export default function Boards() {
     setLoading(true);
     try {
       const workspaces = await fetchUserWorkspaces(user.id);
-      if (workspaces.length === 0) {
-        setNeedsTemplate(true);
-        setWorkspace(null);
-        setActiveBoardId(null);
-        return;
-      }
-      const full = await fetchWorkspaceWithBoards(workspaces[0].id);
+      const full =
+        workspaces.length === 0
+          ? await ensureDefaultWorkspace(user.id)
+          : await fetchWorkspaceWithBoards(workspaces[0].id);
       if (!full) throw new Error("workspace missing");
-      setNeedsTemplate(false);
       setWorkspace(full);
       setActiveBoardId((prev) => {
         const nextId =
@@ -101,39 +105,10 @@ export default function Boards() {
     }
   }, [user?.id]);
 
-  const handleCreateFromTemplate = async (template: BoardStarterTemplate) => {
-    if (!user?.id) return;
-    setCreating(true);
-    try {
-      const ws = await createWorkspaceFromTemplate(user.id, template);
-      setNeedsTemplate(false);
-      setWorkspace(ws);
-      selectBoard(ws.boards[0]?.id ?? "");
-      toast.success("Board system created");
-    } catch {
-      toast.error("Could not create boards");
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const loadReminders = useCallback(async (boardId: string) => {
-    try {
-      const rows = await fetchBoardReminders(boardId);
-      setReminders(rows);
-    } catch {
-      setReminders([]);
-    }
-  }, []);
-
   useEffect(() => {
     void loadWorkspace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
-
-  useEffect(() => {
-    if (activeBoard?.id) void loadReminders(activeBoard.id);
-  }, [activeBoard?.id, loadReminders]);
 
   useEffect(() => {
     document.title = "Boards | Palette Plotting";
@@ -169,6 +144,41 @@ export default function Boards() {
     }
   }, []);
 
+  const handleRenameBoard = useCallback(async (boardId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    try {
+      await updateBoardMeta(boardId, { title: trimmed });
+      setWorkspace((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          boards: prev.boards.map((b) => (b.id === boardId ? { ...b, title: trimmed } : b)),
+        };
+      });
+    } catch {
+      toast.error("Could not rename board");
+    }
+  }, []);
+
+  const handleTitleStyleChange = useCallback(
+    async (boardId: string, patch: { title_color?: string | null; title_font?: string | null }) => {
+      try {
+        await updateBoardMeta(boardId, patch);
+        setWorkspace((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            boards: prev.boards.map((b) => (b.id === boardId ? { ...b, ...patch } : b)),
+          };
+        });
+      } catch {
+        toast.error("Could not update title style");
+      }
+    },
+    [],
+  );
+
   const handlePickImage = useCallback(async (url: string) => {
     try {
       await activeEditorRef.current?.addImageFromUrl(url);
@@ -179,23 +189,38 @@ export default function Boards() {
 
   const handleAddBoard = async () => {
     if (!workspace || !user?.id) return;
+    const focusCount = workspace.boards.filter((b) => b.role === "focus").length;
     const n = workspace.boards.length;
     try {
-      const board = await addBoard(workspace.id, user.id, `Focus ${n}`, "focus", n);
+      const board = await addBoard(
+        workspace.id,
+        user.id,
+        `Focus Board ${focusCount + 1}`,
+        "focus",
+        n,
+      );
       setWorkspace({ ...workspace, boards: [...workspace.boards, board] });
       selectBoard(board.id);
+      toast.success("Focus board added");
     } catch {
       toast.error("Could not add board");
     }
   };
 
   const handleRemoveBoard = async () => {
-    if (!workspace || !activeBoard || workspace.boards.length <= 1) return;
+    if (!workspace || !activeBoard) return;
+    if (activeBoard.role === "plan") {
+      toast.message("The Plan stays in every workspace");
+      return;
+    }
+    const label = activeBoard.title;
+    if (!window.confirm(`Remove “${label}” from your workspace? This cannot be undone.`)) return;
     try {
       await deleteBoard(activeBoard.id);
       const next = workspace.boards.filter((b) => b.id !== activeBoard.id);
       setWorkspace({ ...workspace, boards: next });
       selectBoard(next[0]?.id ?? "");
+      toast.success("Board removed");
     } catch {
       toast.error("Could not remove board");
     }
@@ -204,45 +229,41 @@ export default function Boards() {
   if (!user) return null;
 
   const boards = workspace?.boards ?? [];
+  const canRemoveBoard = activeBoard?.role !== "plan";
 
   return (
-    <div className="flex min-h-screen bg-[#ebe8e3]">
-      {!isMobile && (
-        <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />
-      )}
-
+    <div className="flex h-screen overflow-hidden bg-[#ebe8e3]">
       <div
-        className="flex min-h-0 min-h-screen flex-1 flex-col transition-all duration-300"
-        style={{
-          marginLeft: !isMobile ? (sidebarCollapsed ? "4rem" : "16rem") : undefined,
-          paddingTop: "env(safe-area-inset-top, 0px)",
-        }}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <header className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
           <div className="flex items-center gap-2">
             {isMobile && <MobilePWAMenu />}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard")}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/workspace")}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <LayoutGrid className="h-5 w-5 text-neutral-700" />
             <div>
               <h1 className="text-sm font-semibold text-neutral-900">Boards</h1>
-              <p className="text-[11px] text-neutral-500">{workspace?.name ?? "Your board system"}</p>
+              <p className="text-[11px] text-neutral-500">Three focus boards + The Plan</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {!isMobile && (
-              <>
-                <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleAddBoard}>
-                  <Plus className="h-3.5 w-3.5" />
-                  Board
-                </Button>
-                {boards.length > 1 && (
-                  <Button variant="ghost" size="sm" className="text-xs text-neutral-500" onClick={handleRemoveBoard}>
-                    Remove
-                  </Button>
-                )}
-              </>
+            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleAddBoard}>
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Add board</span>
+            </Button>
+            {canRemoveBoard && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                onClick={handleRemoveBoard}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Remove</span>
+              </Button>
             )}
             <Button variant="outline" size="sm" className="hidden gap-1 text-xs md:flex" onClick={() => setScanOpen(true)}>
               <ScanLine className="h-3.5 w-3.5" />
@@ -252,37 +273,30 @@ export default function Boards() {
               <Copy className="h-3.5 w-3.5" />
               Import
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 text-xs"
-              onClick={() => setWallpaperOpen(true)}
-              title="Phone wallpaper or lock screen"
-            >
-              <Smartphone className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Wallpaper</span>
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setPrintOpen(true)}>
-              <Printer className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Print</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => setShowReminders((v) => !v)}
-            >
-              {showReminders ? "Hide" : "Reminders"}
+            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setDownloadOpen(true)}>
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
         </header>
+
+        {!loading && workspace && activeBoard && (
+          <BoardToolbar
+            editorRef={activeEditorRef}
+            orientation="horizontal"
+            className="shrink-0"
+            boardCount={!isMobile ? boards.length : undefined}
+            zoomPreset={!isMobile ? boardZoom : undefined}
+            onZoomPresetChange={!isMobile ? setBoardZoom : undefined}
+            canUndo={undoRedo.canUndo}
+            canRedo={undoRedo.canRedo}
+          />
+        )}
 
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
           </div>
-        ) : needsTemplate ? (
-          <BoardTemplatePicker onSelect={handleCreateFromTemplate} loading={creating} />
         ) : !workspace || !activeBoard ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
@@ -295,60 +309,48 @@ export default function Boards() {
               onSelect={selectBoard}
               onSave={handleSaveLayoutFor}
               onAddBoard={handleAddBoard}
+              onRemoveBoard={handleRemoveBoard}
+              canRemoveBoard={canRemoveBoard}
               registerEditor={registerEditor}
+              onRenameBoard={handleRenameBoard}
+              onTitleStyleChange={handleTitleStyleChange}
+              onHistoryChange={handleHistoryChange}
             />
-            {showReminders && (
-              <div className="max-h-[40vh] shrink-0 overflow-hidden border-t border-stone-300/80">
-                <BoardReminderPanel
-                  board={activeBoard}
-                  userId={user.id}
-                  reminders={reminders}
-                  onRefresh={() => void loadReminders(activeBoard.id)}
-                />
-              </div>
-            )}
             <BoardPlotKitTray
-              boards={boards}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
               userId={user.id}
-              onSelectBoard={selectBoard}
               onBoardColorChange={handleBoardColorFromAi}
               onPickImage={handlePickImage}
               onScanPhysical={() => setScanOpen(true)}
             />
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-row">
+          <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
             <BoardPlottingWorkbench
-              boards={boards}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
               userId={user.id}
-              onSelectBoard={selectBoard}
               onBoardColorChange={handleBoardColorFromAi}
               onPickImage={handlePickImage}
               onScanPhysical={() => setScanOpen(true)}
             />
 
-            <div className="flex min-h-0 min-w-0 flex-1 flex-row">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <BoardDesktopGrid
                 boards={boards}
                 activeId={activeBoard.id}
                 onSelect={selectBoard}
                 onSave={handleSaveLayoutFor}
                 registerEditor={registerEditor}
+                onAddBoard={handleAddBoard}
+                onRenameBoard={handleRenameBoard}
+                onTitleStyleChange={handleTitleStyleChange}
+                zoomPreset={boardZoom}
+                onHistoryChange={handleHistoryChange}
               />
-              {showReminders && (
-                <BoardReminderPanel
-                  board={activeBoard}
-                  userId={user.id}
-                  reminders={reminders}
-                  onRefresh={() => void loadReminders(activeBoard.id)}
-                />
-              )}
             </div>
           </div>
         )}
@@ -356,8 +358,8 @@ export default function Boards() {
         {activeBoard && workspace && (
           <>
             <BoardPrintDialog
-              open={printOpen}
-              onOpenChange={setPrintOpen}
+              open={downloadOpen}
+              onOpenChange={setDownloadOpen}
               layoutJson={activeBoard.layout_json}
               colorKey={activeBoard.color_key}
               boardTitle={activeBoard.title}
@@ -374,13 +376,6 @@ export default function Boards() {
               boards={workspace.boards}
               activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
-            />
-            <BoardWallpaperDialog
-              open={wallpaperOpen}
-              onOpenChange={setWallpaperOpen}
-              layoutJson={activeBoard.layout_json}
-              colorKey={activeBoard.color_key}
-              boardTitle={activeBoard.title}
             />
           </>
         )}

@@ -9,10 +9,10 @@ function swatchBackground(swatch: string, fill?: string) {
 }
 
 function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
-  const muted = dark ? "text-white/70" : "text-zinc-600";
-  const body = dark ? "text-white/88" : "text-zinc-700";
-  const card = dark ? "border-white/10 bg-white/[0.04]" : "border-zinc-200 bg-white";
-  const border = dark ? "border-white/10" : "border-zinc-200";
+  const muted = dark ? "text-white" : "text-zinc-600";
+  const body = dark ? "text-white" : "text-zinc-700";
+  const card = dark ? "border-white bg-black" : "border-zinc-200 bg-white";
+  const border = dark ? "border-white" : "border-zinc-200";
 
   if (block.type === "paragraph") {
     return <p className={cn("text-[15px] leading-[1.7]", body)}>{block.text}</p>;
@@ -32,7 +32,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
         className={cn(
           "rounded-xl border px-4 py-3.5 text-[15px] leading-relaxed",
           dark
-            ? "border-white/15 bg-white/[0.06] text-white/92"
+            ? "border-white bg-black text-white"
             : "border-zinc-300 bg-[#f3f0eb] text-zinc-800",
         )}
       >
@@ -73,7 +73,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
             <span
               className={cn(
                 "absolute left-0 top-0.5 flex h-4 w-4 items-center justify-center rounded border text-[10px]",
-                dark ? "border-white/25 text-white/50" : "border-zinc-400 text-zinc-400",
+                dark ? "border-white text-white" : "border-zinc-400 text-zinc-400",
               )}
               aria-hidden
             >
@@ -117,7 +117,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
                 <span
                   className={cn(
                     "absolute inset-x-0 bottom-0 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm",
-                    dark ? "bg-black/55 text-white/90" : "bg-white/85 text-zinc-800",
+                    dark ? "border-t border-white bg-black text-white" : "bg-white/85 text-zinc-800",
                   )}
                 >
                   {img.label}
@@ -144,7 +144,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
               <div className="min-w-0">
                 <h3 className={cn("text-base font-semibold", dark ? "text-white" : "text-zinc-900")}>{color.name}</h3>
                 <p className={cn("mt-1 text-sm leading-snug", muted)}>
-                  <span className={cn("font-semibold", dark ? "text-white/85" : "text-zinc-800")}>Best for: </span>
+                  <span className={cn("font-semibold", dark ? "text-white" : "text-zinc-800")}>Best for: </span>
                   {color.bestFor}
                 </p>
               </div>
@@ -162,7 +162,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
         <div
           className={cn(
             "flex items-end justify-center gap-2 rounded-xl border px-4 py-5",
-            dark ? "border-white/10 bg-white/[0.03]" : "border-zinc-200 bg-[#f8f6f2]",
+            dark ? "border-white bg-black" : "border-zinc-200 bg-[#f8f6f2]",
           )}
         >
           {block.colors.map((c, i) => (
@@ -203,9 +203,9 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
                 "flex min-h-[4.5rem] flex-col justify-end rounded-lg border px-3 py-2",
                 border,
               )}
-              style={{ backgroundColor: dark ? `${zone.color}22` : `${zone.color}18` }}
+              style={{ backgroundColor: dark ? zone.color : `${zone.color}18` }}
             >
-              <span className={cn("text-xs font-semibold uppercase tracking-wide", dark ? "text-white/80" : "text-zinc-800")}>
+              <span className={cn("text-xs font-semibold uppercase tracking-wide", dark ? "text-white" : "text-zinc-800")}>
                 {zone.label}
               </span>
             </div>
@@ -227,7 +227,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
                   key={item}
                   className={cn(
                     "rounded-md border px-2 py-1.5 text-[11px] leading-snug",
-                    dark ? "border-white/10 bg-black/40 text-white/80" : "border-zinc-200 bg-zinc-50 text-zinc-700",
+                    dark ? "border-white bg-black text-white" : "border-zinc-200 bg-zinc-50 text-zinc-700",
                   )}
                 >
                   {item}
@@ -259,7 +259,7 @@ export function LibraryReader({
         onClick={onBack}
         className={cn(
           "mb-5 inline-flex items-center gap-1.5 text-sm font-medium transition-colors",
-          dark ? "text-white/60 hover:text-white" : "text-zinc-500 hover:text-zinc-900",
+          dark ? "text-white hover:underline" : "text-zinc-500 hover:text-zinc-900",
         )}
       >
         <ChevronLeft className="h-4 w-4" aria-hidden />
@@ -270,7 +270,7 @@ export function LibraryReader({
         <div
           className={cn(
             "mb-6 overflow-hidden rounded-2xl border",
-            dark ? "border-white/10" : "border-zinc-200",
+            dark ? "border-white" : "border-zinc-200",
           )}
         >
           <img
@@ -284,16 +284,15 @@ export function LibraryReader({
       ) : null}
 
       <header
-        className="mb-8 border-b pb-6"
-        style={{ borderColor: dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)" }}
+        className={cn("mb-8 border-b pb-6", dark ? "border-white" : "border-zinc-200")}
       >
-        <p className={cn("text-[11px] font-semibold uppercase tracking-[0.14em]", dark ? "text-white/45" : "text-zinc-400")}>
+        <p className={cn("text-[11px] font-semibold uppercase tracking-[0.14em]", dark ? "text-white" : "text-zinc-400")}>
           Free reader · {guide.readMinutes} min
         </p>
         <h1 className={cn("font-welcome-serif mt-2 text-3xl leading-tight", dark ? "text-white" : "text-zinc-900")}>
           {guide.title}
         </h1>
-        <p className={cn("mt-2 text-sm font-medium", dark ? "text-white/55" : "text-zinc-500")}>{guide.tagline}</p>
+        <p className={cn("mt-2 text-sm font-medium", dark ? "text-white" : "text-zinc-500")}>{guide.tagline}</p>
       </header>
 
       <div className="space-y-5">
@@ -305,7 +304,7 @@ export function LibraryReader({
       <footer
         className={cn(
           "mt-10 rounded-xl border px-4 py-4 text-center text-xs leading-relaxed",
-          dark ? "border-white/10 bg-white/[0.04] text-white/50" : "border-zinc-200 bg-white text-zinc-500",
+          dark ? "border-white bg-black text-white" : "border-zinc-200 bg-white text-zinc-500",
         )}
       >
         Teaser reader — full color guide, board system, and plotting desk unlock with Pro.

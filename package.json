@@ -17,9 +17,6 @@
     "cap:ios": "npx cap open ios",
     "cap:copy": "npx cap copy ios",
     "cap:update": "npx cap update ios",
-    "convert:affirmation-webp": "node scripts/convert-affirmation-library-to-webp.mjs",
-    "reoptimize:affirmation-webp": "node scripts/reoptimize-affirmation-library-webp.mjs",
-    "compress:hero": "node scripts/compress-hero-assets.mjs",
     "compress:embody-double-videos": "node scripts/compress-embody-double-videos.mjs",
     "gen:favicons": "node scripts/generate-favicon-pngs.mjs"
   },

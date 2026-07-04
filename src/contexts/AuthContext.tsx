@@ -6,7 +6,7 @@ import {
   oneSignalLogin,
   oneSignalLogout,
   readDeviceTimeZone,
-  syncManifestationRoutineOneSignalTags,
+  syncRoutineOneSignalTags,
   syncOneSignalUserLanguage,
 } from "@/services/oneSignal";
 import {
@@ -15,6 +15,7 @@ import {
   refreshAppleRevenueCatPlanOnServer,
 } from "@/services/revenueCat";
 import { bootstrapRevenueCatWeb, isRevenueCatWebConfigured } from "@/services/revenueCatWeb";
+import { isWebRevenueCatBillingEnabled } from "@/lib/webBillingConfig";
 import { Capacitor } from "@capacitor/core";
 import {
   detectInitialAppLocale,
@@ -248,21 +249,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             (supabase as any)
               .from("user_preferences")
               .select(
-                "manifestation_intensity, app_notifications_enabled, notification_permission_status, routine_notification_times, timezone, preferred_locale",
+                "routine_intensity, app_notifications_enabled, notification_permission_status, routine_notification_times, timezone, preferred_locale",
               )
               .eq("user_id", user.id)
               .maybeSingle(),
             (supabase as any)
               .from("profiles")
               .select(
-                "manifestation_intensity, app_notifications_enabled, notification_permission_status, routine_notification_times, timezone, preferred_locale",
+                "routine_intensity, app_notifications_enabled, notification_permission_status, routine_notification_times, timezone, preferred_locale",
               )
               .eq("id", user.id)
               .maybeSingle(),
           ]);
 
           const prefs = prefsRes.data as {
-            manifestation_intensity?: string | null;
+            routine_intensity?: string | null;
             app_notifications_enabled?: boolean | null;
             notification_permission_status?: string | null;
             routine_notification_times?: unknown;
@@ -275,7 +276,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             prefs?.app_notifications_enabled ?? profile?.app_notifications_enabled ?? false;
           if (!notificationsEnabled) return;
 
-          const intensityRaw = prefs?.manifestation_intensity ?? profile?.manifestation_intensity;
+          const intensityRaw = prefs?.routine_intensity ?? profile?.routine_intensity;
           const intensity =
             intensityRaw === "light" || intensityRaw === "consistent" || intensityRaw === "locked_in"
               ? intensityRaw
@@ -299,7 +300,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
           await syncOneSignalUserLanguage(preferredLocale);
 
-          await syncManifestationRoutineOneSignalTags({
+          await syncRoutineOneSignalTags({
             intensity,
             notificationsEnabled: true,
             permissionStatus:
@@ -342,7 +343,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       if (Capacitor.isNativePlatform()) {
         void bootstrapRevenueCat(appUserId);
-      } else if (isRevenueCatWebConfigured()) {
+      } else if (isWebRevenueCatBillingEnabled() && isRevenueCatWebConfigured()) {
         void bootstrapRevenueCatWeb(appUserId);
       }
     }, NATIVE_RC_BOOTSTRAP_MS);

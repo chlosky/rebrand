@@ -20,11 +20,6 @@
 
 # App entry
 -keep class com.paletteplotting.app.MainActivity { *; }
-
-# NativeMirror plugin
--keep class com.paletteplotting.app.NativeMirrorPlugin { *; }
--keep class com.paletteplotting.app.NativeMirrorView { *; }
-
 # TikTok App Events SDK
 -keep class com.tiktok.** { *; }
 -keep class com.android.billingclient.api.** { *; }

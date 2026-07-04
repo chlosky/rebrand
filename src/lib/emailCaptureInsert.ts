@@ -4,7 +4,7 @@ export type EmailCaptureSource =
   | "homepage_newsletter"
   | "homepage_demo_popup"
   | "demo_feedback"
-  | "manifestation_quiz";
+  | "life_rebrand_quiz";
 
 export type EmailCaptureInsert = {
   first_name?: string | null;

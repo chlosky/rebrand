@@ -1,11 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { SetupDraft } from "@/lib/setupDraft";
-import { normalizeConditionalSpecificityFromUnknown } from "@/lib/conditionalSpecificityStorage";
+import { normalizeFocusDetailFromUnknown } from "@/lib/focusDetailStorage";
 import { mapOnboardingEmbodyKeysToAppSlugs } from "@/lib/embodyPracticesCatalog";
 import { buildOnboardingAttributionPatch } from "@/lib/attribution";
 
 const SHELL_APPEARANCES = new Set(["light", "dark"]);
-const GUIDE_IDS = new Set(["river", "sage", "rose", "oliver"]);
 
 /** Must match `useOnboardingSession` / `useLocalStorage("onboarding_session")`. */
 const ONBOARDING_SESSION_STORAGE_KEY = "onboarding_session";
@@ -96,16 +95,12 @@ export function draftToSetupPathPayload(draft: SetupDraft): Record<string, unkno
     tool_preferences: Array.isArray(draft.toolPreferences)
       ? draft.toolPreferences.filter((t): t is string => typeof t === "string")
       : [],
-    conditional_specificity: normalizeConditionalSpecificityFromUnknown(
+    conditional_specificity: normalizeFocusDetailFromUnknown(
       draft.conditionalSpecificity,
       draft.desireCategory,
     ),
     shell_appearance:
       typeof draft.appearance === "string" && SHELL_APPEARANCES.has(draft.appearance) ? draft.appearance : null,
-    guide_character_id:
-      typeof draft.guideCharacterId === "string" && GUIDE_IDS.has(draft.guideCharacterId)
-        ? draft.guideCharacterId
-        : null,
     embody_active_practices: embodySlugs ?? null,
     board_starter_template_slug:
       typeof draft.boardStarterTemplateSlug === "string" && draft.boardStarterTemplateSlug.trim()
@@ -177,15 +172,12 @@ export async function syncSetupJourneyToBackend(draft: SetupDraft): Promise<void
     ) {
       patch.onboarding_answers = {
         setup_journey_v1: {
-          manifestation_intensity: draft.intensity,
-          manifest_routine_items: draft.routineItems ?? [],
+          routine_intensity: draft.intensity,
+          routine_items: draft.routineItems ?? [],
           routine_notification_times: draft.routineNotificationTimes ?? [],
           notification_permission_status: draft.notificationPermissionStatus ?? null,
         },
       };
-    }
-    if (typeof draft.guideCharacterId === "string" && GUIDE_IDS.has(draft.guideCharacterId)) {
-      patch.character_id = draft.guideCharacterId;
     }
 
     const { data, error } = await supabase.functions.invoke("update-onboarding-session", {
@@ -227,10 +219,7 @@ export async function syncSetupJourneyToBackend(draft: SetupDraft): Promise<void
     const prefRow: Record<string, unknown> = { user_id: userId };
     const profileRow: Record<string, unknown> = { id: userId };
     if (embodySlugs) prefRow.embody_active_practices = embodySlugs;
-    if (typeof setup_path.guide_character_id === "string") {
-      prefRow.selected_character = setup_path.guide_character_id;
-    }
-    if (draft.locale === "en" || draft.locale === "es-419" || draft.locale === "pt-BR") {
+    if (draft.locale === "en" || draft.locale === "es-419") {
       prefRow.preferred_locale = draft.locale;
       profileRow.preferred_locale = draft.locale;
     }
@@ -239,10 +228,10 @@ export async function syncSetupJourneyToBackend(draft: SetupDraft): Promise<void
       draft.intensity === "consistent" ||
       draft.intensity === "locked_in"
     ) {
-      prefRow.manifestation_intensity = draft.intensity;
-      profileRow.manifestation_intensity = draft.intensity;
-      prefRow.manifest_routine_items = draft.routineItems ?? [];
-      profileRow.manifest_routine_items = draft.routineItems ?? [];
+      prefRow.routine_intensity = draft.intensity;
+      profileRow.routine_intensity = draft.intensity;
+      prefRow.routine_items = draft.routineItems ?? [];
+      profileRow.routine_items = draft.routineItems ?? [];
       prefRow.routine_notification_times = draft.routineNotificationTimes ?? [];
       profileRow.routine_notification_times = draft.routineNotificationTimes ?? [];
     }

@@ -12,7 +12,7 @@ export type BoardLayoutMode =
 
 export type BoardReminderChannel = "email" | "sms" | "push";
 
-export type BoardReminderSource = "user" | "ai_extracted" | "affirmation" | "plan_item";
+export type BoardReminderSource = "user" | "ai_extracted" | "plan_item";
 
 export type BoardWorkspace = {
   id: string;
@@ -28,6 +28,8 @@ export type Board = {
   workspace_id: string;
   user_id: string;
   title: string;
+  title_color: string | null;
+  title_font: string | null;
   role: BoardRole;
   color_key: string;
   sort_order: number;

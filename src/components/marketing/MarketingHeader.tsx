@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMarketingTranslation } from "@/hooks/useMarketingTranslation";
-import { MarketingLanguageSelector } from "@/components/marketing/MarketingLanguageSelector";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, LogIn, LogOut, Settings } from "lucide-react";
+import { LogIn, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -107,18 +106,9 @@ export function MarketingHeader({
                 {link.label}
               </a>
             ))}
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
-              onClick={() => navigate("/blog")}
-            >
-              {t("home.header.blog")}
-              <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
-            </button>
           </nav>
 
           <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
-            <MarketingLanguageSelector />
             {!isLoading && user ? (
               <>
                 <DropdownMenu>
@@ -159,7 +149,7 @@ export function MarketingHeader({
                   variant="outline"
                   size="sm"
                   className="inline-flex h-8 border-white/20 bg-white/5 px-2.5 text-xs text-white hover:bg-white/10 hover:text-white sm:px-3 sm:text-sm"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => navigate("/dashboard/boards")}
                 >
                   {t("home.header.dashboard")}
                 </Button>

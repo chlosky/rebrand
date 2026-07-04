@@ -113,7 +113,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
               onClick={onScanPhysical}
             >
               <Camera className="h-4 w-4" />
-              Scan physical board (OCR)
+              Scan physical board
             </Button>
           )}
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">

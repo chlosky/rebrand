@@ -35,7 +35,7 @@ export type WebOnboardingSessionInsert = {
   is_paid?: boolean | null;
   from_tiktok?: boolean | null;
   ttclid?: string | null;
-  make_my_subliminal_cta_clicked?: boolean;
+  make_my_board_cta_clicked?: boolean;
   user_agent?: string | null;
 };
 
@@ -170,11 +170,7 @@ export function readWebOnboardingClientVisitId(): string | null {
   }
 }
 
-export function writeWebOnboardingSubliminalFastPath(_payload: Record<string, unknown>): void {
-  // Retired: web subliminal fast-path no longer writes handoff data server-side.
-}
-
-export function markWebOnboardingMakeMySubliminalCtaClicked(): void {
+export function markWebOnboardingMakeMyBoardCtaClicked(): void {
   if (Capacitor.isNativePlatform()) return;
 
   const clientVisitId = getOrCreateClientVisitId();
@@ -190,11 +186,11 @@ export function markWebOnboardingMakeMySubliminalCtaClicked(): void {
       }
     }
 
-    const { error } = await supabase.rpc("mark_web_onboarding_make_my_subliminal_cta_clicked", {
+    const { error } = await supabase.rpc("mark_web_onboarding_make_my_board_cta_clicked", {
       p_client_visit_id: clientVisitId,
     });
     if (error) {
-      console.warn("[web_onboarding] make_my_subliminal_cta_clicked:", error.message);
+      console.warn("[web_onboarding] make_my_board_cta_clicked:", error.message);
     }
 
     const { error: canonicalError } = await supabase.functions.invoke("update-onboarding-session", {
@@ -206,8 +202,8 @@ export function markWebOnboardingMakeMySubliminalCtaClicked(): void {
             web_onboarding_cta_v1: {
               schema_version: 1,
               client_visit_id: clientVisitId,
-              make_my_subliminal_cta_clicked: true,
-              make_my_subliminal_cta_clicked_at: new Date().toISOString(),
+              make_my_board_cta_clicked: true,
+              make_my_board_cta_clicked_at: new Date().toISOString(),
             },
           },
         },

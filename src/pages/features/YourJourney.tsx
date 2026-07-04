@@ -4,11 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BookOpen, ChevronRight, Loader2 } from "lucide-react";
-import { ManifestationMilestonesTabs } from "@/components/ManifestationMilestonesTabs";
-import { supabase } from "@/integrations/supabase/client";
+import { ProgressMilestonesTabs } from "@/components/ProgressMilestonesTabs";
+import { BoardReminderPanel } from "@/components/boards/BoardReminderPanel";
+import { fetchBoardReminders, fetchUserWorkspaces, fetchWorkspaceWithBoards } from "@/lib/boards/api";
+import type { Board, BoardReminder } from "@/lib/boards/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -20,11 +21,38 @@ export default function YourJourney() {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    return localStorage.getItem("sidebar-collapsed") === "true";
-  });
-
   const [loading, setLoading] = useState(true);
+  const [planBoard, setPlanBoard] = useState<Board | null>(null);
+  const [reminders, setReminders] = useState<BoardReminder[]>([]);
+
+  const loadReminders = useCallback(async (boardId: string) => {
+    try {
+      const rows = await fetchBoardReminders(boardId);
+      setReminders(rows);
+    } catch {
+      setReminders([]);
+    }
+  }, []);
+
+  const loadPlanBoard = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const workspaces = await fetchUserWorkspaces(user.id);
+      if (workspaces.length === 0) {
+        setPlanBoard(null);
+        setReminders([]);
+        return;
+      }
+      const full = await fetchWorkspaceWithBoards(workspaces[0].id);
+      const plan = full?.boards.find((b) => b.role === "plan") ?? full?.boards[0] ?? null;
+      setPlanBoard(plan);
+      if (plan) await loadReminders(plan.id);
+      else setReminders([]);
+    } catch {
+      setPlanBoard(null);
+      setReminders([]);
+    }
+  }, [user?.id, loadReminders]);
 
   const isStandalone =
     (typeof window !== "undefined" &&
@@ -46,25 +74,15 @@ export default function YourJourney() {
     }
   }, [authLoading, user, navigate]);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
     if (authLoading) return;
     if (!user?.id) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    try {
-      await supabase.from("manifestation_power_daily_signals").select("signal_kind").eq("user_id", user.id).limit(1);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id, authLoading]);
-
-  useEffect(() => {
-    if (!authLoading) {
-      void load();
-    }
-  }, [authLoading, load]);
+    void loadPlanBoard().finally(() => setLoading(false));
+  }, [user?.id, authLoading, loadPlanBoard]);
 
   return (
     <div
@@ -75,19 +93,7 @@ export default function YourJourney() {
       )}
       style={{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" }}
     >
-      {!isMobile && <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />}
-
-      <div
-        className="min-h-screen"
-        style={
-          !isMobile
-            ? {
-                marginLeft: sidebarCollapsed ? "64px" : "256px",
-                transition: "margin-left 300ms ease-in-out",
-              }
-            : {}
-        }
-      >
+      <div className="min-h-screen">
         {isMobile && (
           <div
             className={cn(
@@ -116,9 +122,7 @@ export default function YourJourney() {
                 : {
                     ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }),
                     top: "var(--app-safe-area-top)",
-                    left: sidebarCollapsed ? "64px" : "256px",
                     right: "0",
-                    transition: "left 300ms ease-in-out",
                   }
             }
           >
@@ -131,7 +135,7 @@ export default function YourJourney() {
                       : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity",
                     "truncate",
                   )}
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => navigate("/dashboard/boards")}
                 >
                   {t("tools:journey.title")}
                 </h1>
@@ -171,8 +175,26 @@ export default function YourJourney() {
                       : "border border-zinc-200/75 bg-card/75 backdrop-blur-sm",
                   )}
                 >
-                  <ManifestationMilestonesTabs syncHash={false} />
+                  <ProgressMilestonesTabs syncHash={false} />
                 </Card>
+
+                {planBoard && user && (
+                  <section className="space-y-2">
+                    <h2 className={cn("text-lg font-bold tracking-tight", theme === "dark" ? "text-white" : "text-foreground")}>
+                      {t("tools:journey.remindersTitle")}
+                    </h2>
+                    <p className={cn("text-sm leading-snug", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
+                      {t("tools:journey.remindersDescription")}
+                    </p>
+                    <BoardReminderPanel
+                      embedded
+                      board={planBoard}
+                      userId={user.id}
+                      reminders={reminders}
+                      onRefresh={() => void loadReminders(planBoard.id)}
+                    />
+                  </section>
+                )}
 
                 <Button
                   variant="outline"

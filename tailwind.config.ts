@@ -152,6 +152,7 @@ export default {
           "marketing-tools-ticker-reverse 18s linear infinite",
         "palette-plotting-testimonials-marquee": "palette-plotting-testimonials-marquee 42s linear infinite",
         "palette-plotting-testimonials-marquee-slow": "palette-plotting-testimonials-marquee 56s linear infinite",
+        marquee: "palette-plotting-testimonials-marquee 75s linear infinite",
       },
     },
   },

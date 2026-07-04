@@ -1,37 +1,13 @@
-import type { ComponentType } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MarketingSiteLayout } from "@/components/marketing/MarketingSiteLayout";
-import type { LegalRouteLocale } from "@/lib/locale";
-import { DMCAContentAR } from "./legal/DMCAContentAR";
-import { DMCAContentES } from "./legal/DMCAContentES";
-import { DMCAContentFR } from "./legal/DMCAContentFR";
-import { DMCAContentIT } from "./legal/DMCAContentIT";
-import { DMCAContentPT } from "./legal/DMCAContentPT";
 
-type DMCAProps = {
-  legalLocale?: LegalRouteLocale;
-};
-
-const DMCA_BY_LOCALE: Partial<Record<LegalRouteLocale, ComponentType>> = {
-  AR: DMCAContentAR,
-  ES: DMCAContentES,
-  PT: DMCAContentPT,
-  FR: DMCAContentFR,
-  IT: DMCAContentIT,
-};
-
-const DMCA = ({ legalLocale }: DMCAProps) => {
-  const LocalizedPolicy = legalLocale ? DMCA_BY_LOCALE[legalLocale] : undefined;
-
+const DMCA = () => {
   return (
     <MarketingSiteLayout>
       <div className="container mx-auto max-w-4xl flex-1 px-4 py-8 sm:px-6">
         <Card className="mb-8">
           <CardContent className="pt-6">
-            {LocalizedPolicy ? (
-              <LocalizedPolicy />
-            ) : (
-              <>
+            <>
             <h1 className="text-4xl font-bold mb-6">DMCA Notice & Takedown Policy</h1>
             <p className="text-sm text-muted-foreground mb-8">
               Effective Date: Jan 13, 2025<br />
@@ -132,7 +108,6 @@ const DMCA = ({ legalLocale }: DMCAProps) => {
               </section>
             </div>
               </>
-            )}
           </CardContent>
         </Card>
       </div>

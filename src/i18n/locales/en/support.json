@@ -10,18 +10,18 @@
     "intro": "Feature requests and inbox are open on the free plan. Help Me Create — personalized plotting support — is for Pro members.",
     "introPro": "Help, feedback, and your support inbox.",
     "createLockedTitle": "Help Me Create is for Pro",
-    "createLockedBody": "Personalized help building affirmations, routines, and plotting support unlocks with Palette Plotting Pro.",
+    "createLockedBody": "Personalized help with boards, routines, and plotting support unlocks with Palette Plotting Pro.",
     "upgrade": "Unlock plotting tools"
   },
   "create": {
-    "intro": "Share only what feels relevant. Palette Plotting will turn this into app-ready prompts, affirmations, or a routine.",
+    "intro": "Share only what feels relevant. Palette Plotting will turn this into board prompts, plan steps, or a routine.",
     "successTitle": "Submitted.",
     "successBody": "We'll reply by in-app inbox (best if you set notifications on) and/or email. If you need something urgently, you can also email",
     "successBodySuffix": ".",
     "backToDashboard": "Back to dashboard",
     "submitAnother": "Submit another",
-    "focusLabel": "What are you manifesting right now?",
-    "focusPlaceholder": "Let us know what you are manifesting and what difficulties you're facing.",
+    "focusLabel": "What are you working on right now?",
+    "focusPlaceholder": "Tell us what you're plotting and where you're stuck.",
     "helpTypeLabel": "What do you need help with?",
     "chooseOne": "Choose one",
     "footer": "Please submit what feels most relevant. Palette Plotting will aim to reply within 24 to 48 hours of your request. You may also reach out to us at support@paletteplot.com.",
@@ -29,10 +29,10 @@
     "submitting": "Submitting…"
   },
   "createHelpOptions": {
-    "affirmationsOrScripting": "Affirmations or scripting",
-    "strongSubliminal": "Make a strong subliminal",
-    "mirrorWorkGuidance": "Mirror work guidance",
+    "boardLayoutHelp": "Board layout and labels",
+    "planStepsHelp": "Plan steps and weekly goals",
     "buildWeeklyRoutine": "Build a weekly routine",
+    "journalPromptHelp": "Journal prompts and check-ins",
     "notSureHelpMeChoose": "Not sure — help me choose"
   },
   "submissionTypes": {
@@ -101,7 +101,7 @@
     "uploadFailed": "Image upload failed",
     "requestFailed": "Request failed",
     "submitted": "Submitted",
-    "shareManifestationFocus": "Please share what you're trying to manifest or shift.",
+    "shareFocus": "Please share what you're working on or trying to change.",
     "chooseHelpType": "Please choose what you need help with.",
     "addMoreDetail": "Please add a bit more detail.",
     "loadInboxFailed": "Could not load inbox.",

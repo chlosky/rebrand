@@ -22,16 +22,19 @@ export type BoardStarterTemplate = {
   boards: StarterBoardDef[];
 };
 
-/** Classic vision-board four-up — life rebranding default. */
+/** Standard plot: three focus boards plus The Plan (four boards total). */
+export const STANDARD_BOARD_COUNT = 4;
+
+/** Classic four-board plot — life rebranding default. */
 export const DEFAULT_FOUR_BOARD_TEMPLATE: BoardStarterTemplate = {
   slug: "four-board-rebrand",
   intent: "life_rebranding",
-  name: "Vision Board + Plan",
-  description: "Three vision boards and one plan board — the signature four-board plot.",
+  name: "Three Focus Boards and The Plan",
+  description: "Three focus boards and one plan board — the signature four-board plot.",
   boards: [
-    { title: "Vision 1", role: "focus", color_key: "rose_gold", sort_order: 0, layout_mode: "vision" },
-    { title: "Vision 2", role: "focus", color_key: "blue", sort_order: 1, layout_mode: "vision" },
-    { title: "Vision 3", role: "focus", color_key: "light_pink", sort_order: 2, layout_mode: "vision" },
+    { title: "Focus Board 1", role: "focus", color_key: "rose_gold", sort_order: 0, layout_mode: "vision" },
+    { title: "Focus Board 2", role: "focus", color_key: "blue", sort_order: 1, layout_mode: "vision" },
+    { title: "Focus Board 3", role: "focus", color_key: "light_pink", sort_order: 2, layout_mode: "vision" },
     { title: "The Plan", role: "plan", color_key: "white_opaque", sort_order: 3, layout_mode: "vision" },
   ],
 };

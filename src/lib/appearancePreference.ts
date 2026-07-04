@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const APPEARANCE_STORAGE_KEY = "theme";
 
+/** Legacy palette names — `command` was the DB default, not an explicit dark choice. */
 const LEGACY_PROFILE_THEMES: Record<string, Appearance> = {
-  command: "dark",
+  command: "light",
   glow: "dark",
   volt: "dark",
   ground: "dark",
@@ -22,11 +23,11 @@ export function isStoredDashboardAppearance(
 export function normalizeAppearance(raw: string | null | undefined): Appearance {
   if (isStoredDashboardAppearance(raw)) return raw;
   if (raw && LEGACY_PROFILE_THEMES[raw]) return LEGACY_PROFILE_THEMES[raw];
-  return "dark";
+  return "light";
 }
 
 export function readStoredAppearance(): Appearance {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return normalizeAppearance(localStorage.getItem(APPEARANCE_STORAGE_KEY));
 }
 
@@ -66,12 +67,12 @@ export async function persistProfileAppearance(
   }
 }
 
-/** Prefer explicit local choice; otherwise profile; otherwise dark. */
+/** Prefer saved profile on login; otherwise localStorage; otherwise light. */
 export function resolveAppearancePreference(
   localRaw: string | null,
   profileAppearance: Appearance | null,
 ): Appearance {
-  if (isStoredDashboardAppearance(localRaw)) return localRaw;
   if (profileAppearance) return profileAppearance;
-  return "dark";
+  if (isStoredDashboardAppearance(localRaw)) return localRaw;
+  return "light";
 }

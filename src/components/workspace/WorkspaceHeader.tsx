@@ -33,8 +33,8 @@ export function workspaceShellClass(dark: boolean) {
 
 export function workspaceHeaderClass(dark: boolean) {
   return cn(
-    "border-b backdrop-blur-sm",
-    dark ? "border-white/10 bg-black/95" : "border-zinc-200/80 bg-white/90",
+    "border-b",
+    dark ? "border-white bg-black" : "border-zinc-200/80 bg-white/90 backdrop-blur-sm",
   );
 }
 
@@ -70,7 +70,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   const iconBtn = cn(
     "h-9 w-9 rounded-lg border p-0",
     dark
-      ? "border-white/12 bg-transparent text-white hover:bg-white/10 hover:text-white"
+      ? "border-white bg-black text-white hover:bg-white hover:text-black"
       : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
   );
 
@@ -94,17 +94,17 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className={cn("w-52 z-50", dark ? "border border-white/12 bg-black text-white" : "bg-white")}
+              className={cn("w-52 z-50", dark ? "border border-white bg-black text-white" : "bg-white")}
             >
               <DropdownMenuLabel>{t("nav.appearance")}</DropdownMenuLabel>
-              <DropdownMenuSeparator className={dark ? "bg-white/10" : undefined} />
+              <DropdownMenuSeparator className={dark ? "bg-white" : undefined} />
               <DropdownMenuItem className="gap-2" onClick={() => setTheme("light")}>
                 <span className="h-3 w-3 rounded-full border border-zinc-300 bg-white" aria-hidden />
                 <span className="flex-1">{t("appearance.light")}</span>
                 {theme === "light" ? <Check className="h-4 w-4 opacity-70" /> : null}
               </DropdownMenuItem>
               <DropdownMenuItem className="gap-2" onClick={() => setTheme("dark")}>
-                <span className="h-3 w-3 rounded-full border border-white/20 bg-black" aria-hidden />
+                <span className="h-3 w-3 rounded-full border border-white bg-black" aria-hidden />
                 <span className="flex-1">{t("appearance.dark")}</span>
                 {theme === "dark" ? <Check className="h-4 w-4 opacity-70" /> : null}
               </DropdownMenuItem>
@@ -127,7 +127,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
               <Button type="button" variant="outline" className={cn(iconBtn, "w-auto px-2")}>
                 <Avatar className="h-6 w-6">
                   {avatarUrl ? <AvatarImage src={avatarUrl} alt={username || userEmail} /> : null}
-                  <AvatarFallback className={cn("text-xs", dark ? "bg-white/10 text-white" : "bg-zinc-100")}>
+                  <AvatarFallback className={cn("text-xs", dark ? "border border-white bg-black text-white" : "bg-zinc-100")}>
                     {(username || userEmail || "U")[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -135,20 +135,20 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className={cn("w-56 z-50", dark ? "border border-white/12 bg-black text-white" : "bg-white")}
+              className={cn("w-56 z-50", dark ? "border border-white bg-black text-white" : "bg-white")}
             >
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">{username || t("profile.defaultUser")}</p>
-                  <p className={cn("text-xs", dark ? "text-white/55" : "text-muted-foreground")}>{userEmail}</p>
+                  <p className={cn("text-xs", dark ? "text-white" : "text-muted-foreground")}>{userEmail}</p>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className={dark ? "bg-white/10" : undefined} />
+              <DropdownMenuSeparator className={dark ? "bg-white" : undefined} />
               <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 {t("profile.yourAccount")}
               </DropdownMenuItem>
-              <DropdownMenuSeparator className={dark ? "bg-white/10" : undefined} />
+              <DropdownMenuSeparator className={dark ? "bg-white" : undefined} />
               <DropdownMenuItem
                 onClick={() => void supabase.auth.signOut().then(() => navigate("/login"))}
               >
@@ -160,7 +160,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
         </div>
       </div>
       {tabs ? (
-        <div className={cn("mx-auto flex max-w-3xl gap-1 overflow-x-auto px-4 sm:px-6", dark ? "border-t border-white/10" : "")}>
+        <div className={cn("mx-auto flex max-w-3xl gap-1 overflow-x-auto px-4 sm:px-6", dark ? "border-t border-white" : "")}>
           {tabs}
         </div>
       ) : null}

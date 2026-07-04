@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { RefObject } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
   BookImage,
-  Grid3x3,
+  ChevronLeft,
+  ChevronRight,
   Layers,
   MessageCircleHeart,
   PenLine,
@@ -13,14 +12,14 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { BOARD_COLORS, boardFillForKey, type BoardColorKey } from "@/lib/boards/colors";
+import { BOARD_QUICK_PICK_COLORS, boardFillForKey, normalizeBoardColorHex } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { BoardCompanionPanel } from "@/components/boards/BoardCompanionPanel";
 import { cn } from "@/lib/utils";
 
-export type PlotDockTab = "companion" | "boards" | "clippings" | "structures" | "marks";
+export type PlotDockTab = "companion" | "clippings" | "structures" | "marks";
 
 export const PLOT_STRUCTURES: {
   type: BoardDiagramType;
@@ -45,7 +44,6 @@ export const PLOT_STRUCTURES: {
 
 const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
   { id: "companion", label: "Companion", Icon: MessageCircleHeart },
-  { id: "boards", label: "Boards", Icon: Grid3x3 },
   { id: "clippings", label: "Clippings", Icon: BookImage },
   { id: "structures", label: "Structures", Icon: Shapes },
   { id: "marks", label: "Marks", Icon: PenLine },
@@ -53,39 +51,65 @@ const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
   companion: "Tell me the feeling of this board — I'll plot color, words, and structures with you.",
-  boards: "Jump between boards in your workspace.",
   clippings: "Images from the library or your camera roll.",
   structures: "Drop planning grids onto the board — mix freely on any board.",
-  marks: "Hand-place text, notes, layers, and acrylic board colors.",
+  marks: "Right-click empty space to add · right-click a mark to edit or recolor.",
 };
 
 type BoardPlottingWorkbenchProps = {
-  boards: Board[];
   activeBoard: Board;
   activeBoardId: string;
   editorRef: RefObject<BoardCanvasHandle | null>;
   userId: string;
-  onSelectBoard: (id: string) => void;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
   onPickImage: (url: string) => void;
   onScanPhysical?: () => void;
 };
 
 export function BoardPlottingWorkbench({
-  boards,
   activeBoard,
   activeBoardId,
   editorRef,
   userId,
-  onSelectBoard,
   onBoardColorChange,
   onPickImage,
   onScanPhysical,
 }: BoardPlottingWorkbenchProps) {
   const [openTab, setOpenTab] = useState<PlotDockTab | null>("companion");
+  const [collapsed, setCollapsed] = useState(false);
+  const activeBoardFill = boardFillForKey(activeBoard.color_key);
+  const [hexDraft, setHexDraft] = useState(activeBoardFill);
+
+  useEffect(() => {
+    setHexDraft(activeBoardFill);
+  }, [activeBoardFill]);
+
+  const applyBoardHex = (raw: string) => {
+    const hex = normalizeBoardColorHex(raw);
+    if (!hex) {
+      setHexDraft(activeBoardFill);
+      return;
+    }
+    setHexDraft(hex);
+    void onBoardColorChange(activeBoardId, hex);
+  };
+
+  const applyQuickPick = (hex: string) => {
+    setHexDraft(hex);
+    void onBoardColorChange(activeBoardId, hex);
+  };
 
   const pickTab = (tab: PlotDockTab) => {
+    if (collapsed) {
+      setCollapsed(false);
+      setOpenTab(tab);
+      return;
+    }
     setOpenTab((prev) => (prev === tab ? null : tab));
+  };
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => !prev);
   };
 
   const placeStructure = (type: BoardDiagramType, items?: string[]) => {
@@ -97,8 +121,19 @@ export function BoardPlottingWorkbench({
     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-stone-700 hover:bg-stone-200/60";
 
   return (
-    <div className="flex h-full shrink-0 border-r border-stone-300/80 bg-[#f3f0eb]">
-      <nav className="flex w-12 flex-col items-center gap-1 border-r border-stone-300/60 py-3" aria-label="Plotting desk">
+    <div className="flex h-full min-h-0 max-h-full shrink-0 self-stretch border-r border-stone-300/80 bg-[#f3f0eb]">
+      <nav
+        className="flex w-12 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-stone-300/60 py-1"
+        aria-label="Plotting desk"
+      >
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex h-5 w-5 items-center justify-center text-stone-500 hover:text-stone-900"
+        >
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+        </button>
         {DOCK_TABS.map(({ id, label, Icon }) => {
           const active = openTab === id;
           return (
@@ -113,7 +148,7 @@ export function BoardPlottingWorkbench({
               )}
               style={
                 active
-                  ? { boxShadow: `inset 3px 0 0 0 ${BOARD_COLORS[activeBoard.color_key as BoardColorKey]?.swatch ?? "#888"}` }
+                  ? { boxShadow: `inset 3px 0 0 0 ${boardFillForKey(activeBoard.color_key)}` }
                   : undefined
               }
             >
@@ -123,8 +158,8 @@ export function BoardPlottingWorkbench({
         })}
       </nav>
 
-      {openTab ? (
-        <div className="flex w-[min(100vw,17.5rem)] flex-col xl:w-72">
+      {!collapsed && openTab ? (
+        <div className="flex h-full min-h-0 w-[min(100vw,17.5rem)] flex-col overflow-hidden xl:w-72">
           <header className="border-b border-stone-300/60 px-3 py-2.5">
             <p className="font-welcome-serif text-sm font-normal text-stone-900">
               {DOCK_TABS.find((t) => t.id === openTab)?.label}
@@ -132,52 +167,13 @@ export function BoardPlottingWorkbench({
             <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{TAB_INTROS[openTab]}</p>
           </header>
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {openTab === "companion" && (
               <BoardCompanionPanel
                 activeBoardId={activeBoardId}
                 editorRef={editorRef}
                 onBoardColorChange={onBoardColorChange}
               />
-            )}
-
-            {openTab === "boards" && (
-              <div className="flex-1 overflow-y-auto p-2">
-                <div className="space-y-1.5">
-                  {boards.map((board) => {
-                    const active = board.id === activeBoardId;
-                    return (
-                      <button
-                        key={board.id}
-                        type="button"
-                        onClick={() => onSelectBoard(board.id)}
-                        className={cn(
-                          "flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors",
-                          active
-                            ? "border-stone-800 bg-[#faf8f5] shadow-[inset_3px_0_0_0_var(--swatch)]"
-                            : "border-transparent bg-transparent hover:border-stone-300/80 hover:bg-stone-200/40",
-                        )}
-                        style={
-                          active
-                            ? ({
-                                "--swatch": BOARD_COLORS[board.color_key as BoardColorKey]?.swatch ?? "#888",
-                              } as React.CSSProperties)
-                            : undefined
-                        }
-                      >
-                        <span
-                          className="h-7 w-7 shrink-0 rounded-md ring-1 ring-stone-300/50"
-                          style={{ backgroundColor: boardFillForKey(board.color_key) }}
-                        />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium text-stone-900">{board.title}</span>
-                          <span className="text-[10px] text-stone-500">{board.role === "plan" ? "Plan" : "Focus"}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             )}
 
             {openTab === "clippings" && (
@@ -215,38 +211,59 @@ export function BoardPlottingWorkbench({
                   </button>
                 </div>
                 <div className="space-y-0.5 border-t border-stone-300/50 pt-2">
-                  <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Layer</p>
-                  <button type="button" className={markBtn} onClick={() => editorRef.current?.bringForward()}>
-                    <ArrowUp className="h-4 w-4" /> Forward
-                  </button>
-                  <button type="button" className={markBtn} onClick={() => editorRef.current?.sendBackward()}>
-                    <ArrowDown className="h-4 w-4" /> Back
-                  </button>
                   <button type="button" className={markBtn} onClick={() => editorRef.current?.deleteSelected()}>
                     <Trash2 className="h-4 w-4" /> Remove selected
                   </button>
                 </div>
                 <div className="border-t border-stone-300/50 pt-2">
-                  <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Acrylic color</p>
-                  <div className="grid grid-cols-4 gap-1.5 px-1">
-                    {(Object.keys(BOARD_COLORS) as BoardColorKey[]).map((key) => (
+                  <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Board color</p>
+                  <div className="mb-2 flex items-center gap-2 px-1">
+                    <label className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center">
+                      <span
+                        className="h-9 w-9 rounded-full ring-2 ring-stone-300/80 ring-offset-1"
+                        style={{ backgroundColor: activeBoardFill }}
+                        aria-hidden
+                      />
+                      <input
+                        type="color"
+                        value={activeBoardFill}
+                        onChange={(e) => applyBoardHex(e.target.value)}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Pick board color"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={hexDraft}
+                      onChange={(e) => setHexDraft(e.target.value)}
+                      onBlur={() => applyBoardHex(hexDraft)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") applyBoardHex(hexDraft);
+                      }}
+                      spellCheck={false}
+                      className="min-w-0 flex-1 rounded-md border border-stone-300/80 bg-white px-2 py-1.5 font-mono text-[11px] uppercase text-stone-800"
+                      aria-label="Board color hex code"
+                    />
+                  </div>
+                  <div className="grid grid-cols-7 gap-1.5 px-1">
+                    {BOARD_QUICK_PICK_COLORS.map((pick) => (
                       <button
-                        key={key}
+                        key={pick.hex}
                         type="button"
-                        title={BOARD_COLORS[key].label}
-                        onClick={() => void onBoardColorChange(activeBoardId, key)}
+                        title={`${pick.label} · ${pick.hex}`}
+                        onClick={() => applyQuickPick(pick.hex)}
                         className={cn(
                           "aspect-square rounded-md ring-1 ring-stone-300/60 transition-transform hover:scale-105",
-                          activeBoard.color_key === key && "ring-2 ring-stone-900",
+                          activeBoardFill === pick.hex && "ring-2 ring-stone-900",
                         )}
-                        style={{ backgroundColor: BOARD_COLORS[key].fill }}
+                        style={{ backgroundColor: pick.hex }}
                       />
                     ))}
                   </div>
                 </div>
                 <p className="flex items-center gap-1 px-2 text-[10px] text-stone-500">
                   <Layers className="h-3 w-3" />
-                  Drag marks on the board · corners to resize
+                  Right-click empty to add · right-click a mark to edit · hold on mobile
                 </p>
               </div>
             )}

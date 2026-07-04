@@ -123,7 +123,7 @@ serve(async (req) => {
     const successUrl = `${baseUrl}/payment-processing?sid=${encodeURIComponent(String(sessionId))}&token=${encodeURIComponent(
       String(resumeToken),
     )}`;
-    const cancelUrl = `${baseUrl}/onboarding/ios-paywall`;
+    const cancelUrl = `${baseUrl}/onboarding/web-paywall`;
 
     // Create Stripe Checkout Session
     const formParts: string[] = [];

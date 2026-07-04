@@ -95,7 +95,7 @@ export function inchesToPixels(inches: number, dpi: number): number {
   return Math.round(inches * dpi);
 }
 
-/** Presets for home printers and print shops (Kinko's, etc.). */
+/** Presets for home and professional printing. */
 export const BOARD_PRINT_PRESETS = [
   {
     id: "screen",
@@ -139,8 +139,8 @@ export const BOARD_PRINT_PRESETS = [
   },
   {
     id: "acrylic",
-    label: 'Acrylic board (24×36")',
-    description: "Matches paletteplot.com physical boards — Kinko's / FedEx Office",
+    label: '24×36" poster',
+    description: "Large format print",
     pageWidthIn: 24,
     pageHeightIn: 36,
     dpi: 300,

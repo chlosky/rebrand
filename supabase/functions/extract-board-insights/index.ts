@@ -6,6 +6,11 @@ import {
   userHasActivePlottingPro,
 } from "../_shared/requirePlottingPro.ts";
 
+import {
+  BOARDS_AI_SAFETY_POLICY,
+  screenBoardsCorpus,
+} from "../_shared/boardsAiGuardrails.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -87,7 +92,14 @@ serve(async (req) => {
       );
     }
 
-    const prompt = `You help users organize vision boards. From these board text elements, extract:
+    const corpus = textSnippets.join("\n");
+    if (!screenBoardsCorpus(corpus)) {
+      return new Response(JSON.stringify({ themes: [], reminders: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const prompt = `From these board text elements, extract:
 1) up to 3 core themes (short phrases)
 2) up to 5 actionable reminders for a plan board (title only, imperative)
 
@@ -106,7 +118,10 @@ Reply JSON only: {"themes":["..."],"reminders":[{"title":"..."}]}`;
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You return valid JSON only." },
+          {
+            role: "system",
+            content: `You extract themes and plan reminders from board text. Return valid JSON only.\n\n${BOARDS_AI_SAFETY_POLICY}`,
+          },
           { role: "user", content: prompt },
         ],
         temperature: 0.4,

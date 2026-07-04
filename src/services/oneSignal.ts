@@ -286,7 +286,7 @@ export async function syncOneSignalUserLanguage(locale?: AppLocale): Promise<voi
 }
 
 /** Push + in-app journeys read these tags in the OneSignal dashboard. */
-export async function syncManifestationRoutineOneSignalTags(opts: {
+export async function syncRoutineOneSignalTags(opts: {
   intensity: "light" | "consistent" | "locked_in";
   notificationsEnabled: boolean;
   permissionStatus: "granted" | "denied" | "skipped" | null;
@@ -303,7 +303,7 @@ export async function syncManifestationRoutineOneSignalTags(opts: {
   const timezone = (opts.timezone?.trim() || readDeviceTimeZone()).trim() || "UTC";
 
   const tags: Record<string, string> = {
-    manifestation_intensity: opts.intensity,
+    routine_intensity: opts.intensity,
     notifications_enabled: opts.notificationsEnabled ? "true" : "false",
     notification_permission_status: opts.permissionStatus ?? "skipped",
     preferred_locale: appLocale,

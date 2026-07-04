@@ -19,22 +19,13 @@ export function usePlottingPro() {
     (async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("user_plans")
-          .select("status, current_period_end")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
+        const { data, error } = await supabase.rpc("has_active_plotting_subscription");
         if (cancelled) return;
-        if (error || !data) {
+        if (error) {
           setHasPro(false);
           return;
         }
-
-        const active =
-          data.status === "active" &&
-          (!data.current_period_end || new Date(data.current_period_end) > new Date());
-        setHasPro(active);
+        setHasPro(Boolean(data));
       } catch {
         if (!cancelled) setHasPro(false);
       } finally {

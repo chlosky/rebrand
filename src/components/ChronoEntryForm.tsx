@@ -206,7 +206,7 @@ export function ChronoEntryForm({ onCancel, onSuccess, entry }: ChronoEntryFormP
 
         // Update existing entry
         const { data: updatedEntry, error: updateError } = await supabase
-          .from('chrono_entries')
+          .from('journal_entries')
           .update({
             entry_date: formattedDate,
             title: entryTitle.trim(),
@@ -250,7 +250,7 @@ export function ChronoEntryForm({ onCancel, onSuccess, entry }: ChronoEntryFormP
 
         // Create new entry - users can create multiple entries per day
         const { data: newEntry, error: insertError } = await supabase
-          .from('chrono_entries')
+          .from('journal_entries')
           .insert({
             user_id: sessionUserId, // Use session user ID to match auth.uid()
             entry_date: formattedDate,
@@ -314,7 +314,7 @@ export function ChronoEntryForm({ onCancel, onSuccess, entry }: ChronoEntryFormP
       }
 
       const { error: deleteError } = await supabase
-        .from('chrono_entries')
+        .from('journal_entries')
         .delete()
         .eq('id', entry.id);
 

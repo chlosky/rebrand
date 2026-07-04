@@ -4,25 +4,25 @@
     "afternoon": "Good afternoon",
     "evening": "Good evening"
   },
-  "manifestationCharge": {
-    "needsPersistence": "Needs Persistence",
-    "lockedIn": "Magnetic",
+  "plotMomentum": {
+    "needsPersistence": "Needs persistence",
+    "lockedIn": "On a roll",
     "aligned": "Aligned",
-    "percentToday": "{{pct}}% aligned today"
+    "percentToday": "{{pct}}% on track today"
   },
   "sections": {
     "inspiredActions": "Inspired Actions",
-    "manifestationCharge": "Manifestation Charge",
+    "plotMomentum": "Daily momentum",
     "tools": "Tools",
     "dailyPractice": "Inspired Actions"
   },
   "home": {
-    "subtitle": "Everything you need to manifest, in one place.",
+    "subtitle": "Your four-board life system, in one place.",
     "pageTitle": "Dashboard | Palette Plotting",
     "defaultName": "there"
   },
   "inspiredActions": {
-    "footer": "Affirm daily & embody the new story for coherence and alignment."
+    "footer": "Small daily actions keep your boards and plan coherent."
   },
   "appearance": {
     "light": "Light",
@@ -34,11 +34,10 @@
   },
   "nav": {
     "home": "Home",
-    "affirmScript": "Affirm & Script",
+    "boards": "Boards",
     "yourJourney": "Your Journey",
     "settings": "Settings",
     "appearance": "Appearance",
-    "talkToGuide": "Talk to Guide",
     "help": "Help",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
@@ -47,41 +46,17 @@
   "tools": {
     "boards": {
       "title": "Boards",
-      "description": "Canva-style vision boards — focus, mood, and The Plan"
-    },
-    "affirmScript": {
-      "title": "Affirm & Script",
-      "description": "Build affirmation sequences and visual goals"
-    },
-    "subliminalMaker": {
-      "title": "Subliminal Maker",
-      "description": "Create custom audio for daily listening"
-    },
-    "mirrorWork": {
-      "title": "Mirror Work",
-      "description": "Practice affirmations with real-time reflection"
-    },
-    "beliefWork": {
-      "title": "Belief Work",
-      "description": "Explore beliefs you want to release or integrate"
-    },
-    "embody": {
-      "title": "Embody",
-      "description": "Track daily progress in your new story"
+      "description": "Vision boards with drag-and-drop editing — focus, mood, and The Plan"
     },
     "yourJourney": {
       "title": "Your Journey",
-      "description": "Journal, reflections, and guide chat"
+      "description": "Journal, milestones, and weekly progress"
     }
   },
   "supportTools": {
     "dashboard": "Dashboard (home)",
-    "affirmationVisualizer": "Affirmation Visualizer",
-    "talkToGuide": "Talk to Guide (Chat)",
-    "musicComposer": "Music Composer",
-    "tapIn": "Tap-in / Piano",
     "activityTracking": "Activity tracking",
-    "journal": "Manifestation journal",
+    "journal": "Journal",
     "settingsAccount": "Settings / Account",
     "billing": "Billing / subscriptions",
     "other": "Other (new tool or not listed)"
@@ -103,8 +78,19 @@
       "library": "Library",
       "community": "Community",
       "tips": "Tips",
+      "yourJourney": "Your Journey",
+      "newBoard": "Start a New Board",
       "create": "Create",
       "projects": "Projects"
+    },
+    "journey": {
+      "journalTitle": "Journal",
+      "journalDescription": "Reflect and capture what shifted this week."
+    },
+    "newBoard": {
+      "title": "Start a new board",
+      "subtitle": "Open your plotting desk to lay out vision boards, plan items, and clippings.",
+      "openBoards": "Open plotting desk"
     },
     "library": {
       "heading": "Library",
@@ -198,6 +184,10 @@
     "locked": {
       "createTitle": "Create is for members",
       "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Pro.",
+      "journeyTitle": "Your Journey is for members",
+      "journeyBody": "Progress tracking, weekly goals, and journal unlock with Palette Plotting Pro.",
+      "newBoardTitle": "Boards are for members",
+      "newBoardBody": "Start a new board on the plotting desk once you are on Pro — Library stays free.",
       "projectsTitle": "Projects are for members",
       "projectsBody": "Your saved boards live here once you're on Pro — Library stays free.",
       "upgrade": "Unlock plotting tools"

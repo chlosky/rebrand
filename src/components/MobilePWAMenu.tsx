@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Home, Settings as SettingsIcon, Smartphone } from "lucide-react";
+import { Menu, X, Settings as SettingsIcon, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDashboardFeatures } from "@/lib/featuresData";
 import { useTranslation } from "react-i18next";
@@ -25,19 +25,18 @@ export const MobilePWAMenu = () => {
     (window.navigator as any).standalone === true
   );
   
-  // Don't show on dashboard
-  const isDashboard = location.pathname === "/dashboard" || location.pathname === "/dashboard/";
+  // Don't show on bare /dashboard (redirects to boards).
+  const isDashboardRoot =
+    location.pathname === "/dashboard" || location.pathname === "/dashboard/";
 
-  const isToolPage = location.pathname.startsWith("/dashboard/") &&
-                      !isDashboard &&
-                      location.pathname !== "/dashboard/settings" &&
-                      location.pathname !== "/dashboard/your-journey";
+  const isToolPage =
+    location.pathname.startsWith("/dashboard/") &&
+    !isDashboardRoot &&
+    location.pathname !== "/dashboard/settings" &&
+    location.pathname !== "/dashboard/your-journey";
 
   const isActive = (path: string) => {
-    if (path === "/dashboard") {
-      return location.pathname === "/dashboard" || location.pathname === "/dashboard/";
-    }
-    return location.pathname === path || location.pathname.startsWith(path);
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   const handleNavigate = (path: string) => {
@@ -47,7 +46,7 @@ export const MobilePWAMenu = () => {
 
   // Only show on mobile, on tool pages (not dashboard/category lists).
   // Show in both browser mode and standalone mode for better navigation
-  if (!isMobile || isDashboard || !isToolPage) return null;
+  if (!isMobile || isDashboardRoot || !isToolPage) return null;
 
   return (
     <div className="relative">
@@ -77,25 +76,6 @@ export const MobilePWAMenu = () => {
           )}
         >
             <div className="overflow-y-auto max-h-[calc(100vh-5rem)]">
-              {/* Dashboard Link */}
-              <button
-                onClick={() => handleNavigate("/dashboard")}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
-                  isActive("/dashboard")
-                    ? "text-foreground"
-                    : isToolPage
-                      ? "text-muted-foreground hover:bg-muted/50"
-                      : "text-muted-foreground hover:bg-white/10"
-                )}
-              >
-                <Home className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                <span className="text-sm font-medium">{t("mobileMenu.dashboard")}</span>
-              </button>
-
-              {/* Divider */}
-              <div className={cn("border-t my-1", isToolPage ? "border-border/30" : "border-white/10")} />
-
               {/* Tools Section Header */}
               <div className="px-4 py-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

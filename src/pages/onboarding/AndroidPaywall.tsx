@@ -12,8 +12,7 @@ import { isAndroidPaywallContext } from "@/lib/isAndroidPaywallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { IosAppHeader } from "@/components/IosAppHeader";
-import i18n from "@/i18n";
-import { resolveAppLocale, legalTermsUrl, legalPrivacyUrl } from "@/lib/locale";
+import { legalTermsUrl, legalPrivacyUrl } from "@/lib/locale";
 
 /**
  * Native Android subscription paywall. Uses RevenueCat paywall UI to present
@@ -21,9 +20,8 @@ import { resolveAppLocale, legalTermsUrl, legalPrivacyUrl } from "@/lib/locale";
  */
 const AndroidPaywall = () => {
   const { t } = useTranslation(["paywall", "common"]);
-  const appLocale = resolveAppLocale(i18n.language);
-  const termsUrl = legalTermsUrl(appLocale);
-  const privacyUrl = legalPrivacyUrl(appLocale);
+  const termsUrl = legalTermsUrl();
+  const privacyUrl = legalPrivacyUrl();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();

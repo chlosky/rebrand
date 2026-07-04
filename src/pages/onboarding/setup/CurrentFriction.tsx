@@ -6,7 +6,7 @@ import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { Textarea } from "@/components/ui/textarea";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import { useTranslation } from "react-i18next";
-import { needsSetupConditionalSpecificityPage } from "@/lib/conditionalSpecificityStep7";
+import { needsFocusDetailsStep } from "@/lib/focusDetailOptions";
 import { SETUP_BELIEF_TEXT_MAX } from "./constants";
 import { SETUP_TEXTAREA_CLASS } from "@/lib/onboardingSetupTheme";
 
@@ -39,16 +39,16 @@ export default function SetupCurrentFriction() {
         const draft = readSetupDraft();
         const cat = (draft.desireCategory || "").trim();
         navigate(
-          cat && needsSetupConditionalSpecificityPage(cat)
-            ? `${setupBase}/conditional-specificity`
-            : `${setupBase}/desire-category`,
+          cat && needsFocusDetailsStep(cat)
+            ? `${setupBase}/focus-details`
+            : `${setupBase}/focus-categories`,
         );
       }}
       onContinue={() => {
         writeSetupDraft({
           currentFriction: text.slice(0, SETUP_BELIEF_TEXT_MAX).trim(),
         });
-        navigate(`${setupBase}/affirmations`);
+        navigate(`${setupBase}/begin-journey`);
       }}
     >
       <SetupHeadingBlock

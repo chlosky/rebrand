@@ -35,13 +35,11 @@ export type SetupDraft = {
     | null;
   trackingPermissionAskedAt?: string | null;
   desireCategory?: string;
-  /** Manifest focus (names matching `SUPPORT_CATEGORIES`). Stored as a one-element array when set; primary field is `desireCategory`. */
+  /** Focus categories (names matching `FOCUS_CATEGORIES`). Up to three; primary field is `desireCategory` (first). */
   desireCategories?: string[];
   currentFriction?: string;
   desiredIdentity?: string;
   conditionalSpecificity?: Record<string, unknown>;
-  /** `river` | `sage` | `rose` | `oliver` — matches `onboarding_sessions.character_id`. */
-  guideCharacterId?: string;
   /** App shell appearance (`light` | `dark`). */
   appearance?: Appearance;
   toolPreferences?: string[];
@@ -54,25 +52,23 @@ export type SetupDraft = {
   homeFocusKey?: string;
   officePlanningSystem?: string;
   moodboardFocusKey?: string;
-  /** Retired web subliminal builder flag — kept on draft type for older localStorage entries. */
-  subliminalFastFlow?: boolean;
-  manifestTopic?: string;
-  starterAffirmations?: string[];
-  starterAffirmationCategory?: string;
-  subliminalVocalMode?: "karaoke" | "freestyle" | "tts";
-  subliminalBinauralBeat?: string;
-  subliminalBackgroundSound?: string;
-  subliminalLayers?: number;
-  subliminalTrackMinutes?: number;
-  /** UI locale (`en` | `es-419` | `pt-BR`) — set on welcome switcher or auto-detect. */
-  locale?: "en" | "es-419" | "pt-BR";
+  /** UI locale (`en` | `es-419`) — set on welcome switcher or auto-detect. */
+  locale?: "en" | "es-419";
 };
 
-const KEY = "sv_setup_draft_v1";
+const KEY = "pp_setup_draft_v1";
+const LEGACY_KEY = "sv_setup_draft_v1";
 
 export function readSetupDraft(): SetupDraft {
   try {
-    const raw = localStorage.getItem(KEY);
+    let raw = localStorage.getItem(KEY);
+    if (!raw) {
+      raw = localStorage.getItem(LEGACY_KEY);
+      if (raw) {
+        localStorage.setItem(KEY, raw);
+        localStorage.removeItem(LEGACY_KEY);
+      }
+    }
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? (parsed as SetupDraft) : {};

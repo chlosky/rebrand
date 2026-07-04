@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,11 +49,6 @@ export default function AdminSupportInbox() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const { theme } = useTheme();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved === "true";
-  });
-
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [tab, setTab] = useState<AdminInboxTab>("open");
   const [search, setSearch] = useState("");
@@ -498,15 +492,7 @@ export default function AdminSupportInbox() {
       className={cn(cn("tool-page-shell relative overflow-x-hidden", theme === "dark" ? "text-white bg-[#0f0d14]" : "text-foreground bg-background"), theme === "dark" ? "min-h-screen" : "min-h-screen bg-background", "pb-20 md:pb-0")}
       style={{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" }}
     >
-      {!isMobile && <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />}
-      <div
-        className="min-h-screen"
-        style={
-          !isMobile
-            ? { marginLeft: sidebarCollapsed ? "64px" : "256px", transition: "margin-left 300ms ease-in-out" }
-            : {}
-        }
-      >
+      <div className="min-h-screen">
         {isMobile && (
           <div
             className={cn(
@@ -520,7 +506,7 @@ export default function AdminSupportInbox() {
         <div className="relative z-10">
           <header
             className={cn(cn("md:h-16 flex items-center md:py-0 z-50 border-b", theme === "dark" ? "py-2.5 border-white/10" : "py-3 border-primary/10", theme === "dark" ? "border-b border-white/10 bg-[#0f0d14]" : "bg-background"), isMobile ? "sticky z-50 left-0 right-0 w-full max-md:mt-[var(--app-safe-area-top)] max-md:top-[var(--app-safe-area-top)]" : "fixed top-0 left-0 right-0")}
-            style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", left: sidebarCollapsed ? "64px" : "256px", right: "0", transition: "left 300ms ease-in-out" }}
+            style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", right: "0" }}
           >
             <div
               className={cn(
@@ -528,7 +514,7 @@ export default function AdminSupportInbox() {
                 !isMobile ? "" : "container mx-auto",
               )}
             >
-              <h1 className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate("/dashboard")}>
+              <h1 className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate("/dashboard/boards")}>
                 Support Inbox
               </h1>
               {isMobile && (

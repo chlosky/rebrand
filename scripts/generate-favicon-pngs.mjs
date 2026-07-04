@@ -1,17 +1,19 @@
 /**
- * Rasterize public/favicon.svg → public/icon-196.png & public/icon-512.png (PWA + legacy tabs).
- * Run: node scripts/generate-favicon-pngs.mjs
+ * Rasterize public/logo.png → public/icon-196.png & public/icon-512.png (PWA + browser tabs).
+ * Run: npm run gen:favicons
  */
 import sharp from "sharp";
-import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
-const svgPath = join(root, "public", "favicon.svg");
+const sourcePath = join(root, "public", "logo.png");
 
-const svg = await readFile(svgPath);
-await sharp(svg).resize(196, 196).png().toFile(join(root, "public", "icon-196.png"));
-await sharp(svg).resize(512, 512).png().toFile(join(root, "public", "icon-512.png"));
-console.log("Wrote public/icon-196.png and public/icon-512.png from favicon.svg");
+for (const size of [196, 512]) {
+  await sharp(sourcePath)
+    .resize(size, size, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 1 } })
+    .png()
+    .toFile(join(root, "public", `icon-${size}.png`));
+}
+console.log("Wrote public/icon-196.png and public/icon-512.png from logo.png");

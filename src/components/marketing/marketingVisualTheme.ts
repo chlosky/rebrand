@@ -46,7 +46,7 @@ export const MARKETING_SOFT_SURFACE_CLASS =
 export const MARKETING_PHONE_GLOW =
   "radial-gradient(ellipse 70% 60% at 50% 55%, rgba(255, 77, 166, 0.18) 0%, transparent 68%)";
 
-export const MARKETING_MANIFEST_PILL_CLASS =
+export const MARKETING_ACCENT_PILL_CLASS =
   "inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 font-sans text-sm font-medium text-neutral-800 shadow-sm";
 
 /** Marketing page shell — bright white like vel SiteLayout */

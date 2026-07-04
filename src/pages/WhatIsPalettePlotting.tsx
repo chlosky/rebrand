@@ -5,12 +5,9 @@ import { MarketingSiteLayout } from "@/components/marketing/MarketingSiteLayout"
 import { Button } from "@/components/ui/button";
 
 const FEATURE_STRIP_PATHS = [
-  "/dashboard/subliminal",
-  "/dashboard/mirror",
-  "/dashboard/affirmations-builder",
-  "/dashboard/refactor",
-  "/dashboard/your-journey",
-  "/dashboard/your-journey/chat",
+  "/dashboard/boards",
+  "/dashboard/timeline",
+  "/dashboard/activity-tracking",
 ] as const;
 
 const sectionDomId = (title: string) =>
@@ -56,14 +53,6 @@ const WhatIsPalettePlotting = () => {
             className="text-primary hover:underline font-medium"
           >
             {t("whatIsPalettePlotting.faq")}
-          </button>
-          {" "}{t("whatIsPalettePlotting.footerMiddle")}{" "}
-          <button
-            type="button"
-            onClick={() => navigate("/blog")}
-            className="text-primary hover:underline font-medium"
-          >
-            {t("whatIsPalettePlotting.blog")}
           </button>
           {t("whatIsPalettePlotting.footerSuffix")}
         </p>

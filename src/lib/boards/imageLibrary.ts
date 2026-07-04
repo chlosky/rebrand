@@ -13,17 +13,6 @@ export const BOARD_IMAGE_THEMES = [
 
 export type BoardImageTheme = (typeof BOARD_IMAGE_THEMES)[number];
 
-/** Maps affirmation-library categories into board-relevant themes. */
-const CATEGORY_TO_THEME: Record<string, BoardImageTheme> = {
-  Education: "Career & Money",
-  Home: "Home & Space",
-  Mentality: "Identity",
-  Relationships: "Love & Relationships",
-  Travel: "Travel & Adventure",
-  Wealth: "Career & Money",
-  "Wellness & Beauty": "Beauty & Wellness",
-};
-
 let cachedManifest: BoardImageAsset[] | null = null;
 
 export async function loadBoardImageLibrary(): Promise<BoardImageAsset[]> {
@@ -46,18 +35,4 @@ export function themesFromLibrary(images: BoardImageAsset[]): BoardImageTheme[] 
 export function filterLibraryByTheme(images: BoardImageAsset[], theme: string | null): BoardImageAsset[] {
   if (!theme) return images;
   return images.filter((i) => i.theme === theme);
-}
-
-/** Build board manifest entries from affirmation library manifest shape. */
-export function mapAffirmationManifestToBoardAssets(
-  images: { id: string; category: string; url: string; description: string }[],
-): BoardImageAsset[] {
-  return images.map((img) => ({
-    id: `board-${img.id}`,
-    theme: CATEGORY_TO_THEME[img.category] ?? "Aesthetic & Mood",
-    category: img.category,
-    url: img.url,
-    description: img.description,
-    tags: [img.category.toLowerCase()],
-  }));
 }

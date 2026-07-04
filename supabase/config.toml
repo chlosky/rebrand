@@ -1,7 +1,6 @@
 project_id = "essjyrhhaiywotvgjkcg"
 
 [auth]
-# Allow Capacitor iOS app to use auth
 site_url = "capacitor://localhost"
 additional_redirect_urls = ["capacitor://localhost"]
 
@@ -38,15 +37,6 @@ verify_jwt = false
 [functions.log-marketing-homepage-event]
 verify_jwt = false
 
-[functions.generate-chrono-insights]
-verify_jwt = true
-
-[functions.generate-affirmation-audio]
-verify_jwt = false
-
-[functions.generate-affirmations]
-verify_jwt = false
-
 [functions.send-sms-notification]
 verify_jwt = false
 
@@ -59,30 +49,12 @@ verify_jwt = false
 [functions.get-pricing]
 verify_jwt = false
 
-[functions.generate-vision-image]
-verify_jwt = false
-
-[functions.refactor-belief]
-verify_jwt = false
-
-[functions.handle-chat-message]
-verify_jwt = false
-
-[functions.generate-music]
-verify_jwt = false
-
-[functions.post-paywall-welcome-message]
-# Validated inside the function via auth.getUser(); gateway verify_jwt breaks some clients.
-verify_jwt = false
-
 [functions.verify-checkout-session]
 verify_jwt = false
 
 [functions.submit-app-support-report]
-# JWT checked inside with auth.getUser().
 verify_jwt = false
 
-# Cron-only worker; not invoked from app. Requires CRON_SECRET in Authorization header.
 [functions.process-user-plan-brevo-welcome]
 verify_jwt = false
 
@@ -96,7 +68,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-help-request-reply-push]
-# Admin JWT validated inside the function; gateway verify_jwt breaks some admin clients.
 verify_jwt = false
 
 [functions.process-help-reply-push-queue]
@@ -105,5 +76,17 @@ verify_jwt = false
 [functions.extract-board-insights]
 verify_jwt = false
 
+[functions.board-design-chat]
+verify_jwt = false
+
 [functions.process-board-reminders]
+verify_jwt = false
+
+[functions.sync-revenuecat-entitlement]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.admin-sign-support-attachments]
 verify_jwt = false

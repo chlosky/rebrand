@@ -19,7 +19,7 @@ type Props = {
 };
 
 /**
- * Reveals copy progressively for onboarding moments (affirmation-style reads).
+ * Reveals copy progressively for onboarding moments.
  */
 export function OnboardingTypewriter({
   text,

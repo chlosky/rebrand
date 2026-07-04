@@ -19,12 +19,9 @@
 }
 
 @media (max-width: 767px) {
-  .board-artboard-host:not(.min-h-0) {
-    min-height: 55vh;
-  }
-
   .board-mobile-carousel .board-artboard-host {
     min-height: 0;
+    height: 100%;
   }
 }
 
@@ -32,5 +29,26 @@
   .board-grid-cell .board-artboard-host {
     min-height: 0;
     height: 100%;
+  }
+
+  .board-row-scroll {
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .board-marks-quick-selector {
+    animation: boardMarksWheelIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes boardMarksWheelIn {
+    from {
+      opacity: 0;
+      transform: scale(0.82);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }

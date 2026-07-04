@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobilePWAMenu } from '@/components/MobilePWAMenu';
-import { DesktopToolSidebar } from '@/components/DesktopToolSidebar';
 import { cn } from '@/lib/utils';
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -31,7 +30,6 @@ export interface ChronoEntry {
   longitude?: number;
   ai_best_timeline?: string;
   ai_worst_timeline?: string;
-  ai_affirmation?: string;
   has_wins?: boolean | null;
   journal_env_3d_rating?: JournalMoodRating | null;
   journal_day_experience_rating?: JournalMoodRating | null;
@@ -83,7 +81,7 @@ export default function Chrono() {
       // Load entries - RLS will automatically filter by auth.uid() = user_id
       // Don't filter by user_id manually - let RLS handle it for security
       const { data, error } = await supabase
-        .from('chrono_entries')
+        .from('journal_entries')
         .select('*')
         .order('entry_date', { ascending: false })
         .order('entry_time', { ascending: false });
@@ -120,29 +118,12 @@ export default function Chrono() {
     setEditingEntry(null);
   };
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebar-collapsed');
-    return saved === 'true';
-  });
-
   return (
     <div
       className={cn(cn("tool-page-shell relative overflow-x-hidden", theme === "dark" ? "text-white bg-[#0f0d14]" : "text-foreground bg-background"), theme === "dark" ? "min-h-screen" : "min-h-screen bg-background", "pb-20")}
       style={{ scrollbarWidth: "none", msOverflowStyle: "none", ...{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" } }}
     >
-      {!isMobile && <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />}
-
-      <div
-        className="min-h-screen"
-        style={
-          !isMobile
-            ? {
-                marginLeft: sidebarCollapsed ? "64px" : "256px",
-                transition: "margin-left 300ms ease-in-out",
-              }
-            : {}
-        }
-      >
+      <div className="min-h-screen">
         {isMobile && (
           <div
             className={cn(
@@ -156,11 +137,11 @@ export default function Chrono() {
         <div className="relative z-10">
         <header
           className={cn(cn("md:h-16 flex items-center md:py-0 z-50 border-b", theme === "dark" ? "py-2.5 border-white/10" : "py-3 border-primary/10", theme === "dark" ? "border-b border-white/10 bg-[#0f0d14]" : "bg-background"), isMobile ? "sticky z-50 left-0 right-0 w-full max-md:mt-[var(--app-safe-area-top)] max-md:top-[var(--app-safe-area-top)]" : "fixed top-0 left-0 right-0")}
-          style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", left: sidebarCollapsed ? "64px" : "256px", right: "0", transition: "left 300ms ease-in-out" }}
+          style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", right: "0" }}
         >
         <div className={cn("px-4 sm:px-6 w-full", !isMobile ? "" : "container mx-auto")}>
           <div className="flex items-center justify-between">
-          <h1 className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate("/dashboard")}>
+          <h1 className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate("/dashboard/boards")}>
             {t('chrono.title')}
           </h1>
           {isMobile && <MobilePWAMenu />}

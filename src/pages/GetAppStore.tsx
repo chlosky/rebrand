@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Card } from "@/components/ui/card";
@@ -17,10 +16,6 @@ const GetAppStore: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<QRStatus>("loading");
   const [copied, setCopied] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved === "true";
-  });
 
   useEffect(() => {
     QRCode.toDataURL(PALETTE_PLOTTING_APP_STORE_URL, {
@@ -182,14 +177,7 @@ const GetAppStore: React.FC = () => {
       )}
       style={{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" }}
     >
-      <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />
-      <div
-        className="flex min-h-screen items-center justify-center px-4 py-10"
-        style={{
-          marginLeft: sidebarCollapsed ? "64px" : "256px",
-          transition: "margin-left 300ms ease-in-out",
-        }}
-      >
+      <div className="flex min-h-screen items-center justify-center px-4 py-10">
         {qrCard}
       </div>
     </div>

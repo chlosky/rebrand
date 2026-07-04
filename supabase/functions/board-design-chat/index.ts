@@ -6,6 +6,11 @@ import {
   userHasActivePlottingPro,
 } from "../_shared/requirePlottingPro.ts";
 
+import {
+  BOARDS_AI_SAFETY_POLICY,
+  screenBoardsUserInput,
+} from "../_shared/boardsAiGuardrails.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -28,11 +33,11 @@ const COLOR_PALETTE = `Palette Plotting board colors (pick color_key for board b
 - white_opaque (#FFFFFF) — clean plan board, structure
 - black_opaque (#F5F5F5) — contrast, sophistication, editorial`;
 
-const SYSTEM = `You are the board-design companion for Palette Plotting — warm, emotionally attuned, and practical. You help users build vision boards, home org boards, moodboards, kanban, and gantt boards.
+const DESIGN_CAPABILITIES = `You are the board design companion for Palette Plotting — clear, practical, and warm without being sentimental. You help users build vision boards, home org boards, moodboards, kanban, and gantt boards.
 
 You MUST respond with valid JSON only:
 {
-  "reply": "Short warm message (under 100 words) explaining what you placed and why the colors/vibe fit their goal",
+  "reply": "Short message (under 100 words) explaining what you placed and why the colors/layout fit their goal",
   "actions": [ ...0-12 actions... ]
 }
 
@@ -44,7 +49,7 @@ Action types (use normalized coords 0-1 for x,y,w,h on a 1080×1350 artboard):
 2. add_text — headline or label on canvas boards (vision, checklist scaffold, gallery)
    { "type": "add_text", "text": "Calm mornings", "x": 0.5, "y": 0.1, "font_size": 44, "color": "#171717" }
 
-3. add_sticky — sticky note; use hex fill for emotional color accents
+3. add_sticky — sticky note; use hex fill for color accents
    { "type": "add_sticky", "text": "Sunday reset", "x": 0.12, "y": 0.35, "fill": "#FFF9C4" }
 
 4. add_diagram — overlay diagram scaffold user can rearrange
@@ -57,16 +62,19 @@ Action types (use normalized coords 0-1 for x,y,w,h on a 1080×1350 artboard):
 6. gantt_seed — ONLY when board layout_mode is gantt
    { "type": "gantt_seed", "tasks": [{ "name": "Phase 1", "start": 5, "width": 35 }] }
 
-Rules:
-- When user shares feelings, goals, or vibe — pick a color_key that matches AND place 2-6 concrete items (text, stickies, or a diagram).
-- Prefer add_diagram for planning/priority/home-zone requests on vision boards.
+Layout rules:
+- When the user shares feelings, goals, or vibe — pick a color_key that matches AND place 2-6 concrete items (text, stickies, or a diagram).
+- Prefer add_diagram for planning, priority, or home-zone requests on vision boards.
 - Use hex accent colors on stickies/diagrams that harmonize with the board color_key fill.
 - Do NOT use kanban_seed/gantt_seed unless layout_mode matches.
-- On mostly empty boards, place a hero text + diagram or stickies — Canva-style composition.
-- Never mention subliminals, mirror work, or therapy.
-- If user only wants to chat without placement, return empty actions array.
+- On mostly empty boards, place a hero text plus diagram or stickies in a balanced composition.
+- If the user only wants to chat without placement, return an empty actions array.
 
 ${COLOR_PALETTE}`;
+
+const SYSTEM = `${DESIGN_CAPABILITIES}
+
+${BOARDS_AI_SAFETY_POLICY}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -110,6 +118,13 @@ serve(async (req) => {
     if (!board_id || !message) {
       return new Response(JSON.stringify({ error: "board_id and message required" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const inputScreen = screenBoardsUserInput(message);
+    if (!inputScreen.ok) {
+      return new Response(JSON.stringify({ reply: inputScreen.reply, actions: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -12,6 +12,7 @@ import { applyAppDocumentChrome } from "@/lib/appDocumentChrome";
 import {
   readStoredAppearance,
   writeStoredAppearance,
+  APPEARANCE_STORAGE_KEY,
 } from "@/lib/appearancePreference";
 
 export type Appearance = "light" | "dark";
@@ -59,7 +60,13 @@ if (typeof window !== "undefined" && !window.__appLocationChangePatched) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Appearance>(() => readStoredAppearance());
+  const [theme, setThemeState] = useState<Appearance>(() => {
+    const appearance = readStoredAppearance();
+    if (typeof window !== "undefined" && !localStorage.getItem(APPEARANCE_STORAGE_KEY)) {
+      writeStoredAppearance("light");
+    }
+    return appearance;
+  });
 
   const [pathname, setPathname] = useState(() => window.location.pathname);
 

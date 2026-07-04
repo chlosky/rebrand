@@ -1,5 +1,4 @@
 import { ReactNode, useEffect } from "react";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useIsStandaloneMobile } from "@/hooks/use-standalone-mobile";
@@ -7,7 +6,6 @@ import { useIsNativeApp } from "@/hooks/use-native-app";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
-import { PalettePlottingBottomScene } from "@/components/onboarding/PalettePlottingBottomScene";
 import { ONBOARDING_ROUTES, ONBOARDING_STEP_COUNT } from "@/lib/onboardingFlow";
 import { useTranslation } from "react-i18next";
 import {
@@ -59,12 +57,6 @@ interface OnboardingLayoutProps {
    * visible above the keyboard and fixed footer. Do not set on Welcome or paywall routes.
    */
   nativeFormPage?: boolean;
-  /** Welcome: fixed language bar midpoint above logo (native). */
-  welcomeLanguageSwitcherTop?: string;
-  /** Welcome web mobile: fixed language bar top. */
-  welcomeLanguageSwitcherTopMobile?: string;
-  /** Welcome web desktop: fixed language bar top. */
-  welcomeLanguageSwitcherTopDesktop?: string;
 }
 
 export const OnboardingLayout = ({ 
@@ -88,9 +80,6 @@ export const OnboardingLayout = ({
   hideProgress = false,
   reserveProgressSpace = false,
   nativeFormPage = false,
-  welcomeLanguageSwitcherTop,
-  welcomeLanguageSwitcherTopMobile,
-  welcomeLanguageSwitcherTopDesktop,
 }: OnboardingLayoutProps) => {
   const { t } = useTranslation("common");
   const resolvedContinueText = continueText === "Continue" ? t("continue") : continueText;
@@ -184,32 +173,6 @@ export const OnboardingLayout = ({
         isWelcomeMobileWeb && "max-md:min-h-[100dvh]",
       )}
     >
-      {isWelcome ? <PalettePlottingBottomScene /> : null}
-
-      {isWelcome && welcomeLanguageSwitcherTop ? (
-        <div
-          className="fixed inset-x-0 z-[60] flex -translate-y-1/2 justify-center px-2"
-          style={{ top: welcomeLanguageSwitcherTop }}
-        >
-          <LanguageSwitcher />
-        </div>
-      ) : null}
-      {isWelcome && welcomeLanguageSwitcherTopMobile ? (
-        <div
-          className="fixed inset-x-0 z-[60] flex -translate-y-1/2 justify-center px-2 md:hidden"
-          style={{ top: welcomeLanguageSwitcherTopMobile }}
-        >
-          <LanguageSwitcher />
-        </div>
-      ) : null}
-      {isWelcome && welcomeLanguageSwitcherTopDesktop ? (
-        <div
-          className="fixed inset-x-0 z-[60] hidden -translate-y-1/2 justify-center px-2 md:flex"
-          style={{ top: welcomeLanguageSwitcherTopDesktop }}
-        >
-          <LanguageSwitcher />
-        </div>
-      ) : null}
       {progressFillPct != null ? (
         <div
           className={cn(
@@ -314,7 +277,7 @@ export const OnboardingLayout = ({
                 ? "h-full min-h-0 justify-start px-8 pb-40"
                 : "min-h-screen justify-start pb-32 px-8"
               : isWelcomeMobileWeb
-                ? "max-md:min-h-[100dvh] max-md:justify-start max-md:px-8 max-md:pt-[calc(env(safe-area-inset-top,0px)+1.25rem)] max-md:pb-40 md:justify-start md:gap-6 md:p-8 md:pt-14 md:bg-transparent"
+                ? "max-md:min-h-[100dvh] max-md:justify-start max-md:px-8 max-md:pt-[calc(env(safe-area-inset-top,0px)+1.25rem)] max-md:pb-40 md:min-h-screen md:justify-center md:gap-6 md:p-8 md:pt-24 md:pb-12 md:bg-transparent"
                 : isSetupCosmicMobileWeb
                   ? "max-md:h-full max-md:min-h-0 max-md:justify-start max-md:px-8 max-md:pb-40 max-md:pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] md:justify-start md:p-8 md:pt-24"
                   : "min-h-screen justify-between pt-12 p-8 md:pt-24",
@@ -377,7 +340,7 @@ export const OnboardingLayout = ({
             isSetupCosmicMobileWeb &&
               !isWelcome &&
               "max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-50 max-md:mx-auto max-md:max-w-md max-md:px-8 max-md:pb-[calc(2rem+env(safe-area-inset-bottom,0px))]",
-            isWelcome && !isNative && "md:mx-auto md:max-w-lg md:pb-0 md:pt-0",
+            isWelcome && !isNative && "md:mx-auto md:max-w-xl md:pb-0 md:pt-0 lg:max-w-2xl",
             isStandaloneMobile && !isNative && !isWelcome && !isSetupCosmicMobileWeb && "mb-12",
           )}
           style={
@@ -511,7 +474,31 @@ export const OnboardingLayout = ({
                 isWelcomeMobileWeb && "mx-auto max-w-md px-8",
               )}
             >
-              {continueText ? (
+              {isWelcome && !welcomeSignInAsTextLink ? (
+                <div className="flex w-full items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/login")}
+                    className="h-[3.35rem] flex-1 rounded-xl border-zinc-300 bg-white text-[15px] font-semibold text-zinc-900 hover:bg-zinc-50 active:bg-zinc-50 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none transition-none"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  >
+                    {t("signIn")}
+                  </Button>
+                  {continueText ? (
+                    <Button
+                      onClick={() => canContinue && onContinue()}
+                      disabled={!canContinue}
+                      className={cn(
+                        "h-[3.35rem] flex-1 rounded-xl bg-black text-white hover:bg-black active:bg-black focus:bg-black text-[15px] font-bold disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 outline-none transition-none",
+                        welcomeSoloContinueButtonClassName,
+                      )}
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      {resolvedContinueText}
+                    </Button>
+                  ) : null}
+                </div>
+              ) : continueText ? (
                 <Button
                   onClick={() => canContinue && onContinue()}
                   disabled={!canContinue}

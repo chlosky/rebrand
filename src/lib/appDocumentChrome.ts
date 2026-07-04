@@ -1,27 +1,11 @@
 import { Capacitor } from "@capacitor/core";
 import type { Appearance } from "@/contexts/ThemeContext";
-import { WELCOME_DEEP_BLACK_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
 import {
   applyMarketingSiteDocumentChrome,
   clearMarketingSiteDocumentChrome,
 } from "@/lib/marketingSiteChrome";
 
-const COSMIC_SHELL_PREFIXES = ["/onboarding"] as const;
-
-function normalizePath(pathname: string): string {
-  if (pathname === "/") return "/";
-  return pathname.replace(/\/$/, "") || "/";
-}
-
-export function isCosmicShellPath(pathname: string): boolean {
-  const path = normalizePath(pathname);
-  return COSMIC_SHELL_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-}
-
 const APP_LIGHT_BG = "#ffffff";
-const DASHBOARD_HOME_DARK_BG = "#0a0812";
 const TOOL_DARK_BG = "#0f0d14";
 
 function applyNativeRootSurfaces(bg: string): void {
@@ -30,15 +14,13 @@ function applyNativeRootSurfaces(bg: string): void {
   if (appRoot) appRoot.style.backgroundColor = bg;
 }
 
-function applyDashboardChrome(root: HTMLElement, theme: Appearance, pathname: string): void {
-  const isHome = normalizePath(pathname) === "/dashboard";
+function applyDashboardChrome(root: HTMLElement, theme: Appearance): void {
   if (theme === "dark") {
-    const darkBg = isHome ? DASHBOARD_HOME_DARK_BG : TOOL_DARK_BG;
     root.classList.add("dark");
     root.style.colorScheme = "dark";
     root.dataset.appAppearance = "dark";
-    root.style.backgroundColor = darkBg;
-    applyNativeRootSurfaces(darkBg);
+    root.style.backgroundColor = TOOL_DARK_BG;
+    applyNativeRootSurfaces(TOOL_DARK_BG);
   } else {
     root.classList.remove("dark");
     root.style.colorScheme = "light";
@@ -48,16 +30,8 @@ function applyDashboardChrome(root: HTMLElement, theme: Appearance, pathname: st
   }
 }
 
-function applyCosmicShellChrome(root: HTMLElement): void {
-  root.classList.remove("dark");
-  root.style.colorScheme = "dark";
-  root.dataset.appAppearance = "cosmic";
-  root.style.backgroundColor = WELCOME_DEEP_BLACK_BASE;
-  applyNativeRootSurfaces(WELCOME_DEEP_BLACK_BASE);
-}
-
-function applyNeutralAppChrome(root: HTMLElement, theme: Appearance, pathname: string): void {
-  applyDashboardChrome(root, theme, pathname);
+function applyNeutralAppChrome(root: HTMLElement, theme: Appearance): void {
+  applyDashboardChrome(root, theme);
 }
 
 /** Android only — iOS keeps web safe-area strips + plist (unchanged since ~205). */
@@ -68,12 +42,9 @@ function applyAndroidStatusBarChrome(pathname: string, theme: Appearance): void 
     let color: string;
     let style: (typeof Style)["Dark"];
 
-    if (isCosmicShellPath(pathname)) {
-      color = WELCOME_DEEP_BLACK_BASE;
-      style = Style.Dark;
-    } else if (pathname.startsWith("/dashboard")) {
+    if (pathname.startsWith("/dashboard")) {
       if (theme === "dark") {
-        color = normalizePath(pathname) === "/dashboard" ? DASHBOARD_HOME_DARK_BG : TOOL_DARK_BG;
+        color = TOOL_DARK_BG;
         style = Style.Dark;
       } else {
         color = APP_LIGHT_BG;
@@ -108,17 +79,11 @@ export function applyAppDocumentChrome(pathname: string, theme: Appearance): voi
   const root = document.documentElement;
 
   if (pathname.startsWith("/dashboard")) {
-    applyDashboardChrome(root, theme, pathname);
+    applyDashboardChrome(root, theme);
     applyAndroidStatusBarChrome(pathname, theme);
     return;
   }
 
-  if (isCosmicShellPath(pathname)) {
-    applyCosmicShellChrome(root);
-    applyAndroidStatusBarChrome(pathname, theme);
-    return;
-  }
-
-  applyNeutralAppChrome(root, theme, pathname);
+  applyNeutralAppChrome(root, theme);
   applyAndroidStatusBarChrome(pathname, theme);
 }

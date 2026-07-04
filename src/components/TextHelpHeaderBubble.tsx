@@ -1,19 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { manifestSmsHref } from "@/lib/marketingContact";
+import { plottingSmsHref } from "@/lib/marketingContact";
 
 type TextHelpHeaderBubbleProps = {
   /** Light text + visible outline on dark marketing hero header. Default keeps light-page styling. */
   variant?: "default" | "on-dark";
 };
 
-/** Compact CTA for /help/manifesting — beside Login (logged out) or left of Dashboard (logged in, marketing header). */
+/** Compact CTA for /help/plotting — beside Login (logged out) or left of Dashboard (logged in, marketing header). */
 export function TextHelpHeaderBubble({ variant = "default" }: TextHelpHeaderBubbleProps) {
   const onDark = variant === "on-dark";
 
   return (
-    <a href={manifestSmsHref} className="inline-flex items-center">
+    <a href={plottingSmsHref} className="inline-flex items-center">
       <Button
         type="button"
         variant="outline"

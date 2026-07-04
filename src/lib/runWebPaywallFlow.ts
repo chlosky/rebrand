@@ -7,8 +7,8 @@ import i18n from "@/i18n";
 export type WebPaywallFlowOutcome = "success" | "skipped";
 
 /**
- * After web signup, route to the RevenueCat web paywall (purchases-js).
- * Entitlement sync runs on `/onboarding/post-paywall` (same edge function as native).
+ * After web signup, route to the web paywall (Stripe Checkout by default).
+ * RevenueCat Web Billing stays available when `VITE_WEB_CHECKOUT_PROVIDER=revenuecat`.
  */
 export async function runWebPaywallFlowAfterSignup(options: {
   userId: string | null;

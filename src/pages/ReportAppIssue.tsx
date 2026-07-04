@@ -17,7 +17,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -98,10 +97,10 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
   const billingPurchaseChannelOptions = useMemo(() => getBillingPurchaseChannelOptions(tDashboard), [t]);
   const createHelpOptions = useMemo(
     () => [
-      { value: "affirmations_or_scripting", label: t("createHelpOptions.affirmationsOrScripting") },
-      { value: "strong_subliminal", label: t("createHelpOptions.strongSubliminal") },
-      { value: "mirror_work_guidance", label: t("createHelpOptions.mirrorWorkGuidance") },
+      { value: "board_layout_help", label: t("createHelpOptions.boardLayoutHelp") },
+      { value: "plan_steps_help", label: t("createHelpOptions.planStepsHelp") },
       { value: "build_weekly_routine", label: t("createHelpOptions.buildWeeklyRoutine") },
+      { value: "journal_prompt_help", label: t("createHelpOptions.journalPromptHelp") },
       { value: "not_sure_help_me_choose", label: t("createHelpOptions.notSureHelpMeChoose") },
     ],
     [t],
@@ -124,15 +123,10 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
   const { theme } = useTheme();
   const { hasPro } = usePlottingPro();
   const workspaceFree = workspaceMode && !hasPro;
-  const homePath = workspaceMode ? "/workspace" : "/dashboard";
+  const homePath = workspaceMode ? "/workspace" : "/dashboard/boards";
   const shellDark = theme === "dark";
   const workspaceDarkBg = "#000000";
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved === "true";
-  });
-
   const [submissionType, setSubmissionType] = useState<string>("");
   const [tool, setTool] = useState<string>("");
   const [billingPurchaseChannel, setBillingPurchaseChannel] = useState<string>("");
@@ -143,7 +137,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
   const [activeTab, setActiveTab] = useState<"create" | "support" | "inbox">(
     workspaceMode ? "support" : "create",
   );
-  const [createManifestingFocus, setCreateManifestingFocus] = useState("");
+  const [createPlotFocus, setCreatePlotFocus] = useState("");
   const [createHelpType, setCreateHelpType] = useState<string>("");
 
   const [inboxCases, setInboxCases] = useState<UserInboxCase[]>([]);
@@ -310,9 +304,9 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
     e.preventDefault();
     if (!user) return;
 
-    const focus = createManifestingFocus.trim();
+    const focus = createPlotFocus.trim();
     if (!focus) {
-      toast.error(t("toasts.shareManifestationFocus"));
+      toast.error(t("toasts.shareFocus"));
       return;
     }
     if (!createHelpType) {
@@ -513,20 +507,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
       )}
       style={{ backgroundColor: pageBg }}
     >
-      {!workspaceMode && !isMobile && (
-        <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />
-      )}
-      <div
-        className="min-h-screen"
-        style={
-          !workspaceMode && !isMobile
-            ? {
-                marginLeft: sidebarCollapsed ? "64px" : "256px",
-                transition: "margin-left 300ms ease-in-out",
-              }
-            : {}
-        }
-      >
+      <div className="min-h-screen">
         {!workspaceMode && isMobile && (
           <div
             className={cn(
@@ -543,7 +524,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
           ) : (
             <header
               className={cn(cn("md:h-16 flex items-center md:py-0 z-50 border-b", shellDark ? "py-2.5 border-white/10" : "py-3 border-primary/10", shellDark ? "border-b border-white/10 bg-[#0f0d14]" : "bg-background"), isMobile ? "sticky z-50 left-0 right-0 w-full max-md:mt-[var(--app-safe-area-top)] max-md:top-[var(--app-safe-area-top)]" : "fixed top-0 left-0 right-0")}
-              style={isMobile ? (shellDark ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(shellDark ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", left: sidebarCollapsed ? "64px" : "256px", right: "0", transition: "left 300ms ease-in-out" }}
+              style={isMobile ? (shellDark ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(shellDark ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", right: "0" }}
             >
               <div className={cn("px-4 sm:px-6 w-full flex items-center justify-between", !isMobile ? "" : "container mx-auto")}>
                 <h1 className={shellDark ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate(homePath)}>
@@ -638,7 +619,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                           {t("create.successBodySuffix")}
                         </p>
                         <div className="pt-2 flex flex-wrap gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
+                          <Button type="button" variant="outline" size="sm" onClick={() => navigate("/dashboard/boards")}>
                             {t("create.backToDashboard")}
                           </Button>
                           <Button
@@ -646,7 +627,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                             size="sm"
                             onClick={() => {
                               setDone(false);
-                              setCreateManifestingFocus("");
+                              setCreatePlotFocus("");
                               setCreateHelpType("");
                             }}
                           >
@@ -663,13 +644,13 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                         <div className="flex items-center justify-between gap-2">
                           <Label htmlFor="create-focus">{t("create.focusLabel")}</Label>
                           <span className="text-[11px] tabular-nums text-muted-foreground">
-                            {createManifestingFocus.length}/{CREATE_FOCUS_MAX}
+                            {createPlotFocus.length}/{CREATE_FOCUS_MAX}
                           </span>
                         </div>
                         <Textarea
                           id="create-focus"
-                          value={createManifestingFocus}
-                          onChange={(e) => setCreateManifestingFocus(e.target.value.slice(0, CREATE_FOCUS_MAX))}
+                          value={createPlotFocus}
+                          onChange={(e) => setCreatePlotFocus(e.target.value.slice(0, CREATE_FOCUS_MAX))}
                           placeholder={t("create.focusPlaceholder")}
                           rows={4}
                           className={cn("min-h-[110px] resize-y text-sm", theme === "dark" && darkFieldClass)}
@@ -701,7 +682,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                         <Button type="submit" disabled={submitting}>
                           {submitting ? t("create.submitting") : t("create.submit")}
                         </Button>
-                        <Button type="button" variant="ghost" onClick={() => navigate("/dashboard")}>
+                        <Button type="button" variant="ghost" onClick={() => navigate("/dashboard/boards")}>
                           {t("common:cancel")}
                         </Button>
                       </div>
@@ -727,7 +708,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                       {t("supportForm.successBodySuffix")}
                     </p>
                     <div className="pt-2 flex flex-wrap gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => navigate("/dashboard/boards")}>
                         {t("create.backToDashboard")}
                       </Button>
                       <Button
@@ -919,7 +900,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                     <Button type="submit" disabled={submitting}>
                       {submitting ? t("create.submitting") : t("create.submit")}
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => navigate("/dashboard")}>
+                    <Button type="button" variant="ghost" onClick={() => navigate("/dashboard/boards")}>
                           {t("common:cancel")}
                         </Button>
                   </div>

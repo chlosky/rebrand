@@ -8,19 +8,17 @@ import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import { HOME_FOCUS_TO_TEMPLATE } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
-  SETUP_CHOICE_ICON_WRAP_CLASS,
   SETUP_CHOICE_TITLE_CLASS,
   setupChoiceTileWithGlowClass,
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
-import { Calendar, ChefHat, Home, Sparkles, Users } from "lucide-react";
 
 const OPTIONS = [
-  { key: "home_plan_routines", Icon: Calendar },
-  { key: "home_chores_cleaning", Icon: Home },
-  { key: "home_meal_planning", Icon: ChefHat },
-  { key: "home_family_kids", Icon: Users },
-  { key: "home_seasonal_reset", Icon: Sparkles },
+  "home_plan_routines",
+  "home_chores_cleaning",
+  "home_meal_planning",
+  "home_family_kids",
+  "home_seasonal_reset",
 ] as const;
 
 export default function SetupHomeFocus() {
@@ -33,7 +31,7 @@ export default function SetupHomeFocus() {
 
   const [selected, setSelected] = useState<string | null>(() => {
     const k = readSetupDraft().homeFocusKey;
-    return k && OPTIONS.some((o) => o.key === k) ? k : null;
+    return k && OPTIONS.includes(k as (typeof OPTIONS)[number]) ? k : null;
   });
 
   const select = useCallback((key: string) => {
@@ -63,7 +61,7 @@ export default function SetupHomeFocus() {
         />
         <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-0.5 py-1 pb-2">
           <div className="flex flex-col gap-2.5 sm:gap-3">
-            {OPTIONS.map(({ key, Icon }) => {
+            {OPTIONS.map((key) => {
               const active = selected === key;
               return (
                 <button
@@ -71,14 +69,11 @@ export default function SetupHomeFocus() {
                   type="button"
                   onClick={() => select(key)}
                   className={cn(
-                    "flex w-full items-center gap-3 text-left",
+                    "flex w-full items-center text-left",
                     setupChoiceTileWithGlowClass(active),
                   )}
                   style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
                 >
-                  <span className={cn(SETUP_CHOICE_ICON_WRAP_CLASS, "h-9 w-9")}>
-                    <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  </span>
                   <span className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
                     {t(`setup.homeFocus.options.${key}`)}
                   </span>

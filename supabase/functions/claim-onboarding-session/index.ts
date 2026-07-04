@@ -52,10 +52,6 @@ function pickShellAppearance(value: unknown): string | null {
   return typeof value === "string" && (SHELL_APPEARANCES as readonly string[]).includes(value) ? value : null;
 }
 
-function pickGuideCharacterId(value: unknown): string | null {
-  return typeof value === "string" && ["river", "sage", "rose", "oliver"].includes(value) ? value : null;
-}
-
 type ActivationProfile = {
   firstName?: string | null;
   username?: string | null;
@@ -107,7 +103,7 @@ serve(async (req) => {
     const { data: obSession, error: obErr } = await supabase
       .from("onboarding_sessions")
       .select(
-        "id,resume_token_hash,status,email,first_name,username,email_consent,sms_consent,character_id,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id",
+        "id,resume_token_hash,status,email,first_name,username,email_consent,sms_consent,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id",
       )
       .eq("id", String(sessionId))
       .maybeSingle();
@@ -316,7 +312,7 @@ serve(async (req) => {
     const finalEmailConsent = activationProfile.emailMarketingConsent ?? obSession.email_consent ?? false;
     const finalSmsConsent = activationProfile.smsMarketingConsent ?? obSession.sms_consent ?? false;
 
-    // Manifestation routine + app notifications are applied via sync-revenuecat-entitlement
+    // Routine reminders + app notifications are applied via sync-revenuecat-entitlement
     // (gatherOnboardingPrefs from setup draft). This legacy Stripe Checkout claim path does not write them.
 
     try {
@@ -367,13 +363,6 @@ serve(async (req) => {
               sp.conditional_specificity !== null
               ? sp.conditional_specificity
               : {},
-          shell_appearance:
-            pickShellAppearance(sp.shell_appearance) ??
-              pickShellAppearance((obSession as Record<string, unknown>).shell_appearance) ??
-              legacySetupAppearance,
-          guide_character_id:
-            pickGuideCharacterId(sp.guide_character_id) ??
-              pickGuideCharacterId((obSession as Record<string, unknown>).character_id),
           embody_active_practices: normalizeEmbodyActivePractices(sp.embody_active_practices),
         };
       } else if (legacyJourney && typeof legacyJourney === "object") {
@@ -394,11 +383,6 @@ serve(async (req) => {
             j.conditionalSpecificity && typeof j.conditionalSpecificity === "object" && j.conditionalSpecificity !== null
               ? j.conditionalSpecificity
               : {},
-          shell_appearance:
-            pickShellAppearance(j.appearance) ??
-              pickShellAppearance((obSession as Record<string, unknown>).shell_appearance) ??
-              legacySetupAppearance,
-          guide_character_id: pickGuideCharacterId((obSession as Record<string, unknown>).character_id),
           embody_active_practices: normalizeEmbodyActivePractices(
             (j as Record<string, unknown>).embody_active_practices ??
               (j as Record<string, unknown>).embodyActivePractices,
@@ -424,13 +408,6 @@ serve(async (req) => {
               sp.conditional_specificity !== null
               ? sp.conditional_specificity
               : {},
-          shell_appearance:
-            pickShellAppearance(sp.shell_appearance) ??
-              pickShellAppearance((obSession as Record<string, unknown>).shell_appearance) ??
-              legacySetupAppearance,
-          guide_character_id:
-            pickGuideCharacterId(sp.guide_character_id) ??
-              pickGuideCharacterId((obSession as Record<string, unknown>).character_id),
           embody_active_practices: normalizeEmbodyActivePractices(sp.embody_active_practices),
         };
       }
@@ -448,11 +425,10 @@ serve(async (req) => {
       console.warn("Non-fatal: user_setup_path copy skipped:", pathErr);
     }
 
-    // user_preferences: selected_character + comms prefs + embody (from same pathPayload as user_setup_path)
+    // user_preferences: comms prefs + embody (from same pathPayload as user_setup_path)
     try {
       const prefRow: Record<string, unknown> = {
         user_id: user.id,
-        selected_character: obSession.character_id || null,
         texts_enabled: finalSmsConsent,
         preferred_send_window: "both",
         email_marketing: finalEmailConsent,
@@ -462,20 +438,6 @@ serve(async (req) => {
       await supabase.from("user_preferences").upsert(prefRow, { onConflict: "user_id" });
     } catch (e) {
       console.warn("Non-fatal: failed to upsert user_preferences:", e);
-    }
-
-    // character_selection_log (best-effort)
-    try {
-      if (obSession.character_id) {
-        await supabase.from("character_selection_log").insert({
-          user_id: user.id,
-          selected_character: obSession.character_id,
-          previous_character: null,
-          source: "onboarding_paid_activation",
-        });
-      }
-    } catch (e) {
-      console.warn("Non-fatal: failed to insert character_selection_log:", e);
     }
 
     return new Response(JSON.stringify({ success: true, tier }), {

@@ -47,12 +47,12 @@
     "mismatch": "Passwords do not match"
   },
   "preferences": {
-    "routineHeading": "Manifestation routine",
-    "routineDescription": "Adjust your manifestation intensity, routine expectations, and routine notifications.",
+    "routineHeading": "Routine reminders",
+    "routineDescription": "Adjust your daily rhythm, routine expectations, and reminder notifications.",
     "routineButtonTitle": "Routine & intensity",
     "routineButtonSubtitle": "Set routine intensity & notifications",
     "emailHeading": "Email preferences",
-    "emailDescription": "Manifestation tips, product updates, and app news by email.",
+    "emailDescription": "Board tips, product updates, and app news by email.",
     "emailMarketingLabel": "Email updates",
     "textMarketingLabel": "Text updates",
     "dataTrainingHeading": "Data training",
@@ -100,34 +100,34 @@
     "contact": "Contact Us"
   },
   "routine": {
-    "title": "Manifestation routine",
-    "subtitle": "Manifesting intensity and routine notifications",
+    "title": "Routine reminders",
+    "subtitle": "Routine intensity and notifications",
     "backAria": "Back to settings",
     "loading": "Loading your routine…",
-    "intensityHeading": "Manifesting intensity",
-    "intensityDescription": "Adjust your manifesting intensity",
+    "intensityHeading": "Routine intensity",
+    "intensityDescription": "Adjust how often you want nudges and check-ins",
     "saveIntensity": "Save intensity",
     "saving": "Saving…",
     "notificationsHeading": "Routine notifications",
     "notificationsDescription": "Notifications support your routine — they nudge you back to the app.",
     "pushRemindersLabel": "In-app & push reminders",
     "dailyTimeHeading": "Daily notification time",
-    "deviceDeniedHint": "Notifications are off at the device level. Your routine and charge will still work.",
+    "deviceDeniedHint": "Notifications are off at the device level. Your routine and boards will still work.",
     "intensity": {
       "light": {
         "title": "Light",
         "tagline": "The recommended routine.",
-        "description": "Light integration of manifesting, with daily notifications if opted in."
+        "description": "A lighter rhythm with one daily notification if you opt in."
       },
       "consistent": {
         "title": "Consistent",
-        "tagline": "For experienced manifestors.",
-        "description": "A more steady manifesting rhythm, with 2 daily notifications if selected."
+        "tagline": "Steady check-ins.",
+        "description": "A steadier rhythm with up to 2 daily notifications if selected."
       },
       "locked_in": {
         "title": "Locked In",
         "tagline": "The highest-intensity routine.",
-        "description": "For more intense manifesting goals, with 3 daily notifications if opted in."
+        "description": "More frequent nudges with up to 3 daily notifications if selected."
       }
     },
     "alerts": {
@@ -137,11 +137,9 @@
       "third": "3rd Alert"
     },
     "itemLabels": {
-      "affirmations": "Affirmations",
-      "subliminals": "Subliminal listening",
-      "mirror_work": "Mirror work",
-      "belief_work": "Belief work",
-      "guide_check_in": "Guide check-in",
+      "boards_review": "Board review",
+      "plan_steps": "Plan steps",
+      "journal_entry": "Journal entry",
       "progress_review": "Progress review"
     }
   },
@@ -188,7 +186,7 @@
     "routineNotifDeniedIos": "Notifications are off in iOS Settings. Enable them there, then try again.",
     "routineNotifPermissionFailed": "Could not request notification permission.",
     "routineNotifOn": "Routine notifications enabled",
-    "routineIntensitySaved": "Manifesting intensity updated",
+    "routineIntensitySaved": "Routine intensity updated",
     "routineIntensitySaveFailed": "Could not save your routine intensity."
   },
   "legalDisclaimer": ""

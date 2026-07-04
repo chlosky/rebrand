@@ -54,12 +54,6 @@ function normalizeShellAppearance(value: unknown): string | null {
   return typeof value === "string" && SHELL_APPEARANCES.has(value) ? value : null;
 }
 
-const GUIDE_IDS = new Set(["river", "sage", "rose", "oliver"]);
-
-function normalizeGuideCharacterId(value: unknown): string | null {
-  return typeof value === "string" && GUIDE_IDS.has(value) ? value : null;
-}
-
 /** Normalized setup-path fields (mirrors app SetupDraft → DB columns). */
 type SetupPathPatch = {
   first_name?: string | null;
@@ -72,8 +66,6 @@ type SetupPathPatch = {
   tool_preferences?: string[] | null;
   conditional_specificity?: Record<string, unknown> | null;
   shell_appearance?: string | null;
-  guide_character_id?: string | null;
-  /** Five distinct embody catalog slugs (same as `user_preferences.embody_active_practices`). */
   embody_active_practices?: string[] | null;
 };
 
@@ -107,7 +99,6 @@ type AllowedPatch = {
   tracking_pre_permission_choice?: string | null;
   tracking_authorization_status?: string | null;
   tracking_permission_asked_at?: string | null;
-  character_id?: "river" | "sage" | "rose" | "oliver" | null;
   onboarding_answers?: Record<string, unknown>;
   selected_tier?: "basic" | "plus" | "premium" | null;
   billing?: "monthly" | "annual" | "weekly" | null;
@@ -189,7 +180,6 @@ serve(async (req) => {
     if ("tracking_permission_asked_at" in allowedPatch) {
       updates.tracking_permission_asked_at = allowedPatch.tracking_permission_asked_at;
     }
-    if ("character_id" in allowedPatch) updates.character_id = allowedPatch.character_id;
     if ("onboarding_answers" in allowedPatch) {
       const current =
         session?.onboarding_answers && typeof session.onboarding_answers === "object" && session.onboarding_answers !== null
@@ -244,7 +234,6 @@ serve(async (req) => {
       const normalizedConditional = normalizeConditionalSpecificity(spec, desireCatRaw);
 
       const shellAppearance = normalizeShellAppearance(sp.shell_appearance);
-      const guideCharacterId = normalizeGuideCharacterId(sp.guide_character_id);
       const embodySlugs = normalizeEmbodyActivePractices(sp.embody_active_practices);
 
       const pathRow = {
@@ -260,9 +249,6 @@ serve(async (req) => {
           ? (sp.tool_preferences as unknown[]).filter((x): x is string => typeof x === "string")
           : [],
         conditional_specificity: normalizedConditional,
-        shell_appearance: shellAppearance,
-        guide_character_id: guideCharacterId,
-        embody_active_practices: embodySlugs,
       };
 
       const journeySlice: Record<string, unknown> = {
@@ -279,7 +265,6 @@ serve(async (req) => {
       if (pathRow.desired_identity != null) journeySlice.desired_identity = pathRow.desired_identity;
       if (pathRow.tool_preferences.length > 0) journeySlice.tool_preferences = pathRow.tool_preferences;
       if (shellAppearance != null) journeySlice.shell_appearance = shellAppearance;
-      if (guideCharacterId != null) journeySlice.guide_character_id = guideCharacterId;
       if (embodySlugs) journeySlice.embody_active_practices = embodySlugs;
 
       updates.shell_appearance = shellAppearance;
@@ -362,7 +347,7 @@ serve(async (req) => {
         .update(updates)
         .eq("id", String(sessionId))
         .select(
-          "id,status,email,first_name,username,email_consent,sms_consent,app_notifications_consent,tracking_pre_permission_choice,tracking_authorization_status,tracking_permission_asked_at,character_id,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at",
+          "id,status,email,first_name,username,email_consent,sms_consent,app_notifications_consent,tracking_pre_permission_choice,tracking_authorization_status,tracking_permission_asked_at,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at",
         )
         .single();
 
@@ -378,7 +363,7 @@ serve(async (req) => {
       const { data: refetch, error: refetchErr } = await supabase
         .from("onboarding_sessions")
         .select(
-          "id,status,email,first_name,username,email_consent,sms_consent,app_notifications_consent,tracking_pre_permission_choice,tracking_authorization_status,tracking_permission_asked_at,character_id,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at",
+          "id,status,email,first_name,username,email_consent,sms_consent,app_notifications_consent,tracking_pre_permission_choice,tracking_authorization_status,tracking_permission_asked_at,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at",
         )
         .eq("id", String(sessionId))
         .single();

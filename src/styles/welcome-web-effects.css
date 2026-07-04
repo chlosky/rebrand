@@ -304,14 +304,6 @@
   letter-spacing: -0.02em;
   text-shadow: none;
 }
-
-/* Subliminal web onboarding — card + setup step headlines (matches welcome hero). */
-.sv-subliminal-headline {
-  font-family: "Proxima Nova", "proxima-nova", sans-serif !important;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
 .sv-hero-headline-wrap--welcome .sv-hero-headline-accent {
   margin-top: 0.125rem;
   white-space: nowrap;

@@ -1,94 +1,518 @@
-import { useCallback, useRef } from "react";
-import { BoardCanvasEditor, type BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+
+import {
+
+  BoardCanvasEditor,
+
+  ARTBOARD_HEIGHT,
+
+  ARTBOARD_WIDTH,
+
+  type BoardCanvasHandle,
+
+} from "@/components/boards/BoardCanvasEditor";
+
+import type { BoardZoomPreset } from "@/components/boards/BoardToolbar";
+
 import { boardFillForKey } from "@/lib/boards/colors";
+
+import { STANDARD_BOARD_COUNT } from "@/lib/boards/starterTemplates";
+
 import type { Board } from "@/lib/boards/types";
+
+import { BoardEditableTitle } from "@/components/boards/BoardEditableTitle";
+
 import { cn } from "@/lib/utils";
 
+
+
+const GRID_GAP_PX = 10;
+
+const GRID_PAD_PX = 8;
+
+const ADD_BTN_WIDTH_PX = 40;
+
+const TITLE_BAR_PX = 32;
+
+const MIN_CELL_WIDTH_PX = 120;
+
+
+
+type CellSize = { width: number; height: number };
+
+
+
 type BoardDesktopGridProps = {
+
   boards: Board[];
+
   activeId: string;
+
   onSelect: (id: string) => void;
+
   onSave: (boardId: string, layout: Record<string, unknown>) => void;
+
   registerEditor: (boardId: string, handle: BoardCanvasHandle | null) => void;
+
+  onAddBoard?: () => void;
+
+  onRenameBoard: (boardId: string, title: string) => void | Promise<void>;
+
+  onTitleStyleChange: (
+    boardId: string,
+    patch: { title_color?: string | null; title_font?: string | null },
+  ) => void | Promise<void>;
+
+  zoomPreset: BoardZoomPreset;
+
+  onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
+
 };
 
+
+
 export function BoardDesktopGrid({
+
   boards,
+
   activeId,
+
   onSelect,
+
   onSave,
+
   registerEditor,
+
+  onAddBoard,
+
+  onRenameBoard,
+
+  onTitleStyleChange,
+
+  zoomPreset,
+
+  onHistoryChange,
+
 }: BoardDesktopGridProps) {
+
   const saveHandlers = useRef(new Map<string, (layout: Record<string, unknown>) => void>());
 
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const [cellSize, setCellSize] = useState<CellSize>({ width: 200, height: 280 });
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+
+
   const getSaveHandler = useCallback(
+
     (boardId: string) => {
+
       if (!saveHandlers.current.has(boardId)) {
+
         saveHandlers.current.set(boardId, (layout) => onSave(boardId, layout));
+
       }
+
       return saveHandlers.current.get(boardId)!;
+
     },
+
     [onSave],
+
   );
 
+
+
+  const updateScrollHints = useCallback(() => {
+
+    const el = viewportRef.current;
+
+    if (!el) return;
+
+    setCanScrollLeft(el.scrollLeft > 4);
+
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+
+  }, []);
+
+
+
+  useLayoutEffect(() => {
+
+    const grid = gridRef.current;
+
+    const viewport = viewportRef.current;
+
+    if (!grid || !viewport) return;
+
+
+
+    const measure = () => {
+
+      const availW = viewport.clientWidth - GRID_PAD_PX * 2;
+
+      const availH = grid.clientHeight - GRID_PAD_PX * 2;
+
+      const addReserve = onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0;
+
+      const boardGaps = GRID_GAP_PX * Math.max(STANDARD_BOARD_COUNT - 1, 0);
+
+
+
+      const maxWFromWidth = (availW - addReserve - boardGaps) / STANDARD_BOARD_COUNT;
+
+      const canvasAvailH = Math.max(availH - TITLE_BAR_PX, 160);
+
+      const multiplier = zoomPreset === "fit" ? 1 : zoomPreset;
+
+
+
+      // Fixed slot width for four standard boards; fill almost all vertical space.
+
+      let cellWidth = maxWFromWidth * multiplier;
+
+      let cellHeight = canvasAvailH * multiplier;
+
+
+
+      if (cellWidth * STANDARD_BOARD_COUNT + boardGaps + addReserve > availW) {
+
+        cellWidth = maxWFromWidth;
+
+      }
+
+
+
+      setCellSize({
+
+        width: Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth)),
+
+        height: Math.max(Math.round(cellWidth * (ARTBOARD_HEIGHT / ARTBOARD_WIDTH)), Math.round(cellHeight)),
+
+      });
+
+    };
+
+
+
+    measure();
+
+    const observer = new ResizeObserver(() => {
+
+      measure();
+
+      updateScrollHints();
+
+    });
+
+    observer.observe(grid);
+
+    observer.observe(viewport);
+
+    window.addEventListener("resize", measure);
+
+    return () => {
+
+      observer.disconnect();
+
+      window.removeEventListener("resize", measure);
+
+    };
+
+  }, [onAddBoard, updateScrollHints, zoomPreset]);
+
+
+
+  useEffect(() => {
+
+    updateScrollHints();
+
+  }, [boards.length, cellSize.width, updateScrollHints]);
+
+
+
+  useEffect(() => {
+
+    const viewport = viewportRef.current;
+
+    if (!viewport) return;
+
+    const activeEl = viewport.querySelector(`[data-board-id="${activeId}"]`);
+
+    activeEl?.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+
+  }, [activeId, cellSize.width]);
+
+
+
+  const scrollByPage = (direction: -1 | 1) => {
+
+    const el = viewportRef.current;
+
+    if (!el) return;
+
+    el.scrollBy({ left: direction * Math.max(el.clientWidth * 0.6, cellSize.width), behavior: "smooth" });
+
+  };
+
+
+
+  const rowHeight = cellSize.height + TITLE_BAR_PX;
+
+  const rowScrollWidth =
+
+    boards.length * cellSize.width +
+
+    Math.max(boards.length - 1, 0) * GRID_GAP_PX +
+
+    (onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0);
+
+
+
   return (
-    <div className="board-desktop-grid flex min-h-0 flex-1 flex-col overflow-hidden p-3 md:p-4">
-      <div
-        className={cn(
-          "grid min-h-0 flex-1 gap-3 overflow-y-auto",
-          boards.length === 1 ? "grid-cols-1" : "grid-cols-2",
-          boards.length > 2 ? "auto-rows-fr" : "grid-rows-1",
+
+    <div ref={gridRef} className="board-desktop-grid flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+
+        {canScrollLeft && (
+
+          <button
+
+            type="button"
+
+            aria-label="Scroll boards left"
+
+            onClick={() => scrollByPage(-1)}
+
+            className="absolute left-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 shadow-sm hover:bg-white"
+
+          >
+
+            <ChevronLeft className="h-4 w-4" />
+
+          </button>
+
         )}
-        style={boards.length > 2 ? { gridTemplateRows: `repeat(${Math.ceil(boards.length / 2)}, minmax(0, 1fr))` } : undefined}
-      >
-        {boards.map((board) => {
-          const active = board.id === activeId;
-          return (
-            <div
-              key={board.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelect(board.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onSelect(board.id);
-                }
-              }}
-              className={cn(
-                "board-grid-cell flex min-h-0 flex-col overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-shadow",
-                active ? "border-neutral-900 ring-2 ring-neutral-900/10" : "border-neutral-200 hover:border-neutral-300",
-              )}
-            >
-              <div
-                className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-3 py-2"
-                style={{ backgroundColor: boardFillForKey(board.color_key) }}
+
+        {canScrollRight && (
+
+          <button
+
+            type="button"
+
+            aria-label="Scroll boards right"
+
+            onClick={() => scrollByPage(1)}
+
+            className="absolute right-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 shadow-sm hover:bg-white"
+
+          >
+
+            <ChevronRight className="h-4 w-4" />
+
+          </button>
+
+        )}
+
+
+
+        <div
+
+          ref={viewportRef}
+
+          className="board-row-scroll flex h-full flex-col overflow-x-auto overflow-y-hidden scroll-smooth p-2"
+
+          onScroll={updateScrollHints}
+
+          onWheel={(e) => {
+
+            const el = viewportRef.current;
+
+            if (!el || el.scrollWidth <= el.clientWidth) return;
+
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+
+              el.scrollLeft += e.deltaY;
+
+              e.preventDefault();
+
+            }
+
+          }}
+
+        >
+
+          <div
+
+            className="flex min-h-full flex-row flex-nowrap items-stretch gap-2.5"
+
+            style={{ width: rowScrollWidth, minHeight: rowHeight, height: rowHeight }}
+
+          >
+
+            {boards.map((board) => {
+
+              const active = board.id === activeId;
+
+              return (
+
+                <div
+
+                  key={board.id}
+
+                  data-board-id={board.id}
+
+                  role="button"
+
+                  tabIndex={0}
+
+                  onClick={() => onSelect(board.id)}
+
+                  onKeyDown={(e) => {
+
+                    if (e.key === "Enter" || e.key === " ") {
+
+                      e.preventDefault();
+
+                      onSelect(board.id);
+
+                    }
+
+                  }}
+
+                  style={{ width: cellSize.width, height: rowHeight }}
+
+                  className={cn(
+
+                    "board-grid-cell flex shrink-0 flex-col overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-shadow",
+
+                    active ? "border-neutral-900 ring-2 ring-neutral-900/10" : "border-neutral-200 hover:border-neutral-300",
+
+                  )}
+
+                >
+
+                  <div
+
+                    className="flex h-8 shrink-0 items-center justify-between gap-1 border-b border-neutral-100 px-2.5"
+
+                    style={{ backgroundColor: boardFillForKey(board.color_key) }}
+
+                  >
+
+                    <BoardEditableTitle
+
+                      boardId={board.id}
+
+                      title={board.title}
+
+                      headerFill={boardFillForKey(board.color_key)}
+
+                      titleColor={board.title_color}
+
+                      titleFont={board.title_font}
+
+                      onRename={onRenameBoard}
+
+                      onStyleChange={onTitleStyleChange}
+
+                      showStyleControls={active}
+
+                      className="text-[11px] font-semibold"
+
+                      inputClassName="w-full text-[11px] font-semibold"
+
+                    />
+
+                    {board.role === "plan" && (
+
+                      <span className="shrink-0 rounded bg-black/10 px-1.5 py-0.5 text-[8px] font-bold uppercase text-neutral-800">
+
+                        Plan
+
+                      </span>
+
+                    )}
+
+                  </div>
+
+                  <div className="relative min-h-0 flex-1 overflow-hidden" style={{ height: cellSize.height }}>
+
+                    <BoardCanvasEditor
+
+                      ref={(handle) => registerEditor(board.id, handle)}
+
+                      boardId={board.id}
+
+                      colorKey={board.color_key}
+
+                      layoutMode={board.layout_mode ?? "vision"}
+
+                      layoutJson={board.layout_json}
+
+                      onSave={getSaveHandler(board.id)}
+
+                      onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
+
+                      embedded
+
+                      cellFit="cover"
+
+                      viewZoom="fit"
+
+                    />
+
+                  </div>
+
+                </div>
+
+              );
+
+            })}
+
+
+
+            {onAddBoard && (
+
+              <button
+
+                type="button"
+
+                onClick={onAddBoard}
+
+                title="Add focus board"
+
+                style={{ width: ADD_BTN_WIDTH_PX, height: rowHeight }}
+
+                className="flex shrink-0 flex-col items-center justify-center self-stretch rounded-lg border border-dashed border-neutral-300 bg-white/40 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-white hover:text-neutral-900"
+
               >
-                <span className="truncate text-xs font-semibold text-neutral-900">{board.title}</span>
-                {board.role === "plan" && (
-                  <span className="shrink-0 rounded bg-black/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-neutral-800">
-                    Plan
-                  </span>
-                )}
-              </div>
-              <div className="relative min-h-0 flex-1">
-                <BoardCanvasEditor
-                  ref={(handle) => registerEditor(board.id, handle)}
-                  boardId={board.id}
-                  colorKey={board.color_key}
-                  layoutMode={board.layout_mode ?? "vision"}
-                  layoutJson={board.layout_json}
-                  onSave={getSaveHandler(board.id)}
-                  embedded
-                />
-              </div>
-            </div>
-          );
-        })}
+
+                <Plus className="h-5 w-5" />
+
+              </button>
+
+            )}
+
+          </div>
+
+        </div>
+
       </div>
-      <p className="mt-2 shrink-0 text-center text-[10px] text-neutral-400">
-        Click a board to edit with the toolbar · all boards save automatically
-      </p>
+
     </div>
+
   );
+
 }
+
+

@@ -115,9 +115,9 @@ Capacitor splash plugin: `capacitor.config.ts` (`backgroundColor: #0a0812`, `lau
 
 ### Permissions
 Already configured in `ios/App/App/Info.plist`:
-- Camera: For Mirror Work
-- Microphone: For Subliminal Maker
-- Photo Library: For Vision Boards
+- Camera: For board photo uploads
+- Microphone: Optional support recordings
+- Photo Library: For vision boards and private uploads
 
 ## 🔄 Development Workflow
 

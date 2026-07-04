@@ -9,20 +9,12 @@ import { OFFICE_SYSTEM_TO_TEMPLATE } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
   SETUP_CHOICE_DESC_CLASS,
-  SETUP_CHOICE_ICON_WRAP_CLASS,
   SETUP_CHOICE_TITLE_CLASS,
   setupChoiceTileWithGlowClass,
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
-import { BarChart3, CalendarRange, Columns3, Grid2x2, Wrench } from "lucide-react";
 
-const SYSTEMS = [
-  { key: "kanban", Icon: Columns3 },
-  { key: "gantt", Icon: CalendarRange },
-  { key: "eisenhower", Icon: Grid2x2 },
-  { key: "okrs", Icon: BarChart3 },
-  { key: "five_s", Icon: Wrench },
-] as const;
+const SYSTEMS = ["kanban", "gantt", "eisenhower", "okrs", "five_s"] as const;
 
 export default function SetupOfficePlanningSystem() {
   const { t } = useTranslation("onboarding");
@@ -34,7 +26,7 @@ export default function SetupOfficePlanningSystem() {
 
   const [selected, setSelected] = useState<string | null>(() => {
     const k = readSetupDraft().officePlanningSystem;
-    return k && SYSTEMS.some((s) => s.key === k) ? k : null;
+    return k && SYSTEMS.includes(k as (typeof SYSTEMS)[number]) ? k : null;
   });
 
   const select = useCallback((key: string) => {
@@ -64,7 +56,7 @@ export default function SetupOfficePlanningSystem() {
         />
         <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-0.5 py-1 pb-2">
           <div className="flex flex-col gap-2.5 sm:gap-3">
-            {SYSTEMS.map(({ key, Icon }) => {
+            {SYSTEMS.map((key) => {
               const active = selected === key;
               return (
                 <button
@@ -72,14 +64,11 @@ export default function SetupOfficePlanningSystem() {
                   type="button"
                   onClick={() => select(key)}
                   className={cn(
-                    "flex w-full items-start gap-3 text-left",
+                    "flex w-full items-start text-left",
                     setupChoiceTileWithGlowClass(active),
                   )}
                   style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
                 >
-                  <span className={cn(SETUP_CHOICE_ICON_WRAP_CLASS, "h-10 w-10")}>
-                    <Icon className="h-5 w-5" strokeWidth={1.65} aria-hidden />
-                  </span>
                   <div className="min-w-0 flex-1 py-0.5">
                     <p className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
                       {t(`setup.officePlanning.systems.${key}.title`)}

@@ -2,7 +2,11 @@ import { useState, useCallback } from "react";
 
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { Capacitor } from "@capacitor/core";
+
 import { useIsNativeApp } from "@/hooks/use-native-app";
+
+import { needsFocusDetailsStep } from "@/lib/focusDetailOptions";
 
 import { SetupPage } from "@/components/onboarding/SetupPage";
 
@@ -96,7 +100,27 @@ export default function SetupWorkspaceTemplate() {
 
       disableNativeScrollViewport
 
-      onBack={() => navigate(`${setupBase}/tool-preference`)}
+      onBack={() => {
+        if (isSuiteFunnel) {
+          const showAttScreen = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
+          navigate(showAttScreen ? `${setupBase}/notifications` : `${setupBase}/intensity`);
+          return;
+        }
+        if (intent === "home_organization") {
+          navigate(`${setupBase}/home-focus`);
+          return;
+        }
+        if (intent === "moodboarding") {
+          navigate(`${setupBase}/moodboard-focus`);
+          return;
+        }
+        const cat = (readSetupDraft().desireCategory || "").trim();
+        navigate(
+          cat && needsFocusDetailsStep(cat)
+            ? `${setupBase}/focus-details`
+            : `${setupBase}/focus-categories`,
+        );
+      }}
 
       onContinue={() => {
 

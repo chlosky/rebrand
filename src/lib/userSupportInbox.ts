@@ -31,15 +31,6 @@ export function caseTypeLabel(c: UserInboxCase): string {
 function localizedInboxToolLabel(raw: string | null | undefined): string {
   const tool = raw?.trim() ?? "";
   if (!tool) return "";
-  if (tool === "Affirm & Script" || tool === "Afirmar y Escribir" || tool === "Afirmar e Escrever") {
-    return i18n.t("dashboard:tools.affirmScript.title");
-  }
-  if (tool === "Subliminal Maker") {
-    return i18n.t("dashboard:tools.subliminalMaker.title");
-  }
-  if (tool === "Make a strong subliminal") {
-    return i18n.t("support:createHelpOptions.strongSubliminal");
-  }
   if (tool === "Not sure — help me choose") {
     return i18n.t("support:createHelpOptions.notSureHelpMeChoose");
   }
@@ -69,11 +60,7 @@ export function formatInboxWhen(
     const d = new Date(iso);
     const now = new Date();
     const locale =
-      resolveAppLocale(i18n.language) === "es-419"
-        ? "es"
-        : resolveAppLocale(i18n.language) === "pt-BR"
-          ? "pt-BR"
-          : undefined;
+      resolveAppLocale(i18n.language) === "es-419" ? "es" : undefined;
     const timeOpts: Intl.DateTimeFormatOptions = {
       hour: "numeric",
       minute: "2-digit",
@@ -95,10 +82,6 @@ export function formatInboxWhen(
     if (locale === "es") {
       const when = `${datePart} a las ${time}`;
       return opts?.submitted ? `el ${when}` : when;
-    }
-    if (locale === "pt-BR") {
-      const when = `${datePart} às ${time}`;
-      return opts?.submitted ? `em ${when}` : when;
     }
     return d.toLocaleString(locale, {
       month: "short",

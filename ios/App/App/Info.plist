@@ -48,9 +48,9 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Palette Plotting needs access to your camera for Mirror Work practice sessions.</string>
+	<string>Palette Plotting uses your camera when you add photos to a board.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Palette Plotting needs access to your microphone to record affirmations for subliminal audio creation.</string>
+	<string>Palette Plotting may use your microphone for optional support recordings.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Palette Plotting needs access to your photo library to save and use images for vision boards.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
-import { ManifestationMilestonesTabs } from "@/components/ManifestationMilestonesTabs";
+import { ProgressMilestonesTabs } from "@/components/ProgressMilestonesTabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -22,11 +21,6 @@ const ActivityTracking: React.FC = () => {
     }
   }, [user, navigate]);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved === "true";
-  });
-
   return (
     <div
       className={cn(
@@ -36,19 +30,7 @@ const ActivityTracking: React.FC = () => {
       )}
       style={{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" }}
     >
-      {!isMobile && <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />}
-
-      <div
-        className={cn(isMobile ? "flex-1 flex flex-col min-h-0" : "min-h-screen", "flex flex-col")}
-        style={
-          !isMobile
-            ? {
-                marginLeft: sidebarCollapsed ? "64px" : "256px",
-                transition: "margin-left 300ms ease-in-out",
-              }
-            : {}
-        }
-      >
+      <div className={cn(isMobile ? "flex-1 flex flex-col min-h-0" : "min-h-screen", "flex flex-col")}>
         {isMobile ? (
           <div
             className={cn(
@@ -74,9 +56,7 @@ const ActivityTracking: React.FC = () => {
                 : {
                     backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff",
                     top: "var(--app-safe-area-top)",
-                    left: sidebarCollapsed ? "64px" : "256px",
                     right: "0",
-                    transition: "left 300ms ease-in-out",
                   }
             }
           >
@@ -106,7 +86,7 @@ const ActivityTracking: React.FC = () => {
             )}
           >
             <div className="py-2 sm:py-3">
-              <ManifestationMilestonesTabs syncHash />
+              <ProgressMilestonesTabs syncHash />
             </div>
           </main>
         </div>

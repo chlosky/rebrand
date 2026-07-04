@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Loader2, Printer } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,24 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  BOARD_PRINT_PRESETS,
-  downloadBoardPrint,
-  openBoardPrintWindow,
-  type BoardPrintPreset,
-} from "@/lib/boards/renderBoard";
+import { BOARD_PRINT_PRESETS, downloadBoardPrint, type BoardPrintPreset } from "@/lib/boards/renderBoard";
+import { downloadPhoneWallpaper } from "@/lib/boards/phoneWallpaper";
 import { toast } from "sonner";
+
+type DownloadOptionId = BoardPrintPreset["id"] | "phone-wallpaper";
+
+const DOWNLOAD_OPTIONS: { id: DownloadOptionId; label: string; description: string }[] = [
+  ...BOARD_PRINT_PRESETS.map((p) => ({
+    id: p.id,
+    label: `${p.label} — ${p.dpi} DPI`,
+    description: p.description,
+  })),
+  {
+    id: "phone-wallpaper",
+    label: "Phone wallpaper",
+    description: "Portrait image for your phone",
+  },
+];
 
 type BoardPrintDialogProps = {
   open: boolean;
@@ -32,24 +43,27 @@ export function BoardPrintDialog({
   colorKey,
   boardTitle,
 }: BoardPrintDialogProps) {
-  const [presetId, setPresetId] = useState<BoardPrintPreset["id"]>("letter");
-  const [busy, setBusy] = useState<"download" | "print" | null>(null);
+  const [optionId, setOptionId] = useState<DownloadOptionId>("letter");
+  const [busy, setBusy] = useState(false);
 
-  const preset = BOARD_PRINT_PRESETS.find((p) => p.id === presetId) ?? BOARD_PRINT_PRESETS[1];
+  const option = DOWNLOAD_OPTIONS.find((o) => o.id === optionId) ?? DOWNLOAD_OPTIONS[1];
+  const printPreset = BOARD_PRINT_PRESETS.find((p) => p.id === optionId);
 
-  const run = async (mode: "download" | "print") => {
-    setBusy(mode);
+  const handleDownload = async () => {
+    setBusy(true);
     try {
-      if (mode === "download") {
-        await downloadBoardPrint(layoutJson, colorKey, preset);
-        toast.success(`Downloaded ${boardTitle} (${preset.label})`);
-      } else {
-        await openBoardPrintWindow(layoutJson, colorKey, preset);
+      if (optionId === "phone-wallpaper") {
+        await downloadPhoneWallpaper(layoutJson, colorKey, boardTitle);
+        toast.success("Phone wallpaper downloaded");
+      } else if (printPreset) {
+        await downloadBoardPrint(layoutJson, colorKey, printPreset);
+        toast.success(`Downloaded ${boardTitle} (${printPreset.label})`);
       }
+      onOpenChange(false);
     } catch {
-      toast.error(mode === "download" ? "Export failed" : "Could not open print window — allow popups");
+      toast.error("Download failed");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
@@ -57,44 +71,35 @@ export function BoardPrintDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Print or export</DialogTitle>
-          <DialogDescription>
-            Download a high-resolution PNG for home printing or take to a print shop (FedEx Office, Kinko&apos;s, etc.).
-            The 24×36&quot; preset matches paletteplot.com acrylic boards.
-          </DialogDescription>
+          <DialogTitle>Download</DialogTitle>
+          <DialogDescription>Choose a format and download a PNG.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label className="text-xs">Size</Label>
+          <Label className="text-xs">Format</Label>
           <select
             className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
-            value={presetId}
-            onChange={(e) => setPresetId(e.target.value as BoardPrintPreset["id"])}
+            value={optionId}
+            onChange={(e) => setOptionId(e.target.value as DownloadOptionId)}
           >
-            {BOARD_PRINT_PRESETS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label} — {p.dpi} DPI
+            {DOWNLOAD_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
               </option>
             ))}
           </select>
-          <p className="text-[11px] leading-snug text-neutral-500">{preset.description}</p>
-          {preset.dpi === 300 && preset.pageWidthIn >= 18 && (
+          <p className="text-[11px] leading-snug text-neutral-500">{option.description}</p>
+          {printPreset && printPreset.dpi === 300 && printPreset.pageWidthIn >= 18 && (
             <p className="text-[11px] leading-snug text-amber-800">
               Large exports can take a moment and produce a big file — ideal for professional printing.
             </p>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button className="flex-1 gap-2" disabled={!!busy} onClick={() => void run("download")}>
-            {busy === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            Download PNG
-          </Button>
-          <Button variant="outline" className="flex-1 gap-2" disabled={!!busy} onClick={() => void run("print")}>
-            {busy === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-            Print
-          </Button>
-        </div>
+        <Button className="gap-2" disabled={busy} onClick={() => void handleDownload()}>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Download PNG
+        </Button>
       </DialogContent>
     </Dialog>
   );

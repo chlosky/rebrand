@@ -827,7 +827,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
       .from('onboarding_sessions')
       .update(updateData)
       .eq('id', onboardingSessionId)
-      .select('id,status,email,first_name,username,email_consent,sms_consent,character_id,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at')
+      .select('id,status,email,first_name,username,email_consent,sms_consent,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at')
       .single();
 
     if (obErr) {
@@ -1012,7 +1012,6 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
       const { error: prefsErr } = await supabase.from("user_preferences").upsert(
         {
           user_id: finalUserId,
-          selected_character: updatedSession.character_id || null,
           texts_enabled: finalSmsConsent,
           preferred_send_window: "both",
           email_marketing: finalEmailConsent,
@@ -1071,20 +1070,6 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
         }
         const rcToken = subscriptionId || session.id;
         await postStripePurchaseToRevenueCat(finalUserId, rcToken);
-      }
-
-      // Optional: character_selection_log (best-effort)
-      if (updatedSession.character_id) {
-        const { error: charErr } = await supabase.from("character_selection_log").insert({
-          user_id: finalUserId,
-          selected_character: updatedSession.character_id,
-          previous_character: null,
-          source: "onboarding_paid_activation",
-        });
-
-        if (charErr) {
-          console.warn("Character selection log insert failed (non-fatal):", JSON.stringify(charErr, null, 2));
-        }
       }
 
       // Step 7: Send password reset email (must not depend on any upsert success)

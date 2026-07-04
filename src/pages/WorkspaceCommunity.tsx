@@ -188,7 +188,7 @@ export default function WorkspaceCommunity() {
     }
   };
 
-  const card = dark ? "border-white/10 bg-white/[0.04]" : "border-zinc-200 bg-white";
+  const card = dark ? "border-white bg-black" : "border-zinc-200 bg-white";
   const muted = dark ? "text-white/55" : "text-zinc-500";
   const totalVotes = Object.values(voteCounts).reduce((a, b) => a + b, 0);
 
@@ -207,7 +207,7 @@ export default function WorkspaceCommunity() {
             </div>
             <p className={cn("text-sm", muted)}>{t("workspace.community.feedSubtitle")}</p>
           </div>
-          <Button asChild variant="outline" className={cn("gap-2", dark && "border-white/15 text-white hover:bg-white/10")}>
+          <Button asChild variant="outline" className={cn("gap-2", dark && "border-white text-white hover:bg-white hover:text-black")}>
             <Link to="/workspace/community/submit">
               <Upload className="h-4 w-4" />
               {t("workspace.community.submitSetup")}

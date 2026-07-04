@@ -21,7 +21,6 @@ import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { DesktopToolSidebar } from "@/components/DesktopToolSidebar";
 import { cn } from "@/lib/utils";
 import { validatePassword, validatePasswordMatch } from "@/lib/password-validation";
 import { Capacitor } from "@capacitor/core";
@@ -33,7 +32,6 @@ import {
 } from "@/services/revenueCatManageBilling";
 import { bootstrapRevenueCat, resolveRevenueCatUILocale, syncRevenueCatUILocale } from "@/services/revenueCat";
 import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { resolveAppLocale, legalTermsPath, legalPrivacyPath } from "@/lib/locale";
 
 const PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/account/subscriptions";
@@ -628,11 +626,6 @@ const Settings = () => {
   // Email reminders are now loaded from database in fetchUserData
   // This useEffect is no longer needed as it's handled in fetchUserData
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebar-collapsed');
-    return saved === 'true';
-  });
-
   const billingOptionsLoading =
     !Capacitor.isNativePlatform() &&
     rcWebBillingAvailable === null &&
@@ -644,19 +637,7 @@ const Settings = () => {
       className={cn(cn("tool-page-shell relative overflow-x-hidden", theme === "dark" ? "text-white bg-[#0f0d14]" : "text-foreground bg-background"), theme === "dark" ? "min-h-screen" : "min-h-screen bg-background", "pb-20 md:pb-0")}
       style={{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" }}
     >
-      {!isMobile && <DesktopToolSidebar appearance={theme} onCollapsedChange={setSidebarCollapsed} />}
-
-      <div
-        className="min-h-screen"
-        style={
-          !isMobile
-            ? {
-                marginLeft: sidebarCollapsed ? "64px" : "256px",
-                transition: "margin-left 300ms ease-in-out",
-              }
-            : {}
-        }
-      >
+      <div className="min-h-screen">
         {isMobile && (
           <div
             className={cn(
@@ -670,14 +651,14 @@ const Settings = () => {
         <div className="relative z-10">
         <header
           className={cn(cn("md:h-16 flex items-center md:py-0 z-50 border-b", theme === "dark" ? "py-2.5 border-white/10" : "py-3 border-primary/10", theme === "dark" ? "border-b border-white/10 bg-[#0f0d14]" : "bg-background"), isMobile ? "sticky z-50 left-0 right-0 w-full max-md:mt-[var(--app-safe-area-top)] max-md:top-[var(--app-safe-area-top)]" : "fixed top-0 left-0 right-0")}
-          style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", left: sidebarCollapsed ? "64px" : "256px", right: "0", transition: "left 300ms ease-in-out" }}
+          style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", right: "0" }}
         >
         <div className={cn("px-4 sm:px-6 w-full", !isMobile ? "" : "container mx-auto")}>
           <div className="flex items-center justify-between">
           <div>
             <h1
               className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"}
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/dashboard/boards")}
             >
               {t("header")}
             </h1>
@@ -916,23 +897,6 @@ const Settings = () => {
                 theme === "dark" && "!bg-transparent",
               )}
             >
-              <h3 className="font-semibold text-sm sm:text-base">{t("language.heading")}</h3>
-              <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                {t("language.description")}
-              </p>
-              <LanguageSwitcher
-                persistToAccount
-                variant="default"
-                className="justify-start"
-              />
-            </Card>
-
-            <Card
-              className={cn(
-                theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3",
-                theme === "dark" && "!bg-transparent",
-              )}
-            >
               <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                 <Zap className="h-4 w-4" />
                 {t("preferences.routineHeading")}
@@ -946,7 +910,7 @@ const Settings = () => {
                   "w-full justify-between h-auto py-3",
                   theme === "dark" && "border-white/12 bg-transparent hover:bg-white/[0.06]",
                 )}
-                onClick={() => navigate("/dashboard/settings/manifestation-routine")}
+                onClick={() => navigate("/dashboard/settings/routine-reminders")}
               >
                 <span className="text-left">
                   <span className="block font-medium">{t("preferences.routineButtonTitle")}</span>
@@ -1201,14 +1165,14 @@ const Settings = () => {
                 <Button
                   variant="ghost"
                   className="w-full justify-start"
-                  onClick={() => navigate(legalTermsPath(localeKey))}
+                  onClick={() => navigate(legalTermsPath())}
                 >
                   {t("legal.terms")}
                 </Button>
                 <Button
                   variant="ghost"
                   className="w-full justify-start"
-                  onClick={() => navigate(legalPrivacyPath(localeKey))}
+                  onClick={() => navigate(legalPrivacyPath())}
                 >
                   {t("legal.privacy")}
                 </Button>

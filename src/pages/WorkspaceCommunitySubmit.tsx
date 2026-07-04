@@ -197,7 +197,7 @@ export default function WorkspaceCommunitySubmit() {
     }
   };
 
-  const card = dark ? "border-white/10 bg-white/[0.04]" : "border-zinc-200 bg-white";
+  const card = dark ? "border-white bg-black" : "border-zinc-200 bg-white";
   const muted = dark ? "text-white/55" : "text-zinc-500";
   const field = dark ? "border-white/12 bg-transparent text-white" : "";
 

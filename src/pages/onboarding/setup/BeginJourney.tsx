@@ -25,12 +25,12 @@ export default function SetupBeginJourney() {
       canContinue
       onBack={() => {
         if (isSuiteFunnel) {
-          navigate(`${setupBase}/affirmations`);
+          navigate(`${setupBase}/current-friction`);
           return;
         }
         const intent = readSetupDraft().primaryIntent;
         if (intent === "office_work") {
-          navigate(`${setupBase}/tool-preference`);
+          navigate(`${setupBase}/office-planning-system`);
           return;
         }
         navigate(`${setupBase}/workspace-template`);

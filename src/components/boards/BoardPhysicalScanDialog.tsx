@@ -70,7 +70,7 @@ export function BoardPhysicalScanDialog({
         toast.message("No clear text found — try a straighter photo with good lighting");
       }
     } catch {
-      toast.error("OCR failed — you can still import the photo");
+      toast.error("Couldn't read text — you can still import the photo");
     } finally {
       setWorking(false);
     }
@@ -130,8 +130,7 @@ export function BoardPhysicalScanDialog({
             Scan physical board
           </DialogTitle>
           <DialogDescription>
-            Photograph your paletteplot.com acrylic board (or any wall board). We&apos;ll add the photo and
-            optionally extract text with OCR so you can edit it digitally.
+            Photograph your board. We can add the photo and pull out text you can edit.
           </DialogDescription>
         </DialogHeader>
 
@@ -160,11 +159,11 @@ export function BoardPhysicalScanDialog({
           <div className="space-y-2 rounded-lg border border-neutral-100 bg-neutral-50 p-3 text-xs">
             <label className="flex items-center gap-2">
               <Checkbox checked={addPhoto} onCheckedChange={(v) => setAddPhoto(Boolean(v))} />
-              Add photo as background layer
+              Add photo to board
             </label>
             <label className="flex items-center gap-2">
               <Checkbox checked={runOcr} onCheckedChange={(v) => setRunOcr(Boolean(v))} />
-              Extract text with OCR (editable)
+              Pull out text to edit
             </label>
             <label className="flex items-center gap-2">
               <Checkbox checked={saveUpload} onCheckedChange={(v) => setSaveUpload(Boolean(v))} />
@@ -196,7 +195,7 @@ export function BoardPhysicalScanDialog({
             )}
             {preview && runOcr && (
               <Button type="button" variant="outline" size="sm" disabled={working} onClick={() => void previewOcr()}>
-                {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Preview OCR"}
+                {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Preview text"}
               </Button>
             )}
             <Button type="button" size="sm" className="ml-auto" disabled={!file || working} onClick={() => void handleImport()}>
@@ -205,7 +204,7 @@ export function BoardPhysicalScanDialog({
           </div>
 
           <p className="text-[10px] leading-snug text-neutral-500">
-            Tip: shoot straight-on in good light. OCR works best on printed or vinyl lettering; handwriting may need cleanup.
+            Tip: shoot straight-on in good light. Printed lettering works best; handwriting may need cleanup.
           </p>
         </div>
       </DialogContent>

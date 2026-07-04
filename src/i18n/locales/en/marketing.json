@@ -32,31 +32,15 @@
     "features": {
       "boards": {
         "title": "4-Board Life System",
-        "description": "Three focus boards plus The Plan — drag-and-drop artboards, themed images, private uploads, and AI action reminders."
-      },
-      "subliminal": {
-        "title": "Subliminal Maker",
-        "description": "Make subliminals with your own voice, binaural beats, background sounds, and layered vocals."
-      },
-      "mirror": {
-        "title": "Mirror Work",
-        "description": "Immerse yourself into digital mirror work's scenes and sounds, as you build self-concept with your affirmations."
-      },
-      "affirmations": {
-        "title": "Robotic Affirm & Script Your Life",
-        "description": "Have your custom affirmations shown on a teleprompter-like screen, count your reps, and visualize."
-      },
-      "beliefs": {
-        "title": "Address Self-Limiting Beliefs",
-        "description": "Deconstruct self-limiting beliefs and integrate expansionary beliefs."
+        "description": "Vision, home, office, and mood boards plus The Plan — drag-and-drop artboards, themed images, private uploads, and AI action reminders."
       },
       "journal": {
-        "title": "Journal & Track",
-        "description": "Journal, document inspired action, and track your progress with manifesting lists."
+        "title": "Journal & Timeline",
+        "description": "Capture notes, milestones, and the story of your rebrand in one place."
       },
-      "coach": {
-        "title": "Digital Manifesting Coach",
-        "description": "Ask questions you're scared to ask anyone else, and get advice when you're wavering due to 3D circumstances."
+      "tracking": {
+        "title": "Progress Tracking",
+        "description": "Weekly goals, inspired actions, and a clear view of what you actually followed through on."
       }
     }
   },
@@ -76,7 +60,7 @@
     "items": {
       "whatIs": {
         "question": "What is Palette Plotting?",
-        "answer": "Palette Plotting is a digital personal growth platform that helps you build momentum, reflect through journaling, create audio-based tools, explore mindset patterns, and work with guided suggestions designed for clarity and progress. For a concise tour of each tool in the context of manifestation practice, read What is Palette Plotting?.",
+        "answer": "Palette Plotting is a digital life-organization platform built around four boards — vision, home, office, and mood — plus The Plan. Use it to plot your rebrand visually, stay organized, and track progress over time. For a concise tour, read What is Palette Plotting?.",
         "linkWhatIs": "What is Palette Plotting?"
       },
       "notTherapy": {
@@ -153,7 +137,7 @@
       "headline3Connector": "+",
       "headline3Accent": "The Plan",
       "freeTrialLine": "Free on the web · pairs with acrylic boards at paletteplot.com",
-      "subhead1": "Canva-style drag-and-drop editor",
+      "subhead1": "Drag-and-drop board editor",
       "subhead2": "Themed image library + your private photos",
       "subhead3": "AI action reminders · email · SMS · iCal export",
       "awardLine": "The viral 4-board system — now digital",
@@ -163,10 +147,10 @@
       "exploreApp": "Explore the app",
       "freeTrialUnderBadges": "Also available on iOS and Android"
     },
-    "manifestPanel": {
+    "boardsPanel": {
       "headlineLine1": "One workspace for",
       "headlineLine2": "what you're building",
-      "manifestListAria": "Board focus areas",
+      "boardListAria": "Board focus areas",
       "rows": [
         [
           "identity",
@@ -192,37 +176,33 @@
     },
     "featureStripKeys": [
       "boards",
-      "subliminal",
-      "mirror",
-      "affirmations",
-      "beliefs",
       "journal",
-      "coach"
+      "tracking"
     ],
     "practiceSection": {
       "headlineLine1": "Built for the",
       "headlineLine2": "4-board method",
-      "body": "Palette Plotting is a life-organization and moodboard system — not a scattered vision-board app. Plot three focus areas, lock in The Plan, and keep affirmations, audio tools, and journaling in the same membership when you want them.",
+      "body": "Palette Plotting is a life-organization and moodboard system. Plot three focus areas, lock in The Plan, and keep journaling and progress tracking in the same membership.",
       "focusAreasAria": "Board themes",
       "pills": [
         {
           "label": "Identity & Glow Up",
-          "category": "Self Concept",
+          "category": "Vision",
           "color": "pink"
         },
         {
           "label": "Career & Money",
-          "category": "Law of Assumption",
+          "category": "Focus",
           "color": "green"
         },
         {
           "label": "Love & Life",
-          "category": "Self Concept",
+          "category": "Mood",
           "color": "blue"
         },
         {
           "label": "The Plan",
-          "category": "Self Concept",
+          "category": "Action",
           "color": "yellow"
         }
       ]
@@ -256,19 +236,19 @@
       "starsAria": "5 out of 5 stars",
       "items": [
         {
-          "quote": "I had the acrylic boards on my wall but kept screenshotting Pinterest at 2am anyway. Having the same four-board structure on my laptop finally made the system stick — Focus boards for vibes, The Plan for what I actually do this week.",
+          "quote": "I had acrylic boards on my wall but kept screenshotting inspo at 2am anyway. Having the same four-board structure on my laptop finally made the system stick — focus boards for vibes, The Plan for what I actually do this week.",
           "name": "Maya T.",
           "role": "4-board system"
         },
         {
-          "quote": "The drag-and-drop editor feels like Canva but purpose-built. I dumped my career board images in, pulled themes with AI, and scheduled email nudges for the plan steps I'd been avoiding.",
+          "quote": "The drag-and-drop editor is simple but purpose-built. I dumped my career board images in, pulled themes with AI, and scheduled email nudges for the plan steps I'd been avoiding.",
           "name": "Devon K.",
           "role": "Career & money board"
         },
         {
-          "quote": "I still use subliminals and affirmations here when I want them — but Boards is the home base. It's organization first, not another manifestation rabbit hole.",
+          "quote": "Boards is the home base now. Everything I care about lives in one workspace instead of ten half-started lists.",
           "name": "Jade L.",
-          "role": "Focus boards + tools"
+          "role": "Focus boards"
         }
       ]
     },
@@ -315,7 +295,7 @@
   "community": {
     "eyebrow": "Community",
     "title": "Join the community",
-    "body": "Connect with Palette Plotting on Discord and TikTok — updates, manifestation talk, and what we're building next.",
+    "body": "Connect with Palette Plotting on Discord and TikTok — updates, board tips, and what we're building next.",
     "discordTitle": "Official Palette Plotting Discord",
     "tiktokTitle": "Official Palette Plotting TikTok"
   },
@@ -323,7 +303,7 @@
     "cta": "Download now & start for free today",
     "meta": {
       "title": "Download Palette Plotting",
-      "description": "Download Palette Plotting — subliminals, affirmations, mirror work, and your manifesting coach in one app."
+      "description": "Download Palette Plotting — your four-board life system on web and mobile."
     }
   }
 }

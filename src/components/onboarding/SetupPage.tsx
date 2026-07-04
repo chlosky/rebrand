@@ -15,12 +15,9 @@ import {
 } from "@/lib/onboardingSetupTheme";
 import { cn } from "@/lib/utils";
 import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
-import { PalettePlottingBottomScene } from "@/components/onboarding/PalettePlottingBottomScene";
-import { shouldShowSetupBottomScene } from "@/lib/onboardingBottomSceneRoutes";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import "@/styles/palette-plotting-bottom-scene.css";
 
 type Props = {
   children?: ReactNode;
@@ -236,8 +233,6 @@ export function SetupPage({
           : "max-md:h-[100dvh] max-md:max-h-[100dvh] md:min-h-screen",
       )}
     >
-      {shouldShowSetupBottomScene(pathname) ? <PalettePlottingBottomScene /> : null}
-
       {setupProgressFillPct != null ? (
         <div
           className={cn(

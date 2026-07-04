@@ -15,19 +15,13 @@ function normalizeMarketingPagePath(pathname: string): string {
 
 function resolveMarketingHomepagePagePath(): string {
   if (typeof window === "undefined") return "/";
-  const host = window.location.hostname.toLowerCase();
-  if (host === "themanifestingsetup.com" || host === "www.themanifestingsetup.com") {
-    return "/manifesting-setup";
-  }
   return normalizeMarketingPagePath(window.location.pathname || "/");
 }
 
 function shouldLogMarketingHomepageEvent(pagePath: string): boolean {
   return (
     pagePath === "/" ||
-    pagePath === "/manifesting-setup" ||
     pagePath === "/mobilelanding" ||
-    pagePath === "/mobilelandingBR" ||
     pagePath === "/mobilelandingmimi" ||
     pagePath === "/mobilelandingjonni"
   );

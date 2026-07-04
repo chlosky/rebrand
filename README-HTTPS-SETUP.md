@@ -1,6 +1,6 @@
 # Local HTTPS Setup for Camera/Microphone Access
 
-To use camera and microphone features (Mirror Work and Subliminal Audio) from your phone on the local network, you need HTTPS.
+To use camera and microphone features (board photo uploads) from your phone on the local network, you need HTTPS.
 
 ## Quick Setup
 

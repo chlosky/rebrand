@@ -1,22 +1,22 @@
-/** Routine manifestation push copy — keys must match app locales + OneSignal language codes. */
+/** Routine push copy — keys must match app locales + OneSignal language codes. */
 export const ROUTINE_PUSH_COPY: Record<
   "en" | "es-419" | "pt-BR",
   { heading: string; subtitle: string; body: string }
 > = {
   en: {
-    heading: "Time to manifest!",
-    subtitle: "Get back into the app to manifest",
-    body: "Your dreams are waiting. Let's return to your manifesting practice now.",
+    heading: "Board check-in",
+    subtitle: "Open Palette Plotting",
+    body: "A few minutes on your boards keeps your plan moving. Jump back in when you're ready.",
   },
   "es-419": {
-    heading: "¡Hora de manifestar!",
-    subtitle: "Vuelve a la app",
-    body: "Tu deseo te espera. Entra y retoma tu rutina.",
+    heading: "Revisión de tableros",
+    subtitle: "Abre Palette Plotting",
+    body: "Unos minutos en tus tableros mantienen tu plan en marcha. Vuelve cuando quieras.",
   },
   "pt-BR": {
-    heading: "Hora de manifestar!",
-    subtitle: "Volte para o app",
-    body: "Seu desejo te espera. Entre e retome sua rotina.",
+    heading: "Revisão dos boards",
+    subtitle: "Abra o Palette Plotting",
+    body: "Alguns minutos nos seus boards mantêm o plano em movimento. Volte quando quiser.",
   },
 };
 

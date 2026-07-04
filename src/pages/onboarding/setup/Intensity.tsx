@@ -23,7 +23,7 @@ import {
   optInOneSignalPush,
   readDeviceTimeZone,
   requestOneSignalPushPermission,
-  syncManifestationRoutineOneSignalTags,
+  syncRoutineOneSignalTags,
   syncOneSignalUserLanguage,
 } from "@/services/oneSignal";
 import { requestNativePushPermission } from "@/services/pushNotifications";
@@ -197,10 +197,10 @@ export default function SetupIntensity() {
     const routineItems: { slug: string; label: string; cadence: string; target_per_week: number }[] =
       [];
 
-    if (toolPrefs.includes("powerful_affirmations") || toolPrefs.length === 0) {
+    if (toolPrefs.includes("boards_workspace") || toolPrefs.length === 0) {
       routineItems.push({
-        slug: "affirmations",
-        label: routineItemLabel("affirmations"),
+        slug: "boards_review",
+        label: routineItemLabel("boards_review"),
         cadence: "daily",
         target_per_week: opts.intensity === "locked_in" ? 7 : opts.intensity === "consistent" ? 5 : 3,
       });
@@ -215,8 +215,8 @@ export default function SetupIntensity() {
     }
     if (routineItems.length === 0) {
       routineItems.push({
-        slug: "affirmations",
-        label: routineItemLabel("affirmations"),
+        slug: "boards_review",
+        label: routineItemLabel("boards_review"),
         cadence: "daily",
         target_per_week: opts.intensity === "locked_in" ? 7 : opts.intensity === "consistent" ? 5 : 3,
       });
@@ -248,7 +248,7 @@ export default function SetupIntensity() {
     if (Capacitor.isNativePlatform()) {
       try {
         console.info("[Intensity] tags:start");
-        await syncManifestationRoutineOneSignalTags({
+        await syncRoutineOneSignalTags({
           intensity: opts.intensity,
           notificationsEnabled,
           permissionStatus,

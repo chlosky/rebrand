@@ -1,4 +1,4 @@
-/** Board accent colors — aligned with paletteplot.com acrylic catalog. */
+/** Named board colors — templates, AI companion, and legacy rows. */
 export type BoardColorKey =
   | "rose_gold"
   | "light_pink"
@@ -33,7 +33,43 @@ export const BOARD_COLORS: Record<
   black_opaque: { key: "black_opaque", label: "Black", swatch: "#1C1C1C", fill: "#F5F5F5" },
 };
 
+/** Quick picks in the Marks panel — full ROYGBIV plus useful neutrals. */
+export const BOARD_QUICK_PICK_COLORS = [
+  { label: "Red", hex: "#e53935" },
+  { label: "Orange", hex: "#fb8c00" },
+  { label: "Yellow", hex: "#fdd835" },
+  { label: "Green", hex: "#43a047" },
+  { label: "Blue", hex: "#1e88e5" },
+  { label: "Indigo", hex: "#3949ab" },
+  { label: "Violet", hex: "#8e24aa" },
+  { label: "Rose", hex: "#ec407a" },
+  { label: "Coral", hex: "#ff7043" },
+  { label: "Lime", hex: "#c0ca33" },
+  { label: "Teal", hex: "#00897b" },
+  { label: "Cyan", hex: "#00acc1" },
+  { label: "White", hex: "#ffffff" },
+  { label: "Charcoal", hex: "#455a64" },
+] as const;
+
+export function normalizeBoardColorHex(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const withHash = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  if (!/^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(withHash)) return null;
+  const expanded =
+    withHash.length === 4
+      ? `#${withHash[1]}${withHash[1]}${withHash[2]}${withHash[2]}${withHash[3]}${withHash[3]}`
+      : withHash;
+  return expanded.toLowerCase();
+}
+
 export function boardFillForKey(key: string): string {
+  const hex = normalizeBoardColorHex(key);
+  if (hex) return hex;
   const entry = BOARD_COLORS[key as BoardColorKey];
-  return entry?.fill ?? "#FAFAFA";
+  return entry?.fill.toLowerCase() ?? "#fafafa";
+}
+
+export function boardColorHexForKey(key: string): string {
+  return boardFillForKey(key);
 }

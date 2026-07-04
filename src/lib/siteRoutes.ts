@@ -1,19 +1,15 @@
 /** Public marketing/legal pages that share the bright palette plot chrome (not app shell). */
 
-import { LEGAL_ROUTE_LOCALES } from "@/lib/locale";
-
-const LOCALIZED_LEGAL_PATHS = LEGAL_ROUTE_LOCALES.flatMap((locale) => [
-  `/terms/${locale}`,
-  `/privacy/${locale}`,
-  `/acceptable-use/${locale}`,
-  `/billing/${locale}`,
-  `/dmca/${locale}`,
-]);
-
 const MARKETING_SITE_EXACT = new Set([
   "/",
+  "/about",
+  "/cart",
+  "/palette-plotting-guide",
+  "/dry-erase-boards",
+  "/home-decor-boards",
+  "/vision-boards",
+  "/neon-boards",
   "/mobilelanding",
-  "/mobilelandingBR",
   "/mobilelandingmimi",
   "/mobilelandingjonni",
   "/faq",
@@ -26,11 +22,11 @@ const MARKETING_SITE_EXACT = new Set([
   "/billing",
   "/pricingplans",
   "/dmca",
-  "/quiz/blocking-manifestation",
-  ...LOCALIZED_LEGAL_PATHS,
+  "/quiz/life-rebrand",
+  "/help/plotting",
 ]);
 
-const MARKETING_SITE_PREFIXES = ["/blog"];
+const MARKETING_SITE_PREFIXES = ["/policies"];
 
 const APP_ROUTE_PREFIXES = ["/dashboard", "/onboarding"];
 

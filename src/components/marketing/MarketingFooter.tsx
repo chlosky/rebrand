@@ -1,5 +1,4 @@
 import { useMarketingTranslation } from "@/hooks/useMarketingTranslation";
-import { useMarketingLocaleLng } from "@/contexts/MarketingLocaleContext";
 import {
   marketingLegalAcceptableUsePath,
   marketingLegalBillingPath,
@@ -28,7 +27,6 @@ function scrollToHash(path: string) {
 
 export function MarketingFooter() {
   const { t } = useMarketingTranslation();
-  const marketingLng = useMarketingLocaleLng();
   const navigate = useNavigate();
   const year = new Date().getFullYear();
 
@@ -37,12 +35,12 @@ export function MarketingFooter() {
       { label: t("home.footer.whatIs"), path: "/what-is-palette-plotting" },
       { label: t("home.footer.faq"), path: "/faq" },
       { label: t("home.footer.community"), path: "/community" },
-      { label: t("home.footer.billing"), path: marketingLegalBillingPath(marketingLng) },
+      { label: t("home.footer.billing"), path: marketingLegalBillingPath() },
     ],
     [
-      { label: t("home.footer.terms"), path: marketingLegalTermsPath(marketingLng) },
-      { label: t("home.footer.privacy"), path: marketingLegalPrivacyPath(marketingLng) },
-      { label: t("home.footer.acceptableUse"), path: marketingLegalAcceptableUsePath(marketingLng) },
+      { label: t("home.footer.terms"), path: marketingLegalTermsPath() },
+      { label: t("home.footer.privacy"), path: marketingLegalPrivacyPath() },
+      { label: t("home.footer.acceptableUse"), path: marketingLegalAcceptableUsePath() },
       { label: t("home.footer.contact"), path: "/contact" },
     ],
   ];

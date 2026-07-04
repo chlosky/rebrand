@@ -14,8 +14,6 @@ import {
 
   Lock,
 
-  Sparkles,
-
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +37,7 @@ import { COMMUNITY_IN_APP_ENABLED } from "@/lib/communityRelease";
 
 import { WorkspaceHeader, workspaceShellClass } from "@/components/workspace/WorkspaceHeader";
 
+import { ProgressMilestonesTabs } from "@/components/ProgressMilestonesTabs";
 import { LibraryReader } from "@/components/workspace/LibraryReader";
 
 import {
@@ -51,7 +50,9 @@ import {
 
 
 
-type WorkspaceTab = "library" | "create" | "projects";
+type WorkspaceTab = "library" | "journey" | "new-board" | "create" | "projects";
+
+const WORKSPACE_TABS: WorkspaceTab[] = ["library", "journey", "new-board", "create", "projects"];
 
 
 
@@ -117,7 +118,7 @@ function LockedOverlay({
 
         "absolute inset-0 z-20 flex items-center justify-center rounded-2xl p-6 backdrop-blur-[2px]",
 
-        dark ? "bg-black/88" : "bg-[#faf8f5]/88",
+        dark ? "bg-black" : "bg-[#faf8f5]/88",
 
       )}
 
@@ -131,7 +132,7 @@ function LockedOverlay({
 
             "mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full",
 
-            dark ? "bg-white/10 text-white/70" : "bg-zinc-100 text-zinc-500",
+            dark ? "border border-white bg-black text-white" : "bg-zinc-100 text-zinc-500",
 
           )}
 
@@ -143,9 +144,9 @@ function LockedOverlay({
 
         <h3 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>{title}</h3>
 
-        <p className={cn("mt-2 text-sm leading-relaxed", dark ? "text-white/55" : "text-zinc-500")}>{body}</p>
+        <p className={cn("mt-2 text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>{body}</p>
 
-        <Button onClick={onUpgrade} className={cn("mt-5 w-full", SETUP_PRIMARY_CTA_CLASS)}>
+        <Button onClick={onUpgrade} className={cn("mt-5 w-full", dark ? "h-12 rounded-xl border border-white bg-white font-semibold text-black hover:bg-white" : SETUP_PRIMARY_CTA_CLASS)}>
 
           {upgradeLabel}
 
@@ -209,7 +210,7 @@ function TabButton({
 
           : dark
 
-            ? "border-transparent text-white/50 hover:text-white/75"
+            ? "border-transparent text-white hover:underline"
 
             : "border-transparent text-zinc-500 hover:text-zinc-700",
 
@@ -219,7 +220,7 @@ function TabButton({
 
       {label}
 
-      {locked ? <Lock className={cn("h-3 w-3", dark ? "text-white/35" : "text-zinc-400")} aria-hidden /> : null}
+      {locked ? <Lock className={cn("h-3 w-3", dark ? "text-white" : "text-zinc-400")} aria-hidden /> : null}
 
     </button>
 
@@ -231,7 +232,7 @@ function TabButton({
 
 export default function Workspace() {
 
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation(["dashboard", "tools"]);
 
   const navigate = useNavigate();
 
@@ -252,16 +253,11 @@ export default function Workspace() {
   const tabParam = searchParams.get("tab");
 
   const tab: WorkspaceTab =
-
-    tabParam === "create" || tabParam === "projects" || tabParam === "library" || tabParam === "tips"
-
-      ? tabParam === "tips"
-
-        ? "library"
-
-        : tabParam
-
-      : "library";
+    tabParam === "tips"
+      ? "library"
+      : WORKSPACE_TABS.includes(tabParam as WorkspaceTab)
+        ? (tabParam as WorkspaceTab)
+        : "library";
 
 
 
@@ -381,6 +377,34 @@ export default function Workspace() {
 
       <TabButton
 
+        active={tab === "journey"}
+
+        locked={!hasPro}
+
+        label={t("workspace.tabs.yourJourney")}
+
+        onClick={() => setTab("journey")}
+
+        dark={dark}
+
+      />
+
+      <TabButton
+
+        active={tab === "new-board"}
+
+        locked={!hasPro}
+
+        label={t("workspace.tabs.newBoard")}
+
+        onClick={() => setTab("new-board")}
+
+        dark={dark}
+
+      />
+
+      <TabButton
+
         active={tab === "create"}
 
         locked={!hasPro}
@@ -417,7 +441,7 @@ export default function Workspace() {
 
     "rounded-xl border shadow-sm transition-colors",
 
-    dark ? "border-white/10 bg-white/[0.04] hover:border-white/20" : "border-zinc-200/80 bg-white hover:border-zinc-300",
+    dark ? "border-white bg-black hover:border-white" : "border-zinc-200/80 bg-white hover:border-zinc-300",
 
   );
 
@@ -439,7 +463,7 @@ export default function Workspace() {
 
         <div className="space-y-3">
 
-          <p className={cn("text-sm", dark ? "text-white/55" : "text-zinc-500")}>{t("workspace.library.lead")}</p>
+          <p className={cn("text-sm", dark ? "text-white" : "text-zinc-500")}>{t("workspace.library.lead")}</p>
 
           {FREE_LIBRARY_GUIDES.map((guide) => (
 
@@ -457,13 +481,13 @@ export default function Workspace() {
 
               {guide.coverImage ? (
 
-                <div className={cn("relative w-24 shrink-0 sm:w-28", dark ? "bg-white/5" : "bg-zinc-100")}>
+                <div className={cn("relative w-24 shrink-0 border-r sm:w-28", dark ? "border-white bg-black" : "bg-zinc-100")}>
 
                   <img
 
                     src={guide.coverImage}
 
-                    alt=""
+                    alt={guide.title}
 
                     className="h-full min-h-[5.5rem] w-full object-cover"
 
@@ -483,7 +507,7 @@ export default function Workspace() {
 
                     "flex w-24 shrink-0 items-center justify-center sm:w-28",
 
-                    dark ? "bg-white/10 text-white/80" : "bg-[#f3f0eb] text-zinc-600",
+                    dark ? "border-r border-white bg-black text-white" : "bg-[#f3f0eb] text-zinc-600",
 
                   )}
 
@@ -497,7 +521,7 @@ export default function Workspace() {
 
               <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-4">
 
-                <span className={cn("text-[11px] font-semibold uppercase tracking-wider", dark ? "text-white/40" : "text-zinc-400")}>
+                <span className={cn("text-[11px] font-semibold uppercase tracking-wider", dark ? "text-white" : "text-zinc-400")}>
 
                   {t(CATEGORY_LABEL_KEYS[guide.category])}
 
@@ -509,7 +533,7 @@ export default function Workspace() {
 
                 </span>
 
-                <span className={cn("mt-1 block text-xs leading-relaxed", dark ? "text-white/50" : "text-zinc-500")}>
+                <span className={cn("mt-1 block text-xs leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
 
                   {guide.tagline} · {guide.readMinutes} min
 
@@ -517,13 +541,13 @@ export default function Workspace() {
 
               </span>
 
-              <ChevronRight className={cn("my-auto mr-4 h-4 w-4 shrink-0", dark ? "text-white/35" : "text-zinc-400")} />
+              <ChevronRight className={cn("my-auto mr-4 h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
 
             </button>
 
           ))}
 
-          <p className={cn("pt-2 text-center text-xs leading-relaxed", dark ? "text-white/40" : "text-zinc-400")}>
+          <p className={cn("pt-2 text-center text-xs leading-relaxed", dark ? "text-white" : "text-zinc-400")}>
 
             {t("workspace.library.marketingNote")}
 
@@ -534,6 +558,202 @@ export default function Workspace() {
       );
 
     }
+
+  }
+
+
+
+  if (tab === "journey") {
+
+    panel = (
+
+      <div className="relative min-h-[22rem]">
+
+        <div className="space-y-4">
+
+          <div>
+
+            <p className={cn("text-sm leading-snug", dark ? "text-white" : "text-zinc-500")}>
+
+              {t("tools:journey.subtitle")}
+
+            </p>
+
+            <h2 className={cn("mt-2 font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
+
+              {t("tools:journey.yourProgress")}
+
+            </h2>
+
+          </div>
+
+          {hasPro ? (
+
+            <>
+
+              <div className={cn("rounded-xl border p-4", cardClass)}>
+
+                <ProgressMilestonesTabs syncHash={false} />
+
+              </div>
+
+              <button
+
+                type="button"
+
+                onClick={() => navigate("/dashboard/chrono")}
+
+                className={cn("flex w-full items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors", cardClass)}
+
+              >
+
+                <span
+
+                  className={cn(
+
+                    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+
+                    dark ? "border-white bg-black text-white" : "border-zinc-200 bg-zinc-50 text-zinc-900",
+
+                  )}
+
+                >
+
+                  <BookOpen className="h-4 w-4" />
+
+                </span>
+
+                <span className="min-w-0 flex-1">
+
+                  <span className={cn("block text-sm font-semibold", dark ? "text-white" : "text-zinc-900")}>
+
+                    {t("workspace.journey.journalTitle")}
+
+                  </span>
+
+                  <span className={cn("mt-0.5 block text-xs", dark ? "text-white" : "text-zinc-500")}>
+
+                    {t("workspace.journey.journalDescription")}
+
+                  </span>
+
+                </span>
+
+                <ChevronRight className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
+
+              </button>
+
+            </>
+
+          ) : null}
+
+        </div>
+
+        {!hasPro && !loading ? (
+
+          <LockedOverlay
+
+            dark={dark}
+
+            title={t("workspace.locked.journeyTitle")}
+
+            body={t("workspace.locked.journeyBody")}
+
+            onUpgrade={goUpgrade}
+
+            upgradeLabel={t("workspace.locked.upgrade")}
+
+          />
+
+        ) : null}
+
+      </div>
+
+    );
+
+  }
+
+
+
+  if (tab === "new-board") {
+
+    panel = (
+
+      <div className="relative min-h-[22rem]">
+
+        <div
+
+          className={cn(
+
+            "flex min-h-[22rem] flex-col items-center justify-center rounded-2xl border px-6 py-10 shadow-sm",
+
+            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
+
+          )}
+
+        >
+
+          <h2 className={cn("text-center font-welcome-serif text-2xl leading-snug sm:text-[1.65rem]", dark ? "text-white" : "text-zinc-900")}>
+
+            {t("workspace.newBoard.title")}
+
+          </h2>
+
+          <p className={cn("mt-3 max-w-md text-center text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
+
+            {t("workspace.newBoard.subtitle")}
+
+          </p>
+
+          {hasPro ? (
+
+            <Button
+
+              className={cn(
+
+                "mt-8",
+
+                dark
+
+                  ? "h-12 rounded-xl border border-white bg-white font-semibold text-black hover:bg-white"
+
+                  : SETUP_PRIMARY_CTA_CLASS,
+
+              )}
+
+              onClick={() => navigate("/dashboard/boards")}
+
+            >
+
+              {t("workspace.newBoard.openBoards")}
+
+            </Button>
+
+          ) : null}
+
+        </div>
+
+        {!hasPro && !loading ? (
+
+          <LockedOverlay
+
+            dark={dark}
+
+            title={t("workspace.locked.newBoardTitle")}
+
+            body={t("workspace.locked.newBoardBody")}
+
+            onUpgrade={goUpgrade}
+
+            upgradeLabel={t("workspace.locked.upgrade")}
+
+          />
+
+        ) : null}
+
+      </div>
+
+    );
 
   }
 
@@ -551,7 +771,7 @@ export default function Workspace() {
 
             "flex min-h-[22rem] flex-col items-center justify-center rounded-2xl border px-6 py-10 shadow-sm",
 
-            dark ? "border-white/10 bg-white/[0.03]" : "border-zinc-200/80 bg-white",
+            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
 
           )}
 
@@ -579,7 +799,7 @@ export default function Workspace() {
 
               "w-full max-w-md rounded-2xl border px-4 py-3 text-sm",
 
-              dark ? "border-white/10 bg-black text-white/35" : "border-zinc-200 bg-[#faf8f5] text-zinc-400",
+              dark ? "border-white bg-black text-white" : "border-zinc-200 bg-[#faf8f5] text-zinc-400",
 
             )}
 
@@ -609,7 +829,7 @@ export default function Workspace() {
 
                   dark
 
-                    ? "border-white/15 bg-white/[0.04] text-white/80 hover:border-white/25"
+                    ? "border-white bg-black text-white hover:bg-white hover:text-black"
 
                     : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
 
@@ -629,7 +849,7 @@ export default function Workspace() {
 
             <Button
 
-              className={cn("mt-8", SETUP_PRIMARY_CTA_CLASS)}
+              className={cn("mt-8", dark ? "h-12 rounded-xl border border-white bg-white font-semibold text-black hover:bg-white" : SETUP_PRIMARY_CTA_CLASS)}
 
               onClick={() => navigate("/dashboard/boards")}
 
@@ -681,7 +901,7 @@ export default function Workspace() {
 
             "min-h-[22rem] rounded-2xl border p-5 shadow-sm",
 
-            dark ? "border-white/10 bg-white/[0.03]" : "border-zinc-200/80 bg-white",
+            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
 
           )}
 
@@ -697,7 +917,7 @@ export default function Workspace() {
 
               </h2>
 
-              <p className={cn("mt-1 text-sm", dark ? "text-white/55" : "text-zinc-500")}>
+              <p className={cn("mt-1 text-sm", dark ? "text-white" : "text-zinc-500")}>
 
                 {t("workspace.projects.subtitle")}
 
@@ -713,7 +933,7 @@ export default function Workspace() {
 
                 size="sm"
 
-                className={cn("rounded-lg", dark ? "border-white/15 text-white hover:bg-white/10" : "border-zinc-200")}
+                className={cn("rounded-lg", dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200")}
 
                 onClick={() => navigate("/dashboard/boards")}
 
@@ -751,7 +971,7 @@ export default function Workspace() {
 
                         dark
 
-                          ? "border-white/10 bg-white/[0.04] hover:border-white/20"
+                          ? "border-white bg-black hover:border-white"
 
                           : "border-zinc-200/80 bg-[#faf8f5] hover:border-zinc-300",
 
@@ -759,7 +979,7 @@ export default function Workspace() {
 
                     >
 
-                      <FolderKanban className={cn("h-4 w-4 shrink-0", dark ? "text-white/50" : "text-zinc-500")} />
+                      <FolderKanban className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-500")} />
 
                       <span className={cn("min-w-0 flex-1 truncate text-sm font-medium", dark ? "text-white" : "text-zinc-900")}>
 
@@ -767,7 +987,7 @@ export default function Workspace() {
 
                       </span>
 
-                      <ChevronRight className={cn("h-4 w-4 shrink-0", dark ? "text-white/35" : "text-zinc-400")} />
+                      <ChevronRight className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
 
                     </button>
 
@@ -785,7 +1005,7 @@ export default function Workspace() {
 
                   "rounded-xl border border-dashed px-4 py-8 text-center text-sm",
 
-                  dark ? "border-white/15 text-white/50" : "border-zinc-200 bg-[#faf8f5] text-zinc-500",
+                  dark ? "border-white text-white" : "border-zinc-200 bg-[#faf8f5] text-zinc-500",
 
                 )}
 
@@ -807,7 +1027,7 @@ export default function Workspace() {
 
                   key={n}
 
-                  className={cn("h-14 rounded-xl border", dark ? "border-white/10 bg-white/[0.04]" : "border-zinc-200 bg-[#faf8f5]")}
+                  className={cn("h-14 rounded-xl border", dark ? "border-white bg-black" : "border-zinc-200 bg-[#faf8f5]")}
 
                 />
 
@@ -856,22 +1076,16 @@ export default function Workspace() {
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
 
         {tab === "library" && !activeGuide ? (
-
-          <div className={cn("mb-5 flex items-center gap-2", dark ? "text-white/70" : "text-zinc-600")}>
-
-            <Sparkles className="h-4 w-4 text-[#a87c84]" aria-hidden />
-
-            <span className="text-sm font-medium">{t("workspace.library.heading")}</span>
-
-          </div>
-
+          <h1 className={cn("mb-2 font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
+            {t("workspace.library.heading")}
+          </h1>
         ) : null}
 
-        {loading && tab !== "library" ? (
+        {loading && tab !== "library" && tab !== "journey" && tab !== "new-board" ? (
 
           <div
 
-            className={cn("min-h-[22rem] rounded-2xl border", dark ? "border-white/10 bg-white/[0.03]" : "border-zinc-200/80 bg-white")}
+            className={cn("min-h-[22rem] rounded-2xl border", dark ? "border-white bg-black" : "border-zinc-200/80 bg-white")}
 
             aria-busy="true"
 
@@ -883,29 +1097,6 @@ export default function Workspace() {
 
         )}
 
-
-
-        {hasPro ? (
-
-          <p className={cn("mt-8 text-center text-xs", dark ? "text-white/35" : "text-zinc-400")}>
-
-            <button
-
-              type="button"
-
-              onClick={() => navigate("/dashboard")}
-
-              className="underline-offset-2 hover:underline"
-
-            >
-
-              {t("workspace.proDashboardLink")}
-
-            </button>
-
-          </p>
-
-        ) : null}
 
       </main>
 

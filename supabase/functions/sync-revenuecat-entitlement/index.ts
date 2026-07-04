@@ -29,13 +29,12 @@ const getCorsHeaders = (origin: string | null) => ({
 
 /** Optional payload from iOS client: onboarding choices to write to user_preferences, profiles, and user_plans. */
 interface OnboardingPrefs {
-  selected_character?: string | null;
   first_name?: string | null;
   username?: string | null;
   phone?: string | null;
   app_notifications_enabled?: boolean | null;
-  manifestation_intensity?: string | null;
-  manifest_routine_items?: unknown[] | null;
+  routine_intensity?: string | null;
+  routine_items?: unknown[] | null;
   routine_notification_times?: string[] | null;
   timezone?: string | null;
   notification_permission_status?: string | null;
@@ -47,7 +46,7 @@ interface OnboardingPrefs {
   preferred_locale?: string | null;
 }
 
-const VALID_CHARACTERS = ["river", "sage", "rose", "oliver"] as const;
+const VALID_ROUTINE_INTENSITIES = new Set(["light", "consistent", "locked_in"]);
 
 async function markOnboardingSessionPaidForUser(
   supabase: ReturnType<typeof createClient>,
@@ -125,16 +124,13 @@ function applyOnboardingPrefs(
     profileUpdates.app_notifications_enabled = prefs.app_notifications_enabled;
   }
   if (
-    prefs.manifestation_intensity === "light" ||
-    prefs.manifestation_intensity === "consistent" ||
-    prefs.manifestation_intensity === "locked_in"
+    typeof prefs.routine_intensity === "string" &&
+    VALID_ROUTINE_INTENSITIES.has(prefs.routine_intensity)
   ) {
-    profileUpdates.manifestation_intensity = prefs.manifestation_intensity;
+    profileUpdates.routine_intensity = prefs.routine_intensity;
   }
-  if (prefs.manifest_routine_items !== undefined) {
-    profileUpdates.manifest_routine_items = Array.isArray(prefs.manifest_routine_items)
-      ? prefs.manifest_routine_items
-      : [];
+  if (prefs.routine_items !== undefined) {
+    profileUpdates.routine_items = Array.isArray(prefs.routine_items) ? prefs.routine_items : [];
   }
   if (prefs.routine_notification_times !== undefined) {
     profileUpdates.routine_notification_times = Array.isArray(prefs.routine_notification_times)
@@ -155,24 +151,15 @@ function applyOnboardingPrefs(
   const prefUpdates: Record<string, unknown> = {
     user_id: userId,
   };
-  if (prefs.selected_character !== undefined) {
-    const c = String(prefs.selected_character || "").toLowerCase();
-    prefUpdates.selected_character = VALID_CHARACTERS.includes(c as typeof VALID_CHARACTERS[number])
-      ? c
-      : null;
-  }
   if (prefs.app_notifications_enabled !== undefined) prefUpdates.app_notifications_enabled = prefs.app_notifications_enabled;
   if (
-    prefs.manifestation_intensity === "light" ||
-    prefs.manifestation_intensity === "consistent" ||
-    prefs.manifestation_intensity === "locked_in"
+    typeof prefs.routine_intensity === "string" &&
+    VALID_ROUTINE_INTENSITIES.has(prefs.routine_intensity)
   ) {
-    prefUpdates.manifestation_intensity = prefs.manifestation_intensity;
+    prefUpdates.routine_intensity = prefs.routine_intensity;
   }
-  if (prefs.manifest_routine_items !== undefined) {
-    prefUpdates.manifest_routine_items = Array.isArray(prefs.manifest_routine_items)
-      ? prefs.manifest_routine_items
-      : [];
+  if (prefs.routine_items !== undefined) {
+    prefUpdates.routine_items = Array.isArray(prefs.routine_items) ? prefs.routine_items : [];
   }
   if (prefs.routine_notification_times !== undefined) {
     prefUpdates.routine_notification_times = Array.isArray(prefs.routine_notification_times)
@@ -220,18 +207,6 @@ function applyOnboardingPrefs(
         await supabase.from("user_preferences").upsert(prefUpdates, { onConflict: "user_id" });
       } catch (e) {
         console.warn("Non-fatal: failed to upsert user_preferences from onboarding_prefs:", e);
-      }
-    }
-    if (prefs.selected_character && VALID_CHARACTERS.includes(prefs.selected_character as typeof VALID_CHARACTERS[number])) {
-      try {
-        await supabase.from("character_selection_log").insert({
-          user_id: userId,
-          selected_character: prefs.selected_character,
-          previous_character: null,
-          source: "ios_onboarding_activation",
-        });
-      } catch (e) {
-        console.warn("Non-fatal: failed to insert character_selection_log:", e);
       }
     }
   })();

@@ -8,30 +8,23 @@ import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import type { PrimarySetupIntent } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
-  SETUP_CHOICE_CHECK_ACTIVE_CLASS,
-  SETUP_CHOICE_CHECK_INACTIVE_CLASS,
   SETUP_CHOICE_DESC_CLASS,
-  SETUP_CHOICE_ICON_WRAP_CLASS,
   SETUP_CHOICE_TITLE_CLASS,
   setupChoiceTileWithGlowClass,
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
-import { Home, LayoutGrid, Palette, Sparkles } from "lucide-react";
 
-const INTENTS: {
-  id: PrimarySetupIntent;
-  Icon: typeof Sparkles;
-}[] = [
-  { id: "life_rebranding", Icon: Sparkles },
-  { id: "home_organization", Icon: Home },
-  { id: "office_work", Icon: LayoutGrid },
-  { id: "moodboarding", Icon: Palette },
+const INTENTS: PrimarySetupIntent[] = [
+  "life_rebranding",
+  "home_organization",
+  "office_work",
+  "moodboarding",
 ];
 
 function nextRouteForIntent(intent: PrimarySetupIntent, setupBase: string): string {
   switch (intent) {
     case "life_rebranding":
-      return `${setupBase}/desire-category`;
+      return `${setupBase}/focus-categories`;
     case "home_organization":
       return `${setupBase}/home-focus`;
     case "office_work":
@@ -52,7 +45,7 @@ export default function SetupPrimaryIntent() {
 
   const [selected, setSelected] = useState<PrimarySetupIntent | null>(() => {
     const id = readSetupDraft().primaryIntent;
-    return id && INTENTS.some((x) => x.id === id) ? id : null;
+    return id && INTENTS.includes(id) ? id : null;
   });
 
   const selectIntent = useCallback((id: PrimarySetupIntent) => {
@@ -81,7 +74,7 @@ export default function SetupPrimaryIntent() {
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden w-full">
           <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-0.5 py-1 pb-2 [-webkit-overflow-scrolling:touch]">
             <div className="flex flex-col gap-2.5 pt-0.5 sm:gap-3">
-              {INTENTS.map(({ id, Icon }) => {
+              {INTENTS.map((id) => {
                 const active = selected === id;
                 return (
                   <button
@@ -89,14 +82,11 @@ export default function SetupPrimaryIntent() {
                     type="button"
                     onClick={() => selectIntent(id)}
                     className={cn(
-                      "flex w-full items-start gap-3 text-left",
+                      "flex w-full items-start text-left",
                       setupChoiceTileWithGlowClass(active),
                     )}
                     style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
                   >
-                    <span className={cn(SETUP_CHOICE_ICON_WRAP_CLASS, "h-10 w-10")}>
-                      <Icon className="h-5 w-5" strokeWidth={1.65} aria-hidden />
-                    </span>
                     <div className="min-w-0 flex-1 py-0.5">
                       <p className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
                         {t(`setup.primaryIntent.options.${id}.title`)}

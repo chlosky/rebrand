@@ -42,7 +42,7 @@ serve(async (req) => {
     const { data: session, error } = await supabase
       .from("onboarding_sessions")
       .select(
-        "id,resume_token_hash,status,email,first_name,username,app_notifications_consent,email_consent,sms_consent,character_id,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at,expires_at",
+        "id,resume_token_hash,status,email,first_name,username,app_notifications_consent,email_consent,sms_consent,shell_appearance,onboarding_answers,selected_tier,billing,stripe_checkout_session_id,stripe_customer_id,stripe_customer_email,stripe_subscription_id,paid_at,user_id,created_at,updated_at,expires_at",
       )
       .eq("id", String(sessionId))
       .maybeSingle();

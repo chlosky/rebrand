@@ -70,8 +70,7 @@ export function BoardImportDialog({
         <DialogHeader>
           <DialogTitle>Import from another board</DialogTitle>
           <DialogDescription>
-            Pull content from a focus board or The Plan into this artboard — useful when digitizing a physical
-            setup or remixing between boards.
+            Pull content from a focus board or The Plan into this board.
           </DialogDescription>
         </DialogHeader>
 
@@ -97,7 +96,7 @@ export function BoardImportDialog({
             <div className="flex flex-col gap-2">
               <Button variant="outline" className="justify-start gap-2" disabled={!!busy} onClick={() => void importAsImage()}>
                 {busy === "image" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
-                Import as image layer
+                Import as image
               </Button>
               <Button variant="outline" className="justify-start gap-2" disabled={!!busy} onClick={() => void copyElements()}>
                 {busy === "copy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}

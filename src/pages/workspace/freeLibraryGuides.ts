@@ -47,10 +47,10 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
     title: "The quiet rebrand",
     tagline: "Plot the new you before you announce her.",
     readMinutes: 7,
-    coverImage: "/affirmationimagelibrary/Mentality/Creativity.webp",
+    coverImage: "/library/life-rebrand-cover.png",
     heroImage: {
-      src: "/affirmationimagelibrary/Mentality/Pen to Paper.webp",
-      alt: "Pen and paper on a desk — plotting a personal rebrand",
+      src: "/board/reviews/review-01.png",
+      alt: "Rose gold focus board in a home office",
     },
     blocks: [
       {
@@ -95,18 +95,18 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         columns: 3,
         images: [
           {
-            src: "/affirmationimagelibrary/Wellness & Beauty/Vanity.webp",
-            alt: "Vanity setup",
+            src: "/board/reviews/review-01.png",
+            alt: "Pink acrylic board in a home office",
             label: "Identity",
           },
           {
-            src: "/affirmationimagelibrary/Wealth/Money.webp",
-            alt: "Money jar",
+            src: "/board/reviews/review-06.png",
+            alt: "Pink acrylic board with weekly planning",
             label: "Money",
           },
           {
-            src: "/affirmationimagelibrary/Home/Pink Apt.webp",
-            alt: "Pink apartment interior",
+            src: "/board/reviews/review-04.png",
+            alt: "White acrylic board in a bedroom",
             label: "Space",
           },
         ],
@@ -184,14 +184,14 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "image",
-        src: "/affirmationimagelibrary/Mentality/Discipline.webp",
-        alt: "Discipline and focus",
+        src: "/board/reviews/review-06.png",
+        alt: "Pink acrylic focus board with weekly planning",
         caption: "One lane, one board, one habit — that is how the rebrand stops being a fantasy.",
         aspect: "wide",
       },
       {
         type: "callout",
-        text: "You are not manifesting. You are rehearsing. The difference is whether you built a room for it.",
+        text: "You are not wishing. You are rehearsing. The difference is whether you built a room for it.",
       },
     ],
   },
@@ -201,19 +201,19 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
     title: "Moodboard without the mess",
     tagline: "Curate the vibe before you buy the life.",
     readMinutes: 6,
-    coverImage: "/affirmationimagelibrary/Wealth/Luxury Closet.webp",
+    coverImage: "/library/moodboard-cover.png",
     heroImage: {
-      src: "/affirmationimagelibrary/Wealth/Luxury Closet.webp",
-      alt: "Luxury closet moodboard inspiration",
+      src: "/board/dry-erase/hero-mood-board.png",
+      alt: "Moodboard collage on a plotting desk",
     },
     blocks: [
       {
         type: "paragraph",
-        text: "A moodboard is not a Pinterest graveyard. It is a decision filter: does this image belong to the life you are building, or the life you are escaping?",
+        text: "A moodboard is a decision filter: does this image belong to the life you are building?",
       },
       {
         type: "subheading",
-        text: "The weird-girl-money grid",
+        text: "Four-corner grid",
       },
       {
         type: "paragraph",
@@ -223,23 +223,23 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         type: "imageGrid",
         images: [
           {
-            src: "/affirmationimagelibrary/Wealth/Business - Orders.webp",
-            alt: "Business orders on screen",
+            src: "/board/dry-erase/hero-yellow-planner.png",
+            alt: "Yellow weekly planner board",
             label: "Money",
           },
           {
-            src: "/affirmationimagelibrary/Wellness & Beauty/Long Hair 1.webp",
-            alt: "Long hair beauty shot",
+            src: "/board/neon/hero-pink-glow.png",
+            alt: "Pink glow moodboard",
             label: "Body",
           },
           {
-            src: "/affirmationimagelibrary/Home/Luxe Bedroom.webp",
-            alt: "Luxe bedroom",
+            src: "/board/home-decor/hero-rose-gold-desk.png",
+            alt: "Rose gold desk setup",
             label: "Space",
           },
           {
-            src: "/affirmationimagelibrary/Travel/Passport.webp",
-            alt: "Passport and travel",
+            src: "/board/reviews/review-03.png",
+            alt: "Pink acrylic board above a gaming desk",
             label: "Plot twist",
           },
         ],
@@ -315,8 +315,8 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "image",
-        src: "/affirmationimagelibrary/Mentality/Creativity.webp",
-        alt: "Creative moodboard energy",
+        src: "/board/dry-erase/hero-pink-kawaii-desk.png",
+        alt: "Curated moodboard desk setup",
         caption: "Arrange before you shop. The board is the product until the life catches up.",
         aspect: "wide",
       },
@@ -329,13 +329,13 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
     slug: "home-org-reset",
     category: "home_organization",
-    title: "Organization queen, not storage goblin",
+    title: "Home zones that actually work",
     tagline: "Zones before bins. Always.",
     readMinutes: 7,
-    coverImage: "/affirmationimagelibrary/Home/Cozy Living Room.webp",
+    coverImage: "/library/home-org-cover.png",
     heroImage: {
-      src: "/affirmationimagelibrary/Home/Cozy Living Room.webp",
-      alt: "Cozy organized living room",
+      src: "/board/home-decor/hero-command-center.png",
+      alt: "Home command center with organized zones",
     },
     blocks: [
       {
@@ -413,7 +413,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         type: "checklist",
         items: [
           "Surfaces first — if you can see it, it gets decided now.",
-          "One inbound pile — mail, bags, random. Everything else is outbound.",
+          "One inbound spot — mail, bags, random. Everything else is outbound.",
           "Reset the launchpad — keys, charger, tomorrow's outfit. That is your real front door.",
         ],
       },
@@ -422,13 +422,13 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         columns: 2,
         images: [
           {
-            src: "/affirmationimagelibrary/Home/House Keys.webp",
-            alt: "House keys on entry tray",
+            src: "/board/reviews/review-07.png",
+            alt: "Red acrylic board in an entryway launchpad",
             label: "Launchpad",
           },
           {
-            src: "/affirmationimagelibrary/Home/Neutral Lofty Apt.webp",
-            alt: "Neutral loft apartment",
+            src: "/board/reviews/review-02.png",
+            alt: "Black acrylic board in a kitchen",
             label: "Maintain zone",
           },
         ],
@@ -453,15 +453,15 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
     title: "Office brain, color-coded",
     tagline: "Kanban energy without the corporate coma.",
     readMinutes: 7,
-    coverImage: "/affirmationimagelibrary/Wealth/Corner Office.webp",
+    coverImage: "/library/office-cover.png",
     heroImage: {
-      src: "/affirmationimagelibrary/Wealth/Corner Office.webp",
-      alt: "Corner office workspace",
+      src: "/board/dry-erase/hero-weekly-planner.png",
+      alt: "Weekly planner board on a desk",
     },
     blocks: [
       {
         type: "paragraph",
-        text: "Planning chicks do not need another Notion template. You need a board you will look at when the laptop opens — and a ruthless rule about what earns a spot on it.",
+        text: "You do not need another scattered template. You need a board you will look at when the laptop opens — and a ruthless rule about what earns a spot on it.",
       },
       {
         type: "subheading",
@@ -526,7 +526,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "subheading",
-        text: "Weird-girl money add-on",
+        text: "Money & revenue row",
       },
       {
         type: "boardEntry",
@@ -538,13 +538,13 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         columns: 2,
         images: [
           {
-            src: "/affirmationimagelibrary/Wealth/Digital Nomad.webp",
-            alt: "Digital nomad workspace",
+            src: "/board/dry-erase/hero-yellow-planner.png",
+            alt: "Yellow acrylic planner board above a desk",
             label: "WFH",
           },
           {
-            src: "/affirmationimagelibrary/Mentality/To Do List - Discipline.webp",
-            alt: "To-do list discipline",
+            src: "/board/dry-erase/hero-weekly-planner.png",
+            alt: "Plan board with tasks and dates",
             label: "Plan board",
           },
         ],

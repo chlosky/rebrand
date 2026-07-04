@@ -1,8 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import {
-  dispatchManifestationPowerMeterRefresh,
-  manifestationPowerCalendarDateToday,
-} from "@/lib/manifestationPowerSignals";
 
 export const INSPIRED_ACTION_HISTORY_REFRESH_EVENT =
   "paletteplotting-inspired-action-history-refresh";
@@ -11,15 +7,17 @@ export function dispatchInspiredActionHistoryRefresh() {
   try {
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent(INSPIRED_ACTION_HISTORY_REFRESH_EVENT));
-    dispatchManifestationPowerMeterRefresh();
   } catch {
     /* noop */
   }
 }
 
 /** YYYY-MM-DD in local timezone (matches Embody + milestones calendar). */
-export function inspiredActionDateLocal(date?: Date): string {
-  return manifestationPowerCalendarDateToday(date);
+export function inspiredActionDateLocal(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export async function loadInspiredActionHistory(): Promise<Record<string, string[]>> {
@@ -30,7 +28,7 @@ export async function loadInspiredActionHistory(): Promise<Record<string, string
   if (sessionError || !session?.access_token) return {};
 
   const { data, error } = await supabase
-    .from("user_double_action_history")
+    .from("user_action_history")
     .select("action_date, actions")
     .order("action_date", { ascending: false });
 
@@ -55,7 +53,7 @@ async function upsertInspiredActionsForDate(
     throw new Error("No valid session");
   }
 
-  const { error } = await supabase.from("user_double_action_history").upsert(
+  const { error } = await supabase.from("user_action_history").upsert(
     {
       user_id: session.user.id,
       action_date: actionDate,
@@ -67,7 +65,7 @@ async function upsertInspiredActionsForDate(
   if (error) throw error;
 }
 
-/** Merge today's `user_double_progress.completed_actions` into history when calendar is behind. */
+/** Merge today's `user_daily_progress.completed_actions` into history when calendar is behind. */
 export async function syncTodayProgressIntoActionHistory(): Promise<boolean> {
   const today = inspiredActionDateLocal();
   const {
@@ -76,7 +74,7 @@ export async function syncTodayProgressIntoActionHistory(): Promise<boolean> {
   if (!session?.user?.id) return false;
 
   const { data: progress } = await supabase
-    .from("user_double_progress")
+    .from("user_daily_progress")
     .select("completed_actions")
     .eq("user_id", session.user.id)
     .eq("progress_date", today)

@@ -60,7 +60,7 @@ export default function VerifyEmail() {
             <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
             <h1 className="text-2xl font-bold">{t("verifyEmail.successTitle")}</h1>
             <p className="text-sm text-muted-foreground">{t("verifyEmail.successBody")}</p>
-            <Button className="w-full h-12 rounded-full" onClick={() => navigate("/dashboard")}>
+            <Button className="w-full h-12 rounded-full" onClick={() => navigate("/dashboard/boards")}>
               {t("continue", { ns: "common" })}
             </Button>
           </div>
@@ -70,7 +70,7 @@ export default function VerifyEmail() {
           <div className="space-y-3">
             <h1 className="text-2xl font-bold">{t("verifyEmail.errorTitle")}</h1>
             <p className="text-sm text-muted-foreground">{errorMsg || t("verifyEmail.requestNewEmail")}</p>
-            <Button className="w-full h-12 rounded-full" variant="outline" onClick={() => navigate("/dashboard")}>
+            <Button className="w-full h-12 rounded-full" variant="outline" onClick={() => navigate("/dashboard/boards")}>
               {t("verifyEmail.goToDashboard")}
             </Button>
           </div>

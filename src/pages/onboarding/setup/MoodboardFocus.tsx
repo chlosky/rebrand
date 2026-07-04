@@ -8,19 +8,17 @@ import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import { MOODBOARD_FOCUS_TO_TEMPLATE } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
-  SETUP_CHOICE_ICON_WRAP_CLASS,
   SETUP_CHOICE_TITLE_CLASS,
   setupChoiceTileWithGlowClass,
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
-import { Camera, Heart, Home, Palette, Plane } from "lucide-react";
 
 const OPTIONS = [
-  { key: "mood_aesthetic_style", Icon: Palette },
-  { key: "mood_interiors_space", Icon: Home },
-  { key: "mood_travel_inspo", Icon: Plane },
-  { key: "mood_events_weddings", Icon: Heart },
-  { key: "mood_brand_creative", Icon: Camera },
+  "mood_aesthetic_style",
+  "mood_interiors_space",
+  "mood_travel_inspo",
+  "mood_events_weddings",
+  "mood_brand_creative",
 ] as const;
 
 export default function SetupMoodboardFocus() {
@@ -33,7 +31,7 @@ export default function SetupMoodboardFocus() {
 
   const [selected, setSelected] = useState<string | null>(() => {
     const k = readSetupDraft().moodboardFocusKey;
-    return k && OPTIONS.some((o) => o.key === k) ? k : null;
+    return k && OPTIONS.includes(k as (typeof OPTIONS)[number]) ? k : null;
   });
 
   const select = useCallback((key: string) => {
@@ -63,7 +61,7 @@ export default function SetupMoodboardFocus() {
         />
         <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-0.5 py-1 pb-2">
           <div className="flex flex-col gap-2.5 sm:gap-3">
-            {OPTIONS.map(({ key, Icon }) => {
+            {OPTIONS.map((key) => {
               const active = selected === key;
               return (
                 <button
@@ -71,14 +69,11 @@ export default function SetupMoodboardFocus() {
                   type="button"
                   onClick={() => select(key)}
                   className={cn(
-                    "flex w-full items-center gap-3 text-left",
+                    "flex w-full items-center text-left",
                     setupChoiceTileWithGlowClass(active),
                   )}
                   style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
                 >
-                  <span className={cn(SETUP_CHOICE_ICON_WRAP_CLASS, "h-9 w-9")}>
-                    <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  </span>
                   <span className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
                     {t(`setup.moodboardFocus.options.${key}`)}
                   </span>

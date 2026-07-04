@@ -8,7 +8,6 @@ import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { SETUP_MUTED_TEXT_CLASS } from "@/lib/onboardingSetupTheme";
 import { cn } from "@/lib/utils";
 import { provisionPostPaywallIfNeeded } from "@/lib/postPaywallProvisioning";
-import { persistWebGuideCharacterFromDraft } from "@/lib/persistWebGuideCharacterFromDraft";
 import {
   clearIapPostPurchaseEntitlementLatch,
   getIapPostPurchaseLatchUserId,
@@ -201,9 +200,7 @@ export default function PostPaywallLoading() {
           return;
         }
 
-        if (!Capacitor.isNativePlatform()) {
-          await persistWebGuideCharacterFromDraft();
-        } else if (Capacitor.getPlatform() === "android") {
+        if (Capacitor.getPlatform() === "android") {
           const ok = await syncRevenueCatEntitlementAfterPurchaseWithRetries();
           if (!alive) {
             logPostPaywall("aborted after android sync (alive=false)");
@@ -262,9 +259,6 @@ export default function PostPaywallLoading() {
         console.error("[post-paywall] provisioning failed:", e);
         logPostPaywall("provisioning error", { error: String((e as Error)?.message ?? e) });
         if (!alive) return;
-        if (!Capacitor.isNativePlatform()) {
-          await persistWebGuideCharacterFromDraft();
-        }
         markIapSubscriptionConfirmed(getIapPostPurchaseLatchUserId());
         clearIapPostPurchaseEntitlementLatch();
         logPostPaywall("navigate dashboard after error");

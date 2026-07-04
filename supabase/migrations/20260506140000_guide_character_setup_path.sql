@@ -1,2 +1,0 @@
--- Guide choice is already stored on public.onboarding_sessions.character_id (public.character_type)
--- and copied to profiles.selected_character on claim. No extra columns required for this schema.

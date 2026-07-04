@@ -201,7 +201,7 @@ serve(async (req) => {
       ? [
           "Help Me Create",
           "",
-          "What are you manifesting right now?",
+          "What are you working on right now?",
           description,
           "",
           "What do you need help with?",

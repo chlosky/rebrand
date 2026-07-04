@@ -2,6 +2,8 @@ import { Capacitor } from "@capacitor/core";
 import { debugLog } from "@/debugLog";
 import { syncRevenueCatEntitlementAfterPurchaseWithRetries } from "@/services/revenueCat";
 import { syncWebRevenueCatEntitlementAfterPurchaseWithRetries } from "@/services/revenueCatWeb";
+import { isWebRevenueCatBillingEnabled, isWebStripeCheckoutEnabled } from "@/lib/webBillingConfig";
+import { syncWebStripeEntitlementAfterPurchaseWithRetries } from "@/lib/webStripeEntitlementSync";
 
 /** Handoff from native paywall dismissal → entitlement sync happens on `/onboarding/post-paywall`. */
 const STORAGE_KEY = "sv_iap_post_paywall_gate_v1";
@@ -127,7 +129,11 @@ export async function runIapPostPurchaseGateIfNeeded(): Promise<IapPostPurchaseG
   entitlementSyncOutcome = (async (): Promise<IapPostPurchaseGateResult> => {
     try {
       const ok = isWeb
-        ? await syncWebRevenueCatEntitlementAfterPurchaseWithRetries()
+        ? isWebStripeCheckoutEnabled()
+          ? await syncWebStripeEntitlementAfterPurchaseWithRetries()
+          : isWebRevenueCatBillingEnabled()
+            ? await syncWebRevenueCatEntitlementAfterPurchaseWithRetries()
+            : true
         : await syncRevenueCatEntitlementAfterPurchaseWithRetries();
       if (!ok) {
         debugLog({

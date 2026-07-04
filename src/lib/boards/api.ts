@@ -98,7 +98,7 @@ export async function saveBoardLayout(boardId: string, layoutJson: Record<string
 
 export async function updateBoardMeta(
   boardId: string,
-  patch: Partial<Pick<Board, "title" | "color_key" | "sort_order">>,
+  patch: Partial<Pick<Board, "title" | "title_color" | "title_font" | "color_key" | "sort_order">>,
 ): Promise<void> {
   const { error } = await supabase.from("boards").update(patch).eq("id", boardId);
   if (error) throw error;

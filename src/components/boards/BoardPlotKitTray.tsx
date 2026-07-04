@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { RefObject } from "react";
-import { BookImage, Grid3x3, MessageCircleHeart, PenLine, Shapes } from "lucide-react";
+import { BookImage, MessageCircleHeart, PenLine, Shapes } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { BOARD_COLORS, boardFillForKey, type BoardColorKey } from "@/lib/boards/colors";
+import { BOARD_QUICK_PICK_COLORS, boardFillForKey, normalizeBoardColorHex } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
@@ -12,37 +12,53 @@ import { cn } from "@/lib/utils";
 
 const TAB_LABELS: Record<PlotDockTab, string> = {
   companion: "Companion",
-  boards: "Boards",
   clippings: "Clippings",
   structures: "Structures",
   marks: "Marks",
 };
 
 type BoardPlotKitTrayProps = {
-  boards: Board[];
   activeBoard: Board;
   activeBoardId: string;
   editorRef: RefObject<BoardCanvasHandle | null>;
   userId: string;
-  onSelectBoard: (id: string) => void;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
   onPickImage: (url: string) => void;
   onScanPhysical?: () => void;
 };
 
 export function BoardPlotKitTray({
-  boards,
   activeBoard,
   activeBoardId,
   editorRef,
   userId,
-  onSelectBoard,
   onBoardColorChange,
   onPickImage,
   onScanPhysical,
 }: BoardPlotKitTrayProps) {
   const [sheetTab, setSheetTab] = useState<PlotDockTab | null>(null);
   const close = () => setSheetTab(null);
+  const activeBoardFill = boardFillForKey(activeBoard.color_key);
+  const [hexDraft, setHexDraft] = useState(activeBoardFill);
+
+  useEffect(() => {
+    setHexDraft(activeBoardFill);
+  }, [activeBoardFill]);
+
+  const applyBoardHex = (raw: string) => {
+    const hex = normalizeBoardColorHex(raw);
+    if (!hex) {
+      setHexDraft(activeBoardFill);
+      return;
+    }
+    setHexDraft(hex);
+    void onBoardColorChange(activeBoardId, hex);
+  };
+
+  const applyQuickPick = (hex: string) => {
+    setHexDraft(hex);
+    void onBoardColorChange(activeBoardId, hex);
+  };
 
   return (
     <>
@@ -54,7 +70,6 @@ export function BoardPlotKitTray({
         {(
           [
             { id: "companion" as const, Icon: MessageCircleHeart },
-            { id: "boards" as const, Icon: Grid3x3 },
             { id: "clippings" as const, Icon: BookImage },
             { id: "structures" as const, Icon: Shapes },
             { id: "marks" as const, Icon: PenLine },
@@ -90,32 +105,6 @@ export function BoardPlotKitTray({
                 editorRef={editorRef}
                 onBoardColorChange={onBoardColorChange}
               />
-            )}
-
-            {sheetTab === "boards" && (
-              <ul className="space-y-1 p-3">
-                {boards.map((board) => (
-                  <li key={board.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelectBoard(board.id);
-                        close();
-                      }}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left",
-                        board.id === activeBoardId ? "bg-stone-900 text-white" : "bg-[#faf8f5] text-stone-900",
-                      )}
-                    >
-                      <span
-                        className="h-8 w-8 shrink-0 rounded-md"
-                        style={{ backgroundColor: boardFillForKey(board.color_key) }}
-                      />
-                      <span className="font-medium">{board.title}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
             )}
 
             {sheetTab === "clippings" && (
@@ -175,18 +164,59 @@ export function BoardPlotKitTray({
                     Sticky
                   </button>
                 </div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Acrylic color</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {(Object.keys(BOARD_COLORS) as BoardColorKey[]).map((key) => (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-lg border border-stone-300 bg-[#faf8f5] py-2.5 text-xs font-medium text-stone-900"
+                    onClick={() => editorRef.current?.deleteSelected()}
+                  >
+                    Delete selected
+                  </button>
+                </div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Board color</p>
+                <div className="mb-2 flex items-center gap-2">
+                  <label className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center">
+                    <span
+                      className="h-9 w-9 rounded-full ring-2 ring-stone-300/80 ring-offset-1"
+                      style={{ backgroundColor: activeBoardFill }}
+                      aria-hidden
+                    />
+                    <input
+                      type="color"
+                      value={activeBoardFill}
+                      onChange={(e) => applyBoardHex(e.target.value)}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Pick board color"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    value={hexDraft}
+                    onChange={(e) => setHexDraft(e.target.value)}
+                    onBlur={() => applyBoardHex(hexDraft)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") applyBoardHex(hexDraft);
+                    }}
+                    spellCheck={false}
+                    className="min-w-0 flex-1 rounded-md border border-stone-300/80 bg-white px-2 py-1.5 font-mono text-[11px] uppercase text-stone-800"
+                    aria-label="Board color hex code"
+                  />
+                </div>
+                <p className="text-[10px] text-stone-500">
+                  Right-click, tap empty board space, or hold on mobile for the marks wheel.
+                </p>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {BOARD_QUICK_PICK_COLORS.map((pick) => (
                     <button
-                      key={key}
+                      key={pick.hex}
                       type="button"
-                      onClick={() => void onBoardColorChange(activeBoardId, key)}
+                      title={`${pick.label} · ${pick.hex}`}
+                      onClick={() => applyQuickPick(pick.hex)}
                       className={cn(
                         "aspect-square rounded-lg ring-1 ring-stone-300/60",
-                        activeBoard.color_key === key && "ring-2 ring-stone-900",
+                        activeBoardFill === pick.hex && "ring-2 ring-stone-900",
                       )}
-                      style={{ backgroundColor: BOARD_COLORS[key].fill }}
+                      style={{ backgroundColor: pick.hex }}
                     />
                   ))}
                 </div>

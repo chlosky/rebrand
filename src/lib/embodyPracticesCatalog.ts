@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { GiSoap } from "react-icons/gi";
 
-/** Stored in `user_double_progress.completed_actions` as these slug keys. */
+/** Stored in `user_daily_progress.completed_actions` as these slug keys. */
 export type EmbodyPracticeKey =
   | "clean"
   | "drink-water"

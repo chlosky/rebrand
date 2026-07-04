@@ -3,7 +3,6 @@ import { Bell, Calendar, Download, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { createBoardReminder, deleteBoardReminder } from "@/lib/boards/api";
 import { downloadIcalFile } from "@/lib/boards/ical";
@@ -15,14 +14,19 @@ type BoardReminderPanelProps = {
   userId: string;
   reminders: BoardReminder[];
   onRefresh: () => void;
+  /** Inline card on Your Journey — not a boards-page sidebar. */
+  embedded?: boolean;
 };
 
-export function BoardReminderPanel({ board, userId, reminders, onRefresh }: BoardReminderPanelProps) {
+export function BoardReminderPanel({
+  board,
+  userId,
+  reminders,
+  onRefresh,
+  embedded = false,
+}: BoardReminderPanelProps) {
   const [title, setTitle] = useState("");
   const [when, setWhen] = useState("");
-  const [email, setEmail] = useState(true);
-  const [sms, setSms] = useState(false);
-  const [push, setPush] = useState(false);
   const [saving, setSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
 
@@ -31,14 +35,6 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
   const handleAdd = async () => {
     if (!title.trim() || !when) {
       toast.error("Add a title and date/time");
-      return;
-    }
-    const channels: string[] = [];
-    if (email) channels.push("email");
-    if (sms) channels.push("sms");
-    if (push) channels.push("push");
-    if (!channels.length) {
-      toast.error("Pick at least one channel");
       return;
     }
     setSaving(true);
@@ -50,7 +46,7 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
         body: null,
         remind_at: new Date(when).toISOString(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        channels,
+        channels: ["email"],
         source: isPlan ? "plan_item" : "user",
         fabric_object_id: null,
       });
@@ -93,14 +89,20 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
       onRefresh();
       toast.success(`Added ${Math.min(suggested.length, 5)} suggested reminders`);
     } catch {
-      toast.error("AI extract unavailable — add reminders manually");
+      toast.error("Couldn't suggest reminders — add them manually");
     } finally {
       setExtracting(false);
     }
   };
 
   return (
-    <div className="flex h-full w-72 shrink-0 flex-col border-l border-neutral-200 bg-white">
+    <div
+      className={
+        embedded
+          ? "flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200/75 bg-card/75 backdrop-blur-sm shadow-sm"
+          : "flex h-full w-72 shrink-0 flex-col border-l border-neutral-200 bg-white"
+      }
+    >
       <div className="border-b border-neutral-100 px-3 py-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
           <Bell className="h-4 w-4" />
@@ -108,8 +110,8 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
         </h3>
         <p className="mt-1 text-[11px] leading-snug text-neutral-500">
           {isPlan
-            ? "Plan board drives email, SMS-ready, and future push alerts."
-            : "Optional nudges for this focus board."}
+            ? "Email reminders for plan items on this board."
+            : "Optional email nudges for this focus board."}
         </p>
       </div>
 
@@ -118,20 +120,7 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Review focus board" className="h-8 text-xs" />
         <Label className="text-xs">When</Label>
         <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="h-8 text-xs" />
-        <div className="flex flex-col gap-2 pt-1">
-          <label className="flex items-center gap-2 text-xs">
-            <Checkbox checked={email} onCheckedChange={(v) => setEmail(Boolean(v))} />
-            Email
-          </label>
-          <label className="flex items-center gap-2 text-xs text-neutral-600">
-            <Checkbox checked={sms} onCheckedChange={(v) => setSms(Boolean(v))} />
-            SMS (if phone on file)
-          </label>
-          <label className="flex items-center gap-2 text-xs text-neutral-600">
-            <Checkbox checked={push} onCheckedChange={(v) => setPush(Boolean(v))} />
-            Push (when app ships)
-          </label>
-        </div>
+        <p className="text-[10px] text-neutral-500">Sent to the email on your account.</p>
         <Button size="sm" className="w-full" onClick={handleAdd} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Schedule"}
         </Button>
@@ -154,7 +143,7 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
         )}
       </div>
 
-      <ul className="flex-1 overflow-y-auto p-2 text-xs">
+      <ul className={embedded ? "max-h-64 overflow-y-auto p-2 text-xs" : "flex-1 overflow-y-auto p-2 text-xs"}>
         {reminders.length === 0 ? (
           <li className="px-2 py-4 text-center text-neutral-500">No reminders yet</li>
         ) : (
@@ -165,7 +154,6 @@ export function BoardReminderPanel({ board, userId, reminders, onRefresh }: Boar
                 <Calendar className="h-3 w-3" />
                 {new Date(r.remind_at).toLocaleString()}
               </p>
-              <p className="mt-1 text-[10px] text-neutral-400">{r.channels.join(" · ")}</p>
               <Button
                 variant="ghost"
                 size="sm"

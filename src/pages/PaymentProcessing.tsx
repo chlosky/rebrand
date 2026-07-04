@@ -6,6 +6,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { isIosPaywallContext } from "@/lib/isIosPaywallContext";
 import { isAndroidPaywallContext } from "@/lib/isAndroidPaywallContext";
+import { armIapPostPurchaseEntitlementLatch } from "@/lib/iosPostPurchaseEntitlementGate";
+import { armWebGetAppPromptPending } from "@/lib/webFirstPurchaseGetAppPrompt";
 
 /**
  * Platform-aware paywall fallback so a non-iOS web user doesn't get stranded on
@@ -85,6 +87,16 @@ export default function PaymentProcessing() {
 
         const session = data?.session;
         if (session?.status === "paid" || session?.status === "active") {
+          const {
+            data: { session: authSession },
+          } = await supabase.auth.getSession();
+          const userId = authSession?.user?.id ?? null;
+          if (userId) {
+            armIapPostPurchaseEntitlementLatch(userId);
+            armWebGetAppPromptPending();
+            navigate("/onboarding/post-paywall", { replace: true });
+            return;
+          }
           navigate(
             `/activate?sid=${encodeURIComponent(sid)}&token=${encodeURIComponent(token)}`,
             { replace: true },
