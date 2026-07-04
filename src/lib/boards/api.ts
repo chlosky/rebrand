@@ -1,8 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Board, BoardReminder, BoardWorkspace, BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import {
-  BOARD_STARTER_TEMPLATES,
+  buildTemplateFromFocusCategories,
   DEFAULT_FOUR_BOARD_TEMPLATE,
+  normalizeFocusCategoryNames,
   resolveBoardStarterTemplate,
   type BoardStarterTemplate,
 } from "@/lib/boards/starterTemplates";
@@ -54,6 +55,18 @@ export async function ensureStarterWorkspaceFromSlug(
   if (existing.length > 0) return null;
   const template = resolveBoardStarterTemplate(templateSlug);
   return createWorkspaceFromTemplate(userId, template);
+}
+
+/** First entitlement: focus categories from onboarding become the three starter boards plus The Plan. */
+export async function ensureStarterWorkspaceFromCategories(
+  userId: string,
+  categories: string[] | undefined,
+): Promise<BoardWorkspaceWithBoards | null> {
+  const existing = await fetchUserWorkspaces(userId);
+  if (existing.length > 0) return null;
+  const valid = normalizeFocusCategoryNames(categories);
+  if (valid.length === 0) return null;
+  return createWorkspaceFromTemplate(userId, buildTemplateFromFocusCategories(valid));
 }
 
 export async function createWorkspaceFromTemplate(

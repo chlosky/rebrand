@@ -6,6 +6,7 @@ import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import { needsFocusDetailsStep } from "@/lib/focusDetailOptions";
+import { FOUR_BOARD_FOCUS_CATEGORIES_SLUG } from "@/lib/boards/starterTemplates";
 import { FOCUS_CATEGORIES } from "@/lib/focusCategories";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
@@ -82,19 +83,19 @@ export default function SetupFocusCategories() {
       onBack={() => navigate(isSuiteFunnel ? `${setupBase}/name` : `${setupBase}/primary-intent`)}
       onContinue={() => {
         const primary = selected[0]!;
+        const intent = readSetupDraft().primaryIntent ?? "life_rebranding";
         writeSetupDraft({
           desireCategory: primary,
           desireCategories: selected,
           conditionalSpecificity: {},
+          boardStarterTemplateSlug: FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
         });
         const nextAfterDetails = isSuiteFunnel
           ? `${setupBase}/current-friction`
           : `${setupBase}/tool-preference`;
-        navigate(
-          needsFocusDetailsStep(primary)
-            ? `${setupBase}/focus-details`
-            : nextAfterDetails,
-        );
+        const skipFocusDetails = intent === "life_rebranding" && !isSuiteFunnel;
+        const goToFocusDetails = !skipFocusDetails && needsFocusDetailsStep(primary);
+        navigate(goToFocusDetails ? `${setupBase}/focus-details` : nextAfterDetails);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">

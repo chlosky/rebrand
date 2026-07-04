@@ -113,9 +113,12 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
               onClick={onScanPhysical}
             >
               <Camera className="h-4 w-4" />
-              Scan physical board
+              Scan or upload a board
             </Button>
           )}
+          <p className="text-[10px] leading-snug text-neutral-500">
+            Pull text from an existing board and place it into your workspace.
+          </p>
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Upload photo

@@ -8,6 +8,7 @@ import { createBoardReminder, deleteBoardReminder } from "@/lib/boards/api";
 import { downloadIcalFile } from "@/lib/boards/ical";
 import type { Board, BoardReminder } from "@/lib/boards/types";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type BoardReminderPanelProps = {
   board: Board;
@@ -25,10 +26,12 @@ export function BoardReminderPanel({
   onRefresh,
   embedded = false,
 }: BoardReminderPanelProps) {
+  const { t } = useTranslation("tools");
   const [title, setTitle] = useState("");
   const [when, setWhen] = useState("");
   const [saving, setSaving] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   const isPlan = board.role === "plan";
 
@@ -52,6 +55,7 @@ export function BoardReminderPanel({
       });
       setTitle("");
       setWhen("");
+      setShowManualForm(false);
       onRefresh();
       toast.success("Reminder scheduled");
     } catch {
@@ -70,7 +74,7 @@ export function BoardReminderPanel({
       if (error) throw error;
       const suggested = (data as { reminders?: { title: string; remind_at?: string }[] })?.reminders ?? [];
       if (!suggested.length) {
-        toast.message("No new action items detected — add sticky notes on The Plan board");
+        toast.message("No new action items detected — add dates and goals on The Plan board");
         return;
       }
       for (const r of suggested.slice(0, 5)) {
@@ -106,42 +110,69 @@ export function BoardReminderPanel({
       <div className="border-b border-neutral-100 px-3 py-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
           <Bell className="h-4 w-4" />
-          Reminders
+          {isPlan ? t("journey.remindersTitle", { defaultValue: "The Plan Reminders" }) : "Reminders"}
         </h3>
         <p className="mt-1 text-[11px] leading-snug text-neutral-500">
           {isPlan
-            ? "Email reminders for plan items on this board."
+            ? t("journey.remindersDescription", {
+                defaultValue:
+                  "Extract dates, goals, and next steps from The Plan, then send reminders by email or export them to your calendar.",
+              })
             : "Optional email nudges for this focus board."}
         </p>
       </div>
 
-      <div className="space-y-2 border-b border-neutral-100 p-3">
-        <Label className="text-xs">Title</Label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Review focus board" className="h-8 text-xs" />
-        <Label className="text-xs">When</Label>
-        <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="h-8 text-xs" />
-        <p className="text-[10px] text-neutral-500">Sent to the email on your account.</p>
-        <Button size="sm" className="w-full" onClick={handleAdd} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Schedule"}
-        </Button>
-        {isPlan && (
-          <Button variant="outline" size="sm" className="w-full gap-1" onClick={handleExtract} disabled={extracting}>
+      {isPlan && reminders.length === 0 && !showManualForm ? (
+        <div className="space-y-3 border-b border-neutral-100 p-3">
+          <div>
+            <p className="text-sm font-semibold text-neutral-900">
+              {t("journey.planEmptyTitle", { defaultValue: "Turn The Plan into reminders" })}
+            </p>
+            <p className="mt-1 text-xs leading-snug text-neutral-500">
+              {t("journey.planEmptyBody", {
+                defaultValue:
+                  "Add dates, goals, and next steps here. Palette Plotting can extract action items and help schedule reminders.",
+              })}
+            </p>
+          </div>
+          <Button size="sm" className="w-full gap-1" onClick={() => void handleExtract()} disabled={extracting}>
             {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-            Extract from board
+            {t("journey.extractDatesGoals", { defaultValue: "Extract dates & goals" })}
           </Button>
-        )}
-        {reminders.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full gap-1 text-xs"
-            onClick={() => downloadIcalFile(reminders)}
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export .ics
+          <Button variant="outline" size="sm" className="w-full" onClick={() => setShowManualForm(true)}>
+            {t("journey.addReminderManually", { defaultValue: "Add reminder manually" })}
           </Button>
-        )}
-      </div>
+          {reminders.length > 0 && (
+            <Button variant="ghost" size="sm" className="w-full gap-1 text-xs" onClick={() => downloadIcalFile(reminders)}>
+              <Download className="h-3.5 w-3.5" />
+              {t("journey.exportCalendar", { defaultValue: "Export to calendar" })}
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2 border-b border-neutral-100 p-3">
+          {isPlan && (
+            <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => void handleExtract()} disabled={extracting}>
+              {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {t("journey.extractDatesGoals", { defaultValue: "Extract dates & goals" })}
+            </Button>
+          )}
+          <Label className="text-xs">Title</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Review focus board" className="h-8 text-xs" />
+          <Label className="text-xs">When</Label>
+          <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="h-8 text-xs" />
+          <p className="text-[10px] text-neutral-500">Sent to the email on your account.</p>
+          <Button size="sm" className="w-full" onClick={() => void handleAdd()} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("journey.addReminderManually", { defaultValue: "Add reminder" })}
+          </Button>
+          {reminders.length > 0 && (
+            <Button variant="ghost" size="sm" className="w-full gap-1 text-xs" onClick={() => downloadIcalFile(reminders)}>
+              <Download className="h-3.5 w-3.5" />
+              {t("journey.exportCalendar", { defaultValue: "Export to calendar" })}
+            </Button>
+          )}
+        </div>
+      )}
 
       <ul className={embedded ? "max-h-64 overflow-y-auto p-2 text-xs" : "flex-1 overflow-y-auto p-2 text-xs"}>
         {reminders.length === 0 ? (

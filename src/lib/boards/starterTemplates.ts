@@ -1,3 +1,4 @@
+import { FOCUS_CATEGORIES } from "@/lib/focusCategories";
 import type { BoardLayoutMode, BoardRole } from "@/lib/boards/types";
 
 export type PrimarySetupIntent =
@@ -24,6 +25,27 @@ export type BoardStarterTemplate = {
 
 /** Standard plot: three focus boards plus The Plan (four boards total). */
 export const STANDARD_BOARD_COUNT = 4;
+
+/** Category-driven life rebrand preset — titles come from onboarding selections. */
+export const FOUR_BOARD_FOCUS_CATEGORIES_SLUG = "four-board-focus-categories";
+
+const FOCUS_CATEGORY_NAMES = new Set(FOCUS_CATEGORIES.map((c) => c.name));
+
+const FOCUS_BOARD_DEFAULT_COLORS = ["rose_gold", "blue", "light_pink"] as const;
+const FOCUS_BOARD_FALLBACK_TITLES = ["Focus Board 1", "Focus Board 2", "Focus Board 3"] as const;
+
+const FOCUS_CATEGORY_COLOR_KEY: Record<string, string> = {
+  Identity: "rose_gold",
+  "Career & Money": "green",
+  "Love & Relationships": "neon_pink",
+  "Home & Space": "sky_blue",
+  "Beauty & Wellness": "light_pink",
+  "Travel & Adventure": "orange",
+  "Organization & Plan": "blue",
+  "Aesthetic & Mood": "yellow",
+  "College & School": "light_green",
+  "Health & Fitness": "red",
+};
 
 /** Classic four-board plot — life rebranding default. */
 export const DEFAULT_FOUR_BOARD_TEMPLATE: BoardStarterTemplate = {
@@ -233,9 +255,47 @@ export function templatesForIntent(intent: PrimarySetupIntent | undefined): Boar
   return BOARD_STARTER_TEMPLATES.filter((t) => t.intent === intent);
 }
 
+export function mapFocusCategoryToColorKey(categoryName: string, index: number): string {
+  return FOCUS_CATEGORY_COLOR_KEY[categoryName] ?? FOCUS_BOARD_DEFAULT_COLORS[index] ?? "rose_gold";
+}
+
+export function normalizeFocusCategoryNames(categories: string[] | undefined): string[] {
+  if (!Array.isArray(categories)) return [];
+  return categories.filter((c): c is string => typeof c === "string" && FOCUS_CATEGORY_NAMES.has(c)).slice(0, 3);
+}
+
+/** Build a four-board workspace from up to three selected focus categories plus The Plan. */
+export function buildTemplateFromFocusCategories(categories: string[]): BoardStarterTemplate {
+  const valid = normalizeFocusCategoryNames(categories);
+  const boards: StarterBoardDef[] = [];
+  for (let i = 0; i < 3; i++) {
+    boards.push({
+      title: valid[i] ?? FOCUS_BOARD_FALLBACK_TITLES[i],
+      role: "focus",
+      color_key: valid[i] ? mapFocusCategoryToColorKey(valid[i], i) : FOCUS_BOARD_DEFAULT_COLORS[i],
+      sort_order: i,
+      layout_mode: "vision",
+    });
+  }
+  boards.push({
+    title: "The Plan",
+    role: "plan",
+    color_key: "white_opaque",
+    sort_order: 3,
+    layout_mode: "vision",
+  });
+  return {
+    slug: FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
+    intent: "life_rebranding",
+    name: "Three Focus Boards and The Plan",
+    description: "Three focus boards from your selected areas plus The Plan.",
+    boards,
+  };
+}
+
 export function resolveBoardStarterTemplate(slug: string | undefined): BoardStarterTemplate {
   const key = (slug || "").trim();
-  if (!key) return DEFAULT_FOUR_BOARD_TEMPLATE;
+  if (!key || key === FOUR_BOARD_FOCUS_CATEGORIES_SLUG) return DEFAULT_FOUR_BOARD_TEMPLATE;
   return BOARD_STARTER_TEMPLATES.find((t) => t.slug === key) ?? DEFAULT_FOUR_BOARD_TEMPLATE;
 }
 

@@ -87,6 +87,9 @@ export function draftToSetupPathPayload(draft: SetupDraft): Record<string, unkno
     first_name: typeof draft.firstName === "string" ? draft.firstName.trim().slice(0, 120) || null : null,
     email: typeof draft.email === "string" ? draft.email.trim().toLowerCase().slice(0, 320) || null : null,
     desire_category: typeof draft.desireCategory === "string" ? draft.desireCategory.trim().slice(0, 64) || null : null,
+    desire_categories: Array.isArray(draft.desireCategories)
+      ? draft.desireCategories.filter((c): c is string => typeof c === "string").slice(0, 3)
+      : null,
     // Do not persist a separate "desire text" anymore; the setup flow uses friction/identity + signals instead.
     desire_text: null,
     why_it_matters: null,
@@ -199,19 +202,22 @@ export async function syncSetupJourneyToBackend(draft: SetupDraft): Promise<void
     const userId = userData?.user?.id;
     if (userErr || !userId) return;
 
-    try {
-      await supabase.functions.invoke("update-onboarding-session", {
-        body: {
-          sessionId: creds.sessionId,
-          resumeToken: creds.resumeToken,
-          patch: {
-            revenuecat_app_user_id: userId,
-            ...buildOnboardingAttributionPatch(),
+    const creds = readStoredCreds();
+    if (creds) {
+      try {
+        await supabase.functions.invoke("update-onboarding-session", {
+          body: {
+            sessionId: creds.sessionId,
+            resumeToken: creds.resumeToken,
+            patch: {
+              revenuecat_app_user_id: userId,
+              ...buildOnboardingAttributionPatch(),
+            },
           },
-        },
-      });
-    } catch {
-      /* non-fatal */
+        });
+      } catch {
+        /* non-fatal */
+      }
     }
 
     const embodySlugs = mapOnboardingEmbodyKeysToAppSlugs(draft.embodyDailyPractices);

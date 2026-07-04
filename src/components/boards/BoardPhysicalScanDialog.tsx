@@ -127,10 +127,10 @@ export function BoardPhysicalScanDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            Scan physical board
+            Scan or upload a board
           </DialogTitle>
           <DialogDescription>
-            Photograph your board. We can add the photo and pull out text you can edit.
+            Pull text, dates, goals, and action items from an existing board photo into your workspace.
           </DialogDescription>
         </DialogHeader>
 
@@ -199,7 +199,7 @@ export function BoardPhysicalScanDialog({
               </Button>
             )}
             <Button type="button" size="sm" className="ml-auto" disabled={!file || working} onClick={() => void handleImport()}>
-              {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Import to board"}
+              {working ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add text to this board"}
             </Button>
           </div>
 

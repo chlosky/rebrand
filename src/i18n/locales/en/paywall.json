@@ -149,10 +149,12 @@
     "cta": "Start 3-Day Trial",
     "secondaryCta": "Not now",
     "features": [
-      "Four-board workspace",
-      "Clippings, color, text, and notes",
-      "Structures for plans, projects, zones, timelines, and resets",
-      "Save and export your boards"
+      "Three focus boards plus The Plan",
+      "Clippings, color, text, notes, and Structures",
+      "Extract text and action items from boards and uploaded images",
+      "AI-suggested reminders from dates, goals, and next steps",
+      "Email reminders and iCal export",
+      "Push notification framework for the mobile app"
     ]
   }
 }

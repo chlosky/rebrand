@@ -169,14 +169,19 @@
   "journey": {
     "pageTitle": "Reminders | Palette Plotting",
     "title": "Reminders",
-    "subtitle": "Reflect on your daily progress.",
+    "subtitle": "Dates, goals, and next steps from The Plan — with email reminders and calendar export.",
     "dailySnapshot": "Daily Snapshot",
     "statusAligned": "Aligned",
     "coherenceHint": "Check in on your boards and journal to stay aligned with your plan.",
     "yourProgress": "Your Progress",
     "journalTitle": "Journal",
     "journalDescription": "Daily reflections and notes in one place.",
-    "remindersTitle": "Reminders",
-    "remindersDescription": "Email reminders tied to The Plan board — schedule check-ins and export to your calendar."
+    "remindersTitle": "The Plan Reminders",
+    "remindersDescription": "Extract dates, goals, and next steps from The Plan, then send reminders by email or export them to your calendar.",
+    "planEmptyTitle": "Turn The Plan into reminders",
+    "planEmptyBody": "Add dates, goals, and next steps here. Palette Plotting can extract action items and help schedule reminders.",
+    "extractDatesGoals": "Extract dates & goals",
+    "addReminderManually": "Add reminder manually",
+    "exportCalendar": "Export to calendar"
   }
 }

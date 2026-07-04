@@ -2,8 +2,13 @@
 // starter_provisioned === true → skip forever.
 
 import { supabase } from "@/integrations/supabase/client";
-import { ensureStarterWorkspaceFromSlug } from "@/lib/boards/api";
-import { DEFAULT_FOUR_BOARD_TEMPLATE } from "@/lib/boards/starterTemplates";
+import { ensureStarterWorkspaceFromCategories, ensureStarterWorkspaceFromSlug } from "@/lib/boards/api";
+import {
+  DEFAULT_FOUR_BOARD_TEMPLATE,
+  FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
+  normalizeFocusCategoryNames,
+  type PrimarySetupIntent,
+} from "@/lib/boards/starterTemplates";
 import { clearSetupDraft, readSetupDraft, type SetupDraft } from "@/lib/setupDraft";
 
 const ONBOARDING_SESSION_STORAGE_KEY = "onboarding_session";
@@ -16,6 +21,8 @@ type OnboardingSessionRow = {
 
 type StarterProvisioningSeed = {
   boardStarterTemplateSlug: string;
+  primaryIntent?: PrimarySetupIntent;
+  desireCategories: string[];
   usedTrustedLocalDraft: boolean;
 };
 
@@ -85,6 +92,34 @@ function isLocalSetupDraftTrusted(
   return true;
 }
 
+function readPrimaryIntent(
+  setupPath: Record<string, unknown> | null,
+  localDraft: SetupDraft,
+): PrimarySetupIntent | undefined {
+  const fromPath = setupPath?.primary_intent;
+  if (
+    fromPath === "life_rebranding" ||
+    fromPath === "home_organization" ||
+    fromPath === "office_work" ||
+    fromPath === "moodboarding"
+  ) {
+    return fromPath;
+  }
+  return localDraft.primaryIntent;
+}
+
+function readDesireCategories(
+  setupPath: Record<string, unknown> | null,
+  localDraft: SetupDraft,
+): string[] {
+  const fromPath = setupPath?.desire_categories;
+  if (Array.isArray(fromPath)) {
+    const normalized = normalizeFocusCategoryNames(fromPath.filter((c): c is string => typeof c === "string"));
+    if (normalized.length > 0) return normalized;
+  }
+  return normalizeFocusCategoryNames(localDraft.desireCategories);
+}
+
 async function resolveStarterProvisioningSeed(
   userId: string,
   authEmail: string | undefined,
@@ -104,6 +139,8 @@ async function resolveStarterProvisioningSeed(
 
   return {
     boardStarterTemplateSlug,
+    primaryIntent: readPrimaryIntent(setupPath, localDraft),
+    desireCategories: readDesireCategories(setupPath, localDraft),
     usedTrustedLocalDraft: trustedLocalDraft,
   };
 }
@@ -146,7 +183,16 @@ export async function provisionPostPaywallIfNeeded(options?: {
 
   try {
     report(40);
-    await ensureStarterWorkspaceFromSlug(userId, seed.boardStarterTemplateSlug);
+    const useCategoryBoards =
+      seed.primaryIntent === "life_rebranding" && seed.desireCategories.length > 0;
+    if (useCategoryBoards) {
+      const created = await ensureStarterWorkspaceFromCategories(userId, seed.desireCategories);
+      if (!created) {
+        await ensureStarterWorkspaceFromSlug(userId, FOUR_BOARD_FOCUS_CATEGORIES_SLUG);
+      }
+    } else {
+      await ensureStarterWorkspaceFromSlug(userId, seed.boardStarterTemplateSlug);
+    }
 
     await (supabase as any)
       .from("user_plans")

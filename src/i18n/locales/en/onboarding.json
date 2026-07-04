@@ -7,40 +7,29 @@
     "nativeTitle": "Plot your boards in one place",
     "nativeTitleLead": "Plot your boards ",
     "nativeTitleAccent": "in one place",
-    "nativeDescription": "Boards, structures, clippings, color, and The Plan — all in one workspace.",
-    "awardLine1": "One workspace",
-    "awardLine2": "for the boards",
-    "awardLine3": "you are building",
-    "webHeadline1": "Your boards,",
-    "webHeadlineAccent": "in one workspace",
+    "nativeDescription": "Choose your focus boards, add images and structure, then use The Plan to keep dates, goals, and reminders moving.",
+    "awardLine1": "Three focus boards",
+    "awardLine2": "plus",
+    "awardLine3": "The Plan",
+    "webHeadline1": "Plot your boards",
+    "webHeadlineAccent": "in one place",
     "toolRows": {
-      "row1": [
-        "Plotting boards",
-        "Structures"
-      ],
-      "row2": [
-        "Clippings & color",
-        "Guide",
-        "The Plan"
-      ],
-      "row3": [
-        "Home & office",
-        "Moodboards",
-        "Progress"
-      ]
+      "row1": ["Focus boards", "The Plan"],
+      "row2": ["Clippings", "Structures", "Extraction"],
+      "row3": ["Email reminders", "iCal", "Progress"]
     },
     "webSteps": {
       "desire": {
-        "title": "Pick your board path",
-        "subtitle": "Life · Home · Office · Mood — start where you are"
+        "title": "Choose your focus boards",
+        "subtitle": "Pick the areas you want to organize first"
       },
       "makeYours": {
-        "title": "Build the board",
-        "subtitle": "Add color, clippings, notes, and clean structure"
+        "title": "Build the boards",
+        "subtitle": "Add images, notes, color, and structure"
       },
       "listen": {
-        "title": "Keep it moving",
-        "subtitle": "Use The Plan to turn the board into next steps"
+        "title": "Use The Plan",
+        "subtitle": "Turn dates, goals, and next steps into reminders"
       }
     },
     "webToolbar": {
@@ -64,28 +53,28 @@
       "saveError": "Could not save your name. Check your connection and try again."
     },
     "focusCategories": {
-      "title": "What are you plotting?",
-      "subtitle": "Pick up to three. These become your starting boards."
+      "title": "Choose your three focus boards",
+      "subtitle": "Pick up to three. These become your starter focus boards alongside The Plan."
     },
     "primaryIntent": {
       "title": "What are you setting up?",
-      "subtitle": "Choose a starting point. You can mix boards, clippings, structures, and plans later.",
+      "subtitle": "Choose your starting system. You can add other boards later.",
       "options": {
         "life_rebranding": {
           "title": "Life plotting & vision boards",
-          "description": "Identity, goals, routines, money, love, space, and the plan behind it."
+          "description": "Pick three focus areas and turn them into three starter boards plus The Plan."
         },
         "home_organization": {
           "title": "Home organization",
-          "description": "Routines, chores, meal plans, zones, resets, and household boards."
+          "description": "Build household boards for routines, zones, chores, meals, and resets."
         },
         "office_work": {
           "title": "Office & projects",
-          "description": "Kanban, timelines, priorities, OKRs, and project boards."
+          "description": "Build project boards with Kanban, timelines, priorities, OKRs, and next steps."
         },
         "moodboarding": {
           "title": "Moodboarding",
-          "description": "Interiors, style, travel, events, brand ideas, and visual direction."
+          "description": "Build image-forward boards for interiors, style, travel, events, or brand direction."
         }
       }
     },
@@ -262,6 +251,13 @@
     "workspaceTemplate": {
       "title": "Choose your first board setup",
       "subtitle": "Pick a starting layout. You can rearrange everything later.",
+      "summary": {
+        "title": "Your starter boards",
+        "subtitle": "We'll create one focus board for each area you selected, plus The Plan.",
+        "planTitle": "The Plan",
+        "planDescription": "Dates, goals, reminders, and next steps.",
+        "continue": "Build my boards"
+      },
       "titleByIntent": {
         "life_rebranding": "Choose your vision board setup",
         "home_organization": "Choose your home board setup",
@@ -358,8 +354,8 @@
       "subtitle": "An AI companion for questions while you rebrand."
     },
     "attribution": {
-      "title": "How'd you find us?",
-      "subtitle": "This just helps us understand how people find us.",
+      "title": "How did you find Palette Plotting?",
+      "subtitle": "This helps us understand what's working.",
       "options": {
         "tiktok": "TikTok",
         "instagram": "Instagram",
@@ -371,35 +367,37 @@
       }
     },
     "intensity": {
-      "title": "How intense is your plan?",
+      "title": "How often do you want board reminders?",
       "titleByIntent": {
-        "life_rebranding": "How intense is your rebrand?",
+        "life_rebranding": "How often do you want board reminders?",
         "home_organization": "How intense is your reset?",
         "office_work": "How intense is your planning?",
         "moodboarding": "How often do you want to plot?"
       },
-      "subtitle": "Set your pace and optional nudges.",
-      "setRoutine": "Set my pace",
-      "notificationsQuestion": "Want nudges back to your boards when you drift?",
-      "notificationsHint": "Quiet reminders to your workspace — only if you opt in.",
+      "subtitle": "You can turn these off or change them anytime.",
+      "continue": "Continue",
+      "setRoutine": "Continue",
+      "notificationsQuestion": "Send reminders for dates and goals from The Plan?",
+      "notificationsDescription": "Email reminders are available now. Push notifications will arrive with the mobile app.",
+      "notificationsHint": "Email reminders are available now. Push notifications will arrive with the mobile app.",
       "yes": "Yes",
       "notNow": "Not now",
       "dailyTime": "Daily notification time",
       "customizeInSettings": "You can change this anytime in Settings.",
       "light": {
         "title": "Light",
-        "tagline": "The easy-start rhythm.",
-        "description": "A soft cadence with optional daily reminders."
+        "tagline": "1 reminder a day.",
+        "description": "A simple daily check-in."
       },
       "consistent": {
         "title": "Consistent",
-        "tagline": "For girls who show up daily.",
-        "description": "Steadier check-ins with up to 2 daily reminders, if selected."
+        "tagline": "2 reminders a day.",
+        "description": "Morning and evening nudges for your boards and The Plan."
       },
       "lockedIn": {
         "title": "Locked In",
-        "tagline": "Maximum momentum.",
-        "description": "High-touch rhythm with up to 3 daily reminders, if selected."
+        "tagline": "3 reminders a day.",
+        "description": "A stronger rhythm for active planning weeks."
       },
       "alerts": {
         "alert": "Alert",
@@ -449,18 +447,18 @@
     },
     "plotSynthesis": {
       "title": "Your workspace is ready.",
-      "subtitle": "Here is what we set up from what you told us.",
+      "subtitle": "Your starter boards, The Plan, extraction tools, and reminders are set up.",
       "items": {
-        "workspace": "A board workspace built around your starting path.",
-        "boards": "Starter boards with color, structure, and room to edit.",
-        "tracking": "The Plan and progress tools to help you keep moving."
+        "workspace": "Your focus boards match the areas you selected.",
+        "boards": "The Plan is where dates, goals, and next steps become reminders.",
+        "tracking": "Use extraction to pull text, dates, and action items from boards and images."
       }
     },
     "plotLoading": {
-      "title": "Setting up your boards…",
-      "subtitle": "Adding boards, color, structure, and your first plan.",
-      "loading": "Loading",
-      "hint": "You are not starting from a blank page.",
+      "title": "Building your board workspace…",
+      "subtitle": "Creating your focus boards, The Plan, and reminder setup.",
+      "loading": "Building",
+      "hint": "Your first workspace starts from your selected focus areas.",
       "testimonials": {
         "row1": [
           {
@@ -502,7 +500,7 @@
     },
     "beginJourney": {
       "lead": "Your boards are taking shape.",
-      "subtitle": "Let's finish setting up your workspace."
+      "subtitle": "Next we'll save your setup and turn it into your workspace."
     }
   }
 }

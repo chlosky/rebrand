@@ -94,11 +94,7 @@ export default function SetupIntensity() {
     const raw = d.intensity;
     return raw === "light" || raw === "consistent" || raw === "locked_in" ? raw : null;
   }, []);
-  const intensityTitle = useMemo(() => {
-    const intent = readSetupDraft().primaryIntent ?? "life_rebranding";
-    const byIntent = t(`setup.intensity.titleByIntent.${intent}`, { defaultValue: "" });
-    return byIntent || t("setup.intensity.title");
-  }, [t]);
+  const intensityTitle = useMemo(() => t("setup.intensity.title"), [t]);
   const [selected, setSelected] = useState<IntensityId | null>(initial);
   const [notificationChoice, setNotificationChoice] = useState<"yes" | "not_now" | null>(null);
   const [alertTimes, setAlertTimes] = useState<string[]>(
@@ -144,148 +140,143 @@ export default function SetupIntensity() {
     if (busy) return;
     setBusy(true);
 
-    try {
-    let permissionStatus = opts.permissionStatus;
-    let notificationsEnabled = opts.notificationsEnabled;
+    const finish = () => {
+      navigate(nextRoute);
+      setBusy(false);
+    };
 
-    if (opts.requestPermission && isAndroidNative) {
-      let osGranted = false;
-      try {
-        console.info("[Intensity] android permission:start");
-        osGranted = await requestNativePushPermission();
-        console.info("[Intensity] android permission:result", { granted: osGranted });
-        if (!osGranted) {
+    try {
+      let permissionStatus = opts.permissionStatus;
+      let notificationsEnabled = opts.notificationsEnabled;
+
+      if (opts.requestPermission && isAndroidNative) {
+        let osGranted = false;
+        try {
+          osGranted = await requestNativePushPermission();
+          if (!osGranted) {
+            notificationsEnabled = false;
+            permissionStatus = "denied";
+          }
+        } catch {
           notificationsEnabled = false;
           permissionStatus = "denied";
         }
-      } catch {
-        notificationsEnabled = false;
-        permissionStatus = "denied";
-      }
 
-      if (osGranted) {
-        try {
-          console.info("[Intensity] bootstrap:start");
-          await bootstrapOneSignal();
-          attachOneSignalListenersOnce();
-          if (user?.id) {
-            console.info("[Intensity] login:start", { userId: user.id });
-            await oneSignalLogin(user.id);
-          }
-          await syncOneSignalUserLanguage(preferredLocale);
-          const optedIn = await optInOneSignalPush();
-          if (optedIn) {
-            notificationsEnabled = true;
-            permissionStatus = "granted";
-          } else {
+        if (osGranted) {
+          try {
+            await bootstrapOneSignal();
+            attachOneSignalListenersOnce();
+            if (user?.id) {
+              await oneSignalLogin(user.id);
+            }
+            await syncOneSignalUserLanguage(preferredLocale);
+            const optedIn = await optInOneSignalPush();
+            if (optedIn) {
+              notificationsEnabled = true;
+              permissionStatus = "granted";
+            } else {
+              notificationsEnabled = false;
+              permissionStatus = "skipped";
+            }
+          } catch (e) {
+            console.warn("[Intensity] OneSignal setup after permission failed:", e);
             notificationsEnabled = false;
             permissionStatus = "skipped";
           }
-        } catch (e) {
-          console.warn("[Intensity] OneSignal setup after permission failed:", e);
-          notificationsEnabled = false;
-          permissionStatus = "skipped";
         }
       }
-    }
 
-    const draft = readSetupDraft();
-    const toolPrefs = Array.isArray(draft.toolPreferences)
-      ? draft.toolPreferences.filter((t): t is string => typeof t === "string")
-      : [];
+      const draft = readSetupDraft();
+      const toolPrefs = Array.isArray(draft.toolPreferences)
+        ? draft.toolPreferences.filter((t): t is string => typeof t === "string")
+        : [];
 
-    const routineItems: { slug: string; label: string; cadence: string; target_per_week: number }[] =
-      [];
+      const routineItems: { slug: string; label: string; cadence: string; target_per_week: number }[] = [];
 
-    if (toolPrefs.includes("boards_workspace") || toolPrefs.length === 0) {
-      routineItems.push({
-        slug: "boards_review",
-        label: routineItemLabel("boards_review"),
-        cadence: "daily",
-        target_per_week: opts.intensity === "locked_in" ? 7 : opts.intensity === "consistent" ? 5 : 3,
-      });
-    }
-    if (toolPrefs.includes("daily_wins_progress")) {
-      routineItems.push({
-        slug: "progress_review",
-        label: routineItemLabel("progress_review"),
-        cadence: "weekly",
-        target_per_week: opts.intensity === "locked_in" ? 2 : 1,
-      });
-    }
-    if (routineItems.length === 0) {
-      routineItems.push({
-        slug: "boards_review",
-        label: routineItemLabel("boards_review"),
-        cadence: "daily",
-        target_per_week: opts.intensity === "locked_in" ? 7 : opts.intensity === "consistent" ? 5 : 3,
-      });
-    }
-
-    if (opts.requestPermission && Capacitor.isNativePlatform() && !isAndroidNative) {
-      try {
-        const granted = await requestOneSignalPushPermission(true);
-        notificationsEnabled = granted;
-        permissionStatus = granted ? "granted" : "denied";
-      } catch {
-        notificationsEnabled = false;
-        permissionStatus = "denied";
+      if (toolPrefs.includes("boards_workspace") || toolPrefs.length === 0) {
+        routineItems.push({
+          slug: "boards_review",
+          label: routineItemLabel("boards_review"),
+          cadence: "daily",
+          target_per_week: opts.intensity === "locked_in" ? 7 : opts.intensity === "consistent" ? 5 : 3,
+        });
       }
-    }
+      if (toolPrefs.includes("daily_wins_progress")) {
+        routineItems.push({
+          slug: "progress_review",
+          label: routineItemLabel("progress_review"),
+          cadence: "weekly",
+          target_per_week: opts.intensity === "locked_in" ? 2 : 1,
+        });
+      }
+      if (routineItems.length === 0) {
+        routineItems.push({
+          slug: "boards_review",
+          label: routineItemLabel("boards_review"),
+          cadence: "daily",
+          target_per_week: opts.intensity === "locked_in" ? 7 : opts.intensity === "consistent" ? 5 : 3,
+        });
+      }
 
-    await writeSetupDraft(
-      {
+      if (opts.requestPermission && Capacitor.isNativePlatform() && !isAndroidNative) {
+        try {
+          const granted = await requestOneSignalPushPermission(true);
+          notificationsEnabled = granted;
+          permissionStatus = granted ? "granted" : "denied";
+        } catch {
+          notificationsEnabled = false;
+          permissionStatus = "denied";
+        }
+      }
+
+      void writeSetupDraft({
         intensity: opts.intensity,
         routineItems,
         appNotificationsConsent: notificationsEnabled,
         notificationPermissionStatus: permissionStatus,
         routineNotificationTimes: notificationsEnabled ? alertTimes : [],
         timezone: timeZone,
-      },
-      { awaitBackendSync: true },
-    );
+      });
 
-    if (Capacitor.isNativePlatform()) {
-      try {
-        console.info("[Intensity] tags:start");
-        await syncRoutineOneSignalTags({
+      if (Capacitor.isNativePlatform()) {
+        void syncRoutineOneSignalTags({
           intensity: opts.intensity,
           notificationsEnabled,
           permissionStatus,
           alertTimes: notificationsEnabled ? alertTimes : [],
           timezone: timeZone,
           preferredLocale,
+        }).catch((e) => {
+          console.warn("[Intensity] OneSignal tag sync failed:", e);
         });
-      } catch (e) {
-        console.warn("[Intensity] OneSignal tag sync failed:", e);
       }
-    }
 
-    navigate(nextRoute);
+      finish();
     } catch (e) {
       console.warn("[Intensity] persistAndContinue failed:", e);
-      setBusy(false);
+      finish();
     }
   };
 
   const handleSetRoutine = () => {
-    if (!selected || !notificationChoice) return;
+    if (!selected) return;
+    const choice = notificationChoice ?? "not_now";
     void persistAndContinue({
       intensity: selected,
-      notificationsEnabled: notificationChoice === "yes",
-      permissionStatus: notificationChoice === "yes" ? "granted" : "skipped",
-      requestPermission: notificationChoice === "yes",
+      notificationsEnabled: choice === "yes",
+      permissionStatus: choice === "yes" ? "granted" : "skipped",
+      requestPermission: choice === "yes" && Capacitor.isNativePlatform(),
     });
   };
 
-  const canContinue = selected !== null && notificationChoice !== null && !busy;
+  const canContinue = selected !== null && !busy;
 
   return (
     <SetupPage
       canContinue={canContinue}
       onBack={handleBack}
       onContinue={handleSetRoutine}
-      continueText={t("setup.intensity.setRoutine")}
+      continueText={t("setup.intensity.continue", { defaultValue: "Continue" })}
     >
       <SetupHeadingBlock
         centered
@@ -327,7 +318,9 @@ export default function SetupIntensity() {
           </p>
 
           <p className={cn("text-xs leading-relaxed", SETUP_MUTED_TEXT_CLASS)}>
-            {t("setup.intensity.notificationsHint")}
+            {t("setup.intensity.notificationsDescription", {
+              defaultValue: t("setup.intensity.notificationsHint"),
+            })}
           </p>
 
           <div className="grid grid-cols-2 gap-3">
