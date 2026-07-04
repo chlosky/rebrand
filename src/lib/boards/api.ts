@@ -204,5 +204,3 @@ export async function listUserUploads(userId: string): Promise<{ path: string; s
   }
   return out;
 }
-
-export { BOARD_STARTER_TEMPLATES };
