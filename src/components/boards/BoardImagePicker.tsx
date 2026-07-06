@@ -80,7 +80,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
             )}
             onClick={() => setTab(t)}
           >
-            {t === "library" ? "Library" : "My photos"}
+            {t === "library" ? "Our Collection" : "Your Library"}
           </button>
         ))}
       </div>
@@ -103,28 +103,32 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
       )}
 
       {tab === "uploads" && (
-        <div className="space-y-2 border-b border-neutral-100 p-2">
+        <div className="flex gap-2 border-b border-neutral-100 p-2">
           {onScanPhysical && (
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              className="w-full gap-2 text-xs"
+              className="h-8 flex-1 gap-1.5 px-2 text-[11px] font-medium"
               onClick={onScanPhysical}
             >
-              <Camera className="h-4 w-4" />
-              Scan or upload a board
+              <Camera className="h-3.5 w-3.5 shrink-0" />
+              Scan Board
             </Button>
           )}
-          <p className="text-[10px] leading-snug text-neutral-500">
-            Pull text from an existing board and place it into your workspace.
-          </p>
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-neutral-300 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Upload photo
-            <input type="file" accept="image/*" className="sr-only" onChange={onFileChange} disabled={uploading} />
-          </label>
-          <p className="mt-1 text-[10px] leading-snug text-neutral-500">Private to your account only.</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-8 flex-1 gap-1.5 px-2 text-[11px] font-medium"
+            asChild
+            disabled={uploading}
+          >
+            <label className={cn("cursor-pointer", uploading && "pointer-events-none opacity-60")}>
+              {uploading ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Upload className="h-3.5 w-3.5 shrink-0" />}
+              Upload Photo
+              <input type="file" accept="image/*" className="sr-only" onChange={onFileChange} disabled={uploading} />
+            </label>
+          </Button>
         </div>
       )}
 
@@ -139,16 +143,15 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
               <button
                 key={img.id}
                 type="button"
-                className="group overflow-hidden rounded-md border border-neutral-200 text-left hover:ring-2 hover:ring-neutral-900/20"
+                className="group overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
                 onClick={() => onPickImage?.(img.url)}
               >
                 <img src={img.url} alt={img.description} className="aspect-square w-full object-cover" loading="lazy" />
-                <span className="block truncate px-1 py-1 text-[10px] text-neutral-600">{img.description}</span>
               </button>
             ))}
           </div>
         ) : uploads.length === 0 ? (
-          <p className="px-1 py-4 text-center text-xs text-neutral-500">No uploads yet.</p>
+          <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {uploads.map((u) => (

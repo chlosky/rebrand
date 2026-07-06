@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const TITLE_FONTS = [
-  { id: "system", label: "Clean", family: "system-ui, sans-serif" },
+  { id: "system", label: "Sans", family: "system-ui, sans-serif" },
   { id: "serif", label: "Serif", family: "Georgia, 'Times New Roman', serif" },
-  { id: "display", label: "Bold", family: "'Arial Black', 'Helvetica Neue', sans-serif" },
+  { id: "display", label: "Block", family: "'Arial Black', 'Helvetica Neue', sans-serif" },
   { id: "script", label: "Script", family: "'Brush Script MT', 'Segoe Script', cursive" },
 ] as const;
 

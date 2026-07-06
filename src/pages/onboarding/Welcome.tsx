@@ -1,4 +1,4 @@
-import { Fragment, useEffect } from "react";
+import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useLocation, useNavigate } from "react-router-dom";
 import { OnboardingLayout } from "@/components/onboarding/OnboardingLayout";
@@ -41,37 +41,21 @@ const WELCOME_WEB_CTA_CLASS = cn(
   "h-[3.35rem] rounded-xl text-[15px] font-bold shadow-[0_8px_28px_rgba(24,24,27,0.12)]",
 );
 
-function WelcomeAwardLine() {
+function WelcomePitch() {
   const { t } = useTranslation("onboarding");
+  const pillars = t("welcome.pillars", { returnObjects: true }) as string[];
   return (
-    <p className="w-full px-1 text-center font-sans text-[10px] font-medium uppercase leading-[1.35] tracking-[0.14em] text-zinc-500">
-      <span className="block">{t("welcome.awardLine1")}</span>
-      <span className="block">{t("welcome.awardLine2")}</span>
-      <span className="block">{t("welcome.awardLine3")}</span>
-    </p>
-  );
-}
-function WelcomeFeatureGrid() {
-  const { t } = useTranslation("onboarding");
-  const toolRows = [
-    t("welcome.toolRows.row1", { returnObjects: true }) as string[],
-    t("welcome.toolRows.row2", { returnObjects: true }) as string[],
-    t("welcome.toolRows.row3", { returnObjects: true }) as string[],
-  ];
-  return (
-    <div className="flex w-full justify-center px-1">
-      <div className="flex flex-col items-center gap-2 text-center">
-        {toolRows.map((row) => (
-          <p key={row[0]} className="font-welcome-serif text-[13px] leading-[1.45] text-zinc-600">
-            {row.map((label, index) => (
-              <Fragment key={label}>
-                {index > 0 ? <span className="px-1.5 text-zinc-400">·</span> : null}
-                <span>{label}</span>
-              </Fragment>
-            ))}
-          </p>
+    <div className="flex w-full max-w-[21rem] flex-col items-center gap-4 px-1 md:max-w-[32rem]">
+      <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+        {t("welcome.tagline")}
+      </p>
+      <ul className="flex w-full flex-col gap-2.5 text-center">
+        {pillars.map((line) => (
+          <li key={line} className="font-sans text-[13px] leading-[1.5] text-zinc-600">
+            {line}
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -111,8 +95,7 @@ function WelcomeBodyNative() {
     <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-[calc(var(--app-safe-area-top)+1.25rem)] -translate-y-[0.32in]">
       <WelcomeTitle showFreeTrialLine={!isIosNative && !isAndroidNative} />
       <p className="max-w-[21rem] text-center text-[14px] leading-[1.55] text-zinc-600">{t("welcome.nativeDescription")}</p>
-      <WelcomeAwardLine />
-      <WelcomeFeatureGrid />
+      <WelcomePitch />
     </div>
   );
 }
@@ -131,8 +114,7 @@ function WelcomeBodyWeb() {
       <p className="max-w-[21rem] text-center text-[14px] leading-[1.55] text-zinc-600 md:max-w-[32rem] md:text-[15px]">
         {t("welcome.nativeDescription")}
       </p>
-      <WelcomeAwardLine />
-      <WelcomeFeatureGrid />
+      <WelcomePitch />
     </div>
   );
 }

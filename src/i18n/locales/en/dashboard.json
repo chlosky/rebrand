@@ -34,7 +34,7 @@
   },
   "nav": {
     "home": "Home",
-    "boards": "Boards",
+    "boards": "Vision",
     "yourJourney": "Reminders",
     "settings": "Settings",
     "appearance": "Appearance",
@@ -45,7 +45,7 @@
   },
   "tools": {
     "boards": {
-      "title": "Boards",
+      "title": "Vision",
       "description": "Vision boards with drag-and-drop editing — focus, mood, and The Plan"
     },
     "yourJourney": {
@@ -181,9 +181,9 @@
       "subtitle": "Upload clippings and photos here. They stay in your account and show up when you add images on boards."
     },
     "projects": {
-      "title": "Your boards",
+      "title": "Your vision",
       "subtitle": "Jump back into a workspace you've already started.",
-      "open": "Open boards",
+      "open": "Open vision",
       "empty": "No workspaces yet — start from Create when you're ready."
     },
     "locked": {
@@ -191,7 +191,7 @@
       "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Pro.",
       "journeyTitle": "Reminders are for members",
       "journeyBody": "Plan reminders, progress tracking, and journal unlock with Palette Plotting Pro.",
-      "newBoardTitle": "Boards are for members",
+      "newBoardTitle": "Vision is for members",
       "newBoardBody": "Start a new board on the plotting desk once you are on Pro — Library stays free.",
       "imageLibraryTitle": "Image Library is for members",
       "imageLibraryBody": "Upload and organize clippings here once you are on Pro — then drop them onto boards from the radial menu.",

@@ -1,3 +1,10 @@
+# Part 1 — Copy (i18n JSON)
+
+Rewrite user-facing strings here first.
+
+## src/i18n/locales/en/onboarding.json
+
+```json
 {
   "welcome": {
     "signUp": "Get started",
@@ -39,7 +46,7 @@
       }
     },
     "webToolbar": {
-      "boards": "Vision",
+      "boards": "Boards",
       "clippings": "Clippings",
       "structures": "Structures",
       "marks": "Text & Notes"
@@ -510,3 +517,371 @@
     }
   }
 }
+
+```
+
+---
+
+## src/i18n/locales/en/paywall.json
+
+```json
+{
+  "postPaywall": {
+    "title": "Your workspace is ready",
+    "buildingDashboard": "Opening your workspace…",
+    "finishingSubtitle": "Almost there — setting up your boards.",
+    "loadingStatusAria": "Loading status",
+    "commitmentLabel": "Quick reminder:",
+    "commitmentText": "You have a place to put the boards, plans, images, and structures you are building. Start simple, then keep arranging.",
+    "simsLines": [
+      "Confirming your trial…",
+      "Setting up your four-board workspace…",
+      "Adding your starter boards and plan layout…",
+      "Opening your workspace — almost there."
+    ],
+    "toastActivateFailedIos": "Purchase completed, but we could not activate your plan yet. Try again from subscriptions.",
+    "toastActivateFailedAndroid": "Purchase completed, but we could not activate your plan yet. Please try again.",
+    "toastSetupSnag": "We hit a snag finishing setup. Taking you to your workspace…"
+  },
+  "legacyIos": {
+    "titleLine1": "Unlock your free trial",
+    "titleLine2": "Start your membership",
+    "subtitle": "Choose a weekly plan to claim your free trial.",
+    "loadingOptions": "Loading subscription options…",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "bestAnnualValue": "Best annual value",
+    "onlyPerMonth": "Only {{amount}}/mo",
+    "perWeek": "{{price}}/week",
+    "perMonth": "{{price}}/month",
+    "perYear": "{{price}}/year",
+    "opening": "Opening…",
+    "tryAgain": "Try again",
+    "fallbackTitle": "We couldn't finish that step",
+    "fallbackBody": "Tap Try again, or go back to sign up and tap Continue.",
+    "terms": "Terms / EULA",
+    "privacy": "Privacy",
+    "restorePurchases": "Restore purchases",
+    "restoring": "Restoring…",
+    "restore": "Restore",
+    "closeAria": "Close",
+    "errorNotIosApp": "Subscriptions are only available in the iOS app.",
+    "errorSignInAgain": "Sign in again, then open subscription.",
+    "errorNoSession": "No active session. Sign out, sign in, then tap Continue.",
+    "errorOpenFromSignup": "Open subscription from the app after sign up.",
+    "errorSkippedDetail": "Use Continue on the sign-up screen, or open Account from Settings.",
+    "errorGeneric": "Something went wrong.",
+    "errorPersist": "Something went wrong. Copy debug log from Safari if this persists.",
+    "restoreOnlyIos": "Restore is only available in the iOS app.",
+    "restoredSuccess": "Subscription restored. Welcome back!",
+    "restoreCancelled": "Restore cancelled.",
+    "nothingToRestore": "Nothing to restore."
+  },
+  "legacyAndroid": {
+    "title": "Unlock Palette Plotting Pro Today.",
+    "subtitle": "Tap Continue to confirm your plan.",
+    "opening": "Opening…",
+    "tryAgain": "Try again",
+    "fallbackTitle": "We couldn't finish that step",
+    "fallbackBody": "Tap Try again, or go back to sign up and tap Continue.",
+    "terms": "Terms / EULA",
+    "privacy": "Privacy",
+    "closeAria": "Close",
+    "errorNotAndroidApp": "Subscriptions are only available in the Android app.",
+    "errorSignInAgain": "Sign in again, then open subscription.",
+    "errorNoSession": "No active session. Sign out, sign in, then tap Continue.",
+    "errorOpenFromSignup": "Open subscription from the app after sign up.",
+    "errorSkippedDetail": "Use Continue on the sign-up screen, or open Account from Settings.",
+    "errorGeneric": "Something went wrong."
+  },
+  "flow": {
+    "subscriptionAlreadyOpening": "Subscription is already opening — wait a few seconds, then try again.",
+    "subscriptionScreenMayBeOpening": "A subscription screen may still be opening. Wait a few seconds, then try again. If nothing changes, force-quit the app and reopen.",
+    "openingSubscriptionsTimedOut": "Opening subscriptions timed out. Force-quit the app, reopen, and tap Continue again.",
+    "paymentNotCompleted": "Payment was not completed.",
+    "couldNotOpenSubscription": "Could not open subscription options.",
+    "signInRequiredBeforeSubscribing": "Sign in is required before subscribing."
+  },
+  "webWrapper": {
+    "checkoutFailed": "We could not open checkout.",
+    "checkoutClosed": "Checkout closed. You can subscribe anytime.",
+    "viewPlans": "View plans",
+    "close": "Close",
+    "notConfigured": "Web checkout is not configured yet. Please try again later.",
+    "subscriptionNotCompleted": "Subscription not completed."
+  },
+  "emailCollection": {
+    "title": "Let's Get Started",
+    "emailLabel": "Email",
+    "firstNameLabel": "First Name",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "confirmLabel": "Confirm",
+    "emailPlaceholder": "your@email.com",
+    "firstNamePlaceholder": "First name",
+    "usernamePlaceholder": "Username",
+    "passwordPlaceholder": "8+ characters",
+    "confirmPlaceholder": "Re-enter",
+    "checkingEmail": "Checking availability...",
+    "checkingUsername": "Checking...",
+    "emailTaken": "This email is already registered. Please sign in instead.",
+    "usernameTaken": "This username is already taken. Please choose another.",
+    "passwordMinLength": "Password must be at least 8 characters.",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordMismatchToast": "Passwords do not match",
+    "invalidEmail": "Please enter a valid email address",
+    "needUsername": "Please enter a username",
+    "needPassword": "Please enter a password with at least 8 characters",
+    "needFirstName": "Please enter your first name",
+    "acceptTerms": "Please accept the Terms of Service and Privacy Policy",
+    "verifyEmailBlocked": "Account created, but sign-in is blocked. Please verify your email, then sign in.",
+    "subscriptionError": "Could not open subscription options. Try again in a moment.",
+    "saveFailed": "Failed to save. Please try again.",
+    "tryAgain": "Try again",
+    "termsAcceptPrefix": "I accept the",
+    "termsOfService": "Terms of Service",
+    "termsAnd": "and",
+    "privacyPolicy": "Privacy Policy",
+    "appNotificationsConsent": "I consent to app notifications (optional). New tools, promotions and app news. Opt out in Settings → Notification preferences.",
+    "emailMarketingConsent": "I consent to email marketing communications (optional, separate from transactional emails minimally required). Opt out in settings.",
+    "smsMarketingConsent": "I consent to SMS marketing communications (optional). Opt out in settings. Message and data rates may apply."
+  },
+  "errors": {
+    "cancelled": "Cancelled",
+    "paywallError": "Paywall error",
+    "notPresented": "Not presented",
+    "unknownResultDetail": "Unknown result: {{detail}}",
+    "noApiKey": "No RevenueCat API key configured.",
+    "notConfigured": "RevenueCat could not be configured.",
+    "purchaseNotCompleted": "Purchase was not completed.",
+    "billingUnavailable": "Billing unavailable; RevenueCat paywall UI is not used on this iOS version.",
+    "noOfferings": "No offerings in RevenueCat. Add a default offering and paywall in the dashboard.",
+    "checkoutFailed": "Could not complete checkout.",
+    "subscriptionNotCompleted": "Subscription was not completed.",
+    "webNotConfigured": "RevenueCat Web is not configured (missing API key)."
+  },
+  "paymentProcessing": {
+    "title": "Processing Payment",
+    "subtitle": "Please wait while we confirm your payment. This usually takes a few seconds.",
+    "missingInfo": "Missing payment information. Please restart onboarding.",
+    "verificationSlow": "Payment verification is taking longer than expected. Please contact support.",
+    "verificationFailed": "Unable to verify payment. Please contact support."
+  },
+  "webStripe": {
+    "headline": "Start your board workspace",
+    "subtitle": "Create boards for life plotting, home organization, moodboards, and project planning.",
+    "priceLine": "3 days free, then $9.99/month.",
+    "cancelLine": "Cancel anytime.",
+    "cta": "Start 3-Day Trial",
+    "secondaryCta": "Not now",
+    "features": [
+      "Three focus boards plus The Plan",
+      "Clippings, color, text, notes, and Structures",
+      "Extract text and action items from boards and uploaded images",
+      "AI-suggested reminders from dates, goals, and next steps",
+      "Email reminders and iCal export",
+      "Push notification framework for the mobile app"
+    ]
+  }
+}
+
+```
+
+---
+
+## src/i18n/locales/en/tools.json
+
+```json
+{
+  "focusCategories": {
+    "Identity": "Identity",
+    "Career & Money": "Career & Money",
+    "Love & Relationships": "Love & Relationships",
+    "Home & Space": "Home & Space",
+    "Beauty & Wellness": "Beauty & Wellness",
+    "Travel & Adventure": "Travel & Adventure",
+    "Organization & Plan": "Organization & Plan",
+    "Aesthetic & Mood": "Aesthetic & Mood",
+    "College & School": "College & School",
+    "Health & Fitness": "Health & Fitness"
+  },
+  "focusCategoryTiles": {
+    "Identity": "Identity",
+    "Career & Money": "Career & Money",
+    "Love & Relationships": "Love & Relationships",
+    "Home & Space": "Home & Space",
+    "Beauty & Wellness": "Beauty & Wellness",
+    "Travel & Adventure": "Travel & Adventure",
+    "Organization & Plan": "Organization & Plan",
+    "Aesthetic & Mood": "Aesthetic & Mood",
+    "College & School": "College & School",
+    "Health & Fitness": "Health & Fitness"
+  },
+  "boards": {
+    "pageTitle": "Boards | Palette Plotting",
+    "loading": "Loading your board system…",
+    "saveFailed": "Could not save board layout"
+  },
+  "activity": {
+    "title": "Progress Milestones",
+    "milestones": {
+      "tabs": {
+        "inspiredActions": "Inspired Actions",
+        "desires": "Weekly Goals",
+        "weeklyWins": "Weekly Wins"
+      },
+      "toasts": {
+        "error": "Error",
+        "loadHistoryFailed": "Failed to load action history. Please try again.",
+        "loadGoalsFailed": "Failed to load weekly goals",
+        "categoryRequired": "Category Required",
+        "selectCategoryForGoal": "Please select a category for your goal",
+        "saveGoalFailed": "Failed to save goal",
+        "updateGoalFailed": "Failed to update goal",
+        "deleteGoalFailed": "Failed to delete goal",
+        "loadReviewFailed": "Failed to load week review"
+      },
+      "aria": {
+        "completed": "Completed",
+        "notCompleted": "Not completed"
+      },
+      "goals": {
+        "addPlaceholder": "Add",
+        "category": "Category",
+        "addButton": "Add",
+        "loading": "Loading goals...",
+        "emptyTitle": "No goals set for this week.",
+        "emptyHint": "Add a goal above to get started."
+      },
+      "review": {
+        "loading": "Loading weekly wins...",
+        "inspiredActionsTitle": "Inspired Actions",
+        "inspiredActionsCount": "Inspired Actions completed this week",
+        "desiresTitle": "Weekly Goals",
+        "desiresSet": "Goals set",
+        "desiresAttained": "Goals completed",
+        "completionRate": "{{pct}}% completion rate",
+        "byCategoryTitle": "Goals by category",
+        "categoryCompleted": "{{completed}}/{{total}} completed",
+        "emptyTitle": "No activity recorded for this week.",
+        "emptyHint": "Log inspired actions and weekly goals to see your progress here."
+      }
+    }
+  },
+  "chrono": {
+    "title": "Journal",
+    "loadingTimeline": "Loading your timeline...",
+    "emptyTimeline": "Your timeline is waiting to be written.",
+    "createFirstEntry": "Create your first entry",
+    "timeline": {
+      "description": "Reflect on your days and track what shifted.",
+      "newEntry": "New entry",
+      "editEntry": "Edit entry",
+      "showLess": "Show less",
+      "showMore": "Show more",
+      "env3d": "3D (environment):",
+      "dayExperience": "How you experienced the day:",
+      "winToday": "Win today:",
+      "yes": "Yes",
+      "no": "No",
+      "env3dAria": "3D environment felt {{rating}}",
+      "dayExperienceAria": "Day was experienced as {{rating}}"
+    },
+    "form": {
+      "editEntry": "Edit entry",
+      "newEntry": "New entry",
+      "deleteEntry": "Delete entry",
+      "date": "Date",
+      "pickDate": "Pick a date",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "Give your entry a title...",
+      "whatHappened": "What happened? *",
+      "textPlaceholder": "Tell your timeline what happened today...",
+      "env3dQuestion": "(1) How was the 3D (external environment) today? *",
+      "dayExperienceQuestion": "(2) How did you experience the day? *",
+      "updating": "Updating...",
+      "creating": "Creating...",
+      "update": "Update",
+      "addEntry": "Add entry",
+      "deleteTitle": "Delete entry",
+      "deleteDescription": "Are you sure you want to delete this entry? This action cannot be undone.",
+      "deleting": "Deleting...",
+      "delete": "Delete",
+      "mood": {
+        "rough": "Rough or heavy",
+        "neutral": "Neutral",
+        "good": "Good"
+      },
+      "toast": {
+        "titleRequired": "Title required",
+        "titleRequiredDesc": "Give your entry a title.",
+        "entryRequired": "Entry required",
+        "entryRequiredDesc": "Write something for your timeline.",
+        "authRequired": "Authentication required",
+        "authRequiredDesc": "Please log in to create entries.",
+        "reflectionIncomplete": "Reflection incomplete",
+        "reflectionIncompleteDesc": "Answer both questions using the faces below.",
+        "permissionDenied": "Permission denied",
+        "permissionDeniedDesc": "Please ensure you are logged in and try again.",
+        "error": "Error",
+        "createFailed": "Failed to create entry. Please try again.",
+        "deleteFailed": "Failed to delete entry. Please try again.",
+        "noSession": "No valid session found. Please log in and try again."
+      }
+    }
+  },
+  "double": {
+    "choose": {
+      "practicesShort": {
+        "rest": "Rest",
+        "selfCare": "Care",
+        "clean": "Clean",
+        "drinkWater": "Water",
+        "haveFun": "Fun",
+        "exercise": "Move",
+        "glamUp": "Glam Up",
+        "connect": "Connect",
+        "seen": "Seen",
+        "work": "Work"
+      }
+    },
+    "embody": {
+      "confirmQuestions": {
+        "rest": "Did you rest?",
+        "selfCare": "Did you do some self-care?",
+        "clean": "Did you clean a space today?",
+        "drinkWater": "Did you drink water?",
+        "haveFun": "Did you do something fun today?",
+        "exercise": "Did you exercise?",
+        "glamUp": "Did you glam up or celebrate your beauty today?",
+        "connect": "Did you connect with people, nature, or animals today?",
+        "seen": "Did you practice being seen (online or in person) today?",
+        "work": "Did you make career or academic progress today?"
+      }
+    }
+  },
+  "journey": {
+    "pageTitle": "Reminders | Palette Plotting",
+    "title": "Reminders",
+    "subtitle": "Dates, goals, and next steps from The Plan — with email reminders and calendar export.",
+    "dailySnapshot": "Daily Snapshot",
+    "statusAligned": "Aligned",
+    "coherenceHint": "Check in on your boards and journal to stay aligned with your plan.",
+    "yourProgress": "Your Progress",
+    "journalTitle": "Journal",
+    "journalDescription": "Daily reflections and notes in one place.",
+    "remindersTitle": "The Plan Reminders",
+    "remindersDescription": "Extract dates, goals, and next steps from The Plan, then send reminders by email or export them to your calendar.",
+    "planEmptyTitle": "Turn The Plan into reminders",
+    "planEmptyBody": "Add dates, goals, and next steps here. Palette Plotting can extract action items and help schedule reminders.",
+    "extractDatesGoals": "Extract dates & goals",
+    "addReminderManually": "Add reminder manually",
+    "exportCalendar": "Export to calendar"
+  }
+}
+
+```
+
+---
+

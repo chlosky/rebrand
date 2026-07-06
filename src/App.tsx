@@ -23,6 +23,7 @@ const Welcome = lazy(() => import("./pages/onboarding/Welcome"));
 import Settings from "./pages/Settings";
 import RoutineReminderSettings from "./pages/RoutineReminderSettings";
 import Boards from "./pages/features/Boards";
+import BoardAccountability from "./pages/features/BoardAccountability";
 import ActivityTracking from "./pages/features/ActivityTracking";
 import Chrono from "./pages/features/Chrono";
 import Reminders from "./pages/features/Reminders";
@@ -36,12 +37,9 @@ import AndroidPostPaywallLoading from "./pages/onboarding/AndroidPostPaywallLoad
 import PostPaywallLoading from "./pages/onboarding/PostPaywallLoading";
 import {
   SetupCurrentFriction,
-  SetupBeginJourney,
   SetupFocusDetails,
   SetupFocusCategories,
-  SetupPrimaryIntent,
   SetupHomeFocus,
-  SetupOfficePlanningSystem,
   SetupMoodboardFocus,
   SetupEmail,
   SetupName,
@@ -50,9 +48,12 @@ import {
   SetupAttribution,
   SetupPlotLoading,
   SetupPlotSynthesis,
-  SetupToolPreference,
   SetupWorkspaceTemplate,
 } from "./pages/onboarding/setup";
+import SetupPrimaryIntentGated from "@/components/onboarding/SetupPrimaryIntentGated";
+import SetupOfficePlanningSystemGated from "@/components/onboarding/SetupOfficePlanningSystemGated";
+import SetupToolPreferenceGated from "@/components/onboarding/SetupToolPreferenceGated";
+import SetupBeginJourneyGated from "@/components/onboarding/SetupBeginJourneyGated";
 import Activate from "./pages/Activate";
 import PaymentProcessing from "./pages/PaymentProcessing";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -231,19 +232,19 @@ const App = () => {
 
               {/* Personalized setup flow (web + native) */}
               <Route path="/onboarding/setup/name" element={<SetupName />} />
-              <Route path="/onboarding/setup/primary-intent" element={<SetupPrimaryIntent />} />
+              <Route path="/onboarding/setup/primary-intent" element={<SetupPrimaryIntentGated />} />
               <Route path="/onboarding/setup/focus-categories" element={<SetupFocusCategories />} />
               <Route path="/onboarding/setup/home-focus" element={<SetupHomeFocus />} />
-              <Route path="/onboarding/setup/office-planning-system" element={<SetupOfficePlanningSystem />} />
+              <Route path="/onboarding/setup/office-planning-system" element={<SetupOfficePlanningSystemGated />} />
               <Route path="/onboarding/setup/moodboard-focus" element={<SetupMoodboardFocus />} />
               <Route path="/onboarding/setup/current-friction" element={<SetupCurrentFriction />} />
-              <Route path="/onboarding/setup/begin-journey" element={<SetupBeginJourney />} />
+              <Route path="/onboarding/setup/begin-journey" element={<SetupBeginJourneyGated />} />
               <Route path="/onboarding/setup/focus-details" element={<SetupFocusDetails />} />
               <Route path="/onboarding/setup/email" element={<SetupEmail />} />
               <Route path="/onboarding/setup/attribution" element={<SetupAttribution />} />
               <Route path="/onboarding/setup/notifications" element={<SetupNotificationPrePermission />} />
               <Route path="/onboarding/setup/intensity" element={<SetupIntensity />} />
-              <Route path="/onboarding/setup/tool-preference" element={<SetupToolPreference />} />
+              <Route path="/onboarding/setup/tool-preference" element={<SetupToolPreferenceGated />} />
               <Route path="/onboarding/setup/workspace-template" element={<SetupWorkspaceTemplate />} />
               <Route path="/onboarding/setup/plot-loading" element={<SetupPlotLoading />} />
               <Route path="/onboarding/setup/plot-synthesis" element={<SetupPlotSynthesis />} />
@@ -258,19 +259,19 @@ const App = () => {
                 }
               />
               <Route path="/onboarding/suite/setup/name" element={<SetupName />} />
-              <Route path="/onboarding/suite/setup/primary-intent" element={<SetupPrimaryIntent />} />
+              <Route path="/onboarding/suite/setup/primary-intent" element={<SetupPrimaryIntentGated />} />
               <Route path="/onboarding/suite/setup/focus-categories" element={<SetupFocusCategories />} />
               <Route path="/onboarding/suite/setup/home-focus" element={<SetupHomeFocus />} />
-              <Route path="/onboarding/suite/setup/office-planning-system" element={<SetupOfficePlanningSystem />} />
+              <Route path="/onboarding/suite/setup/office-planning-system" element={<SetupOfficePlanningSystemGated />} />
               <Route path="/onboarding/suite/setup/moodboard-focus" element={<SetupMoodboardFocus />} />
               <Route path="/onboarding/suite/setup/current-friction" element={<SetupCurrentFriction />} />
-              <Route path="/onboarding/suite/setup/begin-journey" element={<SetupBeginJourney />} />
+              <Route path="/onboarding/suite/setup/begin-journey" element={<SetupBeginJourneyGated />} />
               <Route path="/onboarding/suite/setup/focus-details" element={<SetupFocusDetails />} />
               <Route path="/onboarding/suite/setup/email" element={<SetupEmail />} />
               <Route path="/onboarding/suite/setup/attribution" element={<SetupAttribution />} />
               <Route path="/onboarding/suite/setup/notifications" element={<SetupNotificationPrePermission />} />
               <Route path="/onboarding/suite/setup/intensity" element={<SetupIntensity />} />
-              <Route path="/onboarding/suite/setup/tool-preference" element={<SetupToolPreference />} />
+              <Route path="/onboarding/suite/setup/tool-preference" element={<SetupToolPreferenceGated />} />
               <Route path="/onboarding/suite/setup/workspace-template" element={<SetupWorkspaceTemplate />} />
               <Route path="/onboarding/suite/setup/plot-loading" element={<SetupPlotLoading />} />
               <Route path="/onboarding/suite/setup/plot-synthesis" element={<SetupPlotSynthesis />} />
@@ -330,6 +331,7 @@ const App = () => {
                 <Route path="reminders" element={<ProToolRoute><Reminders /></ProToolRoute>} />
                 <Route path="your-journey" element={<Navigate to="/dashboard/reminders" replace />} />
                 <Route path="boards" element={<ProToolRoute><Boards /></ProToolRoute>} />
+                <Route path="boards/accountability" element={<ProToolRoute><BoardAccountability /></ProToolRoute>} />
                 <Route path="timeline" element={<ProToolRoute><Chrono /></ProToolRoute>} />
                 <Route path="activity-tracking" element={<ProToolRoute><ActivityTracking /></ProToolRoute>} />
                 <Route path="chrono" element={<ProToolRoute><Chrono /></ProToolRoute>} />

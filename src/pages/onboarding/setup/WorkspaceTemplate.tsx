@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { useIsNativeApp } from "@/hooks/use-native-app";
-import { needsFocusDetailsStep } from "@/lib/focusDetailOptions";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
@@ -74,9 +73,7 @@ export default function SetupWorkspaceTemplate() {
       return;
     }
     const cat = (readSetupDraft().desireCategory || "").trim();
-    navigate(
-      cat && needsFocusDetailsStep(cat) ? `${setupBase}/focus-details` : `${setupBase}/focus-categories`,
-    );
+    navigate(cat ? `${setupBase}/focus-categories` : `${setupBase}/primary-intent`);
   };
 
   const handleContinue = () => {

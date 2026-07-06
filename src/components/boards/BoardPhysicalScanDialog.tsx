@@ -127,10 +127,10 @@ export function BoardPhysicalScanDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            Scan or upload a board
+            Scan Board
           </DialogTitle>
           <DialogDescription>
-            Pull text, dates, goals, and action items from an existing board photo into your workspace.
+            Take or upload a photo — pull text onto your board and save to Your Library.
           </DialogDescription>
         </DialogHeader>
 
@@ -167,7 +167,7 @@ export function BoardPhysicalScanDialog({
             </label>
             <label className="flex items-center gap-2">
               <Checkbox checked={saveUpload} onCheckedChange={(v) => setSaveUpload(Boolean(v))} />
-              Save to My photos
+              Save to Your Library
             </label>
           </div>
 

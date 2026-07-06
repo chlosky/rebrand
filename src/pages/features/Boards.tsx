@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, Download, LayoutGrid, Loader2, Plus, ScanLine, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, ListChecks, Loader2, Plus, ScanLine, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
@@ -23,7 +23,6 @@ import {
 import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { BoardPrintDialog } from "@/components/boards/BoardPrintDialog";
 import { BoardPhysicalScanDialog } from "@/components/boards/BoardPhysicalScanDialog";
-import { BoardImportDialog } from "@/components/boards/BoardImportDialog";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -35,6 +34,7 @@ export default function Boards() {
   const isMobile = useIsMobile();
   const editorMapRef = useRef(new Map<string, BoardCanvasHandle>());
   const activeEditorRef = useRef<BoardCanvasHandle | null>(null);
+  const saveSeqRef = useRef(new Map<string, number>());
   const [imagePickOpen, setImagePickOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,6 @@ export default function Boards() {
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
   const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
 
@@ -124,12 +123,15 @@ export default function Boards() {
   }, [user?.id]);
 
   useEffect(() => {
-    document.title = "Boards | Palette Plotting";
+    document.title = "Vision | Palette Plotting";
   }, []);
 
   const handleSaveLayoutFor = useCallback(async (boardId: string, layout: Record<string, unknown>) => {
+    const seq = (saveSeqRef.current.get(boardId) ?? 0) + 1;
+    saveSeqRef.current.set(boardId, seq);
     try {
       await saveBoardLayout(boardId, layout);
+      if (saveSeqRef.current.get(boardId) !== seq) return;
       setWorkspace((prev) => {
         if (!prev) return prev;
         return {
@@ -138,6 +140,7 @@ export default function Boards() {
         };
       });
     } catch {
+      if (saveSeqRef.current.get(boardId) !== seq) return;
       toast.error("Could not save board");
     }
   }, []);
@@ -224,6 +227,43 @@ export default function Boards() {
     }
   };
 
+  const handleDuplicateBoard = async () => {
+    if (!workspace || !activeBoard || !user?.id) return;
+    const layout =
+      editorMapRef.current.get(activeBoard.id)?.getLayoutJson() ?? activeBoard.layout_json;
+    const baseTitle = activeBoard.title.replace(/ \(copy( \d+)?\)$/i, "");
+    const title = `${baseTitle} (copy)`;
+    try {
+      const board = await addBoard(
+        workspace.id,
+        user.id,
+        title,
+        "focus",
+        workspace.boards.length,
+      );
+      await saveBoardLayout(board.id, layout);
+      await updateBoardMeta(board.id, {
+        color_key: activeBoard.color_key,
+        title_color: activeBoard.title_color,
+        title_font: activeBoard.title_font,
+        layout_mode: activeBoard.layout_mode,
+      });
+      const duplicated: typeof board = {
+        ...board,
+        layout_json: layout,
+        color_key: activeBoard.color_key,
+        title_color: activeBoard.title_color,
+        title_font: activeBoard.title_font,
+        layout_mode: activeBoard.layout_mode,
+      };
+      setWorkspace({ ...workspace, boards: [...workspace.boards, duplicated] });
+      selectBoard(board.id);
+      toast.success("Board duplicated");
+    } catch {
+      toast.error("Could not duplicate board");
+    }
+  };
+
   const handleRemoveBoard = async () => {
     if (!workspace || !activeBoard) return;
     if (activeBoard.role === "plan") {
@@ -262,13 +302,17 @@ export default function Boards() {
             </Button>
             <LayoutGrid className="h-5 w-5 text-neutral-700" />
             <div>
-              <h1 className="text-sm font-semibold text-neutral-900">Boards</h1>
+              <h1 className="text-sm font-semibold text-neutral-900">Vision</h1>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleAddBoard}>
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Add board</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => void handleDuplicateBoard()}>
+              <CopyPlus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Duplicate</span>
             </Button>
             {canRemoveBoard && (
               <Button
@@ -285,20 +329,34 @@ export default function Boards() {
               <ScanLine className="h-3.5 w-3.5" />
               Scan
             </Button>
-            <Button variant="outline" size="sm" className="hidden gap-1 text-xs md:flex" onClick={() => setImportOpen(true)}>
-              <Copy className="h-3.5 w-3.5" />
-              Import
-            </Button>
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setDownloadOpen(true)}>
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
             </Button>
+            <div className="ml-1 flex items-center gap-2 border-l border-neutral-200 pl-2">
+              <ListChecks className="h-5 w-5 shrink-0 text-neutral-700" />
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900">Action</h2>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => navigate("/dashboard/boards/accountability")}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </header>
 
         {!loading && workspace && activeBoard && (
           <BoardToolbar
             editorRef={activeEditorRef}
+            onResetBoard={() => {
+              const id = activeBoard.id;
+              editorMapRef.current.get(id)?.resetBoard();
+            }}
             orientation="horizontal"
             className="shrink-0"
             zoomPreset={!isMobile ? boardZoom : undefined}
@@ -396,21 +454,18 @@ export default function Boards() {
             <BoardPrintDialog
               open={downloadOpen}
               onOpenChange={setDownloadOpen}
-              layoutJson={activeBoard.layout_json}
-              colorKey={activeBoard.color_key}
-              boardTitle={activeBoard.title}
+              boards={workspace.boards}
+              activeBoardId={activeBoard.id}
+              getLayoutJson={(boardId) => {
+                const editor = editorMapRef.current.get(boardId);
+                if (editor) return editor.getLayoutJson();
+                return workspace.boards.find((b) => b.id === boardId)?.layout_json ?? {};
+              }}
             />
             <BoardPhysicalScanDialog
               open={scanOpen}
               onOpenChange={setScanOpen}
               userId={user.id}
-              editorRef={activeEditorRef}
-            />
-            <BoardImportDialog
-              open={importOpen}
-              onOpenChange={setImportOpen}
-              boards={workspace.boards}
-              activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
             />
           </>

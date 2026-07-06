@@ -48,7 +48,7 @@ export const BOARD_QUICK_PICK_COLORS = [
   { label: "Teal", hex: "#00897b" },
   { label: "Cyan", hex: "#00acc1" },
   { label: "White", hex: "#ffffff" },
-  { label: "Charcoal", hex: "#455a64" },
+  { label: "Black", hex: "#1C1C1C" },
 ] as const;
 
 export function normalizeBoardColorHex(raw: string): string | null {

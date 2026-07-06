@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { RefObject } from "react";
 import { BookImage, MessageCircleHeart, Shapes } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { BOARD_QUICK_PICK_COLORS, boardFillForKey, normalizeBoardColorHex } from "@/lib/boards/colors";
+import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
+import { BoardColorStrip } from "@/components/boards/BoardColorStrip";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE, StructureDecalPreview, type PlotDockTab } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardCompanionPanel } from "@/components/boards/BoardCompanionPanel";
@@ -39,26 +40,6 @@ export function BoardPlotKitTray({
   const [sheetTab, setSheetTab] = useState<PlotDockTab | null>(null);
   const close = () => setSheetTab(null);
   const activeBoardFill = boardFillForKey(activeBoard.color_key);
-  const [hexDraft, setHexDraft] = useState(activeBoardFill);
-
-  useEffect(() => {
-    setHexDraft(activeBoardFill);
-  }, [activeBoardFill]);
-
-  const applyBoardHex = (raw: string) => {
-    const hex = normalizeBoardColorHex(raw);
-    if (!hex) {
-      setHexDraft(activeBoardFill);
-      return;
-    }
-    setHexDraft(hex);
-    void onBoardColorChange(activeBoardId, hex);
-  };
-
-  const applyQuickPick = (hex: string) => {
-    setHexDraft(hex);
-    void onBoardColorChange(activeBoardId, hex);
-  };
 
   return (
     <>
@@ -121,31 +102,40 @@ export function BoardPlotKitTray({
             )}
 
             {sheetTab === "structures" && (
-              <div className="grid gap-2 p-3">
-                {PLOT_STRUCTURES.map((s) => (
-                  <button
-                    key={s.type}
-                    type="button"
-                    onClick={() => {
-                      const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
-                      editorRef.current?.addDiagramOverlay(
-                        s.type,
-                        placement.x,
-                        placement.y,
-                        placement.w,
-                        placement.h,
-                        s.items,
-                      );
-                      close();
-                    }}
-                    className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
-                  >
-                    <span className="text-sm font-semibold text-stone-900">{s.title}</span>
-                    <span className="mt-0.5 block text-xs text-stone-500">{s.hint}</span>
-                    <StructureDecalPreview type={s.type} />
-                  </button>
-                ))}
-              </div>
+              <>
+                <BoardColorStrip
+                  userId={userId}
+                  activeBoardFill={activeBoardFill}
+                  onColorChange={(hex) => void onBoardColorChange(activeBoardId, hex)}
+                  className="px-4 py-3"
+                  swatchSize="md"
+                />
+                <div className="grid gap-2 p-3">
+                  {PLOT_STRUCTURES.map((s) => (
+                    <button
+                      key={s.type}
+                      type="button"
+                      onClick={() => {
+                        const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+                        editorRef.current?.addDiagramOverlay(
+                          s.type,
+                          placement.x,
+                          placement.y,
+                          placement.w,
+                          placement.h,
+                          s.items,
+                        );
+                        close();
+                      }}
+                      className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
+                    >
+                      <span className="text-sm font-semibold text-stone-900">{s.title}</span>
+                      <span className="mt-0.5 block text-xs text-stone-500">{s.hint}</span>
+                      <StructureDecalPreview type={s.type} />
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
 
             {sheetTab === "marks" && (
@@ -172,62 +162,9 @@ export function BoardPlotKitTray({
                     Sticky
                   </button>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="flex-1 rounded-lg border border-stone-300 bg-[#faf8f5] py-2.5 text-xs font-medium text-stone-900"
-                    onClick={() => editorRef.current?.deleteSelected()}
-                  >
-                    Delete selected
-                  </button>
-                </div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Board color</p>
-                <div className="mb-2 flex items-center gap-2">
-                  <label className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center">
-                    <span
-                      className="h-9 w-9 rounded-full ring-2 ring-stone-300/80 ring-offset-1"
-                      style={{ backgroundColor: activeBoardFill }}
-                      aria-hidden
-                    />
-                    <input
-                      type="color"
-                      value={activeBoardFill}
-                      onChange={(e) => applyBoardHex(e.target.value)}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      aria-label="Pick board color"
-                    />
-                  </label>
-                  <input
-                    type="text"
-                    value={hexDraft}
-                    onChange={(e) => setHexDraft(e.target.value)}
-                    onBlur={() => applyBoardHex(hexDraft)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") applyBoardHex(hexDraft);
-                    }}
-                    spellCheck={false}
-                    className="min-w-0 flex-1 rounded-md border border-stone-300/80 bg-white px-2 py-1.5 font-mono text-[11px] uppercase text-stone-800"
-                    aria-label="Board color hex code"
-                  />
-                </div>
                 <p className="text-[10px] text-stone-500">
                   Right-click, tap empty board space, or hold on mobile for the marks wheel.
                 </p>
-                <div className="grid grid-cols-7 gap-1.5">
-                  {BOARD_QUICK_PICK_COLORS.map((pick) => (
-                    <button
-                      key={pick.hex}
-                      type="button"
-                      title={`${pick.label} · ${pick.hex}`}
-                      onClick={() => applyQuickPick(pick.hex)}
-                      className={cn(
-                        "aspect-square rounded-lg ring-1 ring-stone-300/60",
-                        activeBoardFill === pick.hex && "ring-2 ring-stone-900",
-                      )}
-                      style={{ backgroundColor: pick.hex }}
-                    />
-                  ))}
-                </div>
               </div>
             )}
           </div>

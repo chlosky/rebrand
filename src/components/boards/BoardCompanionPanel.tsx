@@ -20,6 +20,7 @@ const VALID_DIAGRAMS = new Set<BoardDiagramType>([
   "gantt",
   "okrs",
   "five_s",
+  "divider",
 ]);
 
 function clamp01(n: number) {

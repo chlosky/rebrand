@@ -156,10 +156,21 @@ function presetPixels(preset: BoardPrintPreset) {
   };
 }
 
+export type BoardPrintSource = {
+  layoutJson: Record<string, unknown>;
+  colorKey: string;
+  title: string;
+};
+
+function boardFileSlug(title: string): string {
+  return title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 40) || "board";
+}
+
 export async function downloadBoardPrint(
   layoutJson: Record<string, unknown>,
   colorKey: string,
   preset: BoardPrintPreset,
+  title?: string,
 ): Promise<void> {
   const { pageW, pageH } = presetPixels(preset);
   const blob = await renderBoardToBlob({
@@ -169,12 +180,50 @@ export async function downloadBoardPrint(
     pageHeightPx: pageH,
   });
 
+  const slug = title ? boardFileSlug(title) : "board";
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `palette-plot-board-${preset.id}-${preset.dpi}dpi.png`;
+  a.download = `palette-plot-${slug}-${preset.id}-${preset.dpi}dpi.png`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadBoardsPrintPdf(
+  boards: BoardPrintSource[],
+  preset: BoardPrintPreset,
+): Promise<void> {
+  if (boards.length === 0) return;
+
+  const { jsPDF } = await import("jspdf");
+  const { pageW, pageH } = presetPixels(preset);
+  const format: [number, number] = [preset.pageWidthIn, preset.pageHeightIn];
+  const landscape = preset.pageWidthIn > preset.pageHeightIn;
+
+  const pdf = new jsPDF({
+    orientation: landscape ? "landscape" : "portrait",
+    unit: "in",
+    format,
+  });
+
+  for (let i = 0; i < boards.length; i++) {
+    const board = boards[i];
+    if (i > 0) pdf.addPage(format, landscape ? "landscape" : "portrait");
+
+    const dataUrl = await renderBoardToDataUrl({
+      layoutJson: board.layoutJson,
+      colorKey: board.colorKey,
+      pageWidthPx: pageW,
+      pageHeightPx: pageH,
+    });
+    pdf.addImage(dataUrl, "PNG", 0, 0, preset.pageWidthIn, preset.pageHeightIn);
+  }
+
+  const slug =
+    boards.length === 1
+      ? boardFileSlug(boards[0].title)
+      : `${boards.length}-boards`;
+  pdf.save(`palette-plot-${slug}-${preset.id}.pdf`);
 }
 
 export async function openBoardPrintWindow(

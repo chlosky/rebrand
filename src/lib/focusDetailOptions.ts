@@ -121,11 +121,9 @@ export function getFocusDetailOptions(category: string): FocusDetailOptionSet | 
   return CHOICE[category.trim()] ?? null;
 }
 
-/** A category shows the focus-details step only when it has a defined option set. */
-export function needsFocusDetailsStep(category: string): boolean {
-  const c = category.trim();
-  if (!c) return false;
-  return getFocusDetailOptions(c) != null;
+/** Focus-details step removed from onboarding — categories are enough for starter boards. */
+export function needsFocusDetailsStep(_category: string): boolean {
+  return false;
 }
 
 export function normalizeFocusCategory(raw: string | undefined): string {
