@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Calendar, Download, Loader2, Sparkles } from "lucide-react";
+import { Bell, Calendar, Download, ListPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,7 +136,7 @@ export function BoardReminderPanel({
             </p>
           </div>
           <Button size="sm" className="w-full gap-1" onClick={() => void handleExtract()} disabled={extracting}>
-            {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ListPlus className="h-3.5 w-3.5" />}
             {t("journey.extractDatesGoals", { defaultValue: "Extract dates & goals" })}
           </Button>
           <Button variant="outline" size="sm" className="w-full" onClick={() => setShowManualForm(true)}>
@@ -153,7 +153,7 @@ export function BoardReminderPanel({
         <div className="space-y-2 border-b border-neutral-100 p-3">
           {isPlan && (
             <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => void handleExtract()} disabled={extracting}>
-              {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ListPlus className="h-3.5 w-3.5" />}
               {t("journey.extractDatesGoals", { defaultValue: "Extract dates & goals" })}
             </Button>
           )}

@@ -115,7 +115,7 @@ export function BoardAccountabilityGrid({ goals, boards, activeId, onSelect }: B
   if (!goals.length) {
     return (
       <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-neutral-500">
-        Run Analyze to map goals from your boards into a quarterly → daily action tree.
+        Run Analyze to map goals from your boards into a quarterly → monthly → weekly → daily action.
       </div>
     );
   }

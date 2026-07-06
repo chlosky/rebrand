@@ -60,7 +60,7 @@ const Auth = () => {
     };
   }, []);
 
-  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -75,24 +75,8 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      let emailToUse = emailOrUsername;
-
-      if (!emailOrUsername.includes("@")) {
-        const { data: email, error: lookupError } = await supabase.rpc("get_email_by_username", {
-          lookup_username: emailOrUsername,
-        });
-
-        if (lookupError || !email) {
-          toast.error(t("toasts.usernameNotFound"));
-          setLoading(false);
-          return;
-        }
-
-        emailToUse = email;
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
-        email: emailToUse,
+        email: email.trim(),
         password,
       });
       if (error) throw error;
@@ -120,24 +104,8 @@ const Auth = () => {
     setResetLoading(true);
 
     try {
-      let emailToUse = resetEmail;
-
-      if (!resetEmail.includes("@")) {
-        const { data: email, error: lookupError } = await supabase.rpc("get_email_by_username", {
-          lookup_username: resetEmail,
-        });
-
-        if (lookupError || !email) {
-          toast.error(t("toasts.usernameNotFound"));
-          setResetLoading(false);
-          return;
-        }
-
-        emailToUse = email;
-      }
-
       const { error } = await supabase.functions.invoke("send-password-reset", {
-        body: { email: emailToUse },
+        body: { email: resetEmail.trim() },
       });
 
       if (error) throw error;
@@ -200,12 +168,12 @@ const Auth = () => {
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="resetEmail" className={SETUP_LABEL_CLASS}>
-                      {t("signIn.emailOrUsernameLabel")}
+                      {t("signIn.emailLabel")}
                     </Label>
                     <Input
                       id="resetEmail"
-                      type="text"
-                      placeholder={t("signIn.emailOrUsernamePlaceholder")}
+                      type="email"
+                      placeholder={t("signIn.emailPlaceholder")}
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       className={SETUP_FIELD_CLASS}
@@ -233,17 +201,17 @@ const Auth = () => {
           ) : (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="emailOrUsername" className={SETUP_LABEL_CLASS}>
-                  {t("signIn.emailOrUsernameLabel")}
+                <Label htmlFor="email" className={SETUP_LABEL_CLASS}>
+                  {t("signIn.emailLabel")}
                 </Label>
                 <Input
-                  id="emailOrUsername"
-                  type="text"
-                  placeholder={t("signIn.emailOrUsernamePlaceholder")}
-                  value={emailOrUsername}
-                  onChange={(e) => setEmailOrUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder={t("signIn.emailPlaceholder")}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className={SETUP_FIELD_CLASS}
-                  autoComplete="username"
+                  autoComplete="email"
                   required
                 />
               </div>

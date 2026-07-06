@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, Loader2, Sparkles, Upload } from "lucide-react";
+import { Check, Images, Loader2, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -200,7 +200,7 @@ export default function WorkspaceCommunity() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-1 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#a87c84]" aria-hidden />
+              <Images className="h-4 w-4 text-[#a87c84]" aria-hidden />
               <h1 className={cn("font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
                 {t("workspace.community.title")}
               </h1>

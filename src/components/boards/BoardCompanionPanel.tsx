@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, PenLine, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BOARD_COLORS } from "@/lib/boards/colors";
@@ -188,7 +188,7 @@ export function BoardCompanionPanel({
         ))}
         {lastApplied > 0 ? (
           <p className="flex items-center gap-1.5 text-[10px] font-medium text-stone-600">
-            <Sparkles className="h-3 w-3" />
+            <PenLine className="h-3 w-3" />
             Plotted {lastApplied} {lastApplied === 1 ? "piece" : "pieces"} on the board
           </p>
         ) : null}

@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
-  Bell,
+  CheckCircle2,
+  Circle,
   Download,
   ListChecks,
   LayoutGrid,
   Loader2,
-  Sparkles,
+  ScanSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
@@ -20,12 +20,11 @@ import { BoardAccountabilityGrid } from "@/components/boards/BoardAccountability
 import {
   createBoardReminder,
   ensureDefaultWorkspace,
-  fetchBoardReminders,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
 } from "@/lib/boards/api";
 import type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
-import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
+import type { BoardReminder, BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { downloadIcalFile } from "@/lib/boards/ical";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -47,9 +46,11 @@ export default function BoardAccountability() {
   const [map, setMap] = useState<AccountabilityMap | null>(null);
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [channelEmail, setChannelEmail] = useState(true);
-  const [channelSms, setChannelSms] = useState(false);
+  const [schedulingEmail, setSchedulingEmail] = useState(false);
+  const [schedulingSms, setSchedulingSms] = useState(false);
+  const [exportingIcal, setExportingIcal] = useState(false);
+  const [emailOptedIn, setEmailOptedIn] = useState(false);
+  const [textOptedIn, setTextOptedIn] = useState(false);
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -107,6 +108,8 @@ export default function BoardAccountability() {
       }
       setMap(result);
       setActiveGoalId(result.goals[0]?.id ?? null);
+      setEmailOptedIn(false);
+      setTextOptedIn(false);
       sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(result));
       toast.success("Action plan ready");
     } catch {
@@ -116,20 +119,15 @@ export default function BoardAccountability() {
     }
   };
 
-  const runGenerateReminders = async () => {
+  const remindersDisabled = !map?.reminders.length;
+
+  const scheduleReminders = async (channel: "email" | "sms") => {
     if (!map?.reminders.length || !planBoard || !user?.id) {
       toast.error("Analyze boards first");
-      return;
+      return false;
     }
-    const channels: string[] = [];
-    if (channelEmail) channels.push("email");
-    if (channelSms) channels.push("sms");
-    if (!channels.length) {
-      toast.error("Pick at least one reminder channel");
-      return;
-    }
-
-    setGenerating(true);
+    const setBusy = channel === "email" ? setSchedulingEmail : setSchedulingSms;
+    setBusy(true);
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       for (const r of map.reminders.slice(0, 20)) {
@@ -141,18 +139,81 @@ export default function BoardAccountability() {
           body: r.goal_title ? `Goal: ${r.goal_title} · ${r.cadence}` : r.cadence,
           remind_at: new Date(ms).toISOString(),
           timezone: tz,
-          channels,
+          channels: [channel],
           source: "ai_extracted",
           fabric_object_id: null,
         });
       }
-      const rows = await fetchBoardReminders(planBoard.id);
-      downloadIcalFile(rows, "palette-plotting-accountability.ics");
-      toast.success(`Scheduled ${Math.min(map.reminders.length, 20)} reminders`);
+      const count = Math.min(map.reminders.length, 20);
+      if (channel === "email") {
+        toast.success(`${count} email reminders set`);
+      } else {
+        toast.success(`${count} text reminders set`);
+      }
+      return true;
     } catch {
-      toast.error("Could not generate reminders");
+      toast.error(channel === "email" ? "Couldn't set up email reminders" : "Couldn't set up text reminders");
+      return false;
     } finally {
-      setGenerating(false);
+      setBusy(false);
+    }
+  };
+
+  const toggleEmailReminders = async () => {
+    if (remindersDisabled) return;
+    if (emailOptedIn) {
+      setEmailOptedIn(false);
+      return;
+    }
+    const ok = await scheduleReminders("email");
+    if (ok) setEmailOptedIn(true);
+  };
+
+  const toggleTextReminders = async () => {
+    if (remindersDisabled) return;
+    if (textOptedIn) {
+      setTextOptedIn(false);
+      return;
+    }
+    const ok = await scheduleReminders("sms");
+    if (ok) setTextOptedIn(true);
+  };
+
+  const runExportIcal = () => {
+    if (!map?.reminders.length || !planBoard || !user?.id) {
+      toast.error("Analyze boards first");
+      return;
+    }
+    setExportingIcal(true);
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const now = new Date().toISOString();
+      const rows: BoardReminder[] = map.reminders.slice(0, 20).map((r, i) => {
+        const ms = Date.now() + Math.max(1, r.days_from_now) * 24 * 60 * 60 * 1000;
+        return {
+          id: `ical-export-${i}`,
+          board_id: planBoard.id,
+          user_id: user.id,
+          title: r.title,
+          body: r.goal_title ? `Goal: ${r.goal_title} · ${r.cadence}` : r.cadence,
+          remind_at: new Date(ms).toISOString(),
+          timezone: tz,
+          channels: ["email"],
+          source: "ai_extracted",
+          fabric_object_id: null,
+          status: "pending",
+          ical_uid: `accountability-${planBoard.id}-${i}@paletteplot.com`,
+          last_sent_at: null,
+          created_at: now,
+          updated_at: now,
+        };
+      });
+      downloadIcalFile(rows, "palette-plotting-accountability.ics");
+      toast.success("Calendar file ready");
+    } catch {
+      toast.error("Couldn't add to calendar");
+    } finally {
+      setExportingIcal(false);
     }
   };
 
@@ -176,27 +237,21 @@ export default function BoardAccountability() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 text-xs"
-              disabled={analyzing || loading}
-              onClick={() => void runAnalyze()}
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-xs"
+                disabled={analyzing || loading}
+                onClick={() => void runAnalyze()}
+              >
+                {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+                Analyze
+              </Button>
+            )}
+            <div
+              className={`flex items-center gap-2${isMobile ? " ml-1 border-l border-neutral-200 pl-2" : ""}`}
             >
-              {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">Analyze</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 text-xs"
-              disabled={generating || !map?.reminders.length}
-              onClick={() => void runGenerateReminders()}
-            >
-              {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">Reminders</span>
-            </Button>
-            <div className="ml-1 flex items-center gap-2 border-l border-neutral-200 pl-2">
               <LayoutGrid className="h-5 w-5 shrink-0 text-neutral-700" />
               <div>
                 <h2 className="text-sm font-semibold text-neutral-900">Vision</h2>
@@ -214,24 +269,65 @@ export default function BoardAccountability() {
         </header>
 
         <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-neutral-200 bg-white px-4 py-2 text-xs">
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5">
-              <Checkbox checked={channelEmail} onCheckedChange={(v) => setChannelEmail(v === true)} />
-              Email
-            </label>
-            <label className="flex items-center gap-1.5">
-              <Checkbox checked={channelSms} onCheckedChange={(v) => setChannelSms(v === true)} />
-              SMS
-            </label>
-          </div>
           {map?.summary ? (
             <p className="min-w-0 flex-1 text-[11px] leading-snug text-neutral-600">{map.summary}</p>
           ) : (
             <p className="text-[11px] text-neutral-500">
-              Maps focus boards and The Plan into accountability trees with quarterly resets and daily steps.
+              Run Analyze to map goals from your boards into a quarterly → monthly → weekly → daily action.
             </p>
           )}
         </div>
+
+        {isMobile ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2.5">
+            <Label className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Reminders</Label>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 bg-white text-xs"
+              disabled={exportingIcal || remindersDisabled}
+              onClick={() => runExportIcal()}
+            >
+              {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              Add to calendar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1 bg-white text-xs${emailOptedIn ? " border-stone-900" : ""}`}
+              disabled={schedulingEmail || remindersDisabled}
+              onClick={() => void toggleEmailReminders()}
+            >
+              {schedulingEmail ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : emailOptedIn ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : (
+                <Circle className="h-3.5 w-3.5 opacity-40" />
+              )}
+              Email reminders
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1 bg-white text-xs${textOptedIn ? " border-stone-900" : ""}`}
+              disabled={schedulingSms || remindersDisabled}
+              onClick={() => void toggleTextReminders()}
+            >
+              {schedulingSms ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : textOptedIn ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : (
+                <Circle className="h-3.5 w-3.5 opacity-40" />
+              )}
+              Text reminders
+            </Button>
+            {remindersDisabled ? (
+              <p className="text-[11px] text-stone-500">Run Analyze first to set up follow-through.</p>
+            ) : null}
+          </div>
+        ) : null}
 
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
@@ -245,8 +341,8 @@ export default function BoardAccountability() {
               <aside className="flex w-56 shrink-0 flex-col border-r border-stone-300/80 bg-[#f3f0eb] p-3 text-xs">
                 <Label className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">How it works</Label>
                 <p className="mt-2 leading-relaxed text-stone-700">
-                  AI reads board titles, statements, and image placements — especially The Plan — then builds goal trees
-                  with quarterly accountability checks, monthly milestones, weekly habits, and daily actions.
+                  AI reads board titles, statements, and image placements — especially The Plan — then maps goals
+                  into quarterly, monthly, weekly, and daily actions.
                 </p>
                 <Button
                   className="mt-4 w-full gap-1 bg-stone-900 text-xs"
@@ -254,23 +350,55 @@ export default function BoardAccountability() {
                   disabled={analyzing}
                   onClick={() => void runAnalyze()}
                 >
-                  {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  Analyze boards
+                  {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+                  Analyze
                 </Button>
+                <Label className="mt-5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Reminders</Label>
                 <Button
                   variant="outline"
                   className="mt-2 w-full gap-1 text-xs"
                   size="sm"
-                  disabled={generating || !map?.reminders.length}
-                  onClick={() => void runGenerateReminders()}
+                  disabled={exportingIcal || remindersDisabled}
+                  onClick={() => runExportIcal()}
                 >
-                  {generating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Download className="h-3.5 w-3.5" />
-                  )}
-                  Generate reminders + iCal
+                  {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                  Add to calendar
                 </Button>
+                <Button
+                  variant="outline"
+                  className={`mt-2 w-full gap-1 text-xs${emailOptedIn ? " border-stone-900" : ""}`}
+                  size="sm"
+                  disabled={schedulingEmail || remindersDisabled}
+                  onClick={() => void toggleEmailReminders()}
+                >
+                  {schedulingEmail ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : emailOptedIn ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 opacity-40" />
+                  )}
+                  Email reminders
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`mt-2 w-full gap-1 text-xs${textOptedIn ? " border-stone-900" : ""}`}
+                  size="sm"
+                  disabled={schedulingSms || remindersDisabled}
+                  onClick={() => void toggleTextReminders()}
+                >
+                  {schedulingSms ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : textOptedIn ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 opacity-40" />
+                  )}
+                  Text reminders
+                </Button>
+                {remindersDisabled ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">Run Analyze first to set up follow-through.</p>
+                ) : null}
               </aside>
             )}
 

@@ -147,10 +147,9 @@ export function BoardToolbar({
         )}
 
         {showZoom && (
-          <>
-            <span className="mx-1 hidden h-6 w-px bg-neutral-200 md:block" aria-hidden />
-            <div className="ml-auto flex shrink-0 items-center gap-1">
-              <span className="mr-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Zoom</span>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <span className="mr-1 hidden h-6 w-px bg-neutral-200 md:block" aria-hidden />
+            <span className="mr-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Zoom</span>
               {(
                 [
                   { id: "fit" as const, label: "Fit all" },
@@ -196,7 +195,6 @@ export function BoardToolbar({
                 <ZoomIn className="h-3.5 w-3.5" />
               </button>
             </div>
-          </>
         )}
         {horizontal && !showZoom && (
           <span className="ml-auto hidden text-[10px] text-neutral-400 sm:inline">

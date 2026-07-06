@@ -8,7 +8,7 @@ import {
   Link2,
   Moon,
   PartyPopper,
-  Sparkles,
+  Gem,
 } from "lucide-react";
 import { GiSoap } from "react-icons/gi";
 
@@ -110,7 +110,7 @@ export const EMBODY_PRACTICES_BY_KEY: Record<EmbodyPracticeKey, EmbodyPracticeDe
     key: "glam-up",
     shortLabel: "Glam Up",
     videoFileName: "Glam Up",
-    Icon: Sparkles,
+    Icon: Gem,
     heatmapHex: "#D946EF",
     trackingLines: ["Glam Up"],
   },

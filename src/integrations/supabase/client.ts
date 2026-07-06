@@ -1,4 +1,4 @@
-// Supabase client — reads from .env (VITE_SUPABASE_*). Project: rebrand (essjyrhhaiywotvgjkcg).
+// Supabase client — VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY from .env (rebrand / essjyrhhaiywotvgjkcg).
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
