@@ -78,11 +78,11 @@ const Settings = () => {
   const passwordValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   /** Cadence from `user_plans.billing_period` only (Current Plan label). */
   const [billingPeriodLabel, setBillingPeriodLabel] = useState<string | null>(null);
-  /** From user_plans; routes Manage Billing (RC web / App Store / Google Play). */
+  /** From user_plans; routes Manage Billing by payment source. */
   const [lastPaymentSource, setLastPaymentSource] = useState<
     "stripe" | "apple" | "google_play" | null
   >(null);
-  /** RC Web Billing subscriber — checked so Settings can show a loading hint while portal status resolves. */
+  /** RC Web Billing subscriber -- checked so Settings can show a loading hint while portal status resolves. */
   const [rcWebBillingAvailable, setRcWebBillingAvailable] = useState<boolean | null>(null);
   /** Billing identity from user_plans; not used to infer RC Web Billing by placeholder prefix. */
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);

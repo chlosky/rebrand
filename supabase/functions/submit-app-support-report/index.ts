@@ -127,7 +127,7 @@ serve(async (req) => {
     if (toolValue === "billing") {
       if (!BILLING_CHANNELS.has(rawBillingChannel)) {
         return new Response(
-          JSON.stringify({ error: "Please select where you purchased (Apple, Google Play, or Web)." }),
+          JSON.stringify({ error: "Please select where you purchased (Mobile purchase or Web)." }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -236,13 +236,11 @@ serve(async (req) => {
     }
 
     const billingChannelLabel =
-      billingPurchaseChannel === "apple_app_store"
-        ? "Apple App Store"
-        : billingPurchaseChannel === "google_play"
-          ? "Google Play"
-          : billingPurchaseChannel === "web"
-            ? "Web (card / checkout)"
-            : "";
+      billingPurchaseChannel === "apple_app_store" || billingPurchaseChannel === "google_play"
+        ? "Mobile purchase"
+        : billingPurchaseChannel === "web"
+          ? "Web (card / checkout)"
+          : "";
 
     const billingRowText =
       billingPurchaseChannel != null ? `Purchase channel: ${billingChannelLabel}` : "";

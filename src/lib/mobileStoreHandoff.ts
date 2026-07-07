@@ -9,7 +9,7 @@ import type { MobileWebStore } from "@/lib/marketingGetApp";
 export { PALETTE_PLOTTING_APP_STORE_ID };
 export const PALETTE_PLOTTING_ANDROID_PACKAGE = "com.paletteplotting.app";
 
-/** Opens App Store app on iOS — preferred over https in embedded WebViews. */
+/** Native iOS app handoff URL. */
 export const ITMS_APP_STORE_URL = `itms-apps://itunes.apple.com/app/id${PALETTE_PLOTTING_APP_STORE_ID}`;
 
 function buildAndroidPlayIntentUrl(fallbackHttps: string): string {
@@ -18,11 +18,11 @@ function buildAndroidPlayIntentUrl(fallbackHttps: string): string {
 }
 
 /**
- * Best href for a store badge / CTA on this device.
+ * Best href for a native mobile CTA on this device.
  *
- * In TikTok / Meta / IG WebViews, plain https store URLs often do nothing.
- * Native schemes (`itms-apps://`, Play `intent://`) on a real `<a>` tap are
- * the standard handoff — no instruction sheets required.
+ * In TikTok / Meta / IG WebViews, plain native-app URLs often do nothing.
+ * Native schemes on a real `<a>` tap are
+ * the standard handoff -- no instruction sheets required.
  */
 export function getMobileStoreHref(
   store: MobileWebStore,
@@ -41,12 +41,12 @@ export function getMobileStoreHref(
   return PALETTE_PLOTTING_GOOGLE_PLAY_URL;
 }
 
-/** HTTPS URL for clipboard — always paste-friendly in Safari/Chrome. */
+/** HTTPS URL for clipboard -- always paste-friendly in Safari/Chrome. */
 export function getCopyableStoreUrl(store: MobileWebStore): string {
   return store === "apple" ? PALETTE_PLOTTING_APP_STORE_URL : PALETTE_PLOTTING_GOOGLE_PLAY_URL;
 }
 
-/** Fallback when a button (not an anchor) triggers store open — clicks a transient link. */
+/** Fallback when a button (not an anchor) triggers store open -- clicks a transient link. */
 export function openMobileStoreViaAnchor(
   store: MobileWebStore,
   detection?: InAppBrowserDetection,

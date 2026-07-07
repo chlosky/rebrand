@@ -308,7 +308,7 @@ export default function Boards() {
       return;
     }
     const label = activeBoard.title;
-    if (!window.confirm(`Remove “${label}” from your workspace? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete “${label}” from your workspace? This cannot be undone.`)) return;
     try {
       await deleteBoard(activeBoard.id);
       const next = workspace.boards.filter((b) => b.id !== activeBoard.id);
@@ -349,7 +349,7 @@ export default function Boards() {
             </Button>
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => void handleDuplicateBoard()}>
               <CopyPlus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Duplicate</span>
+              <span className="hidden sm:inline">Duplicate Board</span>
             </Button>
             {canRemoveBoard && (
               <Button
@@ -359,7 +359,7 @@ export default function Boards() {
                 onClick={handleRemoveBoard}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Remove</span>
+                <span className="hidden sm:inline">Delete Board</span>
               </Button>
             )}
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setDownloadOpen(true)}>

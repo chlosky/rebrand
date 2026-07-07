@@ -68,8 +68,8 @@
     "getTheApp": "Get the App"
   },
   "billingChannels": {
-    "apple": "Apple App Store",
-    "googlePlay": "Google Play",
+    "apple": "Mobile purchase",
+    "googlePlay": "Mobile purchase",
     "web": "Web (card / checkout)"
   },
   "workspace": {

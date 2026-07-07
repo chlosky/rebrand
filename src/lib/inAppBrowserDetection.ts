@@ -3,14 +3,14 @@
  *
  * Why this exists: TikTok, Instagram, Facebook, Snapchat, LinkedIn etc. wrap
  * external links in their own embedded WebView. Those WebViews silently break
- * App Store / Play Store handoff (apps.apple.com / play.google.com), strip
+ * native mobile handoff links, strip
  * referrers, block target="_blank", and disallow itms-apps:// schemes.
  *
  * For paid social traffic (TikTok especially) this is the single biggest
- * conversion leak — users tap "Download" and nothing happens.
+ * conversion leak -- users tap "Download" and nothing happens.
  *
  * Mitigation: native store schemes on real `<a href>` tags (`itms-apps://`,
- * Play `intent://`) — see mobileStoreHandoff.ts.
+ * Play `intent://`) -- see mobileStoreHandoff.ts.
  */
 
 export type InAppBrowserKind =
@@ -28,11 +28,11 @@ export type InAppBrowserKind =
 export type InAppBrowserDetection = {
   isInAppBrowser: boolean;
   kind: InAppBrowserKind | null;
-  /** True when this in-app browser is known to break apps.apple.com handoff. */
+  /** True when this in-app browser is known to break native app handoff. */
   blocksAppStore: boolean;
-  /** Convenience: iOS detection — switches "Open in Safari" vs "Open in Chrome" copy. */
+  /** Convenience: iOS detection -- switches "Open in Safari" vs "Open in Chrome" copy. */
   isIos: boolean;
-  /** Convenience: Android detection — switches Play Store fallback. */
+  /** Convenience: Android detection; switches mobile fallback copy. */
   isAndroid: boolean;
 };
 
@@ -70,7 +70,7 @@ function detectKind(ua: string): InAppBrowserKind | null {
 }
 
 /**
- * Detect at call-time. Cheap, no caching — UA can't change mid-session.
+ * Detect at call-time. Cheap, no caching -- UA can't change mid-session.
  * Server-rendering safe (returns a null detection).
  */
 export function detectInAppBrowser(): InAppBrowserDetection {
@@ -87,7 +87,7 @@ export function detectInAppBrowser(): InAppBrowserDetection {
 
   /**
    * TikTok / Instagram / Facebook / Snapchat / WeChat WebViews block plain
-   * https store URLs — use native schemes when these are detected.
+   * https store URLs -- use native schemes when these are detected.
    */
   const blocksAppStore = kind === "tiktok" || kind === "instagram" || kind === "facebook" || kind === "snapchat" || kind === "wechat";
 

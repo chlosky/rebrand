@@ -216,7 +216,7 @@ export function BoardMobileCarousel({
             size="icon"
             className="h-8 w-8 rounded-full text-red-600"
             onClick={onRemoveBoard}
-            aria-label="Remove this board"
+            aria-label="Delete this board"
           >
             <Trash2 className="h-4 w-4" />
           </Button>

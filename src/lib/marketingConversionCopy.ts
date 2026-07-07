@@ -17,11 +17,11 @@ export const MARKETING_SUBHEAD_LINES = [
 export const MARKETING_AWARD_LINE = "The viral 4-board system — now digital";
 
 /** Bottom download section — short mobile heading above store badges. */
-export const MARKETING_DOWNLOAD_SECTION_HEADING = "Download the app";
-export const MARKETING_CTA_DOWNLOAD = "Download the app & start free trial";
-export const MARKETING_CTA_DOWNLOAD_IOS = "Download the app & start free trial";
-export const MARKETING_CTA_DOWNLOAD_ANDROID = "Download the app & start free trial";
-export const MARKETING_FREE_TRIAL_UNDER_BADGES = "Start your free trial in the App Store";
+export const MARKETING_DOWNLOAD_SECTION_HEADING = "Mobile app coming soon";
+export const MARKETING_CTA_DOWNLOAD = "Start your free trial on web";
+export const MARKETING_CTA_DOWNLOAD_IOS = "Start your free trial on web";
+export const MARKETING_CTA_DOWNLOAD_ANDROID = "Start your free trial on web";
+export const MARKETING_FREE_TRIAL_UNDER_BADGES = "Start your free trial on web";
 /** Primary CTA on /onboarding/welcome (browser). */
 export const MARKETING_CTA_PRIMARY = "Get started";
 export const MARKETING_WEB_ONBOARDING_WELCOME_PATH = "/onboarding/welcome";

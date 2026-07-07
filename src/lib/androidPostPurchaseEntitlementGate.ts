@@ -1,4 +1,4 @@
-import { Capacitor } from "@capacitor/core";
+﻿import { Capacitor } from "@capacitor/core";
 import { debugLog } from "@/debugLog";
 import { syncRevenueCatEntitlementAfterPurchaseWithRetries } from "@/services/revenueCat";
 
@@ -53,7 +53,7 @@ export function getAndroidPostPurchaseLatchUserId(): string | null {
   return readLatch()?.userId ?? null;
 }
 
-/** Optimistic dashboard access when Google Play → RevenueCat sync is still in flight. */
+/** Optimistic dashboard access when native Android purchase sync is still in flight. */
 export function markAndroidSubscriptionConfirmed(userId: string | null): void {
   applyAndroidSubscriptionSessionMarkers(userId);
 }
@@ -111,8 +111,8 @@ export function retryAndroidPostPurchaseEntitlementSyncInBackground(
  * Android-only post-purchase entitlement sync. Mirrors the iOS gate but uses
  * its own storage key and platform check. Shares no code with the iOS gate.
  *
- * After a successful Play purchase, sync failure is reported as `delayed` — not
- * a hard failure — because entitlement can lag behind the purchase receipt.
+ * After a successful native Android purchase, sync failure is reported as `delayed`, not
+ * a hard failure, because entitlement can lag behind the purchase receipt.
  */
 export async function runAndroidPostPurchaseGateIfNeeded(): Promise<AndroidPostPurchaseGateResult> {
   const latch = readLatch();
@@ -136,7 +136,7 @@ export async function runAndroidPostPurchaseGateIfNeeded(): Promise<AndroidPostP
         debugLog({
           location: "androidPostPurchaseEntitlementGate.ts:syncDelayed",
           message:
-            "syncRevenueCatEntitlementAfterPurchaseWithRetries unverified after Google Play purchase — treating as delayed",
+            "syncRevenueCatEntitlementAfterPurchaseWithRetries unverified after native Android purchase; treating as delayed",
           hypothesisId: "ANDROID-GATE",
         });
         return {

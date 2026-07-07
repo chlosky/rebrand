@@ -20,9 +20,19 @@
     "webHeadline1": "Turn your vision into",
     "webHeadlineAccent": "real follow-through",
     "toolRows": {
-      "row1": ["Your focus areas", "The Plan"],
-      "row2": ["Images & structure", "Dates & goals"],
-      "row3": ["Email reminders", "Accountability", "Progress"]
+      "row1": [
+        "Your focus areas",
+        "The Plan"
+      ],
+      "row2": [
+        "Images & structure",
+        "Dates & goals"
+      ],
+      "row3": [
+        "Email reminders",
+        "Accountability",
+        "Progress"
+      ]
     },
     "webSteps": {
       "desire": {
@@ -385,7 +395,7 @@
       "options": {
         "tiktok": "TikTok",
         "instagram": "Instagram",
-        "app_store": "App Store / Google Play",
+        "app_store": "Mobile app referral",
         "friend": "A friend told me",
         "youtube": "YouTube",
         "search": "Google / search",

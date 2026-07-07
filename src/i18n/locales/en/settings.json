@@ -179,7 +179,7 @@
     "emailEnabled": "Email notifications enabled",
     "emailDisabled": "Email notifications disabled",
     "billingLoginRequired": "Please log in to manage billing",
-    "playSubscriptionsFailed": "Could not open Google Play subscriptions.",
+    "playSubscriptionsFailed": "Could not open subscription management.",
     "iosSubscriptionsHint": "Manage billing is available from your iPhone in Settings > Apple ID > Subscriptions.",
     "portalFailed": "Could not open billing portal. Please try again.",
     "portalFailedFallback": "Could not open billing portal. Please try again or use the link in your subscription email.",

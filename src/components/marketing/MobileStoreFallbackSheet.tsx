@@ -18,7 +18,6 @@ type MobileStoreFallbackSheetProps = {
 
 export function MobileStoreFallbackSheet({
   open,
-  store,
   storeUrl,
   browserKind,
   isIos,
@@ -40,11 +39,10 @@ export function MobileStoreFallbackSheet({
   if (!open) return null;
 
   const browserName = browserKind ? inAppBrowserLabel(browserKind) : "this app";
-  const isApple = store === "apple";
-  const title = isApple ? "App Store did not open?" : "Play Store did not open?";
+  const title = "Mobile app link did not open?";
   const bodyCopy = isIos
-    ? `${browserName} may have blocked the App Store link. Tap copy, then open Safari and paste.`
-    : `${browserName} may have blocked the Play Store link. Tap copy, then open Chrome and paste.`;
+    ? `${browserName} may have blocked the mobile app link. Tap copy, then open Safari and paste.`
+    : `${browserName} may have blocked the mobile app link. Tap copy, then open Chrome and paste.`;
 
   const handleCopy = async () => {
     const ok = await onCopy();
@@ -98,7 +96,7 @@ export function MobileStoreFallbackSheet({
             className="h-11 w-full rounded-full bg-white text-sm font-semibold text-[#120810] hover:bg-white/90"
             onClick={onTryAgain}
           >
-            {isApple ? "Try opening App Store again" : "Try opening Play Store again"}
+            Try opening app link again
           </Button>
 
           <Button
@@ -118,7 +116,7 @@ export function MobileStoreFallbackSheet({
               readOnly
               value={storeUrl}
               className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/80"
-              aria-label="App store link"
+              aria-label="Mobile app link"
             />
           ) : null}
 

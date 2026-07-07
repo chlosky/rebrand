@@ -22,7 +22,7 @@ export function getMobileWebStore(): MobileWebStore | null {
   return null;
 }
 
-/** Desktop web = browser, wide viewport — show QR section instead of a store link. */
+/** Desktop web = browser, wide viewport -- show QR section instead of a store link. */
 export function isDesktopMarketingWeb(isMobileViewport: boolean): boolean {
   return !Capacitor.isNativePlatform() && !isMobileViewport;
 }
@@ -36,7 +36,7 @@ type StoreClickOptions = {
   forceStore?: MobileWebStore;
   source?: string;
   detection?: InAppBrowserDetection;
-  /** When false, only track — navigation is handled by a native `<a href>`. */
+  /** When false, only track -- navigation is handled by a native `<a href>`. */
   navigate?: boolean;
 };
 
@@ -73,7 +73,7 @@ export function trackStoreClick(
     source: source ?? "unknown",
     page_path: typeof window !== "undefined" ? window.location.pathname || "/" : "/",
     content_id: store === "apple" ? "app_store" : "google_play",
-    content_name: store === "apple" ? "App Store" : "Google Play",
+    content_name: store === "apple" ? "iOS mobile app" : "Android mobile app",
     in_app_browser: detection.kind ?? "none",
     blocks_app_store: detection.blocksAppStore,
     store_href_scheme: href.split(":")[0],
@@ -109,7 +109,7 @@ function logHomepageStoreClick(opts: {
 
 /**
  * Centralized "user wants the app" handler.
- * Desktop → scroll to QR. Mobile → track (+ optional programmatic open).
+ * Desktop -> scroll to QR. Mobile -> track (+ optional programmatic open).
  */
 export function handleStoreClick(opts: StoreClickOptions): StoreClickResult {
   const { isMobileViewport, forceStore, source, navigate = true } = opts;

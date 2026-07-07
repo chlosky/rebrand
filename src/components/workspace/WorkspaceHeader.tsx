@@ -83,17 +83,6 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
         </button>
 
         <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className={iconBtn}
-            aria-label={t("nav.help")}
-            onClick={() => navigate("/workspace/help")}
-          >
-            <CircleHelp className="h-4 w-4" />
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="outline" className={cn(iconBtn, "w-auto px-2")}>
@@ -129,6 +118,17 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className={iconBtn}
+            aria-label={t("nav.help")}
+            onClick={() => navigate("/workspace/help")}
+          >
+            <CircleHelp className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       {tabs ? (
