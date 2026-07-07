@@ -13,7 +13,10 @@ import {
   CADENCE_OPTIONS,
   DAILY_TIME_QUICK_OPTIONS,
   DEFAULT_REMINDER_CHANNELS,
+  DEFAULT_REMINDER_TYPE,
   naturalizeTitle,
+  normalizeReminderChannels,
+  reminderTypeFromChannels,
   SMS_MAX_LENGTH,
   stripChromeFromInput,
   stripSmsText,
@@ -271,7 +274,10 @@ function ActionNodeRow({
       }
     }
     const channels = reminderTypeToChannels(type);
-    const patch: Partial<AccountabilityAction> = { channels };
+    const patch: Partial<AccountabilityAction> = {
+      channels,
+      reminder_type: type,
+    };
     if (type === "sms" && !action.sms_text) {
       patch.sms_text = smsTextFromTitle(action.title);
     }
@@ -494,7 +500,20 @@ export function BoardAccountabilityFlow({
     if (!map) return;
     patch({
       ...map,
-      actions: map.actions.map((a) => (a.id === id ? { ...a, ...patchAction } : a)),
+      actions: map.actions.map((a) => {
+        if (a.id !== id) return a;
+        const next = { ...a, ...patchAction };
+        if (patchAction.channels || patchAction.reminder_type) {
+          const channels = normalizeReminderChannels(
+            patchAction.reminder_type
+              ? { reminder_type: patchAction.reminder_type }
+              : patchAction.channels ?? a.channels,
+          );
+          next.channels = channels;
+          next.reminder_type = reminderTypeFromChannels(channels);
+        }
+        return next;
+      }),
     });
   };
 
@@ -526,6 +545,7 @@ export function BoardAccountabilityFlow({
       kind: "action",
       step_type: "task",
       reminder_enabled: true,
+      reminder_type: DEFAULT_REMINDER_TYPE,
       channels: { ...DEFAULT_REMINDER_CHANNELS },
       sms_text: null,
       source_evidence: null,

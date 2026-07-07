@@ -1,12 +1,17 @@
 import {
   DEFAULT_REMINDER_CHANNELS,
+  DEFAULT_REMINDER_TYPE,
   SMS_MAX_LENGTH,
+  channelsFromReminderType,
+  normalizeReminderChannels,
+  reminderTypeFromChannels,
   stripSmsText,
   type AccountabilityAction,
   type AccountabilityMap,
   type AccountabilityPlan,
   type MapCadence,
   type ReminderChannelFlags,
+  type ReminderType,
 } from "@/lib/boards/accountabilityMap";
 
 export type ActionGuideOperation = Record<string, unknown> & { type: string };
@@ -21,13 +26,20 @@ function asCadence(v: unknown, fallback: MapCadence = "weekly"): MapCadence {
 }
 
 function parseChannels(raw: unknown): ReminderChannelFlags | null {
-  if (!raw || typeof raw !== "object") return null;
-  const o = raw as Record<string, unknown>;
-  return {
-    calendar: o.calendar === true,
-    email: o.email !== false,
-    sms: o.sms === true,
-  };
+  if (raw == null) return null;
+  return normalizeReminderChannels(raw);
+}
+
+function parseReminderType(raw: unknown): ReminderType | null {
+  if (raw === "calendar" || raw === "email" || raw === "sms") return raw;
+  return null;
+}
+
+function withReminderChannels(
+  channels: ReminderChannelFlags,
+): Pick<AccountabilityAction, "channels" | "reminder_type"> {
+  const normalized = normalizeReminderChannels(channels);
+  return { channels: normalized, reminder_type: reminderTypeFromChannels(normalized) };
 }
 
 function touchMap(map: AccountabilityMap): AccountabilityMap {
@@ -58,6 +70,7 @@ function defaultAction(planId: string, title: string): AccountabilityAction {
     kind: "action",
     step_type: "task",
     reminder_enabled: true,
+    reminder_type: DEFAULT_REMINDER_TYPE,
     channels: { ...DEFAULT_REMINDER_CHANNELS },
     sms_text: null,
     source_evidence: null,
@@ -113,8 +126,15 @@ export function applyActionGuideOperations(
         if (typeof op.cadence === "string") action.cadence = asCadence(op.cadence);
         if (typeof op.remind_day_of_week === "string") action.remind_day_of_week = op.remind_day_of_week;
         if (typeof op.remind_time === "string") action.remind_time = op.remind_time;
-        const channels = parseChannels(op.channels);
-        if (channels) action.channels = channels;
+        const reminderType = parseReminderType(op.reminder_type);
+        const channels = reminderType
+          ? channelsFromReminderType(reminderType)
+          : parseChannels(op.channels);
+        if (channels) {
+          const normalized = withReminderChannels(channels);
+          action.channels = normalized.channels;
+          action.reminder_type = normalized.reminder_type;
+        }
         if (typeof op.sms_text === "string") {
           action.sms_text = stripSmsText(op.sms_text).slice(0, SMS_MAX_LENGTH) || null;
         }
@@ -131,18 +151,23 @@ export function applyActionGuideOperations(
           ...next,
           actions: next.actions.map((a) => {
             if (a.id !== actionId) return a;
-            const channels = parseChannels(p.channels);
+            const reminderType = parseReminderType(p.reminder_type);
+            const channels = reminderType
+              ? channelsFromReminderType(reminderType)
+              : parseChannels(p.channels);
             const sms_text =
               typeof p.sms_text === "string"
                 ? stripSmsText(p.sms_text).slice(0, SMS_MAX_LENGTH) || null
                 : p.sms_text === null
                   ? null
                   : a.sms_text;
+            const reminderPatch = channels ? withReminderChannels(channels) : null;
             return {
               ...a,
               ...p,
               cadence: p.cadence ? asCadence(p.cadence, a.cadence) : a.cadence,
-              channels: channels ?? a.channels,
+              channels: reminderPatch?.channels ?? a.channels,
+              reminder_type: reminderPatch?.reminder_type ?? a.reminder_type,
               sms_text,
             };
           }),
@@ -208,12 +233,24 @@ export function applyActionGuideOperations(
       }
       case "set_channel": {
         const actionId = String(op.action_id);
-        const channels = parseChannels(op.channels);
+        const reminderType = parseReminderType(op.reminder_type);
+        const channels = reminderType
+          ? channelsFromReminderType(reminderType)
+          : parseChannels(op.channels);
         if (!channels) break;
+        const normalized = withReminderChannels(channels);
         next = {
           ...next,
           actions: next.actions.map((a) =>
-            a.id === actionId ? { ...a, channels, reminder_enabled: true } : a,
+            a.id === actionId
+              ? {
+                  ...a,
+                  channels: normalized.channels,
+                  reminder_type: normalized.reminder_type,
+                  reminder_enabled: true,
+                  sms_text: normalized.reminder_type === "sms" ? a.sms_text ?? stripSmsText(a.title).slice(0, SMS_MAX_LENGTH) : null,
+                }
+              : a,
           ),
         };
         applied += 1;
@@ -245,7 +282,13 @@ export function applyActionGuideOperations(
         next = {
           ...next,
           actions: next.actions.map((a) =>
-            a.id === actionId ? { ...a, sms_text: sms, channels: { ...a.channels, sms: true } } : a,
+            a.id === actionId
+              ? {
+                  ...a,
+                  sms_text: sms,
+                  ...withReminderChannels(channelsFromReminderType("sms")),
+                }
+              : a,
           ),
         };
         applied += 1;

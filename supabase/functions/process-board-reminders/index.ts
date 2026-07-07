@@ -10,6 +10,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+import {
+  sanitizeSmsReminder,
+  sendBrevoReminderEmail,
+  sendBrevoReminderSms,
+} from "../_shared/brevoReminders.ts";
+
 
 
 const corsHeaders = {
@@ -101,31 +107,19 @@ function localDayKey(date: Date, timezone: string): string {
 
 
 function stripSmsContent(content: string): string {
-
-  return content
-
-    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
-
-    .replace(/[\r\n]+/g, " ")
-
-    .replace(/[\u2018\u2019]/g, "'")
-
-    .replace(/[\u201C\u201D]/g, '"')
-
-    .replace(/\s+/g, " ")
-
-    .trim();
-
+  return sanitizeSmsReminder(content);
 }
 
+function buildSmsContent(title: string, body?: string | null, smsContent?: string | null): string {
+  if (typeof smsContent === "string" && smsContent.trim()) {
+    return stripSmsContent(smsContent).slice(0, 70);
+  }
+  return stripSmsContent(title).slice(0, 70);
+}
 
-
-function buildSmsContent(title: string, body?: string | null): string {
-
-  const raw = body ? `${title}: ${body}` : `Palette: ${title}`;
-
-  return stripSmsContent(raw).slice(0, 70);
-
+function primaryReminderChannel(channels: string[] | null | undefined): string {
+  if (!channels?.length) return "email";
+  return channels[0];
 }
 
 
@@ -422,15 +416,11 @@ serve(async (req) => {
 
     const channels: string[] = reminder.channels ?? ["email"];
 
-    const smsBody =
+    const metadata = (reminder.metadata ?? null) as Record<string, unknown> | null;
+    const isActionReminder = metadata?.source_page === "action";
+    const channel = primaryReminderChannel(channels);
 
-      typeof reminder.sms_content === "string" && reminder.sms_content.trim()
-
-        ? stripSmsContent(reminder.sms_content).slice(0, 70)
-
-        : buildSmsContent(reminder.title, reminder.body);
-
-
+    const smsBody = buildSmsContent(reminder.title, reminder.body, reminder.sms_content);
 
     let emailDelivered = false;
 
@@ -438,65 +428,57 @@ serve(async (req) => {
 
     let smsLimitDeferred = false;
 
-
-
-    if (channels.includes("email") && email) {
-
-      const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email-notification`;
-
-      const res = await fetch(fnUrl, {
-
-        method: "POST",
-
-        headers: {
-
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-
-          "Content-Type": "application/json",
-
-        },
-
-        body: JSON.stringify({
-
+    if (channel === "email" && email) {
+      if (isActionReminder) {
+        const result = await sendBrevoReminderEmail({
           to: email,
-
-          subject: `Palette Plotting — ${reminder.title}`,
-
-          textBody: reminder.body ?? `Reminder: ${reminder.title}`,
-
-          htmlBody: `<p><strong>${reminder.title}</strong></p>${reminder.body ? `<p>${reminder.body}</p>` : ""}<p><a href="https://paletteplot.com/dashboard/boards">Open your boards</a></p>`,
-
-          tag: "board-reminder",
-
-        }),
-
-      });
-
-      await supabase.from("board_reminder_deliveries").insert({
-
-        reminder_id: reminder.id,
-
-        channel: "email",
-
-        status: res.ok ? "sent" : "failed",
-
-        error: res.ok ? null : await res.text(),
-
-      });
-
-      if (res.ok) {
-
-        emailSent++;
-
-        emailDelivered = true;
-
+          actionTitle: reminder.title,
+          focusTitle: typeof metadata?.focus_title === "string" ? metadata.focus_title : null,
+          planTitle: typeof metadata?.plan_title === "string" ? metadata.plan_title : null,
+          remindAt: reminder.remind_at,
+          details: reminder.body,
+          reminderId: reminder.id,
+        });
+        await supabase.from("board_reminder_deliveries").insert({
+          reminder_id: reminder.id,
+          channel: "email",
+          status: result.ok ? "sent" : "failed",
+          error: result.ok ? null : result.error ?? "brevo_email_failed",
+        });
+        if (result.ok) {
+          emailSent++;
+          emailDelivered = true;
+        }
+      } else {
+        const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email-notification`;
+        const res = await fetch(fnUrl, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: email,
+            subject: `Reminder: ${reminder.title}`,
+            textBody: reminder.body ?? reminder.title,
+            htmlBody: `<p><strong>${reminder.title}</strong></p>${reminder.body ? `<p>${reminder.body}</p>` : ""}`,
+            tag: "board-reminder",
+          }),
+        });
+        await supabase.from("board_reminder_deliveries").insert({
+          reminder_id: reminder.id,
+          channel: "email",
+          status: res.ok ? "sent" : "failed",
+          error: res.ok ? null : await res.text(),
+        });
+        if (res.ok) {
+          emailSent++;
+          emailDelivered = true;
+        }
       }
-
     }
 
-
-
-    if (channels.includes("sms")) {
+    if (channel === "sms") {
 
       let smsStatus = "failed";
 
@@ -532,12 +514,30 @@ serve(async (req) => {
 
           smsLimitDeferred = true;
 
-        } else if (!smsBody || smsBody.length > 70) {
+        } else if (!smsBody || smsBody.length > 70 || /https?:\/\//i.test(smsBody)) {
 
           smsStatus = "failed";
 
           smsError = "invalid_sms_content";
 
+        } else if (isActionReminder) {
+          const result = await sendBrevoReminderSms({
+            to: phone,
+            smsText: smsBody,
+            actionTitle: reminder.title,
+            reminderId: reminder.id,
+          });
+          if (result.ok) {
+            smsStatus = "sent";
+            providerMessageId = result.messageId ?? null;
+            smsDelivered = true;
+            smsSent++;
+            const cacheKey = `${reminder.user_id}:${localDayKey(new Date(), userTimezone)}`;
+            smsCountCache.set(cacheKey, sentToday + 1);
+          } else {
+            smsStatus = "failed";
+            smsError = result.error ?? "sms_send_failed";
+          }
         } else {
 
           const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms-notification`;

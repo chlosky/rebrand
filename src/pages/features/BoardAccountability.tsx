@@ -248,7 +248,7 @@ export default function BoardAccountability() {
       prefs?.sms_reminder_consent_at != null &&
       prefs?.sms_reminder_opted_out_at == null;
 
-    const hasSmsReminders = finalizedMap.reminders.some((r) => r.channels.includes("sms"));
+    const hasSmsReminders = finalizedMap.reminders.some((r) => r.reminder_type === "sms");
     if (hasSmsReminders) {
       if (!prefs?.phone_number_e164?.trim()) {
         setPendingFinalizeAfterSms(true);
@@ -263,7 +263,7 @@ export default function BoardAccountability() {
       if (smsUsedToday >= DAILY_SMS_LIMIT) {
         throw new Error("You've used today's 5 text reminders. Use email or calendar instead.");
       }
-      const smsInPlan = finalizedMap.reminders.filter((r) => r.channels.includes("sms")).length;
+      const smsInPlan = finalizedMap.reminders.filter((r) => r.reminder_type === "sms").length;
       if (smsUsedToday + smsInPlan > DAILY_SMS_LIMIT) {
         throw new Error("You've used today's 5 text reminders. Use email or calendar instead.");
       }
@@ -282,13 +282,22 @@ export default function BoardAccountability() {
     if (deleteErr) throw deleteErr;
 
     for (const r of finalizedMap.reminders) {
-      const channels = r.channels.filter((c) => c === "email" || c === "sms");
-      if (channels.length === 0) continue;
+      const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
+      if (reminderType === "calendar") continue;
+      const channels = [reminderType];
 
-      const body = r.goal_title ? `Focus: ${r.goal_title} · ${r.cadence}` : r.cadence;
-      const smsContent = channels.includes("sms")
-        ? stripSmsText(r.sms_text ?? r.title).slice(0, 70)
-        : undefined;
+      const body = [
+        r.goal_title ? `Focus: ${r.goal_title}` : null,
+        r.plan_title ? `Plan: ${r.plan_title}` : null,
+        `Cadence: ${r.cadence}`,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+      const smsContent =
+        reminderType === "sms"
+          ? stripSmsText(r.sms_text ?? r.title).slice(0, 70)
+          : undefined;
 
       await createBoardReminder({
         board_id: planBoard.id,
@@ -302,6 +311,13 @@ export default function BoardAccountability() {
         fabric_object_id: null,
         metadata: {
           source_page: "action",
+          reminder_type: reminderType,
+          action_id: r.action_id,
+          action_title: r.title,
+          focus_id: r.focus_id,
+          focus_title: r.goal_title,
+          plan_id: r.plan_id,
+          plan_title: r.plan_title,
           cadence: r.cadence,
           day_of_month: r.day_of_month ?? null,
           day_of_week: r.day_of_week ?? null,
@@ -331,7 +347,7 @@ export default function BoardAccountability() {
 
   const hasDraft = Boolean(map?.focuses?.length);
   const hasCalendarReminders = Boolean(
-    map?.finalized && map.reminders.some((r) => r.channels.includes("calendar")),
+    map?.finalized && map.reminders.some((r) => r.reminder_type === "calendar"),
   );
   const remindersDisabled = !map?.finalized;
 
@@ -344,7 +360,18 @@ export default function BoardAccountability() {
   const smsCounterText = `${smsUsedToday} of ${DAILY_SMS_LIMIT} text reminders used today`;
 
   const refreshSmsUsage = useCallback(async () => {
-    setSmsUsedToday(0);
+    if (!user?.id) return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+    const { data: logs } = await supabase
+      .from("palette_sms_send_log")
+      .select("sent_at")
+      .eq("user_id", user.id)
+      .eq("status", "sent");
+    const count = (logs ?? []).filter(
+      (row) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(row.sent_at)) === todayKey,
+    ).length;
+    setSmsUsedToday(count);
   }, [user?.id]);
 
   useEffect(() => {
@@ -407,7 +434,7 @@ export default function BoardAccountability() {
       return;
     }
 
-    const calendarReminders = map.reminders.filter((r) => r.channels.includes("calendar"));
+    const calendarReminders = map.reminders.filter((r) => r.reminder_type === "calendar");
     if (!calendarReminders.length) {
       toast.message("No actions have Calendar selected. Turn on Calendar for the actions you want to export.");
       return;

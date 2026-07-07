@@ -114,14 +114,14 @@ export function buildAccountabilityIcalCalendar(
 
   reminders.forEach((reminder, index) => {
     const startIso = reminderToIso(reminder);
-    const uidSafeTitle = reminder.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-    const uid = `action-${uidSafeTitle || "reminder"}-${index}@paletteplot.com`;
-    const description = reminder.goal_title
-      ? `Focus: ${reminder.goal_title}\nCadence: ${reminder.cadence}`
-      : `Cadence: ${reminder.cadence}`;
+    const uid = `palette-${reminder.action_id || `reminder-${index}`}@paletteplotting.com`;
+    const description = [
+      reminder.goal_title ? `Focus: ${reminder.goal_title}` : null,
+      reminder.plan_title ? `Plan: ${reminder.plan_title}` : null,
+      "Created in Palette Plotting.",
+    ]
+      .filter(Boolean)
+      .join("\\n");
 
     lines.push(
       "BEGIN:VEVENT",

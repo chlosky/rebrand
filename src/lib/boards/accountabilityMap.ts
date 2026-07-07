@@ -11,17 +11,56 @@ export type StepType =
   | "review"
   | "custom";
 
+export type ReminderType = "calendar" | "email" | "sms";
+
 export type ReminderChannelFlags = {
   calendar: boolean;
   email: boolean;
   sms: boolean;
 };
 
+export const DEFAULT_REMINDER_TYPE: ReminderType = "email";
+
 export const DEFAULT_REMINDER_CHANNELS: ReminderChannelFlags = {
   calendar: false,
   email: true,
   sms: false,
 };
+
+export function channelsFromReminderType(type: ReminderType): ReminderChannelFlags {
+  return { calendar: type === "calendar", email: type === "email", sms: type === "sms" };
+}
+
+export function reminderTypeFromChannels(channels: ReminderChannelFlags): ReminderType {
+  if (channels.sms) return "sms";
+  if (channels.calendar) return "calendar";
+  return "email";
+}
+
+/** Enforce exactly one reminder channel per Action. */
+export function normalizeReminderChannels(raw: unknown): ReminderChannelFlags {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_REMINDER_CHANNELS };
+  const o = raw as Record<string, unknown>;
+  if (typeof o.reminder_type === "string") {
+    const t = o.reminder_type as ReminderType;
+    if (t === "calendar" || t === "email" || t === "sms") {
+      return channelsFromReminderType(t);
+    }
+  }
+  const flags: ReminderChannelFlags = {
+    calendar: o.calendar === true,
+    email: o.email === true,
+    sms: o.sms === true,
+  };
+  const active = (["sms", "calendar", "email"] as ReminderType[]).filter((t) => flags[t]);
+  if (active.length === 1) return channelsFromReminderType(active[0]);
+  if (active.length > 1) return channelsFromReminderType(active[0]);
+  return { ...DEFAULT_REMINDER_CHANNELS };
+}
+
+export function reminderChannelsArray(type: ReminderType): string[] {
+  return [type];
+}
 
 export const STEP_TYPE_OPTIONS: StepType[] = [
   "task",
@@ -71,6 +110,7 @@ export type AccountabilityAction = {
   kind: "action" | "micro";
   step_type: StepType;
   reminder_enabled: boolean;
+  reminder_type: ReminderType;
   channels: ReminderChannelFlags;
   sms_text: string | null;
   source_evidence: string | null;
@@ -83,12 +123,18 @@ export type AccountabilityReminder = {
   title: string;
   cadence: AccountabilityReminderCadence;
   goal_title: string;
+  plan_title: string;
+  reminder_type: ReminderType;
   channels: string[];
+  action_id: string;
+  plan_id: string;
+  focus_id: string;
   remind_date?: string | null;
   remind_time?: string | null;
   day_of_month?: number | null;
   day_of_week?: string | null;
   sms_text?: string | null;
+  details?: string | null;
 };
 
 export type AccountabilityMap = {
@@ -167,24 +213,26 @@ function asStepType(v: unknown): StepType {
   return allowed.includes(v as StepType) ? (v as StepType) : "task";
 }
 
-function parseChannels(raw: unknown): ReminderChannelFlags {
-  if (!raw || typeof raw !== "object") return { ...DEFAULT_REMINDER_CHANNELS };
-  const o = raw as Record<string, unknown>;
-  return {
-    calendar: o.calendar === true,
-    email: o.email !== false,
-    sms: o.sms === true,
-  };
+export function sanitizeSmsReminder(text: string): string {
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function stripSmsText(text: string): string {
-  return text
-    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
-    .replace(/[\r\n]+/g, " ")
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
+  return sanitizeSmsReminder(text);
+}
+
+export function isValidSmsReminderText(text: string): boolean {
+  const content = sanitizeSmsReminder(text);
+  if (!content) return false;
+  if (content.length > SMS_MAX_LENGTH) return false;
+  if (/https?:\/\//i.test(content)) return false;
+  return true;
 }
 
 export function smsTextFromTitle(title: string): string {
@@ -330,7 +378,11 @@ function normalizeAction(raw: Record<string, unknown>): AccountabilityAction {
   if (!remind_time) remind_time = DEFAULT_TIME;
 
   const kind = raw.kind === "micro" ? "micro" : "action";
-  const channels = reminder?.channels ? parseChannels(reminder.channels) : parseChannels(raw.channels);
+  const channelSource = reminder?.channels ?? raw.channels ?? raw.reminder_type;
+  const channels = normalizeReminderChannels(
+    typeof raw.reminder_type === "string" ? { reminder_type: raw.reminder_type } : channelSource,
+  );
+  const reminder_type = reminderTypeFromChannels(channels);
   const smsRaw =
     asString(raw.sms_text) ??
     asString(reminder?.smsText) ??
@@ -351,6 +403,7 @@ function normalizeAction(raw: Record<string, unknown>): AccountabilityAction {
     kind,
     step_type: asStepType(raw.step_type ?? raw.type),
     reminder_enabled: reminder?.enabled !== false && raw.reminder_enabled !== false,
+    reminder_type,
     channels,
     sms_text,
     source_evidence:
@@ -402,6 +455,7 @@ function migrateLegacyMap(o: Record<string, unknown>): { plans: AccountabilityPl
         kind: "micro",
         reminder_enabled: true,
         channels: DEFAULT_REMINDER_CHANNELS,
+        reminder_type: DEFAULT_REMINDER_TYPE,
       }),
     );
   }
@@ -488,33 +542,34 @@ export function buildRemindersFromMap(map: AccountabilityMap): AccountabilityRem
     return map.focuses.find((f) => f.id === plan.focus_id)?.title ?? "";
   };
 
-  const channelsForAction = (action: AccountabilityAction): string[] => {
-    const out: string[] = [];
-    if (action.channels.calendar) out.push("calendar");
-    if (action.channels.email) out.push("email");
-    if (action.channels.sms) out.push("sms");
-    return out.length > 0 ? out : ["email"];
-  };
-
   for (const action of map.actions) {
     if (action.status === "rejected") continue;
     if (!action.reminder_enabled) continue;
     if (!action.title.trim()) continue;
 
-    const channels = channelsForAction(action);
+    const plan = map.plans.find((p) => p.id === action.plan_id);
+    const focus = plan ? map.focuses.find((f) => f.id === plan.focus_id) : undefined;
+    const reminder_type = action.reminder_type ?? reminderTypeFromChannels(action.channels);
+    const channels = reminderChannelsArray(reminder_type);
     const sms_text =
-      action.channels.sms && action.sms_text
+      reminder_type === "sms" && action.sms_text
         ? stripSmsText(action.sms_text).slice(0, SMS_MAX_LENGTH)
-        : action.channels.sms
+        : reminder_type === "sms"
           ? smsTextFromTitle(action.title)
           : null;
 
     const base = {
       title: action.title.trim(),
-      goal_title: focusTitleForPlan(action.plan_id),
+      goal_title: focus?.title ?? focusTitleForPlan(action.plan_id),
+      plan_title: plan?.title ?? "",
+      reminder_type,
       channels,
+      action_id: action.id,
+      plan_id: action.plan_id,
+      focus_id: plan?.focus_id ?? "",
       remind_time: action.remind_time ?? DEFAULT_TIME,
       sms_text,
+      details: null,
     };
 
     if (action.cadence === "once") {
@@ -564,10 +619,19 @@ export function validateMapForFinalize(map: AccountabilityMap): FinalizeValidati
     if (!action.title.trim()) {
       return { ok: false, message: "Every action needs a title before finalizing." };
     }
-    if (action.channels.sms) {
+    const channels = normalizeReminderChannels(action.channels);
+    const activeCount = [channels.calendar, channels.email, channels.sms].filter(Boolean).length;
+    if (activeCount !== 1) {
+      return { ok: false, message: "Each action must have exactly one reminder type." };
+    }
+    const reminder_type = reminderTypeFromChannels(channels);
+    if (reminder_type === "sms") {
       const sms = action.sms_text ? stripSmsText(action.sms_text) : smsTextFromTitle(action.title);
-      if (sms.length > SMS_MAX_LENGTH) {
-        return { ok: false, message: "Text reminders must be 70 characters or less." };
+      if (!isValidSmsReminderText(sms)) {
+        return {
+          ok: false,
+          message: "Text reminders must be 70 characters or less with no links or emoji.",
+        };
       }
     }
   }
@@ -672,7 +736,15 @@ export function finalizeAccountabilityMap(map: AccountabilityMap): Accountabilit
     analysis_status: "finalized",
     finalized_at: now,
     plans: map.plans.map(accept),
-    actions: map.actions.map(accept),
+    actions: map.actions.map((action) => {
+      const accepted = accept(action);
+      const channels = normalizeReminderChannels(accepted.channels);
+      return {
+        ...accepted,
+        channels,
+        reminder_type: reminderTypeFromChannels(channels),
+      };
+    }),
     reminders: [],
   };
   next.reminders = buildRemindersFromMap(next);

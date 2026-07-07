@@ -85,6 +85,35 @@ function sanitizeNodeTitle(title: string, fallback: string): string {
   return cleaned || fallback;
 }
 
+function normalizeSingleReminderChannel(raw: unknown): {
+  calendar: boolean;
+  email: boolean;
+  sms: boolean;
+  reminder_type: "calendar" | "email" | "sms";
+} {
+  if (raw && typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    if (o.reminder_type === "calendar" || o.reminder_type === "email" || o.reminder_type === "sms") {
+      const t = o.reminder_type;
+      return {
+        calendar: t === "calendar",
+        email: t === "email",
+        sms: t === "sms",
+        reminder_type: t,
+      };
+    }
+    const flags = {
+      calendar: o.calendar === true,
+      email: o.email === true,
+      sms: o.sms === true,
+    };
+    if (flags.sms) return { calendar: false, email: false, sms: true, reminder_type: "sms" };
+    if (flags.calendar) return { calendar: true, email: false, sms: false, reminder_type: "calendar" };
+    return { calendar: false, email: true, sms: false, reminder_type: "email" };
+  }
+  return { calendar: false, email: true, sms: false, reminder_type: "email" };
+}
+
 function scrubMapTitles(
   map: Record<string, unknown>,
   focuses: { id: string; title: string }[],
@@ -106,12 +135,18 @@ function scrubMapTitles(
           a.reminder && typeof a.reminder === "object"
             ? (a.reminder as Record<string, unknown>)
             : null;
-        const channels = reminder?.channels ?? a.channels;
+        const channelsRaw = reminder?.channels ?? a.channels ?? a.reminder_type;
         const smsText = reminder?.smsText ?? reminder?.sms_text ?? a.sms_text ?? null;
+        const normalized = normalizeSingleReminderChannel(channelsRaw);
         return {
           ...a,
           title: sanitizeNodeTitle(String(a.title ?? ""), planTitle(String(a.plan_id ?? ""))),
-          channels,
+          channels: {
+            calendar: normalized.calendar,
+            email: normalized.email,
+            sms: normalized.sms,
+          },
+          reminder_type: normalized.reminder_type,
           sms_text: typeof smsText === "string" ? smsText.slice(0, 70) : null,
           reminder_enabled: reminder?.enabled !== false,
         };
@@ -252,17 +287,19 @@ ${JSON.stringify(focusIds, null, 2)}
 
 Visible columns: Focus | Plan | Action
 
-CHANNEL RULES (suggest per action; user controls final selection):
+CHANNEL RULES — ONE reminder type per Action (not multi-select):
+- Each action gets exactly one of: calendar, email, or sms
+- Default: email
 - calendar: scheduled follow-through — appointments, deadlines, due dates, date-specific work
 - email: soft accountability — longer details, weekly reviews, summaries, non-urgent check-ins
 - sms: stronger nudge — short, high-priority only; OFF by default unless clearly urgent
+- Do NOT pair channels. Never set calendar+email, email+sms, or all three on one action.
 
-SMS RULES (if you suggest sms):
-- sms must be optional; default sms false for most items
-- smsText max 70 characters, ASCII, no emoji, no links, no motivational fluff
-- derive smsText from the action title only — short practical nudge
-- usually pair sms with email or calendar, not sms alone for everything
-- if sms is false, smsText must be null
+SMS RULES (only when reminder_type is sms):
+- sms_text max 70 characters, ASCII, no emoji, no links, no motivational fluff
+- derive sms_text from the action title only — short practical nudge
+- if reminder_type is not sms, sms_text must be null
+- Never use generic copy like "return to your practice", "check your board", or "open the app"
 
 AI BEHAVIOR:
 - Use only content supported by the workspace — do not invent focus areas or filler goals
@@ -296,6 +333,7 @@ Each action JSON:
   "confidence": 0.8,
   "source_evidence": "From: Career board",
   "reminder_enabled": true,
+  "reminder_type": "email",
   "channels": { "calendar": false, "email": true, "sms": false },
   "sms_text": null
 }
