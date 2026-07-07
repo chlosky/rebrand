@@ -2,7 +2,7 @@
 // starter_provisioned === true → skip forever.
 
 import { supabase } from "@/integrations/supabase/client";
-import { ensureStarterWorkspaceFromCategories, ensureStarterWorkspaceFromSlug } from "@/lib/boards/api";
+import { ensureStarterWorkspaceFromCategories, ensureStarterWorkspaceFromSlug, fetchUserWorkspaces } from "@/lib/boards/api";
 import {
   DEFAULT_FOUR_BOARD_TEMPLATE,
   FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
@@ -176,6 +176,17 @@ export async function provisionPostPaywallIfNeeded(options?: {
   if (planRow?.starter_provisioned) {
     report(100);
     return { ran: false, skipped: true, reason: "already_provisioned" };
+  }
+
+  report(24);
+  const existingWorkspaces = await fetchUserWorkspaces(userId);
+  if (existingWorkspaces.length > 0) {
+    await (supabase as any)
+      .from("user_plans")
+      .update({ starter_provisioned: true })
+      .eq("user_id", userId);
+    report(100);
+    return { ran: false, skipped: true, reason: "workspace_already_exists" };
   }
 
   report(28);

@@ -37,13 +37,18 @@ export async function fetchWorkspaceWithBoards(workspaceId: string): Promise<Boa
   return { ...(workspace as BoardWorkspace), boards: (boards ?? []) as Board[] };
 }
 
-export async function ensureDefaultWorkspace(userId: string): Promise<BoardWorkspaceWithBoards> {
+export async function loadDefaultWorkspace(userId: string): Promise<BoardWorkspaceWithBoards | null> {
   const existing = await fetchUserWorkspaces(userId);
-  if (existing.length > 0) {
-    const full = await fetchWorkspaceWithBoards(existing[0].id);
+  for (const ws of existing) {
+    const full = await fetchWorkspaceWithBoards(ws.id);
     if (full) return full;
   }
-  return createWorkspaceFromTemplate(userId, DEFAULT_FOUR_BOARD_TEMPLATE);
+  return null;
+}
+
+/** @deprecated Use loadDefaultWorkspace — does not create workspaces. */
+export async function ensureDefaultWorkspace(userId: string): Promise<BoardWorkspaceWithBoards | null> {
+  return loadDefaultWorkspace(userId);
 }
 
 /** First entitlement: create a workspace from onboarding rebrand config when none exists. */

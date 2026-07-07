@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Canvas, Circle, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
+import { Canvas, Circle, FabricImage, FabricObject, FabricText, FixedLayout, Group, IText, LayoutManager, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
 import type { BoardLayoutMode } from "@/lib/boards/types";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,44 @@ const STRUCTURE_ROW_H = 38;
 const STRUCTURE_BOX = 20;
 const STRUCTURE_FONT = "system-ui, sans-serif";
 
+const CALENDAR_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+const CALENDAR_WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+
+const CALENDAR_MIN_W = 520;
+const CALENDAR_MIN_H = 360;
+
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function firstWeekdayOfMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex, 1).getDay();
+}
+
+function clampCalendarMonth(month: number): number {
+  if (!Number.isFinite(month)) return new Date().getMonth();
+  return Math.max(0, Math.min(11, Math.round(month)));
+}
+
+function clampCalendarYear(year: number): number {
+  if (!Number.isFinite(year)) return new Date().getFullYear();
+  return Math.max(1900, Math.min(2200, Math.round(year)));
+}
+
 const MARK_TEXT_SIZES: Record<BoardMarkTextSize, number> = {
   S: 16,
   M: 22,
@@ -46,6 +84,16 @@ const MARK_DRAW_WIDTH = 4;
 const STICKY_PADDING = 16;
 const STICKY_DEFAULT_W = 280;
 const STICKY_DEFAULT_H = 200;
+const STICKY_MIN_W = 140;
+const STICKY_MIN_H = 100;
+const STICKY_CONTROL_STYLE = {
+  cornerStyle: "circle" as const,
+  borderColor: "rgba(17,17,17,0.45)",
+  cornerColor: "#111111",
+  transparentCorners: false,
+  hasControls: true,
+  hasBorders: true,
+};
 
 const TEXT_CAPABLE_SHAPES = new Set<BoardMarkShapeType>([
   "rect",
@@ -76,6 +124,11 @@ for (const prop of [
   "stickyHeight",
   "shapeWidth",
   "shapeHeight",
+  "calendarMonth",
+  "calendarYear",
+  "calendarCellIndex",
+  "calendarDayNumber",
+  "calendarDateKey",
 ] as const) {
   if (!FabricObject.customProperties.includes(prop)) {
     FabricObject.customProperties.push(prop);
@@ -91,22 +144,59 @@ function findEditableTextInGroup(group: Group): Textbox | IText | null {
   return found instanceof Textbox || found instanceof IText ? found : null;
 }
 
-function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
-  let root: FabricObject = obj;
-  while (root.group) root = root.group as FabricObject;
+function stickyGroupFromTarget(obj: FabricObject): Group | null {
+  let current: FabricObject = obj;
+  while (current.group) current = current.group as FabricObject;
+  if (current instanceof Group && current.get("markKind") === "sticky") return current;
+  if (
+    (obj instanceof Textbox || obj instanceof IText) &&
+    obj.get("markKind") === "sticky-text" &&
+    obj.group instanceof Group &&
+    obj.group.get("markKind") === "sticky"
+  ) {
+    return obj.group;
+  }
+  return null;
+}
 
+function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
+  const stickyGroup = stickyGroupFromTarget(obj);
   let textObj: Textbox | IText | null = null;
 
-  if (root instanceof Textbox || root instanceof IText) {
-    textObj = root;
-  } else if (root instanceof Group) {
-    textObj = findEditableTextInGroup(root);
+  if (stickyGroup) {
+    textObj = stickyParts(stickyGroup).text ?? findEditableTextInGroup(stickyGroup);
+  } else {
+    let root: FabricObject = obj;
+    while (root.group) root = root.group as FabricObject;
+    if (root instanceof Textbox || root instanceof IText) {
+      textObj = root;
+    } else if (root instanceof Group) {
+      textObj = findEditableTextInGroup(root);
+    }
   }
 
   if (!textObj) return false;
 
-  canvas.setActiveObject(textObj);
+  if (stickyGroup) {
+    canvas.setActiveObject(stickyGroup);
+    stickyGroup.set({ hasControls: false, hasBorders: false });
+  } else {
+    canvas.setActiveObject(textObj);
+  }
   canvas.requestRenderAll();
+
+  const restoreStickyControls = () => {
+    if (!stickyGroup) return;
+    stickyGroup.set(STICKY_CONTROL_STYLE);
+    stickyGroup.setCoords();
+    if (!textObj.isEditing) {
+      canvas.setActiveObject(stickyGroup);
+      canvas.requestRenderAll();
+    }
+  };
+
+  textObj.off("editing:exited", restoreStickyControls);
+  textObj.on("editing:exited", restoreStickyControls);
 
   requestAnimationFrame(() => {
     textObj.enterEditing();
@@ -168,82 +258,125 @@ function createStickyNoteGroup(params: {
     markKind: "sticky-text",
   });
 
-  return new Group([rect, note], {
+  const group = new Group([rect, note], {
     left: params.left,
     top: params.top,
+    width: w,
+    height: h,
+    originX: "left",
+    originY: "top",
+    layoutManager: new LayoutManager(new FixedLayout()),
     subTargetCheck: true,
+    interactive: true,
     objectCaching: false,
+    ...STICKY_CONTROL_STYLE,
     markKind: "sticky",
     stickyWidth: w,
     stickyHeight: h,
   });
+  updateStickyLayout(group, w, h);
+  return group;
+}
+
+function stickyParts(group: Group) {
+  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
+  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
+  return { rect, text };
+}
+
+function updateStickyLayout(group: Group, width?: number, height?: number) {
+  const currentW =
+    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
+  const currentH =
+    typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
+  const nextW = Math.max(STICKY_MIN_W, width ?? currentW);
+  const { rect, text } = stickyParts(group);
+  if (!rect || !text) return;
+
+  text.set({
+    left: STICKY_PADDING,
+    top: STICKY_PADDING,
+    width: Math.max(40, nextW - STICKY_PADDING * 2),
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    splitByGrapheme: true,
+    scaleX: 1,
+    scaleY: 1,
+  });
+  (text as Textbox & { initDimensions?: () => void }).initDimensions?.();
+
+  const minHeightFromText = (text.height ?? 0) + STICKY_PADDING * 2;
+  const nextH = Math.max(STICKY_MIN_H, height ?? currentH, minHeightFromText);
+
+  rect.set({
+    left: 0,
+    top: 0,
+    width: nextW,
+    height: nextH,
+    scaleX: 1,
+    scaleY: 1,
+  });
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    width: nextW,
+    height: nextH,
+    originX: "left",
+    originY: "top",
+    stickyWidth: nextW,
+    stickyHeight: nextH,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    markKind: "sticky",
+  });
+  group.setCoords();
+  group.canvas?.requestRenderAll();
 }
 
 function normalizeStickyResize(group: Group) {
   const sx = group.scaleX ?? 1;
   const sy = group.scaleY ?? 1;
-  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return group;
 
-  const padding = STICKY_PADDING;
   const currentW =
     typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
   const currentH =
     typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
 
-  const nextW = Math.max(120, currentW * sx);
-  const nextH = Math.max(90, currentH * sy);
+  updateStickyLayout(group, currentW * sx, currentH * sy);
+  return group;
+}
 
-  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
-  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
-
-  if (rect) {
-    rect.set({ left: 0, top: 0, width: nextW, height: nextH, scaleX: 1, scaleY: 1 });
-  }
-
-  if (text) {
-    text.set({
-      left: padding,
-      top: padding,
-      width: nextW - padding * 2,
-      textAlign: "left",
-      originX: "left",
-      originY: "top",
-      scaleX: 1,
-      scaleY: 1,
-    });
-  }
-
-  group.set({ scaleX: 1, scaleY: 1, width: nextW, height: nextH, stickyWidth: nextW, stickyHeight: nextH });
-  group.setCoords();
+function normalizeStickyTextEdit(group: Group) {
+  const currentW =
+    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
+  updateStickyLayout(group, currentW);
 }
 
 function restoreStickyAfterLoad(group: Group) {
-  group.set({ subTargetCheck: true, objectCaching: false, markKind: "sticky" });
+  const strategy = group.layoutManager?.strategy;
+  const layoutManager =
+    strategy instanceof FixedLayout ? group.layoutManager : new LayoutManager(new FixedLayout());
+  group.set({
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    markKind: "sticky",
+    layoutManager,
+    originX: "left",
+    originY: "top",
+    ...STICKY_CONTROL_STYLE,
+  });
   const w = (group.get("stickyWidth") as number) ?? STICKY_DEFAULT_W;
   const h = (group.get("stickyHeight") as number) ?? STICKY_DEFAULT_H;
-  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
   const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
-  if (rect) {
-    rect.set({ left: 0, top: 0, width: w, height: h, scaleX: 1, scaleY: 1, markKind: "sticky-bg" });
-  }
   if (text) {
-    text.set({
-      left: STICKY_PADDING,
-      top: STICKY_PADDING,
-      width: w - STICKY_PADDING * 2,
-      textAlign: "left",
-      originX: "left",
-      originY: "top",
-      editable: true,
-      evented: true,
-      selectable: false,
-      markKind: "sticky-text",
-      scaleX: 1,
-      scaleY: 1,
-    });
+    text.set({ editable: true, evented: true, selectable: false, markKind: "sticky-text" });
   }
-  group.set({ stickyWidth: w, stickyHeight: h, scaleX: 1, scaleY: 1 });
-  group.setCoords();
+  updateStickyLayout(group, w, h);
 }
 
 function normalizeTextCapableShapeResize(group: Group) {
@@ -749,6 +882,225 @@ function createPriorityGroup(left: number, top: number, width: number): Group {
   return group;
 }
 
+function createCalendarGroup(params: {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  month?: number;
+  year?: number;
+  structureId?: string;
+}): Group {
+  const structureId = params.structureId ?? createStructureId();
+  const month = clampCalendarMonth(params.month ?? new Date().getMonth());
+  const year = clampCalendarYear(params.year ?? new Date().getFullYear());
+
+  const width = Math.max(CALENDAR_MIN_W, params.width);
+  const height = Math.max(CALENDAR_MIN_H, params.height);
+
+  const headerH = Math.max(52, height * 0.12);
+  const weekdayH = Math.max(30, height * 0.07);
+  const gridTop = headerH + weekdayH;
+  const gridH = height - gridTop;
+  const cols = 7;
+  const rows = 6;
+  const cellW = width / cols;
+  const cellH = gridH / rows;
+
+  const parts: FabricObjectType[] = [];
+
+  const outer = new Rect({
+    left: 0,
+    top: 0,
+    width,
+    height,
+    fill: "transparent",
+    stroke: DECAL_INK,
+    strokeWidth: 2,
+    rx: 0,
+    ry: 0,
+    selectable: false,
+    evented: false,
+  });
+  outer.set({ structureId, structureType: "calendar", structureRole: "calendar-frame" });
+  parts.push(outer);
+
+  const title = new FabricText(`${CALENDAR_MONTHS[month]} ${year}`, {
+    left: width / 2,
+    top: headerH / 2,
+    fontSize: Math.max(22, Math.min(42, headerH * 0.48)),
+    fontFamily: STRUCTURE_FONT,
+    fontWeight: 700,
+    fill: DECAL_INK,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+  });
+  title.set({
+    structureId,
+    structureType: "calendar",
+    structureRole: "calendar-title",
+    calendarMonth: month,
+    calendarYear: year,
+  });
+  parts.push(title);
+
+  const headerLine = new Rect({
+    left: 0,
+    top: headerH,
+    width,
+    height: 2,
+    fill: DECAL_LINE,
+    selectable: false,
+    evented: false,
+  });
+  headerLine.set({ structureId, structureType: "calendar", structureRole: "calendar-line" });
+  parts.push(headerLine);
+
+  const weekdayLine = new Rect({
+    left: 0,
+    top: gridTop,
+    width,
+    height: 2,
+    fill: DECAL_LINE,
+    selectable: false,
+    evented: false,
+  });
+  weekdayLine.set({ structureId, structureType: "calendar", structureRole: "calendar-line" });
+  parts.push(weekdayLine);
+
+  for (let c = 0; c < cols; c += 1) {
+    const label = new FabricText(CALENDAR_WEEKDAYS[c], {
+      left: c * cellW + cellW / 2,
+      top: headerH + weekdayH / 2,
+      fontSize: Math.max(11, Math.min(16, weekdayH * 0.42)),
+      fontFamily: STRUCTURE_FONT,
+      fontWeight: 700,
+      fill: DECAL_INK,
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false,
+    });
+    label.set({
+      structureId,
+      structureType: "calendar",
+      structureRole: "calendar-weekday",
+      columnIndex: c,
+    });
+    parts.push(label);
+  }
+
+  for (let c = 1; c < cols; c += 1) {
+    const line = new Rect({
+      left: c * cellW,
+      top: headerH,
+      width: 2,
+      height: height - headerH,
+      fill: DECAL_LINE,
+      selectable: false,
+      evented: false,
+    });
+    line.set({ structureId, structureType: "calendar", structureRole: "calendar-line" });
+    parts.push(line);
+  }
+
+  for (let r = 1; r <= rows; r += 1) {
+    const line = new Rect({
+      left: 0,
+      top: gridTop + r * cellH,
+      width,
+      height: 2,
+      fill: DECAL_LINE,
+      selectable: false,
+      evented: false,
+    });
+    line.set({ structureId, structureType: "calendar", structureRole: "calendar-line" });
+    parts.push(line);
+  }
+
+  const firstOffset = firstWeekdayOfMonth(year, month);
+  const totalDays = daysInMonth(year, month);
+
+  for (let day = 1; day <= totalDays; day += 1) {
+    const cellIndex = firstOffset + day - 1;
+    const row = Math.floor(cellIndex / cols);
+    const col = cellIndex % cols;
+
+    if (row >= rows) continue;
+
+    const cellX = col * cellW;
+    const cellY = gridTop + row * cellH;
+
+    const dayText = new FabricText(String(day), {
+      left: cellX + 9,
+      top: cellY + 7,
+      fontSize: Math.max(13, Math.min(20, cellH * 0.18)),
+      fontFamily: STRUCTURE_FONT,
+      fontWeight: 700,
+      fill: DECAL_INK,
+      originX: "left",
+      originY: "top",
+      selectable: false,
+      evented: false,
+    });
+    dayText.set({
+      structureId,
+      structureType: "calendar",
+      structureRole: "calendar-day-number",
+      calendarCellIndex: cellIndex,
+      calendarDayNumber: day,
+      calendarDateKey: `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    });
+    parts.push(dayText);
+
+    const corner = new Rect({
+      left: cellX + cellW - 20,
+      top: cellY,
+      width: 20,
+      height: 20,
+      fill: "transparent",
+      stroke: DECAL_INK,
+      strokeWidth: 1.5,
+      selectable: false,
+      evented: false,
+    });
+    corner.set({
+      structureId,
+      structureType: "calendar",
+      structureRole: "calendar-corner-box",
+      calendarCellIndex: cellIndex,
+      calendarDayNumber: day,
+      calendarDateKey: `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    });
+    parts.push(corner);
+  }
+
+  const group = new Group(parts, {
+    left: params.left,
+    top: params.top,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+  });
+
+  group.set({
+    structureId,
+    structureType: "calendar",
+    structureWidth: width,
+    structureHeight: height,
+    calendarMonth: month,
+    calendarYear: year,
+  });
+
+  return group;
+}
+
 function addChecklistRow(canvas: Canvas, group: Group) {
   const structureId = structureProp(group, "structureId") as string;
   const width = getStructureLayoutWidth(group);
@@ -802,6 +1154,12 @@ function getStructureLayoutWidth(group: Group): number {
   return Math.max(group.width ?? 300, 200);
 }
 
+function getStructureLayoutHeight(group: Group): number {
+  const stored = structureProp(group, "structureHeight");
+  if (typeof stored === "number" && stored > 0) return stored;
+  return Math.max(group.height ?? CALENDAR_MIN_H, CALENDAR_MIN_H);
+}
+
 function restoreAllGroupsAfterLoad(canvas: Canvas) {
   canvas.getObjects().forEach((obj) => {
     if (!(obj instanceof Group)) return;
@@ -809,6 +1167,8 @@ function restoreAllGroupsAfterLoad(canvas: Canvas) {
       restoreStickyAfterLoad(obj);
     } else if (obj.get("markKind") === "shape" && obj.get("textCapable")) {
       restoreShapeGroupAfterLoad(obj);
+    } else if (structureProp(obj, "structureType") === "calendar") {
+      restoreCalendarAfterLoad(obj);
     } else if (structureProp(obj, "structureId")) {
       restoreStructureAfterLoad(obj);
     }
@@ -849,6 +1209,81 @@ function restoreStructureAfterLoad(group: Group) {
   if (structureType === "priority") {
     reflowPriority(group);
   }
+}
+
+function restoreCalendarAfterLoad(group: Group) {
+  group.set({
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+    structureType: "calendar",
+  });
+
+  const month = clampCalendarMonth(Number(group.get("calendarMonth")));
+  const year = clampCalendarYear(Number(group.get("calendarYear")));
+  const width = getStructureLayoutWidth(group);
+  const height = getStructureLayoutHeight(group);
+
+  group.set({
+    calendarMonth: month,
+    calendarYear: year,
+    structureWidth: width,
+    structureHeight: height,
+    scaleX: 1,
+    scaleY: 1,
+  });
+
+  group.setCoords();
+}
+
+function replaceCalendarGroup(
+  canvas: Canvas,
+  group: Group,
+  month: number,
+  year: number,
+  width?: number,
+  height?: number,
+): Group {
+  const left = group.left ?? 0;
+  const top = group.top ?? 0;
+  const angle = group.angle ?? 0;
+  const structureId = String(group.get("structureId") ?? createStructureId());
+
+  const next = createCalendarGroup({
+    left,
+    top,
+    width: width ?? getStructureLayoutWidth(group),
+    height: height ?? getStructureLayoutHeight(group),
+    month,
+    year,
+    structureId,
+  });
+
+  next.set({ angle });
+
+  canvas.remove(group);
+  canvas.add(next);
+  canvas.setActiveObject(next);
+  next.setCoords();
+  canvas.requestRenderAll();
+
+  return next;
+}
+
+function normalizeCalendarResize(canvas: Canvas, group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+
+  const currentW = getStructureLayoutWidth(group);
+  const currentH = getStructureLayoutHeight(group);
+
+  const nextW = Math.max(CALENDAR_MIN_W, currentW * sx);
+  const nextH = Math.max(CALENDAR_MIN_H, currentH * sy);
+
+  const month = clampCalendarMonth(Number(group.get("calendarMonth")));
+  const year = clampCalendarYear(Number(group.get("calendarYear")));
+
+  replaceCalendarGroup(canvas, group, month, year, nextW, nextH);
 }
 
 function normalizeStructureResize(group: Group) {
@@ -1063,6 +1498,7 @@ const makeDecalText = (
 export type BoardDiagramType =
   | "eisenhower"
   | "checklist"
+  | "calendar"
   | "zones"
   | "timeline"
   | "kanban"
@@ -1122,6 +1558,12 @@ type QuickSelectorState = {
   stickerCapable?: boolean;
 };
 
+type CalendarControlState = {
+  structureId: string;
+  month: number;
+  year: number;
+};
+
 type BoardCanvasEditorProps = {
   layoutJson: Record<string, unknown>;
   colorKey: string;
@@ -1178,7 +1620,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const onHistoryChangeRef = useRef(onHistoryChange);
     const rebindStructureHandlersRef = useRef<(canvas: Canvas) => void>(() => {});
     const handleStructurePointerRef = useRef<(canvas: Canvas, target: FabricObjectType) => boolean>(() => false);
+    const refreshCalendarControlRef = useRef<(canvas: Canvas | null) => void>(() => {});
     const [quickSelector, setQuickSelector] = useState<QuickSelectorState | null>(null);
+    const [calendarControl, setCalendarControl] = useState<CalendarControlState | null>(null);
     const [drawingMode, setDrawingMode] = useState(false);
     const drawColorRef = useRef(MARK_SHAPE_STROKE);
     const deleteTargetRef = useRef<FabricObject | null>(null);
@@ -1188,8 +1632,35 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     onHistoryChangeRef.current = onHistoryChange;
 
     useEffect(() => {
-      if (!isActive) setQuickSelector(null);
+      if (!isActive) {
+        setQuickSelector(null);
+        setCalendarControl(null);
+      } else {
+        refreshCalendarControlRef.current(fabricRef.current);
+      }
     }, [isActive]);
+
+    const refreshCalendarControl = useCallback((canvas: Canvas | null) => {
+      if (!canvas || readOnly || !isActiveRef.current) {
+        setCalendarControl(null);
+        return;
+      }
+
+      const active = canvas.getActiveObject();
+
+      if (active instanceof Group && active.get("structureType") === "calendar") {
+        setCalendarControl({
+          structureId: String(active.get("structureId")),
+          month: clampCalendarMonth(Number(active.get("calendarMonth"))),
+          year: clampCalendarYear(Number(active.get("calendarYear"))),
+        });
+        return;
+      }
+
+      setCalendarControl(null);
+    }, [readOnly]);
+
+    refreshCalendarControlRef.current = refreshCalendarControl;
 
     const scheduleSave = useCallback(() => {
       const canvas = fabricRef.current;
@@ -1257,6 +1728,34 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     recordHistoryRef.current = recordHistory;
     const scheduleSaveRef = useRef(scheduleSave);
     scheduleSaveRef.current = scheduleSave;
+
+    const updateSelectedCalendar = useCallback(
+      (patch: { month?: number; year?: number }) => {
+        const canvas = fabricRef.current;
+        if (!canvas) return;
+
+        const active = canvas.getActiveObject();
+
+        if (!(active instanceof Group) || active.get("structureType") !== "calendar") return;
+
+        const currentMonth = clampCalendarMonth(Number(active.get("calendarMonth")));
+        const currentYear = clampCalendarYear(Number(active.get("calendarYear")));
+
+        const nextMonth = patch.month == null ? currentMonth : clampCalendarMonth(patch.month);
+        const nextYear = patch.year == null ? currentYear : clampCalendarYear(patch.year);
+
+        const next = replaceCalendarGroup(canvas, active, nextMonth, nextYear);
+        setCalendarControl({
+          structureId: String(next.get("structureId")),
+          month: nextMonth,
+          year: nextYear,
+        });
+
+        recordHistory();
+        scheduleSave();
+      },
+      [recordHistory, scheduleSave],
+    );
 
     const applyHistorySnapshot = useCallback(
       async (index: number) => {
@@ -1440,6 +1939,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       }
 
       let onContextMenu: ((e: MouseEvent) => void) | undefined;
+      let onSelectionChanged: ((event?: { selected?: FabricObject[] }) => void) | undefined;
+      let onSelectionCleared: (() => void) | undefined;
 
       if (!readOnly) {
         const onHistoryDebounced = () => {
@@ -1459,7 +1960,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               normalizeTextCapableShapeResize(target);
             } else if (target.get("structureId")) {
               const structureType = target.get("structureType");
-              if (structureType === "priority" || structureType === "checklist") {
+
+              if (structureType === "calendar") {
+                normalizeCalendarResize(canvas, target);
+              } else if (structureType === "priority" || structureType === "checklist") {
                 normalizeStructureResize(target);
                 reflowInteractiveStructure(target);
                 rebindStructureHandlersRef.current(canvas);
@@ -1470,8 +1974,47 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         });
         canvas.on("object:added", onHistoryImmediate);
         canvas.on("object:removed", onHistoryImmediate);
-        canvas.on("text:changed", onHistoryDebounced);
-        canvas.on("editing:exited", onHistoryDebounced);
+        const onStickyTextChanged = (event: { target?: FabricObject }) => {
+          const target = event.target;
+          if (
+            (target instanceof Textbox || target instanceof IText) &&
+            target.get("markKind") === "sticky-text" &&
+            target.group instanceof Group
+          ) {
+            const stickyGroup = target.group;
+            normalizeStickyTextEdit(stickyGroup);
+            if (!target.isEditing) {
+              stickyGroup.set(STICKY_CONTROL_STYLE);
+              canvas.discardActiveObject();
+              canvas.setActiveObject(stickyGroup);
+              stickyGroup.setCoords();
+              canvas.requestRenderAll();
+            }
+          }
+          onHistoryDebounced();
+        };
+        canvas.on("text:changed", onStickyTextChanged);
+        canvas.on("editing:exited", onStickyTextChanged);
+        const handleSelectionChanged = (event?: { selected?: FabricObject[] }) => {
+          const obj = event?.selected?.[0];
+          if (obj) {
+            const stickyGroup = stickyGroupFromTarget(obj);
+            if (stickyGroup) {
+              stickyGroup.set(STICKY_CONTROL_STYLE);
+              stickyGroup.setCoords();
+              if (canvas.getActiveObject() !== stickyGroup) {
+                canvas.setActiveObject(stickyGroup);
+              }
+              canvas.requestRenderAll();
+            }
+          }
+          refreshCalendarControlRef.current(canvas);
+        };
+        onSelectionChanged = handleSelectionChanged;
+        onSelectionCleared = () => refreshCalendarControlRef.current(canvas);
+        canvas.on("selection:created", onSelectionChanged);
+        canvas.on("selection:updated", onSelectionChanged);
+        canvas.on("selection:cleared", onSelectionCleared);
         canvas.on("path:created", (opt) => {
           const path = opt.path;
           if (path) {
@@ -1552,6 +2095,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (onContextMenu) {
           canvas.upperCanvasEl.removeEventListener("contextmenu", onContextMenu);
         }
+        if (onSelectionChanged) {
+          canvas.off("selection:created", onSelectionChanged);
+          canvas.off("selection:updated", onSelectionChanged);
+        }
+        if (onSelectionCleared) canvas.off("selection:cleared", onSelectionCleared);
         window.removeEventListener("resize", onResize);
         containerObserver?.disconnect();
         window.clearTimeout(saveTimerRef.current);
@@ -2275,6 +2823,29 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           return;
         }
 
+        if (diagram === "calendar") {
+          const now = new Date();
+          const group = createCalendarGroup({
+            left,
+            top,
+            width,
+            height,
+            month: now.getMonth(),
+            year: now.getFullYear(),
+          });
+          canvas.add(group);
+          canvas.setActiveObject(group);
+          setCalendarControl({
+            structureId: String(group.get("structureId")),
+            month: clampCalendarMonth(Number(group.get("calendarMonth"))),
+            year: clampCalendarYear(Number(group.get("calendarYear"))),
+          });
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
+          return;
+        }
+
         if (diagram === "zones") {
           const zones = items.length ? items.slice(0, 4) : ["Zone 1", "Zone 2", "Zone 3"];
           addText("Zones", 0, 0, 22);
@@ -2425,6 +2996,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (obj instanceof Group) {
           if (obj.get("markKind") === "sticky") restoreStickyAfterLoad(obj);
           else if (obj.get("markKind") === "shape" && obj.get("textCapable")) restoreShapeGroupAfterLoad(obj);
+          else if (structureProp(obj, "structureType") === "calendar") restoreCalendarAfterLoad(obj);
           else if (structureProp(obj, "structureId")) restoreStructureAfterLoad(obj);
         }
         canvas.add(obj as FabricObject);
@@ -2920,6 +3492,39 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               Esc to finish
             </div>
           )}
+          {!readOnly && isActive && calendarControl ? (
+            <div
+              className="absolute right-3 top-3 z-20 flex items-center gap-2 rounded-full border border-stone-300/80 bg-white/95 px-2 py-1 text-[11px] shadow-sm"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <select
+                value={calendarControl.month}
+                onChange={(e) => updateSelectedCalendar({ month: Number(e.target.value) })}
+                className="h-7 rounded-md border border-stone-200 bg-white px-2 text-[11px] text-stone-800"
+                aria-label="Calendar month"
+              >
+                {CALENDAR_MONTHS.map((monthName, index) => (
+                  <option key={monthName} value={index}>
+                    {monthName}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={calendarControl.year}
+                onChange={(e) => updateSelectedCalendar({ year: Number(e.target.value) })}
+                className="h-7 rounded-md border border-stone-200 bg-white px-2 text-[11px] text-stone-800"
+                aria-label="Calendar year"
+              >
+                {Array.from({ length: 31 }, (_, i) => new Date().getFullYear() - 10 + i).map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           {!readOnly && isActive && quickSelector && (
             <BoardMarksQuickSelector
               x={quickSelector.x}

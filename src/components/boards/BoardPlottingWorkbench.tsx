@@ -30,12 +30,14 @@ export const PLOT_STRUCTURES: {
   items?: string[];
 }[] = [
   { type: "checklist", title: "Checklist" },
+  { type: "calendar", title: "Calendar" },
   { type: "divider", title: "Divider" },
   { type: "eisenhower", title: "Priority grid" },
 ];
 
 export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
   checklist: { x: 0.14, y: 0.2, w: 0.62, h: 0.34 },
+  calendar: { x: 0.06, y: 0.1, w: 0.88, h: 0.72 },
   divider: { x: 0.12, y: 0.46, w: 0.76, h: 0.02 },
   zones: { x: 0.12, y: 0.24, w: 0.68, h: 0.24 },
   eisenhower: { x: 0.14, y: 0.18, w: 0.62, h: 0.44 },
@@ -77,6 +79,21 @@ export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
             <span className="h-px flex-1 border-b border-dashed border-neutral-400/70" />
           </div>
         ))}
+      </div>
+    );
+  }
+  if (type === "calendar") {
+    return (
+      <div className="mt-2 overflow-hidden border border-neutral-900/80">
+        <div className="h-3 border-b border-neutral-900/80" />
+        <div className="grid grid-cols-7">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <span key={`h-${i}`} className="h-2 border-b border-r border-neutral-900/50 last:border-r-0" />
+          ))}
+          {Array.from({ length: 28 }).map((_, i) => (
+            <span key={i} className="h-2.5 border-b border-r border-neutral-900/30 last:border-r-0" />
+          ))}
+        </div>
       </div>
     );
   }

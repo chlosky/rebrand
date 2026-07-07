@@ -79,6 +79,9 @@ verify_jwt = false
 [functions.board-design-chat]
 verify_jwt = false
 
+[functions.board-guide-chat]
+verify_jwt = false
+
 [functions.board-accountability-map]
 verify_jwt = false
 

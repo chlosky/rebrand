@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
-  Calendar,
   CheckCircle2,
   Download,
   ListChecks,
   LayoutGrid,
   Loader2,
-  Mail,
-  Phone,
   ScanSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,11 +26,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BoardAccountabilityFlow } from "@/components/boards/BoardAccountabilityFlow";
+import { BoardGuideChatPanel } from "@/components/boards/BoardCompanionPanel";
+import { usePlottingPro } from "@/hooks/usePlottingPro";
 import {
   createBoardReminder,
-  ensureDefaultWorkspace,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
+  loadDefaultWorkspace,
 } from "@/lib/boards/api";
 import {
   finalizeAccountabilityMap,
@@ -47,7 +46,6 @@ import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { downloadAccountabilityIcalFile } from "@/lib/boards/ical";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { trackReminderAnalytics } from "@/lib/marketingConversionTrack";
 import { cn } from "@/lib/utils";
 import "@/styles/board-editor.css";
@@ -84,8 +82,10 @@ function actionErrorMessage(error: unknown, fallback: string): string {
 
 export default function BoardAccountability() {
   const { user } = useAuth();
-  const { hasPro } = usePlottingPro();
+  const { hasPro, loading: proLoading } = usePlottingPro();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const workspaceParam = searchParams.get("workspace");
   const isMobile = useIsMobile();
 
   const [loading, setLoading] = useState(true);
@@ -109,6 +109,10 @@ export default function BoardAccountability() {
     [workspace],
   );
 
+  const visionBoardsHref = workspace
+    ? `/dashboard/boards?workspace=${workspace.id}`
+    : "/dashboard/boards";
+
   const persistMap = useCallback(
     (next: AccountabilityMap) => {
       const scrubbed = scrubMapTitles(next);
@@ -121,15 +125,29 @@ export default function BoardAccountability() {
   );
 
   const loadWorkspace = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || proLoading) return;
     setLoading(true);
     try {
-      const workspaces = await fetchUserWorkspaces(user.id);
-      const full =
-        workspaces.length === 0
-          ? await ensureDefaultWorkspace(user.id)
-          : await fetchWorkspaceWithBoards(workspaces[0].id);
-      if (!full) throw new Error("workspace missing");
+      let workspaces = await fetchUserWorkspaces(user.id);
+      if (workspaces.length === 0 && hasPro) {
+        await new Promise((resolve) => window.setTimeout(resolve, 350));
+        workspaces = await fetchUserWorkspaces(user.id);
+      }
+
+      let full: BoardWorkspaceWithBoards | null = null;
+      if (workspaceParam) {
+        full = await fetchWorkspaceWithBoards(workspaceParam);
+      } else if (workspaces.length > 0) {
+        full = await loadDefaultWorkspace(user.id);
+      }
+      if (!full) {
+        if (!hasPro) {
+          navigate("/resubscribe", { replace: true });
+          return;
+        }
+        navigate("/workspace?tab=projects", { replace: true });
+        return;
+      }
       setWorkspace(full);
       const cached = sessionStorage.getItem(storageKey(full.id));
       if (cached) {
@@ -148,7 +166,7 @@ export default function BoardAccountability() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [hasPro, navigate, proLoading, user?.id, workspaceParam]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -312,6 +330,9 @@ export default function BoardAccountability() {
   };
 
   const hasDraft = Boolean(map?.focuses?.length);
+  const hasCalendarReminders = Boolean(
+    map?.finalized && map.reminders.some((r) => r.channels.includes("calendar")),
+  );
   const remindersDisabled = !map?.finalized;
 
   const reminderHelperText = remindersDisabled
@@ -416,7 +437,7 @@ export default function BoardAccountability() {
         <header className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
           <div className="flex items-center gap-2">
             {isMobile && <MobilePWAMenu />}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard/boards")}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(visionBoardsHref)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <ListChecks className="h-5 w-5 text-neutral-700" />
@@ -425,32 +446,36 @@ export default function BoardAccountability() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {hasDraft && !map?.finalized ? (
-              <Button
-                size="sm"
-                className="gap-1 bg-stone-900 text-xs"
-                disabled={finalizing}
-                onClick={() => void runFinalize()}
-              >
-                {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                Finalize
-              </Button>
-            ) : null}
-            {isMobile && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 text-xs"
-                disabled={analyzing || loading}
-                onClick={() => void runAnalyze()}
-              >
-                {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                Analyze workspace
-              </Button>
-            )}
-            <div
-              className={`flex items-center gap-2${isMobile ? " ml-1 border-l border-neutral-200 pl-2" : ""}`}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-xs"
+              disabled={analyzing || loading}
+              onClick={() => void runAnalyze()}
             >
+              {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+              Analyze workspace
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-xs"
+              disabled={exportingIcal || remindersDisabled || !hasCalendarReminders}
+              onClick={() => runExportIcal()}
+            >
+              {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              Calendar export
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1 bg-stone-900 text-xs"
+              disabled={!hasDraft || finalizing || map?.finalized}
+              onClick={() => void runFinalize()}
+            >
+              {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+              Finalize
+            </Button>
+            <div className="ml-1 flex items-center gap-2 border-l border-neutral-200 pl-2">
               <LayoutGrid className="h-5 w-5 shrink-0 text-neutral-700" />
               <div>
                 <h2 className="text-sm font-semibold text-neutral-900">Vision</h2>
@@ -459,7 +484,7 @@ export default function BoardAccountability() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => navigate("/dashboard/boards")}
+                onClick={() => navigate(visionBoardsHref)}
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -486,25 +511,11 @@ export default function BoardAccountability() {
         </div>
 
         {isMobile ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2.5">
-            <Label className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-              Reminder channels
-            </Label>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 bg-white text-xs"
-              disabled={exportingIcal || remindersDisabled}
-              onClick={() => runExportIcal()}
-            >
-              {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              Calendar export
-            </Button>
-            {reminderHelperText ? (
-              <p className="text-[11px] text-stone-500">{reminderHelperText}</p>
-            ) : null}
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2">
             {!remindersDisabled ? (
               <p className="text-[11px] text-stone-500">{smsCounterText}</p>
+            ) : reminderHelperText ? (
+              <p className="text-[11px] text-stone-500">{reminderHelperText}</p>
             ) : null}
           </div>
         ) : null}
@@ -516,85 +527,35 @@ export default function BoardAccountability() {
         ) : !workspace ? (
           <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">No workspace found</div>
         ) : (
-          <div className="flex min-h-0 flex-1 overflow-hidden bg-[#ebe8e3]">
-            {!isMobile && (
-              <aside className="flex w-56 shrink-0 flex-col border-r border-stone-300/80 bg-[#f3f0eb] p-3 text-xs">
-                <Label className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">How it works</Label>
-                <p className="mt-2 leading-relaxed text-stone-700">
-                  Palette reads your Vision workspace and drafts an action map from your boards, notes, images and The
-                  Plan. Review, edit or remove anything, then finalize reminders.
-                </p>
-                <Button
-                  className="mt-4 w-full gap-1 bg-stone-900 text-xs"
-                  size="sm"
-                  disabled={analyzing}
-                  onClick={() => void runAnalyze()}
-                >
-                  {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                  Analyze workspace
-                </Button>
-                <Button
-                  className="mt-2 w-full gap-1 text-xs"
-                  size="sm"
-                  disabled={!hasDraft || finalizing || map?.finalized}
-                  onClick={() => void runFinalize()}
-                >
-                  {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                  Finalize plan
-                </Button>
-                <Label className="mt-5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-                  Reminder channels
-                </Label>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
-                      remindersDisabled ? "border-stone-200 text-stone-400" : "border-stone-300 text-stone-700",
-                    )}
-                  >
-                    <Calendar className="h-3 w-3" />
-                    Calendar
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
-                      remindersDisabled ? "border-stone-200 text-stone-400" : "border-stone-300 text-stone-700",
-                    )}
-                  >
-                    <Mail className="h-3 w-3" />
-                    Email
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
-                      remindersDisabled ? "border-stone-200 text-stone-400" : "border-stone-300 text-stone-700",
-                    )}
-                  >
-                    <Phone className="h-3 w-3" />
-                    Text
-                  </span>
-                </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
-                  Calendar = scheduled follow-through. Email = soft accountability. Text = stronger nudge.
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-2 w-full gap-1 text-xs"
-                  size="sm"
-                  disabled={exportingIcal || remindersDisabled}
-                  onClick={() => runExportIcal()}
-                >
-                  {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                  Calendar export
-                </Button>
-                {reminderHelperText ? (
-                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">{reminderHelperText}</p>
-                ) : null}
-                {!remindersDisabled ? (
-                  <p className="mt-1 text-[11px] leading-relaxed text-stone-500">{smsCounterText}</p>
-                ) : null}
-              </aside>
+          <div
+            className={cn(
+              "flex min-h-0 flex-1 overflow-hidden bg-[#ebe8e3]",
+              isMobile ? "flex-col" : "flex-row",
             )}
+          >
+            {!isMobile && workspace ? (
+              <aside className="flex w-72 shrink-0 flex-col border-r border-stone-300/80 bg-[#f3f0eb]">
+                <BoardGuideChatPanel
+                  mode="action"
+                  workspaceId={workspace.id}
+                  actionMap={map}
+                  onActionMapChange={persistMap}
+                />
+              </aside>
+            ) : null}
+
+            {isMobile && workspace ? (
+              <div className="shrink-0 border-b border-stone-300/80 bg-[#f3f0eb]">
+                <BoardGuideChatPanel
+                  mode="action"
+                  workspaceId={workspace.id}
+                  actionMap={map}
+                  onActionMapChange={persistMap}
+                  compact
+                  showHeader={false}
+                />
+              </div>
+            ) : null}
 
             <BoardAccountabilityFlow
               map={map}
@@ -648,7 +609,7 @@ export default function BoardAccountability() {
             <Button variant="outline" onClick={() => setShowNeedsContent(false)}>
               Close
             </Button>
-            <Button onClick={() => navigate("/dashboard/boards")}>Back to Vision</Button>
+            <Button onClick={() => navigate(visionBoardsHref)}>Back to Vision</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

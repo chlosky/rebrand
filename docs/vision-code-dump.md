@@ -1,34 +1,917 @@
 # Vision code dump (handoff)
 
-Single-file handoff for the **Vision** page (`/dashboard/boards`). Paste into ChatGPT or another agent.
+Single-file handoff for the **Vision** page (`/dashboard/boards`) and its Projects-page set launcher. Paste into ChatGPT or another agent.
 
 **Page title:** Vision
 
 **Route:** `/dashboard/boards`
 
+**Projects entry:** `Workspace > Projects > Start New Set`
+
 **Test user:** `support@test.com` / `Test!123`
 
-**Layout:** Desktop = left plotting dock + horizontal board grid. Mobile = carousel + bottom plot kit tray.
+**Layout:** Desktop = left plotting dock + portrait row or landscape 2-column matrix. Mobile = carousel + bottom plot kit tray.
 
 ---
 
 ## Route registration
 
+Excerpt from `src/App.tsx`
+
 ```tsx
-// src/App.tsx
-import Boards from "./pages/features/Boards";
-import BoardAccountability from "./pages/features/BoardAccountability";
-// ...
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<Navigate to="/dashboard/boards" replace />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="settings/routine-reminders" element={<RoutineReminderSettings />} />
+                <Route path="settings/plan-reminders" element={<PlanReminderSettings />} />
+                <Route path="report-issue" element={<ReportAppIssue />} />
+                <Route path="admin/support" element={<AdminSupportInbox />} />
                 <Route path="boards" element={<Boards />} />
                 <Route path="boards/accountability" element={<BoardAccountability />} />
+                <Route path="timeline" element={<Chrono />} />
+                <Route path="activity-tracking" element={<ActivityTracking />} />
+                <Route path="chrono" element={<Chrono />} />
+                <Route path="get-app" element={<GetAppStore />} />
+              </Route>
+```
+
+## Projects page / Start New Set launcher
+
+Path: `src/pages/Workspace.tsx`
+
+```tsx
+import { useEffect, useState, type ReactNode } from "react";
+
+import { useNavigate, useSearchParams } from "react-router-dom";
+
+import {
+
+  BookOpen,
+
+  ChevronRight,
+
+  FolderKanban,
+
+  Lock,
+
+  Plus,
+
+} from "lucide-react";
+
+import { useAuth } from "@/contexts/AuthContext";
+
+import { usePlottingPro } from "@/hooks/usePlottingPro";
+
+import { useTheme } from "@/contexts/ThemeContext";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { cn } from "@/lib/utils";
+
+import { useTranslation } from "react-i18next";
+
+import { fetchUserWorkspaces, createWorkspaceFromTemplate } from "@/lib/boards/api";
+import { DEFAULT_FOUR_BOARD_TEMPLATE, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
+
+import type { BoardWorkspace } from "@/lib/boards/types";
+
+import { SETUP_PRIMARY_CTA_CLASS } from "@/lib/onboardingSetupTheme";
+import { COMMUNITY_IN_APP_ENABLED } from "@/lib/communityRelease";
+import { toast } from "sonner";
+
+import { WorkspaceHeader, workspaceShellClass } from "@/components/workspace/WorkspaceHeader";
+
+import { LibraryReader } from "@/components/workspace/LibraryReader";
+import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
+
+import {
+
+  FREE_LIBRARY_GUIDES,
+
+  getFreeLibraryGuide,
+
+} from "@/pages/workspace/freeLibraryGuides";
+
+
+
+type WorkspaceTab = "library" | "images" | "projects";
+type NewSetOrientation = "portrait" | "landscape";
+
+const WORKSPACE_TABS: WorkspaceTab[] = ["library", "images", "projects"];
+const LANDSCAPE_ARTBOARD = { width: 1350, height: 1080 };
+
+function templateWithOrientation(
+  template: BoardStarterTemplate,
+  orientation: NewSetOrientation,
+): BoardStarterTemplate {
+  if (orientation === "portrait") return template;
+  return {
+    ...template,
+    boards: template.boards.map((board) => ({
+      ...board,
+      artboard_width: LANDSCAPE_ARTBOARD.width,
+      artboard_height: LANDSCAPE_ARTBOARD.height,
+    })),
+  };
+}
+
+
+
+const GUIDE_CATEGORY_LABEL_KEYS: Record<string, string> = {
+
+  "life-rebrand": "workspace.library.categories.lifeRebrand",
+
+  moodboarding: "workspace.library.categories.moodboard",
+
+  "home-organization": "workspace.library.categories.homeOrg",
+
+  "office-optimization": "workspace.library.categories.office",
+
+};
+
+
+
+function LockedOverlay({
+
+  title,
+
+  body,
+
+  onUpgrade,
+
+  upgradeLabel,
+
+  dark,
+
+}: {
+
+  title: string;
+
+  body: string;
+
+  onUpgrade: () => void;
+
+  upgradeLabel: string;
+
+  dark: boolean;
+
+}) {
+
+  return (
+
+    <div
+
+      className={cn(
+
+        "absolute inset-0 z-20 flex items-center justify-center rounded-2xl p-6 backdrop-blur-[2px]",
+
+        dark ? "bg-black" : "bg-[#faf8f5]/88",
+
+      )}
+
+    >
+
+      <div className="max-w-sm text-center">
+
+        <div
+
+          className={cn(
+
+            "mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full",
+
+            dark ? "border border-white bg-black text-white" : "bg-zinc-100 text-zinc-500",
+
+          )}
+
+        >
+
+          <Lock className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+
+        </div>
+
+        <h3 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>{title}</h3>
+
+        <p className={cn("mt-2 text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>{body}</p>
+
+        <Button onClick={onUpgrade} className={cn("mt-5 w-full", dark ? "h-12 rounded-xl border border-white bg-white font-semibold text-black hover:bg-white" : SETUP_PRIMARY_CTA_CLASS)}>
+
+          {upgradeLabel}
+
+        </Button>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+function TabButton({
+
+  active,
+
+  locked,
+
+  label,
+
+  onClick,
+
+  dark,
+
+}: {
+
+  active: boolean;
+
+  locked: boolean;
+
+  label: string;
+
+  onClick: () => void;
+
+  dark: boolean;
+
+}) {
+
+  return (
+
+    <button
+
+      type="button"
+
+      onClick={onClick}
+
+      className={cn(
+
+        "relative flex items-center gap-1.5 border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors",
+
+        active
+
+          ? dark
+
+            ? "border-white text-white"
+
+            : "border-zinc-900 text-zinc-900"
+
+          : dark
+
+            ? "border-transparent text-white hover:underline"
+
+            : "border-transparent text-zinc-500 hover:text-zinc-700",
+
+      )}
+
+    >
+
+      {label}
+
+      {locked ? <Lock className={cn("h-3 w-3", dark ? "text-white" : "text-zinc-400")} aria-hidden /> : null}
+
+    </button>
+
+  );
+
+}
+
+
+
+export default function Workspace() {
+
+  const { t } = useTranslation(["dashboard", "tools"]);
+
+  const navigate = useNavigate();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { user } = useAuth();
+
+  const { hasPro, loading } = usePlottingPro();
+
+  const { theme } = useTheme();
+
+  const dark = theme === "dark";
+
+  const [workspaces, setWorkspaces] = useState<BoardWorkspace[]>([]);
+  const [creatingSet, setCreatingSet] = useState(false);
+
+
+
+  const tabParam = searchParams.get("tab");
+
+  const tab: WorkspaceTab =
+    tabParam === "tips"
+      ? "library"
+      : tabParam === "new-board" || tabParam === "create"
+        ? "projects"
+        : WORKSPACE_TABS.includes(tabParam as WorkspaceTab)
+          ? (tabParam as WorkspaceTab)
+          : "library";
+
+
+
+  const readerSlug = searchParams.get("reader");
+
+  const activeGuide = readerSlug ? getFreeLibraryGuide(readerSlug) : undefined;
+
+
+
+  const setTab = (next: WorkspaceTab) => {
+
+    setSearchParams({ tab: next }, { replace: true });
+
+  };
+
+
+
+  const openReader = (slug: string) => {
+
+    setSearchParams({ tab: "library", reader: slug }, { replace: false });
+
+  };
+
+
+
+  const closeReader = () => {
+
+    setSearchParams({ tab: "library" }, { replace: true });
+
+  };
+
+
+
+  useEffect(() => {
+
+    if (tabParam === "new-board" || tabParam === "create") {
+
+      setSearchParams({ tab: "projects" }, { replace: true });
+
+    }
+
+  }, [tabParam, setSearchParams]);
+
+
+
+  useEffect(() => {
+
+    document.title = t("workspace.pageTitle");
+
+  }, [t]);
+
+
+
+  useEffect(() => {
+
+    if (!user?.id || !hasPro) {
+
+      setWorkspaces([]);
+
+      return;
+
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+
+      try {
+
+        const rows = await fetchUserWorkspaces(user.id);
+
+        if (!cancelled) setWorkspaces(rows);
+
+      } catch {
+
+        if (!cancelled) setWorkspaces([]);
+
+      }
+
+    })();
+
+    return () => {
+
+      cancelled = true;
+
+    };
+
+  }, [user?.id, hasPro]);
+
+
+
+  const goUpgrade = () => navigate("/resubscribe");
+
+  const startNewSet = async (orientation: NewSetOrientation) => {
+    if (!user?.id || creatingSet) return;
+    setCreatingSet(true);
+    try {
+      const setNumber = workspaces.length + 1;
+      const name = workspaces.length === 0 ? "My first set" : `Set ${setNumber}`;
+      const created = await createWorkspaceFromTemplate(
+        user.id,
+        templateWithOrientation(DEFAULT_FOUR_BOARD_TEMPLATE, orientation),
+        name,
+      );
+      setWorkspaces((prev) => [created, ...prev]);
+      navigate(`/dashboard/boards?workspace=${created.id}`);
+    } catch {
+      toast.error("Could not start a new set");
+    } finally {
+      setCreatingSet(false);
+    }
+  };
+
+
+
+  const tabs = (
+
+    <>
+
+      <TabButton
+
+        active={tab === "library" && !activeGuide}
+
+        locked={false}
+
+        label={t("workspace.tabs.library")}
+
+        onClick={() => setTab("library")}
+
+        dark={dark}
+
+      />
+
+      {COMMUNITY_IN_APP_ENABLED ? (
+      <TabButton
+
+        active={false}
+
+        locked={false}
+
+        label={t("workspace.tabs.community")}
+
+        onClick={() => navigate("/workspace/community")}
+
+        dark={dark}
+
+      />
+      ) : null}
+
+      <TabButton
+
+        active={tab === "images"}
+
+        locked={!hasPro}
+
+        label={t("workspace.tabs.imageLibrary")}
+
+        onClick={() => setTab("images")}
+
+        dark={dark}
+
+      />
+
+      <TabButton
+
+        active={tab === "projects"}
+
+        locked={!hasPro}
+
+        label={t("workspace.tabs.projects")}
+
+        onClick={() => setTab("projects")}
+
+        dark={dark}
+
+      />
+
+    </>
+
+  );
+
+
+
+  const cardClass = cn(
+
+    "rounded-xl border shadow-sm transition-colors",
+
+    dark ? "border-white bg-black hover:border-white" : "border-zinc-200/80 bg-white hover:border-zinc-300",
+
+  );
+
+
+
+  let panel: ReactNode = null;
+
+
+
+  if (tab === "library") {
+
+    if (activeGuide) {
+
+      panel = <LibraryReader guide={activeGuide} dark={dark} onBack={closeReader} />;
+
+    } else {
+
+      panel = (
+
+        <div className="space-y-3">
+
+          <p className={cn("text-sm", dark ? "text-white" : "text-zinc-500")}>{t("workspace.library.lead")}</p>
+
+          {FREE_LIBRARY_GUIDES.map((guide) => (
+
+            <button
+
+              key={guide.slug}
+
+              type="button"
+
+              onClick={() => openReader(guide.slug)}
+
+              className={cn("flex w-full items-stretch gap-0 overflow-hidden text-left", cardClass)}
+
+            >
+
+              <span
+
+                className={cn(
+
+                  "flex w-24 shrink-0 items-center justify-center sm:w-28",
+
+                  dark ? "border-r border-white bg-black text-white" : "bg-[#f3f0eb] text-zinc-600",
+
+                )}
+
+              >
+
+                <BookOpen className="h-5 w-5" strokeWidth={1.75} />
+
+              </span>
+
+              <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-4">
+
+                <span className={cn("text-[11px] font-semibold uppercase tracking-wider", dark ? "text-white" : "text-zinc-400")}>
+
+                  {t(GUIDE_CATEGORY_LABEL_KEYS[guide.slug])}
+
+                </span>
+
+                <span className={cn("mt-0.5 block text-sm font-semibold", dark ? "text-white" : "text-zinc-900")}>
+
+                  {guide.title}
+
+                </span>
+
+                <span className={cn("mt-1 block text-xs leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
+
+                  {guide.tagline} · {guide.readMinutes} min
+
+                </span>
+
+              </span>
+
+              <ChevronRight className={cn("my-auto mr-4 h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
+
+            </button>
+
+          ))}
+
+          <p className={cn("pt-2 text-center text-xs leading-relaxed", dark ? "text-white" : "text-zinc-400")}>
+
+            {t("workspace.library.marketingNote")}
+
+          </p>
+
+        </div>
+
+      );
+
+    }
+
+  }
+
+
+
+  if (tab === "images") {
+
+    panel = (
+
+      <div className="relative min-h-[22rem]">
+
+        <div
+
+          className={cn(
+
+            "min-h-[22rem] overflow-hidden rounded-2xl border shadow-sm",
+
+            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
+
+          )}
+
+        >
+
+          <div className="border-b px-5 py-4">
+
+            <h2 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
+
+              {t("workspace.imageLibrary.title")}
+
+            </h2>
+
+            <p className={cn("mt-1 text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
+
+              {t("workspace.imageLibrary.subtitle")}
+
+            </p>
+
+          </div>
+
+          {hasPro && user?.id ? (
+
+            <div className="h-[min(52vh,28rem)]">
+
+              <BoardImagePicker embedded uploadsOnly userId={user.id} />
+
+            </div>
+
+          ) : null}
+
+        </div>
+
+        {!hasPro && !loading ? (
+
+          <LockedOverlay
+
+            dark={dark}
+
+            title={t("workspace.locked.imageLibraryTitle")}
+
+            body={t("workspace.locked.imageLibraryBody")}
+
+            onUpgrade={goUpgrade}
+
+            upgradeLabel={t("workspace.locked.upgrade")}
+
+          />
+
+        ) : null}
+
+      </div>
+
+    );
+
+  }
+
+
+
+  if (tab === "projects") {
+
+    panel = (
+
+      <div className="relative min-h-[22rem]">
+
+        <div
+
+          className={cn(
+
+            "min-h-[22rem] rounded-2xl border p-5 shadow-sm",
+
+            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
+
+          )}
+
+        >
+
+          <div className="mb-4 flex items-center justify-between gap-3">
+
+            <div>
+
+              <h2 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
+
+                {t("workspace.projects.title")}
+
+              </h2>
+
+              <p className={cn("mt-1 text-sm", dark ? "text-white" : "text-zinc-500")}>
+
+                {t("workspace.projects.subtitle")}
+
+              </p>
+
+            </div>
+
+            {hasPro ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn("rounded-lg", dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200")}
+                    disabled={creatingSet}
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    {creatingSet ? t("workspace.projects.creating") : t("workspace.projects.startNewSet")}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className={dark ? "border-white bg-black text-white" : undefined}>
+                  <DropdownMenuItem onClick={() => void startNewSet("portrait")}>
+                    Portrait set
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void startNewSet("landscape")}>
+                    Landscape set
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+
+          </div>
+
+          {hasPro ? (
+
+            workspaces.length ? (
+
+              <ul className="space-y-2">
+
+                {workspaces.map((ws) => (
+
+                  <li key={ws.id}>
+
+                    <button
+
+                      type="button"
+
+                      onClick={() => navigate(`/dashboard/boards?workspace=${ws.id}`)}
+
+                      className={cn(
+
+                        "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
+
+                        dark
+
+                          ? "border-white bg-black hover:border-white"
+
+                          : "border-zinc-200/80 bg-[#faf8f5] hover:border-zinc-300",
+
+                      )}
+
+                    >
+
+                      <FolderKanban className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-500")} />
+
+                      <span className={cn("min-w-0 flex-1 truncate text-sm font-medium", dark ? "text-white" : "text-zinc-900")}>
+
+                        {ws.name}
+
+                      </span>
+
+                      <ChevronRight className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
+
+                    </button>
+
+                  </li>
+
+                ))}
+
+              </ul>
+
+            ) : (
+
+              <p
+
+                className={cn(
+
+                  "rounded-xl border border-dashed px-4 py-8 text-center text-sm",
+
+                  dark ? "border-white text-white" : "border-zinc-200 bg-[#faf8f5] text-zinc-500",
+
+                )}
+
+              >
+
+                {t("workspace.projects.empty")}
+
+              </p>
+
+            )
+
+          ) : (
+
+            <div className="grid gap-2 opacity-40">
+
+              {[1, 2].map((n) => (
+
+                <div
+
+                  key={n}
+
+                  className={cn("h-14 rounded-xl border", dark ? "border-white bg-black" : "border-zinc-200 bg-[#faf8f5]")}
+
+                />
+
+              ))}
+
+            </div>
+
+          )}
+
+        </div>
+
+        {!hasPro && !loading ? (
+
+          <LockedOverlay
+
+            dark={dark}
+
+            title={t("workspace.locked.projectsTitle")}
+
+            body={t("workspace.locked.projectsBody")}
+
+            onUpgrade={goUpgrade}
+
+            upgradeLabel={t("workspace.locked.upgrade")}
+
+          />
+
+        ) : null}
+
+      </div>
+
+    );
+
+  }
+
+
+
+  return (
+
+    <div className={workspaceShellClass(dark)}>
+
+      <WorkspaceHeader tabs={activeGuide ? undefined : tabs} />
+
+
+
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+
+        {tab === "library" && !activeGuide ? (
+          <h1 className={cn("mb-2 font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
+            {t("workspace.library.heading")}
+          </h1>
+        ) : null}
+
+        {tab === "images" && hasPro ? (
+          <h1 className={cn("mb-2 font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
+            {t("workspace.tabs.imageLibrary")}
+          </h1>
+        ) : null}
+
+        {loading && tab !== "library" ? (
+
+          <div
+
+            className={cn("min-h-[22rem] rounded-2xl border", dark ? "border-white bg-black" : "border-zinc-200/80 bg-white")}
+
+            aria-busy="true"
+
+          />
+
+        ) : (
+
+          panel
+
+        )}
+
+
+      </main>
+
+    </div>
+
+  );
+
+}
+
+
+
 ```
 
 ## Board types
 
+Path: `src/lib/boards/types.ts`
+
 ```ts
-// src/lib/boards/types.ts
-// NOTE: verbatim copy from the repo at time of export.
 export type BoardRole = "focus" | "plan";
 
 export type BoardLayoutMode =
@@ -101,13 +984,14 @@ export type BoardImageAsset = {
 };
 
 export type BoardWorkspaceWithBoards = BoardWorkspace & { boards: Board[] };
+
 ```
 
 ## Board colors
 
+Path: `src/lib/boards/colors.ts`
+
 ```ts
-// src/lib/boards/colors.ts
-// NOTE: verbatim copy from the repo at time of export.
 /** Named board colors — templates, AI companion, and legacy rows. */
 export type BoardColorKey =
   | "rose_gold"
@@ -183,13 +1067,14 @@ export function boardFillForKey(key: string): string {
 export function boardColorHexForKey(key: string): string {
   return boardFillForKey(key);
 }
+
 ```
 
 ## Board API (workspace + uploads)
 
+Path: `src/lib/boards/api.ts`
+
 ```ts
-// src/lib/boards/api.ts
-// NOTE: verbatim copy from the repo at time of export.
 import { supabase } from "@/integrations/supabase/client";
 import type { Board, BoardReminder, BoardWorkspace, BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import {
@@ -285,6 +1170,8 @@ export async function createWorkspaceFromTemplate(
     color_key: b.color_key,
     sort_order: b.sort_order,
     layout_mode: b.layout_mode ?? "vision",
+    artboard_width: b.artboard_width ?? 1080,
+    artboard_height: b.artboard_height ?? 1350,
     layout_json: {},
   }));
 
@@ -316,6 +1203,7 @@ export async function addBoard(
   title: string,
   role: Board["role"],
   sortOrder: number,
+  dimensions?: Pick<Board, "artboard_width" | "artboard_height">,
 ): Promise<Board> {
   const { data, error } = await supabase
     .from("boards")
@@ -326,6 +1214,8 @@ export async function addBoard(
       role,
       color_key: role === "plan" ? "white_opaque" : "light_pink",
       sort_order: sortOrder,
+      artboard_width: dimensions?.artboard_width ?? 1080,
+      artboard_height: dimensions?.artboard_height ?? 1350,
       layout_json: {},
     })
     .select()
@@ -409,13 +1299,14 @@ export async function listUserUploads(userId: string): Promise<{ path: string; s
   }
   return out;
 }
+
 ```
 
 ## Starter templates
 
+Path: `src/lib/boards/starterTemplates.ts`
+
 ```ts
-// src/lib/boards/starterTemplates.ts
-// NOTE: verbatim copy from the repo at time of export.
 import { FOCUS_CATEGORIES } from "@/lib/focusCategories";
 import type { BoardLayoutMode, BoardRole } from "@/lib/boards/types";
 
@@ -431,6 +1322,8 @@ export type StarterBoardDef = {
   color_key: string;
   sort_order: number;
   layout_mode?: BoardLayoutMode;
+  artboard_width?: number;
+  artboard_height?: number;
 };
 
 export type BoardStarterTemplate = {
@@ -740,13 +1633,14 @@ export const OFFICE_SYSTEM_TO_TEMPLATE: Record<string, string> = {
   okrs: "office-okrs",
   five_s: "office-five-s",
 };
+
 ```
 
 ## Layout scale
 
+Path: `src/lib/boards/layoutScale.ts`
+
 ```ts
-// src/lib/boards/layoutScale.ts
-// NOTE: verbatim copy from the repo at time of export.
 import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
 
 const NUMERIC_LAYOUT_KEYS = [
@@ -810,13 +1704,14 @@ export function fitArtboardInBox(
   const height = width / artAspect;
   return { x: 0, y: (pageHeight - height) / 2, width, height };
 }
+
 ```
 
 ## Render + print export
 
+Path: `src/lib/boards/renderBoard.ts`
+
 ```ts
-// src/lib/boards/renderBoard.ts
-// NOTE: verbatim copy from the repo at time of export.
 import { StaticCanvas, FabricImage } from "fabric";
 import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
 import { boardFillForKey } from "@/lib/boards/colors";
@@ -1183,13 +2078,14 @@ export async function renderBoardArtboardDataUrl(
     backgroundPageColor: boardFillForKey(colorKey),
   });
 }
+
 ```
 
 ## Save board image
 
+Path: `src/lib/boards/saveBoardImage.ts`
+
 ```ts
-// src/lib/boards/saveBoardImage.ts
-// NOTE: verbatim copy from the repo at time of export.
 import { Capacitor } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
@@ -1242,13 +2138,14 @@ export async function saveBoardImageBlob(blob: Blob, fileName: string): Promise<
   URL.revokeObjectURL(objectUrl);
   return "download";
 }
+
 ```
 
 ## Image library
 
+Path: `src/lib/boards/imageLibrary.ts`
+
 ```ts
-// src/lib/boards/imageLibrary.ts
-// NOTE: verbatim copy from the repo at time of export.
 import type { BoardImageAsset } from "@/lib/boards/types";
 
 export const BOARD_IMAGE_THEMES = [
@@ -1291,13 +2188,14 @@ export function filterLibraryByTheme(images: BoardImageAsset[], theme: string | 
   if (!theme) return images;
   return images.filter((i) => i.theme === theme);
 }
+
 ```
 
 ## Page shell
 
+Path: `src/pages/features/Boards.tsx`
+
 ```tsx
-// src/pages/features/Boards.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, ListChecks, Loader2, Plus, Trash2 } from "lucide-react";
@@ -1345,6 +2243,9 @@ export default function Boards() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
+  const [isPortraitViewport, setIsPortraitViewport] = useState(() =>
+    typeof window === "undefined" ? true : window.innerHeight > window.innerWidth,
+  );
 
   const handleHistoryChange = useCallback((state: { canUndo: boolean; canRedo: boolean }) => {
     setUndoRedo((prev) =>
@@ -1393,6 +2294,11 @@ export default function Boards() {
     () => workspace?.boards.find((b) => b.id === activeBoardId) ?? workspace?.boards[0] ?? null,
     [workspace, activeBoardId],
   );
+  const workspacePresentation = useMemo(() => {
+    const firstBoard = workspace?.boards[0];
+    return firstBoard && firstBoard.artboard_width > firstBoard.artboard_height ? "matrix" : "row";
+  }, [workspace?.boards]);
+  const isLandscapeSet = workspacePresentation === "matrix";
 
   const loadWorkspace = useCallback(async () => {
     if (!user?.id) return;
@@ -1428,6 +2334,13 @@ export default function Boards() {
 
   useEffect(() => {
     document.title = "Vision | Palette Plotting";
+  }, []);
+
+  useEffect(() => {
+    const update = () => setIsPortraitViewport(window.innerHeight > window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   const handleSaveLayoutFor = useCallback(async (boardId: string, layout: Record<string, unknown>) => {
@@ -1522,6 +2435,12 @@ export default function Boards() {
         `Focus Board ${focusCount + 1}`,
         "focus",
         n,
+        activeBoard
+          ? {
+              artboard_width: activeBoard.artboard_width,
+              artboard_height: activeBoard.artboard_height,
+            }
+          : undefined,
       );
       setWorkspace({ ...workspace, boards: [...workspace.boards, board] });
       selectBoard(board.id);
@@ -1544,6 +2463,10 @@ export default function Boards() {
         title,
         "focus",
         workspace.boards.length,
+        {
+          artboard_width: activeBoard.artboard_width,
+          artboard_height: activeBoard.artboard_height,
+        },
       );
       await saveBoardLayout(board.id, layout);
       await updateBoardMeta(board.id, {
@@ -1608,7 +2531,7 @@ export default function Boards() {
       return;
     }
     const label = activeBoard.title;
-    if (!window.confirm(`Remove “${label}” from your workspace? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete “${label}” from your workspace? This cannot be undone.`)) return;
     try {
       await deleteBoard(activeBoard.id);
       const next = workspace.boards.filter((b) => b.id !== activeBoard.id);
@@ -1649,7 +2572,7 @@ export default function Boards() {
             </Button>
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => void handleDuplicateBoard()}>
               <CopyPlus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Duplicate</span>
+              <span className="hidden sm:inline">Duplicate Board</span>
             </Button>
             {canRemoveBoard && (
               <Button
@@ -1659,7 +2582,7 @@ export default function Boards() {
                 onClick={handleRemoveBoard}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Remove</span>
+                <span className="hidden sm:inline">Delete Board</span>
               </Button>
             )}
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setDownloadOpen(true)}>
@@ -1709,6 +2632,11 @@ export default function Boards() {
           </div>
         ) : isMobile ? (
           <div className="flex min-h-0 flex-1 flex-col pb-[4.25rem]">
+            {isLandscapeSet && isPortraitViewport ? (
+              <p className="mx-4 mt-2 rounded-full border border-neutral-200 bg-white/80 px-3 py-1 text-center text-[11px] text-neutral-600">
+                Landscape set selected. Rotate your phone for more room.
+              </p>
+            ) : null}
             <BoardMobileCarousel
               boards={boards}
               activeId={activeBoard.id}
@@ -1758,6 +2686,7 @@ export default function Boards() {
                 onRenameBoard={handleRenameBoard}
                 onTitleStyleChange={handleTitleStyleChange}
                 zoomPreset={boardZoom}
+                presentationMode={workspacePresentation}
                 onHistoryChange={handleHistoryChange}
                 onReorderBoards={boards.length > 1 ? handleReorderBoards : undefined}
               />
@@ -1803,13 +2732,14 @@ export default function Boards() {
     </div>
   );
 }
+
 ```
 
 ## Toolbar
 
+Path: `src/components/boards/BoardToolbar.tsx`
+
 ```tsx
-// src/components/boards/BoardToolbar.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useState } from "react";
 import {
   Layers,
@@ -2061,13 +2991,14 @@ export function BoardToolbar({
     </>
   );
 }
+
 ```
 
 ## Canvas editor (Fabric)
 
+Path: `src/components/boards/BoardCanvasEditor.tsx`
+
 ```tsx
-// src/components/boards/BoardCanvasEditor.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import {
   forwardRef,
   useCallback,
@@ -2113,11 +3044,27 @@ const MARK_TEXT_FILL = "#000000";
 const MARK_SHAPE_STROKE = "#111111";
 const MARK_DRAW_WIDTH = 4;
 
+const STICKY_PADDING = 16;
+const STICKY_DEFAULT_W = 280;
+const STICKY_DEFAULT_H = 200;
+
+const TEXT_CAPABLE_SHAPES = new Set<BoardMarkShapeType>([
+  "rect",
+  "circle",
+  "triangle",
+  "hexagon",
+  "pentagon",
+  "diamond",
+  "heart",
+  "bubble",
+]);
+
 for (const prop of [
   "structureId",
   "structureType",
   "structureRole",
   "structureWidth",
+  "structureHeight",
   "rowIndex",
   "columnIndex",
   "itemIndex",
@@ -2125,6 +3072,11 @@ for (const prop of [
   "markKind",
   "shapeType",
   "stickerId",
+  "textCapable",
+  "stickyWidth",
+  "stickyHeight",
+  "shapeWidth",
+  "shapeHeight",
 ] as const) {
   if (!FabricObject.customProperties.includes(prop)) {
     FabricObject.customProperties.push(prop);
@@ -2133,6 +3085,734 @@ for (const prop of [
 
 function structureProp(obj: FabricObjectType, key: string): unknown {
   return typeof obj.get === "function" ? obj.get(key) : undefined;
+}
+
+function findEditableTextInGroup(group: Group): Textbox | IText | null {
+  const found = group.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
+  return found instanceof Textbox || found instanceof IText ? found : null;
+}
+
+function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
+  let root: FabricObject = obj;
+  while (root.group) root = root.group as FabricObject;
+
+  let textObj: Textbox | IText | null = null;
+
+  if (root instanceof Textbox || root instanceof IText) {
+    textObj = root;
+  } else if (root instanceof Group) {
+    textObj = findEditableTextInGroup(root);
+  }
+
+  if (!textObj) return false;
+
+  canvas.setActiveObject(textObj);
+  canvas.requestRenderAll();
+
+  requestAnimationFrame(() => {
+    textObj.enterEditing();
+    if (textObj instanceof IText) {
+      textObj.selectAll();
+    } else if (textObj instanceof Textbox) {
+      const len = textObj.text?.length ?? 0;
+      textObj.selectionStart = len;
+      textObj.selectionEnd = len;
+    }
+    canvas.requestRenderAll();
+  });
+
+  return true;
+}
+
+function createStickyNoteGroup(params: {
+  left: number;
+  top: number;
+  width?: number;
+  height?: number;
+  text?: string;
+  fill?: string;
+}): Group {
+  const w = params.width ?? STICKY_DEFAULT_W;
+  const h = params.height ?? STICKY_DEFAULT_H;
+  const fill = params.fill ?? "#FFF9C4";
+  const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
+
+  const rect = new Rect({
+    left: 0,
+    top: 0,
+    width: w,
+    height: h,
+    fill,
+    stroke,
+    strokeWidth: 1,
+    rx: 8,
+    ry: 8,
+    selectable: false,
+    evented: false,
+    markKind: "sticky-bg",
+  });
+
+  const note = new Textbox(params.text ?? "", {
+    left: STICKY_PADDING,
+    top: STICKY_PADDING,
+    width: w - STICKY_PADDING * 2,
+    fontSize: 22,
+    fontFamily: "system-ui, sans-serif",
+    fill: "#171717",
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    splitByGrapheme: true,
+    editable: true,
+    evented: true,
+    selectable: false,
+    markKind: "sticky-text",
+  });
+
+  return new Group([rect, note], {
+    left: params.left,
+    top: params.top,
+    subTargetCheck: true,
+    objectCaching: false,
+    markKind: "sticky",
+    stickyWidth: w,
+    stickyHeight: h,
+  });
+}
+
+function stickyParts(group: Group) {
+  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
+  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
+  return { rect, text };
+}
+
+function updateStickyLayout(group: Group, width?: number, height?: number) {
+  const currentW =
+    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
+  const currentH =
+    typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
+  const nextW = Math.max(120, width ?? currentW);
+  const { rect, text } = stickyParts(group);
+  if (!rect || !text) return;
+
+  text.set({
+    left: STICKY_PADDING,
+    top: STICKY_PADDING,
+    width: Math.max(40, nextW - STICKY_PADDING * 2),
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    splitByGrapheme: true,
+    scaleX: 1,
+    scaleY: 1,
+  });
+  (text as Textbox & { initDimensions?: () => void }).initDimensions?.();
+
+  const minHeightFromText = (text.height ?? 0) + STICKY_PADDING * 2;
+  const nextH = Math.max(90, height ?? currentH, minHeightFromText);
+
+  rect.set({
+    left: 0,
+    top: 0,
+    width: nextW,
+    height: nextH,
+    scaleX: 1,
+    scaleY: 1,
+  });
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    width: nextW,
+    height: nextH,
+    stickyWidth: nextW,
+    stickyHeight: nextH,
+    subTargetCheck: true,
+    objectCaching: false,
+    markKind: "sticky",
+  });
+  group.triggerLayout();
+  group.setCoords();
+  group.canvas?.requestRenderAll();
+}
+
+function normalizeStickyResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return group;
+
+  const currentW =
+    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
+  const currentH =
+    typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
+
+  updateStickyLayout(group, currentW * sx, currentH * sy);
+  return group;
+}
+
+function normalizeStickyTextEdit(group: Group) {
+  const currentW =
+    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
+  updateStickyLayout(group, currentW);
+}
+
+function restoreStickyAfterLoad(group: Group) {
+  group.set({ subTargetCheck: true, objectCaching: false, markKind: "sticky" });
+  const w = (group.get("stickyWidth") as number) ?? STICKY_DEFAULT_W;
+  const h = (group.get("stickyHeight") as number) ?? STICKY_DEFAULT_H;
+  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
+  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
+  if (rect) {
+    rect.set({ left: 0, top: 0, width: w, height: h, scaleX: 1, scaleY: 1, markKind: "sticky-bg" });
+  }
+  if (text) {
+    text.set({
+      left: STICKY_PADDING,
+      top: STICKY_PADDING,
+      width: w - STICKY_PADDING * 2,
+      textAlign: "left",
+      originX: "left",
+      originY: "top",
+      editable: true,
+      evented: true,
+      selectable: false,
+      markKind: "sticky-text",
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+  group.set({ stickyWidth: w, stickyHeight: h, scaleX: 1, scaleY: 1 });
+  group.setCoords();
+}
+
+function normalizeTextCapableShapeResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  const currentW =
+    typeof group.get("shapeWidth") === "number" ? Number(group.get("shapeWidth")) : group.width ?? 120;
+  const currentH =
+    typeof group.get("shapeHeight") === "number" ? Number(group.get("shapeHeight")) : group.height ?? 90;
+
+  const nextW = Math.max(60, currentW * sx);
+  const nextH = Math.max(50, currentH * sy);
+
+  const shapeObj = group
+    .getObjects()
+    .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
+  const text = group.getObjects().find((o) => o.get("markKind") === "shape-text") as Textbox | undefined;
+
+  if (shapeObj) {
+    const sw = shapeObj.width ?? currentW;
+    const sh = shapeObj.height ?? currentH;
+    const scaleShapeX = nextW / (sw * (shapeObj.scaleX ?? 1));
+    const scaleShapeY = nextH / (sh * (shapeObj.scaleY ?? 1));
+    if (shapeObj instanceof Circle) {
+      const r = (shapeObj.radius ?? 55) * Math.min(scaleShapeX, scaleShapeY);
+      shapeObj.set({ radius: r, left: nextW / 2, top: nextH / 2, originX: "center", originY: "center", scaleX: 1, scaleY: 1 });
+    } else if (shapeObj instanceof Rect) {
+      shapeObj.set({ left: 0, top: 0, width: nextW, height: nextH, scaleX: 1, scaleY: 1 });
+    } else {
+      shapeObj.set({
+        scaleX: (shapeObj.scaleX ?? 1) * scaleShapeX,
+        scaleY: (shapeObj.scaleY ?? 1) * scaleShapeY,
+        left: nextW / 2,
+        top: nextH / 2,
+        originX: "center",
+        originY: "center",
+      });
+      shapeObj.set({ scaleX: 1, scaleY: 1 });
+      shapeObj.scale(scaleShapeX);
+    }
+  }
+
+  if (text) {
+    text.set({
+      left: nextW / 2,
+      top: nextH / 2,
+      width: nextW * 0.85,
+      scaleX: 1,
+      scaleY: 1,
+      originX: "center",
+      originY: "center",
+    });
+  }
+
+  group.set({ scaleX: 1, scaleY: 1, width: nextW, height: nextH, shapeWidth: nextW, shapeHeight: nextH });
+  group.setCoords();
+}
+
+function restoreShapeGroupAfterLoad(group: Group) {
+  group.set({ subTargetCheck: true, objectCaching: false });
+  const w = (group.get("shapeWidth") as number) ?? 120;
+  const h = (group.get("shapeHeight") as number) ?? 90;
+  const text = group.getObjects().find((o) => o.get("markKind") === "shape-text") as Textbox | undefined;
+  if (text) {
+    text.set({
+      editable: true,
+      evented: true,
+      selectable: false,
+      textAlign: "center",
+      originX: "center",
+      originY: "center",
+      left: w / 2,
+      top: h / 2,
+      width: w * 0.85,
+    });
+  }
+  group.setCoords();
+}
+
+function createStructureId(): string {
+  return crypto.randomUUID();
+}
+
+function createStructureAddButton(
+  structureId: string,
+  structureType: string,
+  left: number,
+  top: number,
+): FabricObjectType[] {
+  const btnSize = 24;
+  const circle = new Circle({
+    left,
+    top,
+    radius: btnSize / 2,
+    fill: "#ffffff",
+    stroke: DECAL_MUTED,
+    strokeWidth: 1.5,
+    selectable: false,
+    evented: true,
+    hoverCursor: "pointer",
+    originX: "center",
+    originY: "center",
+  });
+  circle.set({ structureId, structureType, structureRole: "add-button" });
+
+  const plus = new FabricText("+", {
+    left,
+    top,
+    fontSize: 16,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_MUTED,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: true,
+    hoverCursor: "pointer",
+  });
+  plus.set({ structureId, structureType, structureRole: "add-button" });
+
+  return [circle, plus];
+}
+
+function isAddButtonHit(obj: FabricObjectType): boolean {
+  const role = structureProp(obj, "structureRole");
+  return role === "add-button" || role === "add-row";
+}
+
+function buildShapePrimitive(
+  shapeType: BoardMarkShapeType,
+  groupW: number,
+  groupH: number,
+  stroke: string,
+  fill: string,
+): FabricObject {
+  if (shapeType === "rect") {
+    return new Rect({
+      left: 0,
+      top: 0,
+      width: groupW,
+      height: groupH,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      rx: 4,
+      ry: 4,
+      selectable: false,
+      evented: false,
+    });
+  }
+  if (shapeType === "circle") {
+    const r = Math.min(groupW, groupH) / 2;
+    return new Circle({
+      left: groupW / 2,
+      top: groupH / 2,
+      radius: r,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false,
+    });
+  }
+  if (shapeType === "triangle") {
+    return new Triangle({
+      left: groupW / 2,
+      top: groupH / 2,
+      width: groupW,
+      height: groupH,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false,
+    });
+  }
+  if (shapeType === "hexagon") {
+    const hw = groupW / 2;
+    const hh = groupH / 2;
+    return new Polygon(
+      [
+        { x: 0, y: -hh },
+        { x: hw * 0.86, y: -hh / 2 },
+        { x: hw * 0.86, y: hh / 2 },
+        { x: 0, y: hh },
+        { x: -hw * 0.86, y: hh / 2 },
+        { x: -hw * 0.86, y: -hh / 2 },
+      ],
+      {
+        left: groupW / 2,
+        top: groupH / 2,
+        originX: "center",
+        originY: "center",
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  if (shapeType === "pentagon") {
+    const hw = groupW / 2;
+    const hh = groupH / 2;
+    return new Polygon(
+      [
+        { x: 0, y: -hh },
+        { x: hw, y: -hh * 0.3 },
+        { x: hw * 0.62, y: hh },
+        { x: -hw * 0.62, y: hh },
+        { x: -hw, y: -hh * 0.3 },
+      ],
+      {
+        left: groupW / 2,
+        top: groupH / 2,
+        originX: "center",
+        originY: "center",
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  if (shapeType === "diamond") {
+    const hw = groupW / 2;
+    const hh = groupH / 2;
+    return new Polygon(
+      [
+        { x: 0, y: -hh },
+        { x: hw, y: 0 },
+        { x: 0, y: hh },
+        { x: -hw, y: 0 },
+      ],
+      {
+        left: groupW / 2,
+        top: groupH / 2,
+        originX: "center",
+        originY: "center",
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  if (shapeType === "heart") {
+    return new Path(
+      "M 50 88 C 20 66 6 52 6 34 C 6 20 16 10 30 10 C 38 10 45 14 50 20 C 55 14 62 10 70 10 C 84 10 94 20 94 34 C 94 52 80 66 50 88 Z",
+      {
+        left: groupW / 2 - 50,
+        top: groupH / 2 - 50,
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  // bubble
+  return new Path(
+    "M 8 10 Q 8 2 16 2 L 104 2 Q 112 2 112 10 L 112 58 Q 112 66 104 66 L 58 66 L 44 82 L 46 66 L 16 66 Q 8 66 8 58 Z",
+    {
+      left: groupW / 2 - 60,
+      top: groupH / 2 - 42,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      selectable: false,
+      evented: false,
+    },
+  );
+}
+
+function createTextCapableShapeGroup(
+  shapeType: BoardMarkShapeType,
+  cx: number,
+  cy: number,
+  stroke = MARK_SHAPE_STROKE,
+): Group {
+  const groupW = 120;
+  const groupH = 90;
+  const fill = `${stroke}33`;
+  const shape = buildShapePrimitive(shapeType, groupW, groupH, stroke, fill);
+  const text = new Textbox("", {
+    left: groupW / 2,
+    top: groupH / 2,
+    width: groupW * 0.85,
+    fontSize: 18,
+    fontFamily: "system-ui, sans-serif",
+    fill: MARK_TEXT_FILL,
+    textAlign: "center",
+    originX: "center",
+    originY: "center",
+    editable: true,
+    evented: true,
+    selectable: false,
+    markKind: "shape-text",
+  });
+  return new Group([shape, text], {
+    left: cx - groupW / 2,
+    top: cy - groupH / 2,
+    subTargetCheck: true,
+    objectCaching: false,
+    markKind: "shape",
+    shapeType,
+    textCapable: true,
+    shapeWidth: groupW,
+    shapeHeight: groupH,
+  });
+}
+
+function createChecklistRowParts(
+  structureId: string,
+  rowIndex: number,
+  width: number,
+): FabricObjectType[] {
+  const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
+  const box = new Rect({
+    left: 0,
+    top: rowTop,
+    width: STRUCTURE_BOX,
+    height: STRUCTURE_BOX,
+    fill: "transparent",
+    stroke: DECAL_INK,
+    strokeWidth: 2,
+    rx: 2,
+    ry: 2,
+    selectable: false,
+    evented: true,
+    hoverCursor: "pointer",
+  });
+  box.set({
+    structureId,
+    structureType: "checklist",
+    structureRole: "checkbox",
+    rowIndex,
+    checked: false,
+  });
+
+  const checkmark = new FabricText("✓", {
+    left: STRUCTURE_BOX / 2,
+    top: rowTop + STRUCTURE_BOX / 2,
+    fontSize: 14,
+    fontFamily: STRUCTURE_FONT,
+    fill: "#ffffff",
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+    visible: false,
+  });
+  checkmark.set({
+    structureId,
+    structureType: "checklist",
+    structureRole: "checkmark",
+    rowIndex,
+  });
+
+  const label = new IText("", {
+    left: STRUCTURE_BOX + 10,
+    top: rowTop - 2,
+    width: width - STRUCTURE_BOX - 40,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  label.set({ structureId, structureType: "checklist", structureRole: "label", rowIndex });
+
+  return [box, checkmark, label];
+}
+
+function createChecklistGroup(left: number, top: number, width: number): Group {
+  const structureId = createStructureId();
+  const rowCount = 4;
+  const parts: FabricObjectType[] = [];
+
+  for (let i = 0; i < rowCount; i++) {
+    parts.push(...createChecklistRowParts(structureId, i, width));
+  }
+
+  const btnTop = 8 + rowCount * STRUCTURE_ROW_H + 16;
+  parts.push(...createStructureAddButton(structureId, "checklist", width - 14, btnTop));
+
+  const group = new Group(parts, {
+    left,
+    top,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+  });
+  group.set({ structureId, structureType: "checklist", structureWidth: width });
+  return group;
+}
+
+function createPriorityRowParts(
+  structureId: string,
+  rowIndex: number,
+  width: number,
+): FabricObjectType[] {
+  const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
+  const midX = width * 0.55;
+  const left = new IText("", {
+    left: 8,
+    top: rowTop,
+    width: midX - 20,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  left.set({ structureId, structureType: "priority", structureRole: "priority-left", rowIndex });
+
+  const right = new IText(String(rowIndex + 1), {
+    left: midX + 8,
+    top: rowTop,
+    width: width - midX - 40,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    textAlign: "right",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  right.set({ structureId, structureType: "priority", structureRole: "priority-right", rowIndex });
+
+  return [left, right];
+}
+
+function createPriorityGroup(left: number, top: number, width: number): Group {
+  const structureId = createStructureId();
+  const midX = width * 0.55;
+  const rowCount = 4;
+  const parts: FabricObjectType[] = [];
+
+  const headerLine = new Rect({
+    left: 0,
+    top: 34,
+    width,
+    height: 2,
+    fill: DECAL_LINE,
+    selectable: false,
+    evented: false,
+  });
+  headerLine.set({ structureRole: "header-line" });
+  parts.push(headerLine);
+
+  const frameV = new Rect({
+    left: midX,
+    top: 0,
+    width: 2,
+    height: 44 + rowCount * STRUCTURE_ROW_H + 36,
+    fill: DECAL_LINE,
+    selectable: false,
+    evented: false,
+  });
+  frameV.set({ structureRole: "frame-v" });
+  parts.push(frameV);
+
+  for (let i = 0; i < rowCount; i++) {
+    parts.push(...createPriorityRowParts(structureId, i, width));
+  }
+
+  const btnTop = 44 + rowCount * STRUCTURE_ROW_H + 18;
+  parts.push(...createStructureAddButton(structureId, "priority", width - 14, btnTop));
+
+  const group = new Group(parts, {
+    left,
+    top,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+  });
+  group.set({ structureId, structureType: "priority", structureWidth: width });
+  return group;
+}
+
+function addChecklistRow(canvas: Canvas, group: Group) {
+  const structureId = structureProp(group, "structureId") as string;
+  const width = getStructureLayoutWidth(group);
+  const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length;
+  const parts = createChecklistRowParts(structureId, rowIndex, width);
+  group.add(...parts);
+  reflowChecklist(group);
+  canvas.requestRenderAll();
+}
+
+function addPriorityRow(canvas: Canvas, group: Group) {
+  const structureId = structureProp(group, "structureId") as string;
+  const width = getStructureLayoutWidth(group);
+  const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "priority-left").length;
+  const parts = createPriorityRowParts(structureId, rowIndex, width);
+  group.add(...parts);
+  reflowPriority(group);
+  canvas.requestRenderAll();
+}
+
+function enterStructureTextEditing(canvas: Canvas, target: FabricObject): boolean {
+  const role = structureProp(target, "structureRole");
+  if (role !== "label" && role !== "priority-left" && role !== "priority-right") return false;
+  if (!(target instanceof IText) && !(target instanceof Textbox)) return false;
+  return enterObjectTextEditing(canvas, target);
 }
 
 function walkStructureObjects(canvas: Canvas, visit: (obj: FabricObjectType) => void) {
@@ -2161,33 +3841,56 @@ function getStructureLayoutWidth(group: Group): number {
   return Math.max(group.width ?? 300, 200);
 }
 
-function restoreStructureGroupState(group: Group) {
+function restoreAllGroupsAfterLoad(canvas: Canvas) {
+  canvas.getObjects().forEach((obj) => {
+    if (!(obj instanceof Group)) return;
+    if (obj.get("markKind") === "sticky") {
+      restoreStickyAfterLoad(obj);
+    } else if (obj.get("markKind") === "shape" && obj.get("textCapable")) {
+      restoreShapeGroupAfterLoad(obj);
+    } else if (structureProp(obj, "structureId")) {
+      restoreStructureAfterLoad(obj);
+    }
+  });
+}
+
+function restoreStructureAfterLoad(group: Group) {
   group.set({ subTargetCheck: true, interactive: true, objectCaching: false });
   const structureType = structureProp(group, "structureType");
   if (structureType === "checklist") {
     for (const child of group.getObjects()) {
       if (structureProp(child, "structureRole") === "checkbox" && child instanceof Rect) {
         const checked = !!structureProp(child, "checked");
-        child.set({ fill: checked ? DECAL_INK : "transparent" });
+        child.set({ fill: "transparent" });
         const rowIndex = structureProp(child, "rowIndex");
+        const checkmark = group
+          .getObjects()
+          .find(
+            (o) =>
+              structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
+          );
+        if (checkmark instanceof FabricText) {
+          checkmark.set({ visible: checked });
+        }
         const label = group
           .getObjects()
           .find(
             (o) =>
               structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
           );
-        if (label instanceof IText) {
-          label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK });
+        if (label instanceof IText || label instanceof Textbox) {
+          label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK, editable: true, evented: true });
         }
       }
     }
+    reflowChecklist(group);
   }
-  if (structureType === "checklist" || structureType === "priority") {
-    reflowInteractiveStructure(group);
+  if (structureType === "priority") {
+    reflowPriority(group);
   }
 }
 
-function normalizeInteractiveStructureResize(group: Group) {
+function normalizeStructureResize(group: Group) {
   const sx = group.scaleX ?? 1;
   const sy = group.scaleY ?? 1;
   if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
@@ -2197,19 +3900,19 @@ function normalizeInteractiveStructureResize(group: Group) {
   for (const child of group.getObjects()) {
     const csx = child.scaleX ?? 1;
     const csy = child.scaleY ?? 1;
-    if (child instanceof IText) {
+    if (child instanceof IText || child instanceof Textbox) {
       if (csx !== 1 || csy !== 1) {
-        child.set({ fontSize: (child.fontSize ?? 18) * csy, scaleX: 1, scaleY: 1 });
+        child.set({ scaleX: 1, scaleY: 1 });
       }
     } else if (child instanceof FabricText) {
       if (csx !== 1 || csy !== 1) {
-        child.set({ fontSize: (child.fontSize ?? 14) * csy, scaleX: 1, scaleY: 1 });
+        child.set({ scaleX: 1, scaleY: 1 });
       }
     } else if (child instanceof Rect) {
       const role = structureProp(child, "structureRole");
-      if (role === "checkbox") {
-        child.set({ width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
-      } else if (role === "frame-v") {
+      if (role === "checkbox" || role === "divider-line" || role === "header-line") {
+        child.set({ scaleX: 1, scaleY: 1 });
+      } else if (role === "frame-v" || role === "divider") {
         child.set({ scaleX: 1, scaleY: 1 });
       } else {
         child.set({
@@ -2219,102 +3922,143 @@ function normalizeInteractiveStructureResize(group: Group) {
           scaleY: 1,
         });
       }
+    } else if (child instanceof Circle) {
+      child.set({ scaleX: 1, scaleY: 1 });
     }
   }
 
   group.set({ scaleX: 1, scaleY: 1, structureWidth: newWidth });
 }
 
-function reflowInteractiveStructure(group: Group) {
-  const structureType = structureProp(group, "structureType") as string | undefined;
+function positionStructureAddButton(group: Group, structureType: string) {
   const width = getStructureLayoutWidth(group);
+  const boxes = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "checkbox")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+  const leftCells = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "priority-left")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+  const rowCount = structureType === "checklist" ? boxes.length : leftCells.length;
+  const baseTop = structureType === "checklist" ? 8 + rowCount * STRUCTURE_ROW_H + 4 : 44 + rowCount * STRUCTURE_ROW_H + 6;
+  const btnLeft = width - 14;
+  const btnTop = baseTop + 12;
 
-  if (structureType === "checklist") {
-    const boxes = group
+  for (const obj of group.getObjects()) {
+    if (structureProp(obj, "structureRole") !== "add-button") continue;
+    if (obj instanceof Circle) {
+      obj.set({ left: btnLeft, top: btnTop, scaleX: 1, scaleY: 1 });
+    } else if (obj instanceof FabricText) {
+      obj.set({ left: btnLeft, top: btnTop, scaleX: 1, scaleY: 1 });
+    }
+  }
+}
+
+function reflowChecklist(group: Group) {
+  const width = getStructureLayoutWidth(group);
+  const boxes = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "checkbox")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+
+  for (const box of boxes) {
+    if (!(box instanceof Rect)) continue;
+    const rowIndex = structureProp(box, "rowIndex") as number;
+    const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
+    const checked = !!structureProp(box, "checked");
+    box.set({ left: 0, top: rowTop, width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
+    box.set({ fill: "transparent" });
+
+    const checkmark = group
       .getObjects()
-      .filter((o) => structureProp(o, "structureRole") === "checkbox")
-      .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
-
-    for (const box of boxes) {
-      if (!(box instanceof Rect)) continue;
-      const rowIndex = structureProp(box, "rowIndex") as number;
-      const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
-      const checked = !!structureProp(box, "checked");
-      box.set({ left: 0, top: rowTop, width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
-      box.set({ fill: checked ? DECAL_INK : "transparent" });
-
-      const label = group
-        .getObjects()
-        .find(
-          (o) =>
-            structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
-        );
-      if (label instanceof IText) {
-        label.set({
-          left: STRUCTURE_BOX + 10,
-          top: rowTop - 2,
-          width: width - STRUCTURE_BOX - 24,
-          scaleX: 1,
-          scaleY: 1,
-          linethrough: checked,
-          fill: checked ? DECAL_MUTED : DECAL_INK,
-        });
-      }
+      .find(
+        (o) =>
+          structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
+      );
+    if (checkmark instanceof FabricText) {
+      checkmark.set({
+        left: STRUCTURE_BOX / 2,
+        top: rowTop + STRUCTURE_BOX / 2,
+        visible: checked,
+        originX: "center",
+        originY: "center",
+        scaleX: 1,
+        scaleY: 1,
+      });
     }
 
-    const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-    if (addBtn) {
-      addBtn.set({ top: 8 + boxes.length * STRUCTURE_ROW_H + 4, scaleX: 1, scaleY: 1 });
+    const label = group
+      .getObjects()
+      .find(
+        (o) =>
+          structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
+      );
+    if (label instanceof IText || label instanceof Textbox) {
+      label.set({
+        left: STRUCTURE_BOX + 10,
+        top: rowTop - 2,
+        width: width - STRUCTURE_BOX - 40,
+        scaleX: 1,
+        scaleY: 1,
+        linethrough: checked,
+        fill: checked ? DECAL_MUTED : DECAL_INK,
+      });
     }
   }
 
-  if (structureType === "priority") {
-    const midX = width * 0.55;
-    const leftCells = group
-      .getObjects()
-      .filter((o) => structureProp(o, "structureRole") === "priority-left")
-      .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
-    const rowCount = leftCells.length;
-
-    const headerLine = group
-      .getObjects()
-      .find((o) => o instanceof Rect && !structureProp(o, "structureRole") && (o.top ?? 0) <= 34);
-    if (headerLine instanceof Rect) {
-      headerLine.set({ width, scaleX: 1, scaleY: 1 });
-    }
-
-    const lastRowTop = 44 + Math.max(0, rowCount - 1) * STRUCTURE_ROW_H;
-    const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
-    if (frameV instanceof Rect) {
-      frameV.set({ left: midX, height: lastRowTop + STRUCTURE_ROW_H + 28, scaleX: 1, scaleY: 1 });
-    }
-
-    for (const left of leftCells) {
-      if (!(left instanceof IText)) continue;
-      const rowIndex = structureProp(left, "rowIndex") as number;
-      const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
-      left.set({ left: 8, top: rowTop, width: midX - 20, scaleX: 1, scaleY: 1 });
-
-      const right = group
-        .getObjects()
-        .find(
-          (o) =>
-            structureProp(o, "structureRole") === "priority-right" &&
-            structureProp(o, "rowIndex") === rowIndex,
-        );
-      if (right instanceof IText) {
-        right.set({ left: midX + 8, top: rowTop, width: width - midX - 16, scaleX: 1, scaleY: 1 });
-      }
-    }
-
-    const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-    if (addBtn) {
-      addBtn.set({ top: 44 + rowCount * STRUCTURE_ROW_H + 6, scaleX: 1, scaleY: 1 });
-    }
-  }
-
+  positionStructureAddButton(group, "checklist");
   group.set({ structureWidth: width });
   group.setCoords();
+}
+
+function reflowPriority(group: Group) {
+  const width = getStructureLayoutWidth(group);
+  const midX = width * 0.55;
+  const leftCells = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "priority-left")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+  const rowCount = leftCells.length;
+
+  const headerLine = group.getObjects().find((o) => structureProp(o, "structureRole") === "header-line");
+  if (headerLine instanceof Rect) {
+    headerLine.set({ width, scaleX: 1, scaleY: 1 });
+  }
+
+  const lastRowTop = 44 + Math.max(0, rowCount - 1) * STRUCTURE_ROW_H;
+  const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
+  if (frameV instanceof Rect) {
+    frameV.set({ left: midX, height: lastRowTop + STRUCTURE_ROW_H + 36, scaleX: 1, scaleY: 1 });
+  }
+
+  for (const left of leftCells) {
+    if (!(left instanceof IText) && !(left instanceof Textbox)) continue;
+    const rowIndex = structureProp(left, "rowIndex") as number;
+    const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
+    left.set({ left: 8, top: rowTop, width: midX - 20, scaleX: 1, scaleY: 1 });
+
+    const right = group
+      .getObjects()
+      .find(
+        (o) =>
+          structureProp(o, "structureRole") === "priority-right" &&
+          structureProp(o, "rowIndex") === rowIndex,
+      );
+    if (right instanceof IText || right instanceof Textbox) {
+      right.set({ left: midX + 8, top: rowTop, width: width - midX - 40, scaleX: 1, scaleY: 1 });
+    }
+  }
+
+  positionStructureAddButton(group, "priority");
+  group.set({ structureWidth: width });
+  group.setCoords();
+}
+
+function reflowInteractiveStructure(group: Group) {
+  const structureType = structureProp(group, "structureType") as string | undefined;
+  if (structureType === "checklist") reflowChecklist(group);
+  else if (structureType === "priority") reflowPriority(group);
 }
 
 const makeDecalLine = (
@@ -2422,6 +4166,8 @@ type BoardCanvasEditorProps = {
   colorKey: string;
   boardId: string;
   layoutMode?: BoardLayoutMode;
+  artboardWidth?: number;
+  artboardHeight?: number;
   readOnly?: boolean;
   /** Tighter layout when shown in grid / carousel cells */
   embedded?: boolean;
@@ -2444,6 +4190,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       colorKey,
       boardId,
       layoutMode = "vision",
+      artboardWidth = ARTBOARD_WIDTH,
+      artboardHeight = ARTBOARD_HEIGHT,
       readOnly = false,
       embedded = false,
       cellFit = "contain",
@@ -2559,6 +4307,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const bg = boardFillForKey(colorKey);
         await canvas.loadFromJSON(JSON.parse(json));
         canvas.backgroundColor = bg;
+        restoreAllGroupsAfterLoad(canvas);
         canvas.discardActiveObject();
         canvas.requestRenderAll();
         restoringHistoryRef.current = false;
@@ -2658,8 +4407,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       setQuickSelector({
         x: clientX - rect.left,
         y: clientY - rect.top,
-        normX: Math.min(1, Math.max(0, pointer.x / ARTBOARD_WIDTH)),
-        normY: Math.min(1, Math.max(0, pointer.y / ARTBOARD_HEIGHT)),
+        normX: Math.min(1, Math.max(0, pointer.x / artboardWidth)),
+        normY: Math.min(1, Math.max(0, pointer.y / artboardHeight)),
         mode: target ? "object" : "empty",
         textCapable,
         shapeCapable,
@@ -2677,8 +4426,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const pad = embedded ? 0 : 32;
       const maxW = Math.max(container.clientWidth - pad, 1);
       const maxH = Math.max(container.clientHeight - pad, 1);
-      const containScale = Math.min(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT);
-      const coverScale = Math.max(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT);
+      const containScale = Math.min(maxW / artboardWidth, maxH / artboardHeight);
+      const coverScale = Math.max(maxW / artboardWidth, maxH / artboardHeight);
       const baseScale =
         embedded && cellFit === "cover"
           ? coverScale
@@ -2694,8 +4443,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               ? baseScale
               : 0.5;
       canvas.setZoom(zoom);
-      const scaledW = ARTBOARD_WIDTH * zoom;
-      const scaledH = ARTBOARD_HEIGHT * zoom;
+      const scaledW = artboardWidth * zoom;
+      const scaledH = artboardHeight * zoom;
       canvas.setDimensions({ width: scaledW, height: scaledH });
       const canvasEl = canvas.getElement();
       if (embedded && cellFit === "cover" && wrap) {
@@ -2712,8 +4461,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvasElRef.current) return;
       const bg = boardFillForKey(colorKey);
       const canvas = new Canvas(canvasElRef.current, {
-        width: ARTBOARD_WIDTH,
-        height: ARTBOARD_HEIGHT,
+        width: artboardWidth,
+        height: artboardHeight,
         backgroundColor: bg,
         selection: !readOnly,
       });
@@ -2743,29 +4492,55 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.on("object:modified", (event) => {
           const target = event.target;
           if (target instanceof Group) {
-            const structureId = target.get("structureId");
-            const structureType = target.get("structureType");
-            if (
-              structureId &&
-              structureType &&
-              (structureType === "priority" || structureType === "checklist")
-            ) {
-              normalizeInteractiveStructureResize(target);
-              reflowInteractiveStructure(target);
-              rebindStructureHandlersRef.current(canvas);
-              canvas.requestRenderAll();
+            if (target.get("markKind") === "sticky") {
+              normalizeStickyResize(target);
+            } else if (target.get("markKind") === "shape" && target.get("textCapable")) {
+              normalizeTextCapableShapeResize(target);
+            } else if (target.get("structureId")) {
+              const structureType = target.get("structureType");
+              if (structureType === "priority" || structureType === "checklist") {
+                normalizeStructureResize(target);
+                reflowInteractiveStructure(target);
+                rebindStructureHandlersRef.current(canvas);
+              }
             }
           }
           onHistoryDebounced();
         });
         canvas.on("object:added", onHistoryImmediate);
         canvas.on("object:removed", onHistoryImmediate);
-        canvas.on("text:changed", onHistoryDebounced);
-        canvas.on("editing:exited", onHistoryDebounced);
+        const onStickyTextChanged = (event: { target?: FabricObject }) => {
+          const target = event.target;
+          if (
+            (target instanceof Textbox || target instanceof IText) &&
+            target.get("markKind") === "sticky-text" &&
+            target.group instanceof Group
+          ) {
+            const stickyGroup = target.group;
+            normalizeStickyTextEdit(stickyGroup);
+            if (!target.isEditing) {
+              canvas.discardActiveObject();
+              canvas.setActiveObject(stickyGroup);
+              stickyGroup.setCoords();
+              canvas.requestRenderAll();
+            }
+          }
+          onHistoryDebounced();
+        };
+        canvas.on("text:changed", onStickyTextChanged);
+        canvas.on("editing:exited", onStickyTextChanged);
         canvas.on("path:created", (opt) => {
           const path = opt.path;
           if (path) {
             path.set({ markKind: "draw" });
+          }
+        });
+        canvas.on("mouse:dblclick", (opt) => {
+          const target = opt.target;
+          if (!target) return;
+          if (enterObjectTextEditing(canvas, target as FabricObject)) {
+            opt.e.preventDefault?.();
+            opt.e.stopPropagation?.();
           }
         });
         canvas.on("mouse:down", (opt) => {
@@ -2780,7 +4555,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               const role = structureProp(hit, "structureRole");
               if (
                 role &&
-                (role === "checkbox" || role === "add-row" || role === "label" || role === "priority-left" || role === "priority-right")
+                (role === "checkbox" ||
+                  role === "checkmark" ||
+                  role === "add-button" ||
+                  role === "add-row" ||
+                  role === "label" ||
+                  role === "priority-left" ||
+                  role === "priority-right")
               ) {
                 if (handleStructurePointerRef.current(canvas, hit)) {
                   opt.e.preventDefault?.();
@@ -2874,11 +4655,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (hasObjects) {
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
-          canvas.getObjects().forEach((obj) => {
-            if (obj instanceof Group && structureProp(obj, "structureId")) {
-              restoreStructureGroupState(obj);
-            }
-          });
+          restoreAllGroupsAfterLoad(canvas);
           canvas.requestRenderAll();
           resetHistory(canvas);
           rebindStructureHandlersRef.current(canvas);
@@ -2895,8 +4672,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText(text, {
-        left: ARTBOARD_WIDTH * 0.15,
-        top: ARTBOARD_HEIGHT * 0.2,
+        left: artboardWidth / 2,
+        top: artboardHeight * 0.38,
+        originX: "center",
+        originY: "top",
         fontSize: 42,
         fontFamily: "system-ui, sans-serif",
         fill: MARK_TEXT_FILL,
@@ -2915,43 +4694,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const addStickyNote = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const w = 280;
-      const h = 200;
-      const left = ARTBOARD_WIDTH * 0.1;
-      const top = ARTBOARD_HEIGHT * 0.35;
-      const rect = new Rect({
-        left: 0,
-        top: 0,
-        width: w,
-        height: h,
-        fill: "#FFF9C4",
-        stroke: "#E8D44D",
-        strokeWidth: 1,
-        rx: 8,
-        ry: 8,
-        selectable: false,
-        evented: false,
-      });
-      const note = new Textbox("", {
-        left: 16,
-        top: 16,
-        width: w - 32,
-        fontSize: 22,
-        fontFamily: "system-ui, sans-serif",
-        fill: "#171717",
-        splitByGrapheme: true,
-      });
-      const sticky = new Group([rect, note], {
-        left,
-        top,
-        subTargetCheck: true,
+      const sticky = createStickyNoteGroup({
+        left: artboardWidth / 2 - STICKY_DEFAULT_W / 2,
+        top: artboardHeight * 0.38 - STICKY_DEFAULT_H / 2,
       });
       canvas.add(sticky);
-      canvas.setActiveObject(note);
-      canvas.requestRenderAll();
-      requestAnimationFrame(() => {
-        note.enterEditing();
-      });
+      enterObjectTextEditing(canvas, sticky);
       scheduleSave();
     }, [readOnly, scheduleSave]);
 
@@ -2959,8 +4707,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText("", {
-        left: normX * ARTBOARD_WIDTH,
-        top: normY * ARTBOARD_HEIGHT,
+        left: normX * artboardWidth,
+        top: normY * artboardHeight,
         fontSize: MARK_TEXT_SIZES.XL,
         fontFamily: "system-ui, sans-serif",
         fill: MARK_TEXT_FILL,
@@ -2979,43 +4727,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const w = 280;
-      const h = 200;
-      const left = normX * ARTBOARD_WIDTH - w / 2;
-      const top = normY * ARTBOARD_HEIGHT - h / 2;
-      const rect = new Rect({
-        left: 0,
-        top: 0,
-        width: w,
-        height: h,
-        fill: "#FFF9C4",
-        stroke: "#E8D44D",
-        strokeWidth: 1,
-        rx: 8,
-        ry: 8,
-        selectable: false,
-        evented: false,
-      });
-      const note = new Textbox("", {
-        left: 16,
-        top: 16,
-        width: w - 32,
-        fontSize: 22,
-        fontFamily: "system-ui, sans-serif",
-        fill: "#171717",
-        splitByGrapheme: true,
-      });
-      const sticky = new Group([rect, note], {
-        left,
-        top,
-        subTargetCheck: true,
+      const w = STICKY_DEFAULT_W;
+      const h = STICKY_DEFAULT_H;
+      const sticky = createStickyNoteGroup({
+        left: normX * artboardWidth - w / 2,
+        top: normY * artboardHeight - h / 2,
       });
       canvas.add(sticky);
-      canvas.setActiveObject(note);
-      canvas.requestRenderAll();
-      requestAnimationFrame(() => {
-        note.enterEditing();
-      });
+      enterObjectTextEditing(canvas, sticky);
       scheduleSave();
     }, [readOnly, scheduleSave]);
 
@@ -3045,8 +4764,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (shapeType: BoardMarkShapeType, normX: number, normY: number, stroke = MARK_SHAPE_STROKE) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const cx = normX * ARTBOARD_WIDTH;
-        const cy = normY * ARTBOARD_HEIGHT;
+        const cx = normX * artboardWidth;
+        const cy = normY * artboardHeight;
+
+        if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
+          const group = createTextCapableShapeGroup(shapeType, cx, cy, stroke);
+          canvas.add(group);
+          enterObjectTextEditing(canvas, group);
+          scheduleSave();
+          return;
+        }
+
         const fill = `${stroke}33`;
         const mark = { markKind: "shape" as const, shapeType };
         let shape: FabricObject;
@@ -3236,8 +4964,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const sticker = new FabricText(BOARD_MARK_STICKER_EMOJI[stickerId], {
-          left: normX * ARTBOARD_WIDTH,
-          top: normY * ARTBOARD_HEIGHT,
+          left: normX * artboardWidth,
+          top: normY * artboardHeight,
           fontSize: 72,
           fontFamily: "system-ui, sans-serif",
           originX: "center",
@@ -3263,9 +4991,24 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         while (root.group) root = root.group;
         if (root.get("markKind") !== "shape") return;
         const center = root.getCenterPoint();
+        const stroke = (root.stroke as string) || MARK_SHAPE_STROKE;
+        let existingText = "";
+        if (root instanceof Group && root.get("textCapable")) {
+          const textObj = findEditableTextInGroup(root);
+          existingText = textObj?.text ?? "";
+        }
         canvas.remove(root);
         deleteTargetRef.current = null;
-        addShapeAtPoint(shapeType, center.x / ARTBOARD_WIDTH, center.y / ARTBOARD_HEIGHT, (root.stroke as string) || MARK_SHAPE_STROKE);
+        if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
+          const group = createTextCapableShapeGroup(shapeType, center.x, center.y, stroke);
+          const textObj = findEditableTextInGroup(group);
+          if (textObj && existingText) textObj.set("text", existingText);
+          canvas.add(group);
+          canvas.setActiveObject(group);
+          canvas.requestRenderAll();
+        } else {
+          addShapeAtPoint(shapeType, center.x / artboardWidth, center.y / artboardHeight, stroke);
+        }
         recordHistory();
       },
       [addShapeAtPoint, readOnly, recordHistory],
@@ -3294,27 +5037,27 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const iw = img.width || 1;
         const ih = img.height || 1;
         const imgAspect = iw / ih;
-        const boardAspect = ARTBOARD_WIDTH / ARTBOARD_HEIGHT;
+        const boardAspect = artboardWidth / artboardHeight;
         let scale: number;
         if (imgAspect > boardAspect) {
-          scale = ARTBOARD_HEIGHT / ih;
+          scale = artboardHeight / ih;
         } else {
-          scale = ARTBOARD_WIDTH / iw;
+          scale = artboardWidth / iw;
         }
         img.set({
-          left: ARTBOARD_WIDTH / 2,
-          top: ARTBOARD_HEIGHT / 2,
+          left: artboardWidth / 2,
+          top: artboardHeight / 2,
           originX: "center",
           originY: "center",
           scaleX: scale,
           scaleY: scale,
         });
       } else {
-        const maxSide = Math.min(ARTBOARD_WIDTH, ARTBOARD_HEIGHT) * 0.45;
+        const maxSide = Math.min(artboardWidth, artboardHeight) * 0.45;
         const scale = Math.min(maxSide / (img.width || 1), maxSide / (img.height || 1), 1);
         img.set({
-          left: ARTBOARD_WIDTH * 0.25,
-          top: ARTBOARD_HEIGHT * 0.15,
+          left: artboardWidth * 0.25,
+          top: artboardHeight * 0.15,
           scaleX: scale,
           scaleY: scale,
         });
@@ -3382,8 +5125,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const t = new FabricText(text, {
-          left: x * ARTBOARD_WIDTH,
-          top: y * ARTBOARD_HEIGHT,
+          left: x * artboardWidth,
+          top: y * artboardHeight,
           fontSize,
           fontFamily: "system-ui, sans-serif",
           fill,
@@ -3403,32 +5146,15 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!canvas || readOnly) return;
         const w = 260;
         const h = 170;
-        const left = x * ARTBOARD_WIDTH;
-        const top = y * ARTBOARD_HEIGHT;
-        const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
-        const rect = new Rect({
-          left: 0,
-          top: 0,
+        const sticky = createStickyNoteGroup({
+          left: x * artboardWidth,
+          top: y * artboardHeight,
           width: w,
           height: h,
+          text,
           fill,
-          stroke,
-          strokeWidth: 1,
-          rx: 8,
-          ry: 8,
-          selectable: false,
-          evented: false,
         });
-        const note = new Textbox(text, {
-          left: 14,
-          top: 14,
-          width: w - 28,
-          fontSize: 20,
-          fontFamily: "system-ui, sans-serif",
-          fill: "#171717",
-          splitByGrapheme: true,
-        });
-        canvas.add(new Group([rect, note], { left, top, subTargetCheck: true }));
+        canvas.add(sticky);
         canvas.requestRenderAll();
       },
       [readOnly],
@@ -3438,100 +5164,19 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (canvas: Canvas) => {
         if (readOnly) return;
 
-        const addRow = (structureId: string, structureType: string) => {
+        const addRowForStructure = (structureId: string, structureType: string) => {
           const group = findStructureGroup(canvas, structureId, structureType);
           if (!group) return;
-
-          if (structureType === "checklist") {
-            const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length;
-            const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
-            const box = new Rect({
-              left: 0,
-              top: rowTop,
-              width: STRUCTURE_BOX,
-              height: STRUCTURE_BOX,
-              fill: "transparent",
-              stroke: DECAL_INK,
-              strokeWidth: 2,
-              rx: 2,
-              ry: 2,
-              selectable: false,
-              evented: true,
-              hoverCursor: "pointer",
-            });
-            box.set({
-              structureId,
-              structureType,
-              structureRole: "checkbox",
-              rowIndex,
-              checked: false,
-            });
-            const label = new IText("", {
-              left: STRUCTURE_BOX + 10,
-              top: rowTop - 2,
-              width: Math.max(120, getStructureLayoutWidth(group) - STRUCTURE_BOX - 24),
-              fontSize: 18,
-              fontFamily: STRUCTURE_FONT,
-              fill: DECAL_INK,
-              editable: true,
-              selectable: false,
-              evented: true,
-            });
-            label.set({ structureId, structureType, structureRole: "label", rowIndex });
-            group.add(box, label);
-            const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-            if (addBtn) addBtn.set({ top: rowTop + STRUCTURE_ROW_H + 4 });
-          }
-
-          if (structureType === "priority") {
-            const rowIndex = group
-              .getObjects()
-              .filter((o) => structureProp(o, "structureRole") === "priority-left").length;
-            const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
-            const midX = getStructureLayoutWidth(group) * 0.55;
-            const left = new IText("", {
-              left: 8,
-              top: rowTop,
-              width: midX - 20,
-              fontSize: 18,
-              fontFamily: STRUCTURE_FONT,
-              fill: DECAL_INK,
-              editable: true,
-              selectable: false,
-              evented: true,
-            });
-            left.set({ structureId, structureType, structureRole: "priority-left", rowIndex });
-            const right = new IText(String(rowIndex + 1), {
-              left: midX + 8,
-              top: rowTop,
-              width: getStructureLayoutWidth(group) - midX - 16,
-              fontSize: 18,
-              fontFamily: STRUCTURE_FONT,
-              fill: DECAL_INK,
-              textAlign: "right",
-              editable: true,
-              selectable: false,
-              evented: true,
-            });
-            right.set({ structureId, structureType, structureRole: "priority-right", rowIndex });
-            group.add(left, right);
-            const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-            if (addBtn) addBtn.set({ top: rowTop + STRUCTURE_ROW_H + 6 });
-            const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
-            if (frameV instanceof Rect) {
-              frameV.set({ height: rowTop + STRUCTURE_ROW_H + 28 });
-            }
-          }
-
+          if (structureType === "checklist") addChecklistRow(canvas, group);
+          else if (structureType === "priority") addPriorityRow(canvas, group);
           group.setCoords();
-          canvas.requestRenderAll();
           recordHistory();
           scheduleSave();
           rebindStructureHandlersRef.current(canvas);
         };
 
         walkStructureObjects(canvas, (obj) => {
-          if (!(obj instanceof IText)) return;
+          if (!(obj instanceof IText) && !(obj instanceof Textbox)) return;
           const role = structureProp(obj, "structureRole");
           if (role !== "label" && role !== "priority-left" && role !== "priority-right") return;
           const structureId = structureProp(obj, "structureId") as string | undefined;
@@ -3543,7 +5188,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             if (!e || e.key !== "Enter") return;
             e.preventDefault();
             obj.exitEditing();
-            addRow(structureId, structureType);
+            addRowForStructure(structureId, structureType);
           });
         });
       },
@@ -3559,31 +5204,31 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const structureType = structureProp(target, "structureType") as string | undefined;
         if (!role || !structureId || !structureType) return false;
 
-        if (
-          (role === "label" || role === "priority-left" || role === "priority-right") &&
-          target instanceof IText
-        ) {
-          canvas.setActiveObject(target);
-          target.enterEditing();
-          canvas.requestRenderAll();
-          return true;
+        if (role === "label" || role === "priority-left" || role === "priority-right") {
+          return enterStructureTextEditing(canvas, target as FabricObject);
         }
 
         if (role === "checkbox" && target instanceof Rect) {
           const checked = !structureProp(target, "checked");
-          target.set({
-            checked,
-            fill: checked ? DECAL_INK : "transparent",
-          });
+          target.set({ checked, fill: checked ? DECAL_INK : "transparent" });
           const rowIndex = structureProp(target, "rowIndex") as number | undefined;
           const group = findStructureGroup(canvas, structureId, structureType);
+          const checkmark = group
+            ?.getObjects()
+            .find(
+              (o) =>
+                structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
+            );
+          if (checkmark instanceof FabricText) {
+            checkmark.set({ visible: checked });
+          }
           const label = group
             ?.getObjects()
             .find(
               (o) =>
                 structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
             );
-          if (label instanceof IText) {
+          if (label instanceof IText || label instanceof Textbox) {
             label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK });
           }
           canvas.requestRenderAll();
@@ -3592,92 +5237,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           return true;
         }
 
-        if (role === "add-row") {
-          rebindStructureHandlersRef.current(canvas);
+        if (isAddButtonHit(target)) {
           const group = findStructureGroup(canvas, structureId, structureType);
           if (!group) return true;
-          const addRow = () => {
-            const rowIndex =
-              structureType === "checklist"
-                ? group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length
-                : group.getObjects().filter((o) => structureProp(o, "structureRole") === "priority-left").length;
-            const rowTop = (structureType === "checklist" ? 8 : 44) + rowIndex * STRUCTURE_ROW_H;
-
-            if (structureType === "checklist") {
-              const box = new Rect({
-                left: 0,
-                top: rowTop,
-                width: STRUCTURE_BOX,
-                height: STRUCTURE_BOX,
-                fill: "transparent",
-                stroke: DECAL_INK,
-                strokeWidth: 2,
-                rx: 2,
-                ry: 2,
-                selectable: false,
-                evented: true,
-                hoverCursor: "pointer",
-              });
-              box.set({
-                structureId,
-                structureType,
-                structureRole: "checkbox",
-                rowIndex,
-                checked: false,
-              });
-              const label = new IText("", {
-                left: STRUCTURE_BOX + 10,
-                top: rowTop - 2,
-                width: Math.max(120, getStructureLayoutWidth(group) - STRUCTURE_BOX - 24),
-                fontSize: 18,
-                fontFamily: STRUCTURE_FONT,
-                fill: DECAL_INK,
-                editable: true,
-                selectable: false,
-                evented: true,
-              });
-              label.set({ structureId, structureType, structureRole: "label", rowIndex });
-              group.add(box, label);
-            } else {
-              const midX = getStructureLayoutWidth(group) * 0.55;
-              const left = new IText("", {
-                left: 8,
-                top: rowTop,
-                width: midX - 20,
-                fontSize: 18,
-                fontFamily: STRUCTURE_FONT,
-                fill: DECAL_INK,
-                editable: true,
-                selectable: false,
-                evented: true,
-              });
-              left.set({ structureId, structureType, structureRole: "priority-left", rowIndex });
-              const right = new IText(String(rowIndex + 1), {
-                left: midX + 8,
-                top: rowTop,
-                width: getStructureLayoutWidth(group) - midX - 16,
-                fontSize: 18,
-                fontFamily: STRUCTURE_FONT,
-                fill: DECAL_INK,
-                textAlign: "right",
-                editable: true,
-                selectable: false,
-                evented: true,
-              });
-              right.set({ structureId, structureType, structureRole: "priority-right", rowIndex });
-              group.add(left, right);
-              const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
-              if (frameV instanceof Rect) frameV.set({ height: rowTop + STRUCTURE_ROW_H + 28 });
-            }
-
-            target.set({ top: rowTop + STRUCTURE_ROW_H + (structureType === "checklist" ? 4 : 6) });
-            group.setCoords();
-            canvas.requestRenderAll();
-            recordHistory();
-            scheduleSave();
-            rebindStructureHandlersRef.current(canvas);
-          };
-          addRow();
+          if (structureType === "checklist") addChecklistRow(canvas, group);
+          else if (structureType === "priority") addPriorityRow(canvas, group);
+          recordHistory();
+          scheduleSave();
+          rebindStructureHandlersRef.current(canvas);
           return true;
         }
 
@@ -3691,73 +5258,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const placeInteractiveChecklist = (left: number, top: number, width: number) => {
       const canvas = fabricRef.current;
       if (!canvas) return;
-      const structureId = crypto.randomUUID();
-      const rowCount = 4;
-      const parts: FabricObjectType[] = [];
-
-      for (let i = 0; i < rowCount; i++) {
-        const rowTop = 8 + i * STRUCTURE_ROW_H;
-        const box = new Rect({
-          left: 0,
-          top: rowTop,
-          width: STRUCTURE_BOX,
-          height: STRUCTURE_BOX,
-          fill: "transparent",
-          stroke: DECAL_INK,
-          strokeWidth: 2,
-          rx: 2,
-          ry: 2,
-          selectable: false,
-          evented: true,
-          hoverCursor: "pointer",
-        });
-        box.set({
-          structureId,
-          structureType: "checklist",
-          structureRole: "checkbox",
-          rowIndex: i,
-          checked: false,
-        });
-        const label = new IText("", {
-          left: STRUCTURE_BOX + 10,
-          top: rowTop - 2,
-          width: width - STRUCTURE_BOX - 24,
-          fontSize: 18,
-          fontFamily: STRUCTURE_FONT,
-          fill: DECAL_INK,
-          editable: true,
-          selectable: false,
-          evented: true,
-        });
-        label.set({ structureId, structureType: "checklist", structureRole: "label", rowIndex: i });
-        parts.push(box, label);
-      }
-
-      const addBtn = new FabricText("", {
-        left: 0,
-        top: 8 + rowCount * STRUCTURE_ROW_H + 4,
-        fontSize: 14,
-        fontFamily: STRUCTURE_FONT,
-        fill: DECAL_MUTED,
-        selectable: false,
-        evented: true,
-        hoverCursor: "pointer",
-      });
-      addBtn.set({ structureId, structureType: "checklist", structureRole: "add-row" });
-      parts.push(addBtn);
-
-      const group = new Group(parts, {
-        left,
-        top,
-        subTargetCheck: true,
-        interactive: true,
-        objectCaching: false,
-        cornerStyle: "circle",
-        borderColor: "rgba(17,17,17,0.45)",
-        cornerColor: "#111111",
-        transparentCorners: false,
-      });
-      group.set({ structureId, structureType: "checklist", structureWidth: width });
+      const group = createChecklistGroup(left, top, width);
       canvas.add(group);
       canvas.setActiveObject(group);
       canvas.requestRenderAll();
@@ -3769,89 +5270,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const placeInteractivePriority = (left: number, top: number, width: number) => {
       const canvas = fabricRef.current;
       if (!canvas) return;
-      const structureId = crypto.randomUUID();
-      const midX = width * 0.55;
-      const rowCount = 6;
-      const parts: FabricObjectType[] = [];
-
-      parts.push(
-        new Rect({
-          left: 0,
-          top: 34,
-          width,
-          height: 2,
-          fill: DECAL_LINE,
-          selectable: false,
-          evented: false,
-        }),
-      );
-      const frameV = new Rect({
-        left: midX,
-        top: 0,
-        width: 2,
-        height: 44 + rowCount * STRUCTURE_ROW_H + 16,
-        fill: DECAL_LINE,
-        selectable: false,
-        evented: false,
-      });
-      frameV.set({ structureRole: "frame-v" });
-      parts.push(frameV);
-
-      for (let i = 0; i < rowCount; i++) {
-        const rowTop = 44 + i * STRUCTURE_ROW_H;
-        const leftCell = new IText("", {
-          left: 8,
-          top: rowTop,
-          width: midX - 20,
-          fontSize: 18,
-          fontFamily: STRUCTURE_FONT,
-          fill: DECAL_INK,
-          editable: true,
-          selectable: false,
-          evented: true,
-        });
-        leftCell.set({ structureId, structureType: "priority", structureRole: "priority-left", rowIndex: i });
-        const rightCell = new IText(String(i + 1), {
-          left: midX + 8,
-          top: rowTop,
-          width: width - midX - 16,
-          fontSize: 18,
-          fontFamily: STRUCTURE_FONT,
-          fill: DECAL_INK,
-          textAlign: "right",
-          editable: true,
-          selectable: false,
-          evented: true,
-        });
-        rightCell.set({ structureId, structureType: "priority", structureRole: "priority-right", rowIndex: i });
-        parts.push(leftCell, rightCell);
-      }
-
-      const addBtn = new FabricText("", {
-        left: 0,
-        top: 44 + rowCount * STRUCTURE_ROW_H + 6,
-        fontSize: 14,
-        fontFamily: STRUCTURE_FONT,
-        fill: DECAL_MUTED,
-        selectable: false,
-        evented: true,
-        hoverCursor: "pointer",
-      });
-      addBtn.set({ structureId, structureType: "priority", structureRole: "add-row" });
-      parts.push(addBtn);
-
-      const group = new Group(parts, {
-        left,
-        top,
-        subTargetCheck: true,
-        interactive: true,
-        objectCaching: false,
-        cornerStyle: "circle",
-        borderColor: "rgba(17,17,17,0.45)",
-        cornerColor: "#111111",
-        transparentCorners: false,
-      });
-      group.set({ structureId, structureType: "priority", structureWidth: width });
+      const group = createPriorityGroup(left, top, width);
       canvas.add(group);
       canvas.setActiveObject(group);
       canvas.requestRenderAll();
@@ -3873,10 +5292,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
 
-        const left = x * ARTBOARD_WIDTH;
-        const top = y * ARTBOARD_HEIGHT;
-        const width = w * ARTBOARD_WIDTH;
-        const height = h * ARTBOARD_HEIGHT;
+        const left = x * artboardWidth;
+        const top = y * artboardHeight;
+        const width = w * artboardWidth;
+        const height = h * artboardHeight;
 
         const objects: FabricObject[] = [];
 
@@ -3987,6 +5406,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         }
 
         if (diagram === "divider") {
+          const structureId = createStructureId();
           const line = new Rect({
             left: left + width / 2,
             top: top + height / 2,
@@ -3997,6 +5417,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             ry: 2,
             originX: "center",
             originY: "center",
+          });
+          line.set({
+            structureId,
+            structureType: "divider",
+            structureRole: "divider-line",
           });
           canvas.add(line);
           canvas.setActiveObject(line);
@@ -4047,15 +5472,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const tempEl = document.createElement("canvas");
       const temp = new StaticCanvas(tempEl, {
-        width: ARTBOARD_WIDTH,
-        height: ARTBOARD_HEIGHT,
+        width: artboardWidth,
+        height: artboardHeight,
       });
       await temp.loadFromJSON(fragment);
       const clones = await Promise.all(temp.getObjects().map((obj) => obj.clone()));
       temp.dispose();
       for (const obj of clones) {
-        if (obj instanceof Group && structureProp(obj, "structureId")) {
-          restoreStructureGroupState(obj);
+        if (obj instanceof Group) {
+          if (obj.get("markKind") === "sticky") restoreStickyAfterLoad(obj);
+          else if (obj.get("markKind") === "shape" && obj.get("textCapable")) restoreShapeGroupAfterLoad(obj);
+          else if (structureProp(obj, "structureId")) restoreStructureAfterLoad(obj);
         }
         canvas.add(obj as FabricObject);
       }
@@ -4102,8 +5529,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const pasteAtPoint = useCallback(
       async (normX: number, normY: number) => {
         if (!boardObjectClipboard?.length) return false;
-        const left = normX * ARTBOARD_WIDTH;
-        const top = normY * ARTBOARD_HEIGHT;
+        const left = normX * artboardWidth;
+        const top = normY * artboardHeight;
         let minLeft = Infinity;
         let minTop = Infinity;
         for (const obj of boardObjectClipboard) {
@@ -4202,25 +5629,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const editMarkSelected = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const active = canvas.getActiveObject();
+      const active = deleteTargetRef.current ?? canvas.getActiveObject();
       if (!active) return;
-
-      let textObj: IText | Textbox | null = null;
-      if (active instanceof IText || active instanceof Textbox) {
-        textObj = active;
-      } else if (active instanceof Group) {
-        const found = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
-        textObj = found instanceof Textbox || found instanceof IText ? found : null;
-      } else if (active.group instanceof Group) {
-        const found = active.group.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
-        textObj = found instanceof Textbox || found instanceof IText ? found : null;
-      }
-
-      if (!textObj || !("enterEditing" in textObj)) return;
-      if (textObj.group) canvas.setActiveObject(textObj.group);
-      textObj.enterEditing();
-      if (textObj instanceof IText) textObj.selectAll();
-      canvas.requestRenderAll();
+      enterObjectTextEditing(canvas, active);
     }, [readOnly]);
 
     const applyMarkFontSize = useCallback(
@@ -4271,6 +5682,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         if (isTextObject(root)) {
           root.set("fill", hex);
+        } else if (root.get("markKind") === "sticky") {
+          const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
+          if (rect instanceof Rect) {
+            rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
+          }
+        } else if (root.get("markKind") === "shape" && root.get("textCapable")) {
+          const shapeObj = root
+            .getObjects()
+            .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
+          if (shapeObj) shapeObj.set({ stroke: hex, fill: `${hex}33` });
+          drawColorRef.current = hex;
         } else if (root.get("markKind") === "shape") {
           root.set({ stroke: hex, fill: `${hex}33` });
           drawColorRef.current = hex;
@@ -4283,9 +5705,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             if (!text) return;
             text.set("fill", hex);
           } else {
-            const rect = root.getObjects().find((o) => o instanceof Rect);
+            const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
+            const shapeObj = root
+              .getObjects()
+              .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
             const textbox = root.getObjects().find((o) => o instanceof Textbox);
             if (rect instanceof Rect && textbox instanceof Textbox) {
+              rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
+            } else if (shapeObj && root.get("textCapable")) {
+              shapeObj.set({ stroke: hex, fill: `${hex}33` });
+            } else if (rect instanceof Rect && textbox instanceof Textbox) {
               rect.set({ fill: hex, stroke: hex });
             } else {
               const text = root.getObjects().find(isTextObject);
@@ -4573,13 +6002,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     );
   },
 );
+
 ```
 
 ## Desktop grid
 
+Path: `src/components/boards/BoardDesktopGrid.tsx`
+
 ```tsx
-// src/components/boards/BoardDesktopGrid.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 
 import { ChevronLeft, ChevronRight, GripVertical, Plus } from "lucide-react";
@@ -4658,6 +6088,8 @@ type BoardDesktopGridProps = {
 
   zoomPreset: BoardZoomPreset;
 
+  presentationMode?: "row" | "matrix";
+
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
 
   onReorderBoards?: (fromIndex: number, toIndex: number) => void;
@@ -4686,6 +6118,8 @@ export function BoardDesktopGrid({
 
   zoomPreset,
 
+  presentationMode = "row",
+
   onHistoryChange,
 
   onReorderBoards,
@@ -4708,6 +6142,8 @@ export function BoardDesktopGrid({
 
   const [dropBoardId, setDropBoardId] = useState<string | null>(null);
 
+  const isMatrix = presentationMode === "matrix";
+
 
 
   const getSaveHandler = useCallback(
@@ -4728,11 +6164,17 @@ export function BoardDesktopGrid({
 
     if (!el) return;
 
+    if (isMatrix) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+
     setCanScrollLeft(el.scrollLeft > 4);
 
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
 
-  }, []);
+  }, [isMatrix]);
 
 
 
@@ -4752,29 +6194,34 @@ export function BoardDesktopGrid({
 
       const availH = grid.clientHeight - GRID_PAD_PX * 2;
 
-      const addReserve = onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0;
+      const addReserve = !isMatrix && onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0;
 
       const boardGaps = GRID_GAP_PX * Math.max(STANDARD_BOARD_COUNT - 1, 0);
 
 
 
-      const maxWFromWidth = (availW - addReserve - boardGaps) / STANDARD_BOARD_COUNT;
+      const maxWFromWidth = isMatrix
+        ? (availW - GRID_GAP_PX) / 2
+        : (availW - addReserve - boardGaps) / STANDARD_BOARD_COUNT;
 
       const canvasAvailH = Math.max(availH - TITLE_BAR_PX, 160);
 
       const multiplier = zoomPreset === "fit" ? 1 : zoomPreset;
+      const firstBoard = boards[0];
+      const boardAspectHeight =
+        firstBoard && firstBoard.artboard_width > 0
+          ? firstBoard.artboard_height / firstBoard.artboard_width
+          : ARTBOARD_HEIGHT / ARTBOARD_WIDTH;
 
 
-
-      // Fixed slot width for four standard boards; fill almost all vertical space.
 
       let cellWidth = maxWFromWidth * multiplier;
 
-      let cellHeight = canvasAvailH * multiplier;
+      let cellHeight = (isMatrix ? Math.max((availH - GRID_GAP_PX) / 2 - TITLE_BAR_PX, 220) : canvasAvailH) * multiplier;
 
 
 
-      if (cellWidth * STANDARD_BOARD_COUNT + boardGaps + addReserve > availW) {
+      if (!isMatrix && cellWidth * STANDARD_BOARD_COUNT + boardGaps + addReserve > availW) {
 
         cellWidth = maxWFromWidth;
 
@@ -4786,7 +6233,9 @@ export function BoardDesktopGrid({
 
         width: Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth)),
 
-        height: Math.max(Math.round(cellWidth * (ARTBOARD_HEIGHT / ARTBOARD_WIDTH)), Math.round(cellHeight)),
+        height: isMatrix
+          ? Math.round(cellHeight)
+          : Math.max(Math.round(cellWidth * boardAspectHeight), Math.round(cellHeight)),
 
       });
 
@@ -4818,7 +6267,7 @@ export function BoardDesktopGrid({
 
     };
 
-  }, [onAddBoard, updateScrollHints, zoomPreset]);
+  }, [boards, isMatrix, onAddBoard, updateScrollHints, zoomPreset]);
 
 
 
@@ -4920,7 +6369,10 @@ export function BoardDesktopGrid({
 
           ref={viewportRef}
 
-          className="board-row-scroll flex h-full flex-col overflow-x-auto overflow-y-hidden scroll-smooth p-2"
+          className={cn(
+            "board-row-scroll flex h-full flex-col scroll-smooth p-2",
+            isMatrix ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-hidden",
+          )}
 
           onScroll={updateScrollHints}
 
@@ -4928,7 +6380,7 @@ export function BoardDesktopGrid({
 
             const el = viewportRef.current;
 
-            if (!el || el.scrollWidth <= el.clientWidth) return;
+            if (isMatrix || !el || el.scrollWidth <= el.clientWidth) return;
 
             if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
 
@@ -4944,9 +6396,16 @@ export function BoardDesktopGrid({
 
           <div
 
-            className="flex min-h-full flex-row flex-nowrap items-stretch gap-2.5"
+            className={cn(
+              "min-h-full gap-2.5",
+              isMatrix ? "grid grid-cols-2 content-start items-start" : "flex flex-row flex-nowrap items-stretch",
+            )}
 
-            style={{ width: rowScrollWidth, minHeight: rowHeight, height: rowHeight }}
+            style={
+              isMatrix
+                ? { gridAutoRows: rowHeight, minHeight: rowHeight }
+                : { width: rowScrollWidth, minHeight: rowHeight, height: rowHeight }
+            }
 
           >
 
@@ -5016,7 +6475,7 @@ export function BoardDesktopGrid({
                       : undefined
                   }
 
-                  style={{ width: cellSize.width, height: rowHeight }}
+                  style={{ width: isMatrix ? "100%" : cellSize.width, height: rowHeight }}
 
                   className={cn(
 
@@ -5103,11 +6562,13 @@ export function BoardDesktopGrid({
                       colorKey={board.color_key}
                       layoutMode={board.layout_mode ?? "vision"}
                       layoutJson={board.layout_json}
+                      artboardWidth={board.artboard_width}
+                      artboardHeight={board.artboard_height}
                       onSave={getSaveHandler(board.id)}
                       onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
                       isActive={board.id === activeId}
                       embedded
-                      cellFit="cover"
+                      cellFit={isMatrix ? "contain" : "cover"}
                       viewZoom="fit"
                     />
 
@@ -5131,7 +6592,7 @@ export function BoardDesktopGrid({
 
                 title="Add focus board"
 
-                style={{ width: ADD_BTN_WIDTH_PX, height: rowHeight }}
+                style={{ width: isMatrix ? "100%" : ADD_BTN_WIDTH_PX, height: rowHeight }}
 
                 className="flex shrink-0 flex-col items-center justify-center self-stretch rounded-lg border border-dashed border-neutral-300 bg-white/40 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-white hover:text-neutral-900"
 
@@ -5154,13 +6615,16 @@ export function BoardDesktopGrid({
   );
 
 }
+
+
+
 ```
 
 ## Plotting workbench (left dock)
 
+Path: `src/components/boards/BoardPlottingWorkbench.tsx`
+
 ```tsx
-// src/components/boards/BoardPlottingWorkbench.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useRef, useState } from "react";
 import type { RefObject } from "react";
 import {
@@ -5194,10 +6658,7 @@ export const PLOT_STRUCTURES: {
 }[] = [
   { type: "checklist", title: "Checklist" },
   { type: "divider", title: "Divider" },
-  { type: "zones", title: "Zones" },
   { type: "eisenhower", title: "Priority grid" },
-  { type: "kanban", title: "Flow columns" },
-  { type: "timeline", title: "Timeline" },
 ];
 
 export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
@@ -5400,7 +6861,7 @@ export function BoardPlottingWorkbench({
               className={cn(
                 "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                 active
-                  ? "bg-transparent text-stone-900 ring-2 ring-stone-900 ring-offset-1 ring-offset-[#f3f0eb]"
+                  ? "bg-transparent text-stone-900 ring-1 ring-stone-900 ring-offset-1 ring-offset-[#f3f0eb]"
                   : "text-stone-600 hover:bg-stone-200/70 hover:text-stone-900",
               )}
             >
@@ -5518,13 +6979,14 @@ export function BoardPlottingWorkbench({
     </div>
   );
 }
+
 ```
 
 ## Plot kit tray (mobile dock)
 
+Path: `src/components/boards/BoardPlotKitTray.tsx`
+
 ```tsx
-// src/components/boards/BoardPlotKitTray.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useState } from "react";
 import type { RefObject } from "react";
 import { BookImage, MessageCircleHeart, Shapes } from "lucide-react";
@@ -5700,13 +7162,14 @@ export function BoardPlotKitTray({
     </>
   );
 }
+
 ```
 
 ## Mobile carousel
 
+Path: `src/components/boards/BoardMobileCarousel.tsx`
+
 ```tsx
-// src/components/boards/BoardMobileCarousel.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useRef, type ComponentProps } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5884,6 +7347,8 @@ export function BoardMobileCarousel({
                 colorKey={board.color_key}
                 layoutMode={board.layout_mode ?? "vision"}
                 layoutJson={board.layout_json}
+                artboardWidth={board.artboard_width}
+                artboardHeight={board.artboard_height}
                 onSave={getSaveHandler(board.id)}
                 onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
                 isActive={board.id === activeId}
@@ -5925,7 +7390,7 @@ export function BoardMobileCarousel({
             size="icon"
             className="h-8 w-8 rounded-full text-red-600"
             onClick={onRemoveBoard}
-            aria-label="Remove this board"
+            aria-label="Delete this board"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -5938,13 +7403,14 @@ export function BoardMobileCarousel({
     </div>
   );
 }
+
 ```
 
 ## Marks quick selector
 
+Path: `src/components/boards/BoardMarksQuickSelector.tsx`
+
 ```tsx
-// src/components/boards/BoardMarksQuickSelector.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useEffect, useState } from "react";
 import {
   ImagePlus,
@@ -6494,13 +7960,14 @@ export function BoardMarksQuickSelector({
     </>
   );
 }
+
 ```
 
 ## Color strip
 
+Path: `src/components/boards/BoardColorStrip.tsx`
+
 ```tsx
-// src/components/boards/BoardColorStrip.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BOARD_QUICK_PICK_COLORS, normalizeBoardColorHex } from "@/lib/boards/colors";
 import { cn } from "@/lib/utils";
@@ -6799,13 +8266,14 @@ export function BoardColorStrip({
     </div>
   );
 }
+
 ```
 
 ## Editable title
 
+Path: `src/components/boards/BoardEditableTitle.tsx`
+
 ```tsx
-// src/components/boards/BoardEditableTitle.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { normalizeBoardColorHex } from "@/lib/boards/colors";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -6815,7 +8283,7 @@ const TITLE_FONTS = [
   { id: "system", label: "Sans", family: "system-ui, sans-serif" },
   { id: "serif", label: "Serif", family: "Georgia, 'Times New Roman', serif" },
   { id: "display", label: "Block", family: "'Arial Black', 'Helvetica Neue', sans-serif" },
-  { id: "script", label: "Script", family: "'Brush Script MT', 'Segoe Script', cursive" },
+  { id: "script", label: "Script", family: "'Allura', cursive" },
 ] as const;
 
 const TITLE_COLOR_PRESETS = ["#171717", "#ffffff", "#e53935", "#1e88e5", "#43a047", "#8e24aa", "#fb8c00"] as const;
@@ -7153,13 +8621,14 @@ export function BoardEditableTitle({
     </div>
   );
 }
+
 ```
 
 ## Guide companion panel
 
+Path: `src/components/boards/BoardCompanionPanel.tsx`
+
 ```tsx
-// src/components/boards/BoardCompanionPanel.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { RefObject } from "react";
@@ -8019,13 +9488,16 @@ export function BoardCompanionPanel({
   );
 
 }
+
+
+
 ```
 
 ## Image picker
 
+Path: `src/components/boards/BoardImagePicker.tsx`
+
 ```tsx
-// src/components/boards/BoardImagePicker.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useCallback, useEffect, useState } from "react";
 import { Camera, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8208,13 +9680,14 @@ export function BoardImagePicker({
     </div>
   );
 }
+
 ```
 
 ## Print / download dialog
 
+Path: `src/components/boards/BoardPrintDialog.tsx`
+
 ```tsx
-// src/components/boards/BoardPrintDialog.tsx
-// NOTE: verbatim copy from the repo at time of export.
 import { useEffect, useMemo, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import {
@@ -8229,7 +9702,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   BOARD_PRINT_PRESETS,
-  downloadBoardPrint,
   downloadBoardsPrintPdf,
   type BoardPrintPreset,
 } from "@/lib/boards/renderBoard";
@@ -8248,7 +9720,7 @@ const DOWNLOAD_OPTIONS: { id: DownloadOptionId; label: string; description: stri
   {
     id: "phone-wallpaper",
     label: "Phone wallpaper",
-    description: "Portrait PNG for your phone — current board only",
+    description: "Portrait PNG for your phone — pick one board below",
   },
 ];
 
@@ -8280,14 +9752,25 @@ export function BoardPrintDialog({
     setSelectedBoardIds(boards.map((b) => b.id));
   }, [open, boards]);
 
+  useEffect(() => {
+    if (!isPhoneWallpaper) return;
+    setSelectedBoardIds((prev) => {
+      if (prev.length === 1) return prev;
+      const pick = boards.some((b) => b.id === activeBoardId) ? activeBoardId : boards[0]?.id;
+      return pick ? [pick] : [];
+    });
+  }, [isPhoneWallpaper, activeBoardId, boards]);
+
   const selectedBoards = useMemo(
     () => boards.filter((b) => selectedBoardIds.includes(b.id)),
     [boards, selectedBoardIds],
   );
 
-  const activeBoard = boards.find((b) => b.id === activeBoardId) ?? boards[0];
-  const downloadAsPdf = !isPhoneWallpaper && selectedBoards.length > 1;
-  const canDownload = isPhoneWallpaper ? Boolean(activeBoard) : selectedBoards.length > 0;
+  const canDownload = isPhoneWallpaper ? selectedBoards.length === 1 : selectedBoards.length > 0;
+
+  const selectPhoneWallpaperBoard = (boardId: string) => {
+    setSelectedBoardIds([boardId]);
+  };
 
   const toggleBoard = (boardId: string, checked: boolean) => {
     setSelectedBoardIds((prev) => {
@@ -8300,13 +9783,15 @@ export function BoardPrintDialog({
     if (!canDownload) return;
     setBusy(true);
     try {
-      if (isPhoneWallpaper && activeBoard) {
+      if (isPhoneWallpaper) {
+        const board = selectedBoards[0];
+        if (!board) return;
         await downloadPhoneWallpaper(
-          getLayoutJson(activeBoard.id),
-          activeBoard.color_key,
-          activeBoard.title,
+          getLayoutJson(board.id),
+          board.color_key,
+          board.title,
         );
-        toast.success("Phone wallpaper downloaded");
+        toast.success(`Downloaded ${board.title} as phone wallpaper`);
       } else if (printPreset) {
         const sources = selectedBoards.map((board) => ({
           layoutJson: getLayoutJson(board.id),
@@ -8314,18 +9799,12 @@ export function BoardPrintDialog({
           title: board.title,
         }));
 
-        if (sources.length === 1) {
-          await downloadBoardPrint(
-            sources[0].layoutJson,
-            sources[0].colorKey,
-            printPreset,
-            sources[0].title,
-          );
-          toast.success(`Downloaded ${sources[0].title} (${printPreset.label})`);
-        } else {
-          await downloadBoardsPrintPdf(sources, printPreset);
-          toast.success(`Downloaded ${sources.length} boards as PDF (${printPreset.label})`);
-        }
+        await downloadBoardsPrintPdf(sources, printPreset);
+        toast.success(
+          sources.length === 1
+            ? `Downloaded ${sources[0].title} as PDF (${printPreset.label})`
+            : `Downloaded ${sources.length} boards as PDF (${printPreset.label})`,
+        );
       }
       onOpenChange(false);
     } catch (err) {
@@ -8343,8 +9822,8 @@ export function BoardPrintDialog({
           <DialogTitle>Download</DialogTitle>
           <DialogDescription>
             {isPhoneWallpaper
-              ? "Choose a format and download the current board as a PNG."
-              : "Choose a print format and select boards. One board downloads as PNG; multiple boards download as a multi-page PDF."}
+              ? "Pick one board below. Downloads as a PNG phone wallpaper."
+              : "Choose a print format and select boards. Downloads as PDF (one page per board)."}
           </DialogDescription>
         </DialogHeader>
 
@@ -8354,7 +9833,16 @@ export function BoardPrintDialog({
             <select
               className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
               value={optionId}
-              onChange={(e) => setOptionId(e.target.value as DownloadOptionId)}
+              onChange={(e) => {
+                const next = e.target.value as DownloadOptionId;
+                setOptionId(next);
+                if (next === "phone-wallpaper") {
+                  const pick = boards.some((b) => b.id === activeBoardId) ? activeBoardId : boards[0]?.id;
+                  if (pick) setSelectedBoardIds([pick]);
+                } else if (selectedBoardIds.length <= 1) {
+                  setSelectedBoardIds(boards.map((b) => b.id));
+                }
+              }}
             >
               {DOWNLOAD_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -8370,21 +9858,23 @@ export function BoardPrintDialog({
             )}
           </div>
 
-          {!isPhoneWallpaper && boards.length > 1 && (
+          {boards.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <Label className="text-xs">Vision</Label>
-                <button
-                  type="button"
-                  className="text-[11px] text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
-                  onClick={() =>
-                    setSelectedBoardIds(
-                      selectedBoardIds.length === boards.length ? [] : boards.map((b) => b.id),
-                    )
-                  }
-                >
-                  {selectedBoardIds.length === boards.length ? "Deselect all" : "Select all"}
-                </button>
+                <Label className="text-xs">Boards</Label>
+                {!isPhoneWallpaper && boards.length > 1 ? (
+                  <button
+                    type="button"
+                    className="text-[11px] text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+                    onClick={() =>
+                      setSelectedBoardIds(
+                        selectedBoardIds.length === boards.length ? [] : boards.map((b) => b.id),
+                      )
+                    }
+                  >
+                    {selectedBoardIds.length === boards.length ? "Deselect all" : "Select all"}
+                  </button>
+                ) : null}
               </div>
               <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-neutral-200 p-2">
                 {boards.map((board) => {
@@ -8394,10 +9884,20 @@ export function BoardPrintDialog({
                       key={board.id}
                       className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-neutral-50"
                     >
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={(value) => toggleBoard(board.id, value === true)}
-                      />
+                      {isPhoneWallpaper ? (
+                        <input
+                          type="radio"
+                          name="download-board"
+                          checked={checked}
+                          onChange={() => selectPhoneWallpaperBoard(board.id)}
+                          className="h-4 w-4 shrink-0 accent-neutral-900"
+                        />
+                      ) : (
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) => toggleBoard(board.id, value === true)}
+                        />
+                      )}
                       <span className="min-w-0 truncate">
                         {board.title}
                         {board.id === activeBoardId ? (
@@ -8409,37 +9909,36 @@ export function BoardPrintDialog({
                 })}
               </div>
               <p className="text-[11px] leading-snug text-neutral-500">
-                {selectedBoards.length === 0
-                  ? "Select at least one board."
-                  : selectedBoards.length === 1
+                {isPhoneWallpaper
+                  ? selectedBoards.length === 1
                     ? "One board — downloads as PNG."
-                    : `${selectedBoards.length} boards — one page each in a PDF.`}
+                    : "Pick one board."
+                  : selectedBoards.length === 0
+                    ? "Select at least one board."
+                    : selectedBoards.length === 1
+                      ? "One board — downloads as PDF."
+                      : `${selectedBoards.length} boards — one page each in a PDF.`}
               </p>
             </div>
-          )}
-
-          {isPhoneWallpaper && activeBoard && (
-            <p className="text-[11px] leading-snug text-neutral-500">
-              Downloading <span className="font-medium text-neutral-700">{activeBoard.title}</span> only.
-            </p>
           )}
         </div>
 
         <Button className="gap-2" disabled={busy || !canDownload} onClick={() => void handleDownload()}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          {isPhoneWallpaper ? "Download PNG" : downloadAsPdf ? "Download PDF" : "Download PNG"}
+          {isPhoneWallpaper ? "Download PNG" : "Download PDF"}
         </Button>
       </DialogContent>
     </Dialog>
   );
 }
+
 ```
 
 ## Board editor styles
 
+Path: `src/styles/board-editor.css`
+
 ```css
-// src/styles/board-editor.css
-// NOTE: verbatim copy from the repo at time of export.
 .board-editor-main {
   min-height: 0;
 }
@@ -8494,13 +9993,14 @@ export function BoardPrintDialog({
     }
   }
 }
+
 ```
 
 ## Guide chat edge function
 
+Path: `supabase/functions/board-design-chat/index.ts`
+
 ```ts
-// supabase/functions/board-design-chat/index.ts
-// NOTE: verbatim copy from the repo at time of export.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import {
@@ -8768,46 +10268,53 @@ ${layoutHint}`;
     });
   }
 });
+
 ```
 
 ## Design spec
 
 ### Concept
 
-Multi-board vision plotting workspace. Three focus boards + **The Plan** (standard four-board plot). Fabric.js canvas per board with marks (text, sticky notes, shapes, stickers, freehand), structures (checklist, zones, kanban decals, etc.), image clippings, and Guide chat companion.
+Multi-board vision plotting workspace. Three focus boards + **The Plan** (standard four-board plot). Fabric.js canvas per board with marks (text, sticky notes, shapes, stickers, freehand), structures (checklist, zones, kanban decals, etc.), image clippings, and Guide chat companion. The Projects page **Start New Set** dropdown now chooses **Portrait set** vs **Landscape set** for the standard four-board Vision workspace.
 
 ### Desktop layout
 
 ```txt
-[HEADER: Vision | Add board | Duplicate | Remove | Download | -> Action]
+[HEADER: Vision | Add board | Duplicate Board | Delete Board | Download | -> Action]
 [TOOLBAR: Text | Note | Undo | Redo | Reset board | Delete | zoom presets]
-[LEFT DOCK: Guide | Images | Structures | Marks] [HORIZONTAL BOARD GRID scroll]
+[LEFT DOCK: Guide | Images | Layouts | Marks]
+[PORTRAIT SET: HORIZONTAL BOARD ROW]
+[LANDSCAPE SET: TWO-COLUMN BOARD MATRIX, scroll down for lower rows]
 ```
 
 ### Mobile layout
 
-Carousel of boards + bottom **Plot kit tray** (Guide, Images, Structures, Marks sheets).
+Carousel of boards + bottom **Plot kit tray** (Guide, Images, Structures, Marks sheets). Landscape sets in portrait mobile view show: `Landscape set selected. Rotate your phone for more room.`
 
 ### Artboard
 
-- Native editor size: **1080x1350** (4:5) - see `ARTBOARD_WIDTH` / `ARTBOARD_HEIGHT` in `BoardCanvasEditor`.
-- Board fill from `color_key` via `boardFillForKey()`.
-- Layout persisted as Fabric JSON in `boards.layout_json`.
+- Default portrait board size: **1080x1350**.
+- Landscape set board size: **1350x1080**.
+- The board editor now reads each board's `artboard_width` / `artboard_height` for on-screen layout.
+- Board fill comes from `color_key` via `boardFillForKey()`.
+- Layout persists as Fabric JSON in `boards.layout_json`.
 
 ### Files
 
 | File | Role |
 |------|------|
-| `src/pages/features/Boards.tsx` | Page shell, workspace load, board CRUD |
-| `src/components/boards/BoardCanvasEditor.tsx` | Fabric canvas, marks, structures |
-| `src/components/boards/BoardDesktopGrid.tsx` | Horizontal scroll grid (desktop) |
+| `src/pages/Workspace.tsx` | Projects page launcher and Portrait/Landscape Start New Set dropdown |
+| `src/pages/features/Boards.tsx` | Vision page shell, workspace load, board CRUD, presentation mode selection |
+| `src/components/boards/BoardCanvasEditor.tsx` | Fabric canvas, marks, sticky notes, structures, dimension-aware artboard |
+| `src/components/boards/BoardDesktopGrid.tsx` | Desktop presenter: portrait row or landscape 2-column matrix |
+| `src/components/boards/BoardMobileCarousel.tsx` | Mobile presenter, rotate hint context, dimension-aware boards |
 | `src/components/boards/BoardPlottingWorkbench.tsx` | Left dock (desktop) |
-| `src/components/boards/BoardPlotKitTray.tsx` | Bottom dock (mobile) |
-| `src/components/boards/BoardCompanionPanel.tsx` | Guide chat |
-| `src/lib/boards/api.ts` | Supabase workspace/board CRUD |
+| `src/lib/boards/api.ts` | Supabase workspace/board CRUD and artboard dimension persistence |
 | `supabase/functions/board-design-chat/index.ts` | Guide AI companion |
 
 Route: `/dashboard/boards`
+
+Projects entry: `/workspace?tab=projects`
 
 Deploy Guide function: `supabase functions deploy board-design-chat --project-ref essjyrhhaiywotvgjkcg`
 
@@ -8817,4 +10324,4 @@ Test: `support@test.com` / `Test!123`
 
 ## Do not touch
 
-Action accountability map (`/dashboard/boards/accountability`), onboarding flows, site marketing pages.
+Action accountability map (`/dashboard/boards/accountability`), onboarding flows outside the Projects launcher, site marketing pages.

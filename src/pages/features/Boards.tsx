@@ -11,12 +11,13 @@ import { BoardDesktopGrid } from "@/components/boards/BoardDesktopGrid";
 import { BoardPlottingWorkbench } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardPlotKitTray } from "@/components/boards/BoardPlotKitTray";
 import { BoardMobileCarousel } from "@/components/boards/BoardMobileCarousel";
+import { usePlottingPro } from "@/hooks/usePlottingPro";
 import {
   addBoard,
   deleteBoard,
-  ensureDefaultWorkspace,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
+  loadDefaultWorkspace,
   reorderBoards,
   saveBoardLayout,
   updateBoardMeta,
@@ -30,6 +31,7 @@ import "@/styles/board-editor.css";
 
 export default function Boards() {
   const { user } = useAuth();
+  const { hasPro, loading: proLoading } = usePlottingPro();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const workspaceParam = searchParams.get("workspace");
@@ -103,19 +105,31 @@ export default function Boards() {
   const isLandscapeSet = workspacePresentation === "matrix";
 
   const loadWorkspace = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || proLoading) return;
     setLoading(true);
     try {
-      const workspaces = await fetchUserWorkspaces(user.id);
+      let workspaces = await fetchUserWorkspaces(user.id);
+      if (workspaces.length === 0 && hasPro) {
+        await new Promise((resolve) => window.setTimeout(resolve, 350));
+        workspaces = await fetchUserWorkspaces(user.id);
+      }
+
       let full: BoardWorkspaceWithBoards | null = null;
       if (workspaceParam) {
         full = await fetchWorkspaceWithBoards(workspaceParam);
-      } else if (workspaces.length === 0) {
-        full = await ensureDefaultWorkspace(user.id);
-      } else {
-        full = await fetchWorkspaceWithBoards(workspaces[0].id);
+      } else if (workspaces.length > 0) {
+        full = await loadDefaultWorkspace(user.id);
       }
-      if (!full) throw new Error("workspace missing");
+
+      if (!full) {
+        if (!hasPro) {
+          navigate("/resubscribe", { replace: true });
+          return;
+        }
+        navigate("/workspace?tab=projects", { replace: true });
+        return;
+      }
+
       setWorkspace(full);
       setActiveBoardId((prev) => {
         const nextId =
@@ -128,7 +142,7 @@ export default function Boards() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, workspaceParam]);
+  }, [hasPro, navigate, proLoading, user?.id, workspaceParam]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -400,7 +414,13 @@ export default function Boards() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => navigate("/dashboard/boards/accountability")}
+                onClick={() =>
+                  navigate(
+                    workspace
+                      ? `/dashboard/boards/accountability?workspace=${workspace.id}`
+                      : "/dashboard/boards/accountability",
+                  )
+                }
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>

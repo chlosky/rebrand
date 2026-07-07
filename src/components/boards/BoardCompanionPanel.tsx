@@ -9,6 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { BOARD_COLORS } from "@/lib/boards/colors";
+import type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
+import {
+  applyActionGuideOperations,
+  filterValidActionGuideOperations,
+  type ActionGuideOperation,
+} from "@/lib/boards/applyActionGuideOperations";
 
 import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
 
@@ -48,29 +54,30 @@ type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
 
 
 
-const WELCOME_MESSAGE =
-
+const VISION_WELCOME_MESSAGE =
   "Tell me the feeling of this board — I'll plot color, words, and structures with you.";
 
+const ACTION_WELCOME_MESSAGE =
+  "Ask the guide to clean up actions, adjust reminders, or explain the plan.";
+
+const VISION_WELCOME_TURN: ChatTurn = { role: "assistant", content: VISION_WELCOME_MESSAGE };
+const ACTION_WELCOME_TURN: ChatTurn = { role: "assistant", content: ACTION_WELCOME_MESSAGE };
 
 
-const WELCOME_TURN: ChatTurn = { role: "assistant", content: WELCOME_MESSAGE };
 
+function chatStorageKey(workspaceId: string, mode: "vision" | "action") {
+  return mode === "action" ? `board-guide-chat-action:${workspaceId}` : `board-companion-chat:${workspaceId}`;
+}
 
-
-function chatStorageKey(workspaceId: string) {
-
-  return `board-companion-chat:${workspaceId}`;
-
+function welcomeTurn(mode: "vision" | "action"): ChatTurn {
+  return mode === "action" ? ACTION_WELCOME_TURN : VISION_WELCOME_TURN;
 }
 
 
 
-function loadStoredChat(workspaceId: string): ChatTurn[] | null {
-
+function loadStoredChat(workspaceId: string, mode: "vision" | "action"): ChatTurn[] | null {
   try {
-
-    const raw = localStorage.getItem(chatStorageKey(workspaceId));
+    const raw = localStorage.getItem(chatStorageKey(workspaceId, mode));
 
     if (!raw) return null;
 
@@ -174,6 +181,8 @@ const VALID_DIAGRAMS = new Set<BoardDiagramType>([
 
   "checklist",
 
+  "calendar",
+
   "zones",
 
   "timeline",
@@ -192,8 +201,31 @@ const VALID_DIAGRAMS = new Set<BoardDiagramType>([
 
 
 
-const FALLBACK_ASK_REPLY =
+const VISION_FALLBACK_ASK_REPLY =
   "I can help with that. What would you like me to add first: a Statement, a Sticky note, a Checklist, or a Priority grid?";
+
+const ACTION_FALLBACK_ASK_REPLY =
+  "I can help with that. What would you like to adjust — actions, reminder channels, or timing?";
+
+function replyClaimsActionChanges(text: string): boolean {
+  return /\b(I('ve| have)?\s+(updated|changed|removed|added|set|finalized)|I updated|I changed|I removed)\b/i.test(
+    text,
+  );
+}
+
+function finalizeActionAssistantReply(
+  reply: string | undefined,
+  replyWithoutAction: string | undefined,
+  appliedCount: number,
+): string {
+  if (appliedCount > 0) {
+    const raw = (reply ?? "").trim();
+    return raw || `Done — I applied ${appliedCount} ${appliedCount === 1 ? "change" : "changes"} to your draft.`;
+  }
+  const neutral = (replyWithoutAction ?? reply ?? "").trim();
+  if (neutral && !replyClaimsActionChanges(neutral)) return neutral;
+  return ACTION_FALLBACK_ASK_REPLY;
+}
 
 const CONFIRM_RE = /^(yes|yeah|yep|y|sure|ok|okay|do it|apply it|go ahead|please do|sounds good)\.?$/i;
 const CANCEL_RE = /^(no|nope|cancel|don't|dont|stop)\.?$/i;
@@ -215,7 +247,7 @@ function finalizeAssistantReply(
   }
   const neutral = (replyWithoutAction ?? reply ?? "").trim();
   if (neutral && !replyClaimsBoardChanges(neutral)) return neutral;
-  return FALLBACK_ASK_REPLY;
+  return VISION_FALLBACK_ASK_REPLY;
 }
 
 type GuideAction = Record<string, unknown> & { type: string };
@@ -247,37 +279,31 @@ function clamp01(n: number) {
 
 
 
-type BoardCompanionPanelProps = {
-
+type BoardGuideChatPanelProps = {
+  mode: "vision" | "action";
   workspaceId: string;
-
-  activeBoardId: string;
-
-  editorRef: RefObject<BoardCanvasHandle | null>;
-
-  onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
-
+  activeBoardId?: string;
+  editorRef?: RefObject<BoardCanvasHandle | null>;
+  onBoardColorChange?: (boardId: string, colorKey: string) => Promise<void>;
+  actionMap?: AccountabilityMap | null;
+  onActionMapChange?: (map: AccountabilityMap) => void;
   compact?: boolean;
-
+  showHeader?: boolean;
 };
 
-
-
-export function BoardCompanionPanel({
-
+export function BoardGuideChatPanel({
+  mode,
   workspaceId,
-
-  activeBoardId,
-
+  activeBoardId = "",
   editorRef,
-
   onBoardColorChange,
-
+  actionMap = null,
+  onActionMapChange,
   compact = false,
-
-}: BoardCompanionPanelProps) {
-
-  const [messages, setMessages] = useState<ChatTurn[]>([WELCOME_TURN]);
+  showHeader = true,
+}: BoardGuideChatPanelProps) {
+  const welcome = welcomeTurn(mode);
+  const [messages, setMessages] = useState<ChatTurn[]>([welcome]);
 
   const [draft, setDraft] = useState("");
 
@@ -287,7 +313,7 @@ export function BoardCompanionPanel({
 
   const [lastApplied, setLastApplied] = useState(0);
 
-  const [pendingGuideActions, setPendingGuideActions] = useState<GuideAction[]>([]);
+  const [pendingGuideActions, setPendingGuideActions] = useState<(GuideAction | ActionGuideOperation)[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -398,39 +424,28 @@ export function BoardCompanionPanel({
   }, [commitSessionTranscript, draft, listening, sending, speechSupported, stopListening]);
 
   useEffect(() => {
-
     if (!workspaceId) {
-
-      setMessages([WELCOME_TURN]);
-
+      setMessages([welcome]);
       return;
-
     }
-
-    setMessages(loadStoredChat(workspaceId) ?? [WELCOME_TURN]);
-
-  }, [workspaceId]);
-
-
+    setMessages(loadStoredChat(workspaceId, mode) ?? [welcome]);
+  }, [workspaceId, mode, welcome]);
 
   useEffect(() => {
-
     if (!workspaceId) return;
-
-    localStorage.setItem(chatStorageKey(workspaceId), JSON.stringify(messages));
-
-  }, [messages, workspaceId]);
+    localStorage.setItem(chatStorageKey(workspaceId, mode), JSON.stringify(messages));
+  }, [messages, workspaceId, mode]);
 
 
 
-  const applyActions = useCallback(
+  const applyVisionActions = useCallback(
     async (actions: unknown[]): Promise<number> => {
       if (!activeBoardId) {
         console.error("Guide applyActions: missing activeBoardId");
         return 0;
       }
 
-      const editor = editorRef.current;
+      const editor = editorRef?.current;
       let applied = 0;
 
       for (const raw of filterValidGuideActions(actions)) {
@@ -438,7 +453,7 @@ export function BoardCompanionPanel({
         const type = action.type;
 
         try {
-          if (type === "set_color" && typeof action.color_key === "string") {
+          if (type === "set_color" && typeof action.color_key === "string" && onBoardColorChange) {
             await onBoardColorChange(activeBoardId, action.color_key);
             applied += 1;
             continue;
@@ -516,25 +531,40 @@ export function BoardCompanionPanel({
     [activeBoardId, editorRef, onBoardColorChange],
   );
 
+  const applyActionOperations = useCallback(
+    async (ops: unknown[]): Promise<number> => {
+      if (!actionMap || !onActionMapChange) return 0;
+      const valid = filterValidActionGuideOperations(ops, actionMap);
+      if (!valid.length) return 0;
+      const { map: next, applied } = applyActionGuideOperations(actionMap, valid);
+      if (applied > 0) onActionMapChange(next);
+      return applied;
+    },
+    [actionMap, onActionMapChange],
+  );
+
+  const applyPending = useCallback(
+    async (actions: (GuideAction | ActionGuideOperation)[]) => {
+      if (mode === "action") return applyActionOperations(actions);
+      return applyVisionActions(actions);
+    },
+    [applyActionOperations, applyVisionActions, mode],
+  );
+
 
 
   const clearChat = useCallback(() => {
-
-    setMessages([WELCOME_TURN]);
-
+    setMessages([welcome]);
     setLastApplied(0);
     setPendingGuideActions([]);
     setGuideError(null);
 
     if (workspaceId) {
-
-      localStorage.setItem(chatStorageKey(workspaceId), JSON.stringify([WELCOME_TURN]));
-
+      localStorage.setItem(chatStorageKey(workspaceId, mode), JSON.stringify([welcome]));
     }
 
     toast.message("Chat cleared");
-
-  }, [workspaceId]);
+  }, [mode, welcome, workspaceId]);
 
 
 
@@ -544,7 +574,7 @@ export function BoardCompanionPanel({
     setGuideError(null);
     setLastApplied(0);
     try {
-      const appliedCount = await applyActions(pendingGuideActions);
+      const appliedCount = await applyPending(pendingGuideActions);
       setPendingGuideActions([]);
       setLastApplied(appliedCount);
       if (appliedCount > 0) {
@@ -552,22 +582,29 @@ export function BoardCompanionPanel({
           ...prev,
           {
             role: "assistant",
-            content: `Done — I added ${appliedCount} ${appliedCount === 1 ? "piece" : "pieces"} to the board.`,
+            content:
+              mode === "action"
+                ? `Done — I applied ${appliedCount} ${appliedCount === 1 ? "change" : "changes"} to your draft.`
+                : `Done — I added ${appliedCount} ${appliedCount === 1 ? "piece" : "pieces"} to the board.`,
           },
         ]);
       } else {
-        setGuideError("I couldn't apply those changes to the board. Try again.");
+        setGuideError(
+          mode === "action"
+            ? "I couldn't apply those changes to your draft. Try again."
+            : "I couldn't apply those changes to the board. Try again.",
+        );
       }
     } finally {
       setSending(false);
     }
-  }, [applyActions, pendingGuideActions, sending]);
+  }, [applyPending, mode, pendingGuideActions, sending]);
 
   const sendMessage = useCallback(async () => {
-
     const text = draft.trim();
 
-    if (!text || sending || !activeBoardId) return;
+    if (!text || sending) return;
+    if (mode === "vision" && !activeBoardId) return;
 
     if (listening) stopListening();
 
@@ -607,15 +644,27 @@ export function BoardCompanionPanel({
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("board-design-chat", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: {
-          board_id: activeBoardId,
-          workspace_id: workspaceId,
-          message: text,
-          history: nextMessages.filter((m) => m.role === "user" || m.role === "assistant").slice(-8),
+      const { data, error } = await supabase.functions.invoke(
+        mode === "action" ? "board-guide-chat" : "board-design-chat",
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body:
+            mode === "action"
+              ? {
+                  mode: "action",
+                  workspace_id: workspaceId,
+                  message: text,
+                  history: nextMessages.filter((m) => m.role === "user" || m.role === "assistant").slice(-8),
+                  action_map: actionMap,
+                }
+              : {
+                  board_id: activeBoardId,
+                  workspace_id: workspaceId,
+                  message: text,
+                  history: nextMessages.filter((m) => m.role === "user" || m.role === "assistant").slice(-8),
+                },
         },
-      });
+      );
 
       if (error) throw error;
 
@@ -633,33 +682,24 @@ export function BoardCompanionPanel({
 
       const actions = Array.isArray(payload.actions) ? payload.actions : [];
       const proposed = Array.isArray(payload.proposed_actions) ? payload.proposed_actions : [];
-      const validProposed = filterValidGuideActions(proposed);
 
-      let appliedCount = 0;
-      if (actions.length > 0) {
-        const validActions = filterValidGuideActions(actions);
-        if (validActions.length > 0) {
-          appliedCount = await applyActions(validActions);
-        }
-        if (actions.length > 0 && appliedCount === 0) {
-          console.error("Guide returned actions but none applied", actions);
-          setGuideError("I couldn't apply those changes to the board. Try again.");
-        }
-      }
+      const combined =
+        mode === "action"
+          ? filterValidActionGuideOperations([...proposed, ...actions], actionMap)
+          : [...filterValidGuideActions(proposed), ...filterValidGuideActions(actions)];
 
-      if (validProposed.length > 0) {
-        setPendingGuideActions(validProposed);
+      if (combined.length > 0) {
+        setPendingGuideActions(combined);
       } else {
         setPendingGuideActions([]);
       }
 
-      setLastApplied(appliedCount);
+      setLastApplied(0);
 
-      const finalReply = finalizeAssistantReply(
-        payload.reply,
-        payload.reply_without_action,
-        appliedCount,
-      );
+      const finalReply =
+        mode === "action"
+          ? finalizeActionAssistantReply(payload.reply, payload.reply_without_action, 0)
+          : finalizeAssistantReply(payload.reply, payload.reply_without_action, 0);
 
       setMessages((prev) => [...prev, { role: "assistant", content: finalReply }]);
 
@@ -679,39 +719,51 @@ export function BoardCompanionPanel({
 
     }
 
-  }, [activeBoardId, applyActions, applyPendingGuideActions, draft, listening, messages, pendingGuideActions, sending, stopListening, workspaceId]);
+  }, [
+    actionMap,
+    activeBoardId,
+    applyPendingGuideActions,
+    draft,
+    listening,
+    messages,
+    mode,
+    pendingGuideActions,
+    sending,
+    stopListening,
+    workspaceId,
+  ]);
 
 
 
   return (
 
     <div className={cn("flex flex-col", compact ? "min-h-[280px]" : "min-h-0 flex-1")}>
-
-      <div className="flex shrink-0 border-b border-stone-300/60 px-3 py-2">
-
-        <Button
-
-          type="button"
-
-          variant="ghost"
-
-          size="sm"
-
-          className="h-8 w-full justify-start gap-2 px-2 text-xs font-medium text-stone-600 hover:text-red-700"
-
-          onClick={clearChat}
-
-          disabled={messages.length <= 1 && messages[0]?.content === WELCOME_MESSAGE}
-
-        >
-
-          <Eraser className="h-3.5 w-3.5" />
-
-          Clear chat
-
-        </Button>
-
-      </div>
+      {showHeader ? (
+        <div className="flex shrink-0 border-b border-stone-300/60 px-3 py-2">
+          {mode === "action" ? (
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Guide</p>
+              <p className="mt-0.5 text-[10px] leading-snug text-stone-600">
+                Ask the guide to clean up actions, adjust reminders, or explain the plan.
+              </p>
+            </div>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 justify-start gap-2 px-2 text-xs font-medium text-stone-600 hover:text-red-700",
+              mode === "action" ? "w-auto shrink-0" : "w-full",
+            )}
+            onClick={clearChat}
+            disabled={messages.length <= 1 && messages[0]?.content === welcome.content}
+          >
+            <Eraser className="h-3.5 w-3.5" />
+            Clear chat
+          </Button>
+        </div>
+      ) : null}
 
 
 
@@ -750,15 +802,12 @@ export function BoardCompanionPanel({
         ))}
 
         {lastApplied > 0 ? (
-
           <p className="flex items-center gap-1.5 text-[10px] font-medium text-stone-600">
-
             <PenLine className="h-3 w-3" />
-
-            Done — added {lastApplied} {lastApplied === 1 ? "piece" : "pieces"} to the board
-
+            {mode === "action"
+              ? `Done — applied ${lastApplied} ${lastApplied === 1 ? "change" : "changes"} to your draft`
+              : `Done — added ${lastApplied} ${lastApplied === 1 ? "piece" : "pieces"} to the board`}
           </p>
-
         ) : null}
 
         {pendingGuideActions.length > 0 ? (
@@ -819,7 +868,7 @@ export function BoardCompanionPanel({
 
           onChange={(e) => setDraft(e.target.value)}
 
-          placeholder="The vibe, the goal, the feeling…"
+          placeholder={mode === "action" ? "Fewer texts, rename a plan, explain channels…" : "The vibe, the goal, the feeling…"}
 
           className="h-9 min-w-0 flex-1 border-stone-300 bg-[#faf8f5] text-xs"
 
@@ -858,4 +907,15 @@ export function BoardCompanionPanel({
 
 }
 
+type BoardCompanionPanelProps = {
+  workspaceId: string;
+  activeBoardId: string;
+  editorRef: RefObject<BoardCanvasHandle | null>;
+  onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
+  compact?: boolean;
+};
+
+export function BoardCompanionPanel(props: BoardCompanionPanelProps) {
+  return <BoardGuideChatPanel mode="vision" {...props} />;
+}
 

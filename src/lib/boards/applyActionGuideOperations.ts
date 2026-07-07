@@ -1,0 +1,260 @@
+import {
+  DEFAULT_REMINDER_CHANNELS,
+  SMS_MAX_LENGTH,
+  stripSmsText,
+  type AccountabilityAction,
+  type AccountabilityMap,
+  type AccountabilityPlan,
+  type MapCadence,
+  type ReminderChannelFlags,
+} from "@/lib/boards/accountabilityMap";
+
+export type ActionGuideOperation = Record<string, unknown> & { type: string };
+
+function newId(prefix: string) {
+  return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function asCadence(v: unknown, fallback: MapCadence = "weekly"): MapCadence {
+  if (v === "once" || v === "monthly" || v === "weekly" || v === "daily") return v;
+  return fallback;
+}
+
+function parseChannels(raw: unknown): ReminderChannelFlags | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  return {
+    calendar: o.calendar === true,
+    email: o.email !== false,
+    sms: o.sms === true,
+  };
+}
+
+function touchMap(map: AccountabilityMap): AccountabilityMap {
+  const edited_at = new Date().toISOString();
+  if (map.finalized) {
+    return {
+      ...map,
+      finalized: false,
+      reminders: [],
+      analysis_status: "draft_ready",
+      edited_at,
+    };
+  }
+  return { ...map, edited_at };
+}
+
+function defaultAction(planId: string, title: string): AccountabilityAction {
+  return {
+    id: newId("action"),
+    plan_id: planId,
+    title,
+    cadence: "weekly",
+    remind_date: null,
+    remind_day_of_month: null,
+    remind_day_of_week: "monday",
+    remind_time: "09:00",
+    status: "accepted",
+    kind: "action",
+    step_type: "task",
+    reminder_enabled: true,
+    channels: { ...DEFAULT_REMINDER_CHANNELS },
+    sms_text: null,
+    source_evidence: null,
+    confidence: null,
+  };
+}
+
+export function isValidActionGuideOperation(op: unknown, map: AccountabilityMap | null): op is ActionGuideOperation {
+  if (!op || typeof op !== "object" || !map) return false;
+  const a = op as Record<string, unknown>;
+  switch (a.type) {
+    case "add_action":
+      return typeof a.plan_id === "string" && map.plans.some((p) => p.id === a.plan_id);
+    case "update_action":
+    case "delete_action":
+    case "set_channel":
+    case "set_timing":
+    case "shorten_sms":
+      return typeof a.action_id === "string" && map.actions.some((x) => x.id === a.action_id);
+    case "update_plan":
+    case "delete_plan":
+      return typeof a.plan_id === "string" && map.plans.some((p) => p.id === a.plan_id);
+    case "add_plan":
+      return typeof a.focus_id === "string" && map.focuses.some((f) => f.id === a.focus_id);
+    case "update_focus":
+      return typeof a.focus_id === "string" && map.focuses.some((f) => f.id === a.focus_id);
+    default:
+      return false;
+  }
+}
+
+export function filterValidActionGuideOperations(
+  ops: unknown[],
+  map: AccountabilityMap | null,
+): ActionGuideOperation[] {
+  return ops.filter((op) => isValidActionGuideOperation(op, map));
+}
+
+export function applyActionGuideOperations(
+  map: AccountabilityMap,
+  ops: ActionGuideOperation[],
+): { map: AccountabilityMap; applied: number } {
+  let next = { ...map };
+  let applied = 0;
+
+  for (const op of ops) {
+    switch (op.type) {
+      case "add_action": {
+        const planId = String(op.plan_id);
+        const title = typeof op.title === "string" ? op.title.trim() : "";
+        if (!title || !next.plans.some((p) => p.id === planId)) break;
+        const action = defaultAction(planId, title);
+        if (typeof op.cadence === "string") action.cadence = asCadence(op.cadence);
+        if (typeof op.remind_day_of_week === "string") action.remind_day_of_week = op.remind_day_of_week;
+        if (typeof op.remind_time === "string") action.remind_time = op.remind_time;
+        const channels = parseChannels(op.channels);
+        if (channels) action.channels = channels;
+        if (typeof op.sms_text === "string") {
+          action.sms_text = stripSmsText(op.sms_text).slice(0, SMS_MAX_LENGTH) || null;
+        }
+        next = { ...next, actions: [...next.actions, action] };
+        applied += 1;
+        break;
+      }
+      case "update_action": {
+        const actionId = String(op.action_id);
+        const patch = op.patch;
+        if (!patch || typeof patch !== "object") break;
+        const p = patch as Partial<AccountabilityAction> & { channels?: ReminderChannelFlags };
+        next = {
+          ...next,
+          actions: next.actions.map((a) => {
+            if (a.id !== actionId) return a;
+            const channels = parseChannels(p.channels);
+            const sms_text =
+              typeof p.sms_text === "string"
+                ? stripSmsText(p.sms_text).slice(0, SMS_MAX_LENGTH) || null
+                : p.sms_text === null
+                  ? null
+                  : a.sms_text;
+            return {
+              ...a,
+              ...p,
+              cadence: p.cadence ? asCadence(p.cadence, a.cadence) : a.cadence,
+              channels: channels ?? a.channels,
+              sms_text,
+            };
+          }),
+        };
+        applied += 1;
+        break;
+      }
+      case "delete_action": {
+        const actionId = String(op.action_id);
+        next = { ...next, actions: next.actions.filter((a) => a.id !== actionId) };
+        applied += 1;
+        break;
+      }
+      case "add_plan": {
+        const focusId = String(op.focus_id);
+        const title = typeof op.title === "string" ? op.title.trim() : "";
+        if (!title || !next.focuses.some((f) => f.id === focusId)) break;
+        const plan: AccountabilityPlan = {
+          id: newId("plan"),
+          focus_id: focusId,
+          title,
+          cadence: "monthly",
+          remind_day_of_month: null,
+          remind_day_of_week: null,
+          remind_time: null,
+          status: "accepted",
+        };
+        next = { ...next, plans: [...next.plans, plan] };
+        applied += 1;
+        break;
+      }
+      case "update_plan": {
+        const planId = String(op.plan_id);
+        const patch = op.patch;
+        if (!patch || typeof patch !== "object") break;
+        next = {
+          ...next,
+          plans: next.plans.map((p) => (p.id === planId ? { ...p, ...(patch as Partial<AccountabilityPlan>) } : p)),
+        };
+        applied += 1;
+        break;
+      }
+      case "delete_plan": {
+        const planId = String(op.plan_id);
+        next = {
+          ...next,
+          plans: next.plans.filter((p) => p.id !== planId),
+          actions: next.actions.filter((a) => a.plan_id !== planId),
+        };
+        applied += 1;
+        break;
+      }
+      case "update_focus": {
+        const focusId = String(op.focus_id);
+        const patch = op.patch;
+        if (!patch || typeof patch !== "object") break;
+        next = {
+          ...next,
+          focuses: next.focuses.map((f) => (f.id === focusId ? { ...f, ...(patch as { title?: string }) } : f)),
+        };
+        applied += 1;
+        break;
+      }
+      case "set_channel": {
+        const actionId = String(op.action_id);
+        const channels = parseChannels(op.channels);
+        if (!channels) break;
+        next = {
+          ...next,
+          actions: next.actions.map((a) =>
+            a.id === actionId ? { ...a, channels, reminder_enabled: true } : a,
+          ),
+        };
+        applied += 1;
+        break;
+      }
+      case "set_timing": {
+        const actionId = String(op.action_id);
+        next = {
+          ...next,
+          actions: next.actions.map((a) => {
+            if (a.id !== actionId) return a;
+            return {
+              ...a,
+              cadence: typeof op.cadence === "string" ? asCadence(op.cadence, a.cadence) : a.cadence,
+              remind_date: typeof op.remind_date === "string" ? op.remind_date : a.remind_date,
+              remind_time: typeof op.remind_time === "string" ? op.remind_time : a.remind_time,
+              remind_day_of_week:
+                typeof op.remind_day_of_week === "string" ? op.remind_day_of_week : a.remind_day_of_week,
+            };
+          }),
+        };
+        applied += 1;
+        break;
+      }
+      case "shorten_sms": {
+        const actionId = String(op.action_id);
+        const sms = typeof op.sms_text === "string" ? stripSmsText(op.sms_text).slice(0, SMS_MAX_LENGTH) : "";
+        if (!sms) break;
+        next = {
+          ...next,
+          actions: next.actions.map((a) =>
+            a.id === actionId ? { ...a, sms_text: sms, channels: { ...a.channels, sms: true } } : a,
+          ),
+        };
+        applied += 1;
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return { map: touchMap(next), applied };
+}
