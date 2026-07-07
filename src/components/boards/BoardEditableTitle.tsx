@@ -7,7 +7,7 @@ const TITLE_FONTS = [
   { id: "system", label: "Sans", family: "system-ui, sans-serif" },
   { id: "serif", label: "Serif", family: "Georgia, 'Times New Roman', serif" },
   { id: "display", label: "Block", family: "'Arial Black', 'Helvetica Neue', sans-serif" },
-  { id: "script", label: "Script", family: "'Brush Script MT', 'Segoe Script', cursive" },
+  { id: "script", label: "Script", family: "'Allura', cursive" },
 ] as const;
 
 const TITLE_COLOR_PRESETS = ["#171717", "#ffffff", "#e53935", "#1e88e5", "#43a047", "#8e24aa", "#fb8c00"] as const;

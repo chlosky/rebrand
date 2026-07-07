@@ -234,7 +234,7 @@ export function BoardPlottingWorkbench({
               className={cn(
                 "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                 active
-                  ? "bg-transparent text-stone-900 ring-2 ring-stone-900 ring-offset-1 ring-offset-[#f3f0eb]"
+                  ? "bg-transparent text-stone-900 ring-1 ring-stone-900 ring-offset-1 ring-offset-[#f3f0eb]"
                   : "text-stone-600 hover:bg-stone-200/70 hover:text-stone-900",
               )}
             >

@@ -17,7 +17,7 @@ export default {
         'satoshi': ['Satoshi', 'sans-serif'],
         'sans': ['Satoshi', 'system-ui', 'sans-serif'],
         'bricolage': ['"Bricolage Grotesque"', 'Satoshi', 'system-ui', 'sans-serif'],
-        'welcome-serif': ['Allura', 'cursive'],
+        'welcome-serif': ['Georgia', 'Times New Roman', 'serif'],
         proxima: ['"Proxima Nova"', 'proxima-nova', 'sans-serif'],
       },
       colors: {
