@@ -31,10 +31,7 @@ export const PLOT_STRUCTURES: {
 }[] = [
   { type: "checklist", title: "Checklist" },
   { type: "divider", title: "Divider" },
-  { type: "zones", title: "Zones", items: ["Entry", "Kitchen", "Bedrooms"] },
   { type: "eisenhower", title: "Priority grid" },
-  { type: "kanban", title: "Flow columns" },
-  { type: "timeline", title: "Timeline" },
 ];
 
 export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
@@ -90,10 +87,9 @@ export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
           <span className={`absolute left-[55%] top-0 h-full w-px ${decalInk}`} />
         </div>
         <div className="mt-1 space-y-1">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="flex items-center gap-1">
-              <span className="h-px flex-[0.55] border-b border-dashed border-neutral-400/70" />
-              <span className="flex-[0.45] text-right text-[9px] tabular-nums text-neutral-400">{n}</span>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-1">
+              <span className="h-px flex-1 border-b border-dashed border-neutral-400/70" />
             </div>
           ))}
         </div>
@@ -151,7 +147,6 @@ type BoardPlottingWorkbenchProps = {
   userId: string;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
   onPickImage: (url: string) => void;
-  onScanPhysical?: () => void;
 };
 
 export function BoardPlottingWorkbench({
@@ -162,7 +157,6 @@ export function BoardPlottingWorkbench({
   userId,
   onBoardColorChange,
   onPickImage,
-  onScanPhysical,
 }: BoardPlottingWorkbenchProps) {
   const [openTab, setOpenTab] = useState<PlotDockTab | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -270,7 +264,7 @@ export function BoardPlottingWorkbench({
             )}
 
             <div className={cn("min-h-0 flex-1", openTab !== "clippings" && "hidden")}>
-              <BoardImagePicker embedded userId={userId} onPickImage={onPickImage} onScanPhysical={onScanPhysical} />
+              <BoardImagePicker embedded userId={userId} onPickImage={onPickImage} />
             </div>
 
             {openTab === "structures" && (
@@ -311,7 +305,7 @@ export function BoardPlottingWorkbench({
                       title="Esc to finish"
                       onClick={() => editorRef.current?.startDrawMode()}
                     >
-                      Freehand
+                      <PenLine className="h-4 w-4" /> Freehand
                     </button>
                   </div>
                 </div>

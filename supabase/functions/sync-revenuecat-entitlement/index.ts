@@ -44,6 +44,11 @@ interface OnboardingPrefs {
   onboarding_answers?: Record<string, unknown> | null;
   embody_active_practices?: string[] | null;
   preferred_locale?: string | null;
+  preferred_reminder_channels?: string | null;
+  phone_number_e164?: string | null;
+  sms_reminders_enabled?: boolean | null;
+  sms_reminder_consent_at?: string | null;
+  sms_reminder_consent_source?: string | null;
 }
 
 const VALID_ROUTINE_INTENSITIES = new Set(["light", "consistent", "locked_in"]);
@@ -189,6 +194,22 @@ function applyOnboardingPrefs(
   if (locale === "en" || locale === "es-419" || locale === "pt-BR") {
     prefUpdates.preferred_locale = locale;
     profileUpdates.preferred_locale = locale;
+  }
+  if (typeof prefs.preferred_reminder_channels === "string" && prefs.preferred_reminder_channels.trim()) {
+    prefUpdates.preferred_reminder_channels = prefs.preferred_reminder_channels.trim();
+  }
+  if (typeof prefs.phone_number_e164 === "string" && prefs.phone_number_e164.trim()) {
+    prefUpdates.phone_number_e164 = prefs.phone_number_e164.trim();
+    profileUpdates.phone = prefs.phone_number_e164.trim();
+  }
+  if (prefs.sms_reminders_enabled !== undefined) {
+    prefUpdates.sms_reminders_enabled = prefs.sms_reminders_enabled === true;
+  }
+  if (typeof prefs.sms_reminder_consent_at === "string" && prefs.sms_reminder_consent_at.trim()) {
+    prefUpdates.sms_reminder_consent_at = prefs.sms_reminder_consent_at.trim();
+  }
+  if (typeof prefs.sms_reminder_consent_source === "string" && prefs.sms_reminder_consent_source.trim()) {
+    prefUpdates.sms_reminder_consent_source = prefs.sms_reminder_consent_source.trim();
   }
 
   return (async () => {

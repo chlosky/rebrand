@@ -53,7 +53,7 @@ export default function SetupAttribution() {
           source: "onboarding_attribution",
           attribution_source: selected,
         });
-        navigate(`${setupBase}/intensity`);
+        navigate(`${setupBase}/reminder-channels`);
       }}
     >
       <SetupHeadingBlock

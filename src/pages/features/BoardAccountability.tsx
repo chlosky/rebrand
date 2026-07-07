@@ -3,16 +3,28 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
+  Calendar,
   CheckCircle2,
-  Circle,
   Download,
   ListChecks,
   LayoutGrid,
   Loader2,
+  Mail,
+  Phone,
   ScanSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -28,12 +40,16 @@ import {
   normalizeAccountabilityMap,
   reminderToIso,
   scrubMapTitles,
+  stripSmsText,
   type AccountabilityMap,
 } from "@/lib/boards/accountabilityMap";
-import type { BoardReminder, BoardWorkspaceWithBoards } from "@/lib/boards/types";
-import { downloadIcalFile } from "@/lib/boards/ical";
+import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
+import { downloadAccountabilityIcalFile } from "@/lib/boards/ical";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePlottingPro } from "@/hooks/usePlottingPro";
+import { trackReminderAnalytics } from "@/lib/marketingConversionTrack";
+import { cn } from "@/lib/utils";
 import "@/styles/board-editor.css";
 
 export type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
@@ -42,8 +58,33 @@ function storageKey(workspaceId: string) {
   return `board-accountability-map:${workspaceId}`;
 }
 
+const DAILY_SMS_LIMIT = 5;
+
+function normalizeToE164(phone: string): string | null {
+  const trimmed = phone.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  if (trimmed.startsWith("+") && digits.length >= 6 && digits.length <= 15) return `+${digits}`;
+  return null;
+}
+
+function actionErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (error && typeof error === "object") {
+    const record = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [record.message, record.details, record.hint, record.code]
+      .filter((part): part is string => typeof part === "string" && part.trim().length > 0);
+    if (parts.length) return parts.join(" ");
+  }
+  if (typeof error === "string" && error.trim()) return error;
+  return fallback;
+}
+
 export default function BoardAccountability() {
   const { user } = useAuth();
+  const { hasPro } = usePlottingPro();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -51,12 +92,17 @@ export default function BoardAccountability() {
   const [workspace, setWorkspace] = useState<BoardWorkspaceWithBoards | null>(null);
   const [map, setMap] = useState<AccountabilityMap | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analyzePhase, setAnalyzePhase] = useState<string | null>(null);
+  const [showReanalyzeDialog, setShowReanalyzeDialog] = useState(false);
+  const [showNeedsContent, setShowNeedsContent] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [schedulingEmail, setSchedulingEmail] = useState(false);
-  const [schedulingSms, setSchedulingSms] = useState(false);
   const [exportingIcal, setExportingIcal] = useState(false);
-  const [emailOptedIn, setEmailOptedIn] = useState(false);
-  const [textOptedIn, setTextOptedIn] = useState(false);
+  const [smsUsedToday, setSmsUsedToday] = useState(0);
+  const [smsRemindersEnabled, setSmsRemindersEnabled] = useState(false);
+  const [showSmsConsentDialog, setShowSmsConsentDialog] = useState(false);
+  const [smsConsentChecked, setSmsConsentChecked] = useState(false);
+  const [smsPhoneInput, setSmsPhoneInput] = useState("");
+  const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -112,9 +158,14 @@ export default function BoardAccountability() {
     document.title = "Action | Palette Plotting";
   }, []);
 
-  const runAnalyze = async () => {
+  const runAnalyze = async (skipConfirm = false) => {
     if (!workspace) return;
+    if (map?.focuses?.length && !skipConfirm && !map.finalized) {
+      setShowReanalyzeDialog(true);
+      return;
+    }
     setAnalyzing(true);
+    setAnalyzePhase("Reading your workspace…");
     try {
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       if (refreshError) throw refreshError;
@@ -126,20 +177,27 @@ export default function BoardAccountability() {
         return;
       }
 
+      window.setTimeout(() => setAnalyzePhase("Finding focus areas and actions…"), 800);
+      window.setTimeout(() => setAnalyzePhase("Drafting your action map…"), 1600);
+
       const { data, error } = await supabase.functions.invoke("board-accountability-map", {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: { workspace_id: workspace.id },
       });
       if (error) throw error;
+
+      if (data?.status === "needs_more_content") {
+        setShowNeedsContent(true);
+        return;
+      }
+
       const normalized = normalizeAccountabilityMap(data);
       if (!normalized) {
-        toast.message("Add titles and statements on your boards, then analyze again");
+        setShowNeedsContent(true);
         return;
       }
       persistMap(normalized);
-      setEmailOptedIn(false);
-      setTextOptedIn(false);
-      toast.success("Action suggestions ready — review, edit, or remove what doesn't fit");
+      toast.success("Action map drafted — review and edit before finalizing");
     } catch (error: unknown) {
       const status =
         error && typeof error === "object" && "context" in error
@@ -154,6 +212,86 @@ export default function BoardAccountability() {
       }
     } finally {
       setAnalyzing(false);
+      setAnalyzePhase(null);
+    }
+  };
+
+  const scheduleAllReminders = async (finalizedMap: AccountabilityMap) => {
+    if (!planBoard || !user?.id || !finalizedMap.reminders.length) return;
+
+    const { data: prefs } = await supabase
+      .from("user_preferences")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const smsConsentOk =
+      prefs?.sms_reminders_enabled === true &&
+      prefs?.sms_reminder_consent_at != null &&
+      prefs?.sms_reminder_opted_out_at == null;
+
+    const hasSmsReminders = finalizedMap.reminders.some((r) => r.channels.includes("sms"));
+    if (hasSmsReminders) {
+      if (!prefs?.phone_number_e164?.trim()) {
+        setPendingFinalizeAfterSms(true);
+        setShowSmsConsentDialog(true);
+        throw new Error("Add a phone number for text reminders.");
+      }
+      if (!smsConsentOk) {
+        setPendingFinalizeAfterSms(true);
+        setShowSmsConsentDialog(true);
+        throw new Error("Turn on text reminders to use this channel.");
+      }
+      if (smsUsedToday >= DAILY_SMS_LIMIT) {
+        throw new Error("You've used today's 5 text reminders. Use email or calendar instead.");
+      }
+      const smsInPlan = finalizedMap.reminders.filter((r) => r.channels.includes("sms")).length;
+      if (smsUsedToday + smsInPlan > DAILY_SMS_LIMIT) {
+        throw new Error("You've used today's 5 text reminders. Use email or calendar instead.");
+      }
+    }
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const { error: deleteErr } = await supabase
+      .from("board_reminders")
+      .delete()
+      .eq("board_id", planBoard.id)
+      .eq("user_id", user.id)
+      .eq("source", "ai_extracted")
+      .eq("status", "scheduled")
+      .filter("metadata->>source_page", "eq", "action");
+    if (deleteErr) throw deleteErr;
+
+    for (const r of finalizedMap.reminders) {
+      const channels = r.channels.filter((c) => c === "email" || c === "sms");
+      if (channels.length === 0) continue;
+
+      const body = r.goal_title ? `Focus: ${r.goal_title} · ${r.cadence}` : r.cadence;
+      const smsContent = channels.includes("sms")
+        ? stripSmsText(r.sms_text ?? r.title).slice(0, 70)
+        : undefined;
+
+      await createBoardReminder({
+        board_id: planBoard.id,
+        user_id: user.id,
+        title: r.title,
+        body,
+        remind_at: reminderToIso(r),
+        timezone: tz,
+        channels,
+        source: "ai_extracted",
+        fabric_object_id: null,
+        metadata: {
+          source_page: "action",
+          cadence: r.cadence,
+          day_of_month: r.day_of_month ?? null,
+          day_of_week: r.day_of_week ?? null,
+          remind_time: r.remind_time ?? null,
+          goal_title: r.goal_title ?? null,
+        },
+        ...(smsContent ? { sms_content: smsContent } : {}),
+      } as Parameters<typeof createBoardReminder>[0]);
     }
   };
 
@@ -162,104 +300,101 @@ export default function BoardAccountability() {
     setFinalizing(true);
     try {
       const next = finalizeAccountabilityMap(map);
+      await scheduleAllReminders(next);
       persistMap(next);
-      toast.success("Action plan finalized — reminders are ready to schedule");
-    } catch {
-      toast.error("Couldn't finalize your plan");
+      void refreshSmsUsage();
+      toast.success("Your action map is finalized. Your reminders are ready.");
+    } catch (e) {
+      toast.error(actionErrorMessage(e, "Couldn't finalize your plan"));
     } finally {
       setFinalizing(false);
     }
   };
 
-  const hasActionPlan = Boolean(map?.focuses?.length);
-  const remindersDisabled = !map?.finalized || !map?.reminders.length;
+  const hasDraft = Boolean(map?.focuses?.length);
+  const remindersDisabled = !map?.finalized;
 
-  const scheduleReminders = async (channel: "email" | "sms") => {
-    if (!map?.reminders.length || !planBoard || !user?.id) {
-      toast.error(map?.finalized ? "No reminders in this plan" : "Finalize your plan first");
+  const reminderHelperText = remindersDisabled
+    ? hasDraft
+      ? "Finalize your plan to enable reminders."
+      : "Analyze your workspace first."
+    : "Your reminder channels are active for finalized actions.";
+
+  const smsCounterText = `${smsUsedToday} of ${DAILY_SMS_LIMIT} text reminders used today`;
+
+  const refreshSmsUsage = useCallback(async () => {
+    setSmsUsedToday(0);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void (async () => {
+      const { data: prefs } = await supabase
+        .from("user_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setSmsRemindersEnabled(prefs?.sms_reminders_enabled === true);
+      if (typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()) {
+        setSmsPhoneInput(prefs.phone_number_e164.replace(/^\+1/, ""));
+      }
+      void refreshSmsUsage();
+    })();
+  }, [user?.id, refreshSmsUsage]);
+
+  const completeSmsOptIn = async (): Promise<boolean> => {
+    if (!user?.id) return false;
+    const e164 = normalizeToE164(smsPhoneInput);
+    if (!e164) {
+      toast.error("Enter a valid U.S. phone number for text reminders.");
       return false;
     }
-    const setBusy = channel === "email" ? setSchedulingEmail : setSchedulingSms;
-    setBusy(true);
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      for (const r of map.reminders.slice(0, 20)) {
-        await createBoardReminder({
-          board_id: planBoard.id,
-          user_id: user.id,
-          title: r.title,
-          body: r.goal_title ? `Goal: ${r.goal_title} · ${r.cadence}` : r.cadence,
-          remind_at: reminderToIso(r),
-          timezone: tz,
-          channels: [channel],
-          source: "ai_extracted",
-          fabric_object_id: null,
-        });
-      }
-      const count = Math.min(map.reminders.length, 20);
-      if (channel === "email") {
-        toast.success(`${count} email reminders set`);
-      } else {
-        toast.success(`${count} text reminders set`);
-      }
-      return true;
-    } catch {
-      toast.error(channel === "email" ? "Couldn't set up email reminders" : "Couldn't set up text reminders");
+    if (!smsConsentChecked) {
+      toast.error("Please agree to receive text reminders.");
       return false;
-    } finally {
-      setBusy(false);
     }
-  };
-
-  const toggleEmailReminders = async () => {
-    if (remindersDisabled) return;
-    if (emailOptedIn) {
-      setEmailOptedIn(false);
-      return;
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("user_preferences").upsert(
+      {
+        user_id: user.id,
+        phone_number_e164: e164,
+        sms_reminders_enabled: true,
+        sms_reminder_consent_at: now,
+        sms_reminder_consent_source: "action",
+        sms_reminder_opted_out_at: null,
+      },
+      { onConflict: "user_id" },
+    );
+    if (error) {
+      toast.error("Couldn't save text reminder preferences.");
+      return false;
     }
-    const ok = await scheduleReminders("email");
-    if (ok) setEmailOptedIn(true);
-  };
-
-  const toggleTextReminders = async () => {
-    if (remindersDisabled) return;
-    if (textOptedIn) {
-      setTextOptedIn(false);
-      return;
+    await supabase.from("profiles").update({ phone: e164 }).eq("id", user.id);
+    setSmsRemindersEnabled(true);
+    trackReminderAnalytics("sms_consent_granted");
+    setShowSmsConsentDialog(false);
+    if (pendingFinalizeAfterSms) {
+      setPendingFinalizeAfterSms(false);
+      await runFinalize();
     }
-    const ok = await scheduleReminders("sms");
-    if (ok) setTextOptedIn(true);
+    return true;
   };
 
   const runExportIcal = () => {
-    if (!map?.reminders.length || !planBoard || !user?.id) {
-      toast.error(map?.finalized ? "No reminders in this plan" : "Finalize your plan first");
+    if (!map?.finalized || !map.reminders.length) {
+      toast.error(map?.finalized ? "No calendar reminders in this plan" : "Finalize your plan first");
       return;
     }
+
+    const calendarReminders = map.reminders.filter((r) => r.channels.includes("calendar"));
+    if (!calendarReminders.length) {
+      toast.message("No actions have Calendar selected. Turn on Calendar for the actions you want to export.");
+      return;
+    }
+
     setExportingIcal(true);
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const now = new Date().toISOString();
-      const rows: BoardReminder[] = map.reminders.slice(0, 20).map((r, i) => {
-        return {
-          id: `ical-export-${i}`,
-          board_id: planBoard.id,
-          user_id: user.id,
-          title: r.title,
-          body: r.goal_title ? `Goal: ${r.goal_title} · ${r.cadence}` : r.cadence,
-          remind_at: reminderToIso(r),
-          timezone: tz,
-          channels: ["email"],
-          source: "ai_extracted",
-          fabric_object_id: null,
-          status: "pending",
-          ical_uid: `accountability-${planBoard.id}-${i}@paletteplot.com`,
-          last_sent_at: null,
-          created_at: now,
-          updated_at: now,
-        };
-      });
-      downloadIcalFile(rows, "palette-plotting-accountability.ics");
+      downloadAccountabilityIcalFile(calendarReminders, "palette-plotting-action-reminders.ics");
       toast.success("Calendar file ready");
     } catch {
       toast.error("Couldn't add to calendar");
@@ -267,6 +402,8 @@ export default function BoardAccountability() {
       setExportingIcal(false);
     }
   };
+
+  const smsReady = smsRemindersEnabled;
 
   if (!user) return null;
 
@@ -288,7 +425,7 @@ export default function BoardAccountability() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {hasActionPlan && !map?.finalized ? (
+            {hasDraft && !map?.finalized ? (
               <Button
                 size="sm"
                 className="gap-1 bg-stone-900 text-xs"
@@ -308,7 +445,7 @@ export default function BoardAccountability() {
                 onClick={() => void runAnalyze()}
               >
                 {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                Analyze
+                Analyze workspace
               </Button>
             )}
             <div
@@ -333,11 +470,14 @@ export default function BoardAccountability() {
         <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-neutral-200 bg-white px-4 py-2 text-xs">
           {map?.summary ? (
             <p className="min-w-0 flex-1 text-[11px] leading-snug text-neutral-600">{map.summary}</p>
-          ) : hasActionPlan ? null : (
+          ) : !hasDraft ? (
             <p className="text-[11px] text-neutral-500">
-              Run Analyze to turn your focus boards and The Plan into an action map.
+              Turn your workspace into an action map. Nothing is sent until you review and finalize.
             </p>
-          )}
+          ) : null}
+          {analyzePhase ? (
+            <p className="text-[11px] text-neutral-500">{analyzePhase}</p>
+          ) : null}
           {map?.finalized ? (
             <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
               Finalized
@@ -347,7 +487,9 @@ export default function BoardAccountability() {
 
         {isMobile ? (
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2.5">
-            <Label className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Reminders</Label>
+            <Label className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+              Reminder channels
+            </Label>
             <Button
               variant="outline"
               size="sm"
@@ -356,44 +498,13 @@ export default function BoardAccountability() {
               onClick={() => runExportIcal()}
             >
               {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              Add to calendar
+              Calendar export
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={`gap-1 bg-white text-xs${emailOptedIn ? " border-stone-900" : ""}`}
-              disabled={schedulingEmail || remindersDisabled}
-              onClick={() => void toggleEmailReminders()}
-            >
-              {schedulingEmail ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : emailOptedIn ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : (
-                <Circle className="h-3.5 w-3.5 opacity-40" />
-              )}
-              Email reminders
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={`gap-1 bg-white text-xs${textOptedIn ? " border-stone-900" : ""}`}
-              disabled={schedulingSms || remindersDisabled}
-              onClick={() => void toggleTextReminders()}
-            >
-              {schedulingSms ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : textOptedIn ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              ) : (
-                <Circle className="h-3.5 w-3.5 opacity-40" />
-              )}
-              Text reminders
-            </Button>
-            {remindersDisabled ? (
-              <p className="text-[11px] text-stone-500">
-                {hasActionPlan ? "Finalize your plan to enable reminders." : "Run Analyze first."}
-              </p>
+            {reminderHelperText ? (
+              <p className="text-[11px] text-stone-500">{reminderHelperText}</p>
+            ) : null}
+            {!remindersDisabled ? (
+              <p className="text-[11px] text-stone-500">{smsCounterText}</p>
             ) : null}
           </div>
         ) : null}
@@ -410,8 +521,8 @@ export default function BoardAccountability() {
               <aside className="flex w-56 shrink-0 flex-col border-r border-stone-300/80 bg-[#f3f0eb] p-3 text-xs">
                 <Label className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">How it works</Label>
                 <p className="mt-2 leading-relaxed text-stone-700">
-                  Analyze reads your focus boards and The Plan, then generates a map: Focuses → Plans → Actions.
-                  Edit nodes, remove what does not fit, add your own, then finalize reminders.
+                  Palette reads your Vision workspace and drafts an action map from your boards, notes, images and The
+                  Plan. Review, edit or remove anything, then finalize reminders.
                 </p>
                 <Button
                   className="mt-4 w-full gap-1 bg-stone-900 text-xs"
@@ -420,20 +531,52 @@ export default function BoardAccountability() {
                   onClick={() => void runAnalyze()}
                 >
                   {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                  Analyze
+                  Analyze workspace
                 </Button>
-                {hasActionPlan && !map?.finalized ? (
-                  <Button
-                    className="mt-2 w-full gap-1 text-xs"
-                    size="sm"
-                    disabled={finalizing}
-                    onClick={() => void runFinalize()}
+                <Button
+                  className="mt-2 w-full gap-1 text-xs"
+                  size="sm"
+                  disabled={!hasDraft || finalizing || map?.finalized}
+                  onClick={() => void runFinalize()}
+                >
+                  {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                  Finalize plan
+                </Button>
+                <Label className="mt-5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                  Reminder channels
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
+                      remindersDisabled ? "border-stone-200 text-stone-400" : "border-stone-300 text-stone-700",
+                    )}
                   >
-                    {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                    Finalize plan
-                  </Button>
-                ) : null}
-                <Label className="mt-5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Reminders</Label>
+                    <Calendar className="h-3 w-3" />
+                    Calendar
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
+                      remindersDisabled ? "border-stone-200 text-stone-400" : "border-stone-300 text-stone-700",
+                    )}
+                  >
+                    <Mail className="h-3 w-3" />
+                    Email
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
+                      remindersDisabled ? "border-stone-200 text-stone-400" : "border-stone-300 text-stone-700",
+                    )}
+                  >
+                    <Phone className="h-3 w-3" />
+                    Text
+                  </span>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
+                  Calendar = scheduled follow-through. Email = soft accountability. Text = stronger nudge.
+                </p>
                 <Button
                   variant="outline"
                   className="mt-2 w-full gap-1 text-xs"
@@ -442,44 +585,13 @@ export default function BoardAccountability() {
                   onClick={() => runExportIcal()}
                 >
                   {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                  Add to calendar
+                  Calendar export
                 </Button>
-                <Button
-                  variant="outline"
-                  className={`mt-2 w-full gap-1 text-xs${emailOptedIn ? " border-stone-900" : ""}`}
-                  size="sm"
-                  disabled={schedulingEmail || remindersDisabled}
-                  onClick={() => void toggleEmailReminders()}
-                >
-                  {schedulingEmail ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : emailOptedIn ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5 opacity-40" />
-                  )}
-                  Email reminders
-                </Button>
-                <Button
-                  variant="outline"
-                  className={`mt-2 w-full gap-1 text-xs${textOptedIn ? " border-stone-900" : ""}`}
-                  size="sm"
-                  disabled={schedulingSms || remindersDisabled}
-                  onClick={() => void toggleTextReminders()}
-                >
-                  {schedulingSms ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : textOptedIn ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Circle className="h-3.5 w-3.5 opacity-40" />
-                  )}
-                  Text reminders
-                </Button>
-                {remindersDisabled ? (
-                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
-                    {hasActionPlan ? "Finalize your plan to enable reminders." : "Run Analyze first."}
-                  </p>
+                {reminderHelperText ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">{reminderHelperText}</p>
+                ) : null}
+                {!remindersDisabled ? (
+                  <p className="mt-1 text-[11px] leading-relaxed text-stone-500">{smsCounterText}</p>
                 ) : null}
               </aside>
             )}
@@ -488,10 +600,101 @@ export default function BoardAccountability() {
               map={map}
               boards={workspace.boards}
               onChange={persistMap}
+              smsReady={smsReady}
+              hasPro={hasPro}
+              onRequestSmsSetup={() => {
+                setPendingFinalizeAfterSms(false);
+                setShowSmsConsentDialog(true);
+              }}
             />
           </div>
         )}
       </div>
+
+      <Dialog open={showReanalyzeDialog} onOpenChange={setShowReanalyzeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Re-analyze workspace?</DialogTitle>
+            <DialogDescription>
+              This may replace your current draft. Your finalized reminders will not change unless you
+              finalize again.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReanalyzeDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowReanalyzeDialog(false);
+                void runAnalyze(true);
+              }}
+            >
+              Re-analyze
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNeedsContent} onOpenChange={setShowNeedsContent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Palette needs a little more to work with</DialogTitle>
+            <DialogDescription>
+              Add a few notes, images, goals or dates to your Vision workspace, then analyze again.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNeedsContent(false)}>
+              Close
+            </Button>
+            <Button onClick={() => navigate("/dashboard/boards")}>Back to Vision</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSmsConsentDialog} onOpenChange={setShowSmsConsentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Text reminders</DialogTitle>
+            <DialogDescription>
+              Text is best for important nudges. Use email or calendar for longer details. Up to 5 text reminders per
+              day.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="action-sms-phone">Phone number for text reminders</Label>
+              <Input
+                id="action-sms-phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="(555) 123-4567"
+                value={smsPhoneInput}
+                onChange={(e) => setSmsPhoneInput(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Used only for text reminders you choose.</p>
+            </div>
+            <label className="flex items-start gap-2">
+              <Checkbox
+                checked={smsConsentChecked}
+                onCheckedChange={(v) => setSmsConsentChecked(v === true)}
+                className="mt-0.5"
+              />
+              <span className="text-xs leading-relaxed text-muted-foreground">
+                I agree to receive text reminders for dates, goals and actions I create in Palette. Message and data
+                rates may apply. I can turn text reminders off anytime.
+              </span>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSmsConsentDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => void completeSmsOptIn()}>Save and continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

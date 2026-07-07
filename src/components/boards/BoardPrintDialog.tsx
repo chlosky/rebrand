@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   BOARD_PRINT_PRESETS,
-  downloadBoardPrint,
   downloadBoardsPrintPdf,
   type BoardPrintPreset,
 } from "@/lib/boards/renderBoard";
@@ -31,7 +30,7 @@ const DOWNLOAD_OPTIONS: { id: DownloadOptionId; label: string; description: stri
   {
     id: "phone-wallpaper",
     label: "Phone wallpaper",
-    description: "Portrait PNG for your phone — current board only",
+    description: "Portrait PNG for your phone — pick one board below",
   },
 ];
 
@@ -63,14 +62,25 @@ export function BoardPrintDialog({
     setSelectedBoardIds(boards.map((b) => b.id));
   }, [open, boards]);
 
+  useEffect(() => {
+    if (!isPhoneWallpaper) return;
+    setSelectedBoardIds((prev) => {
+      if (prev.length === 1) return prev;
+      const pick = boards.some((b) => b.id === activeBoardId) ? activeBoardId : boards[0]?.id;
+      return pick ? [pick] : [];
+    });
+  }, [isPhoneWallpaper, activeBoardId, boards]);
+
   const selectedBoards = useMemo(
     () => boards.filter((b) => selectedBoardIds.includes(b.id)),
     [boards, selectedBoardIds],
   );
 
-  const activeBoard = boards.find((b) => b.id === activeBoardId) ?? boards[0];
-  const downloadAsPdf = !isPhoneWallpaper && selectedBoards.length > 1;
-  const canDownload = isPhoneWallpaper ? Boolean(activeBoard) : selectedBoards.length > 0;
+  const canDownload = isPhoneWallpaper ? selectedBoards.length === 1 : selectedBoards.length > 0;
+
+  const selectPhoneWallpaperBoard = (boardId: string) => {
+    setSelectedBoardIds([boardId]);
+  };
 
   const toggleBoard = (boardId: string, checked: boolean) => {
     setSelectedBoardIds((prev) => {
@@ -83,13 +93,15 @@ export function BoardPrintDialog({
     if (!canDownload) return;
     setBusy(true);
     try {
-      if (isPhoneWallpaper && activeBoard) {
+      if (isPhoneWallpaper) {
+        const board = selectedBoards[0];
+        if (!board) return;
         await downloadPhoneWallpaper(
-          getLayoutJson(activeBoard.id),
-          activeBoard.color_key,
-          activeBoard.title,
+          getLayoutJson(board.id),
+          board.color_key,
+          board.title,
         );
-        toast.success("Phone wallpaper downloaded");
+        toast.success(`Downloaded ${board.title} as phone wallpaper`);
       } else if (printPreset) {
         const sources = selectedBoards.map((board) => ({
           layoutJson: getLayoutJson(board.id),
@@ -97,18 +109,12 @@ export function BoardPrintDialog({
           title: board.title,
         }));
 
-        if (sources.length === 1) {
-          await downloadBoardPrint(
-            sources[0].layoutJson,
-            sources[0].colorKey,
-            printPreset,
-            sources[0].title,
-          );
-          toast.success(`Downloaded ${sources[0].title} (${printPreset.label})`);
-        } else {
-          await downloadBoardsPrintPdf(sources, printPreset);
-          toast.success(`Downloaded ${sources.length} boards as PDF (${printPreset.label})`);
-        }
+        await downloadBoardsPrintPdf(sources, printPreset);
+        toast.success(
+          sources.length === 1
+            ? `Downloaded ${sources[0].title} as PDF (${printPreset.label})`
+            : `Downloaded ${sources.length} boards as PDF (${printPreset.label})`,
+        );
       }
       onOpenChange(false);
     } catch (err) {
@@ -126,8 +132,8 @@ export function BoardPrintDialog({
           <DialogTitle>Download</DialogTitle>
           <DialogDescription>
             {isPhoneWallpaper
-              ? "Choose a format and download the current board as a PNG."
-              : "Choose a print format and select boards. One board downloads as PNG; multiple boards download as a multi-page PDF."}
+              ? "Pick one board below. Downloads as a PNG phone wallpaper."
+              : "Choose a print format and select boards. Downloads as PDF (one page per board)."}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +143,16 @@ export function BoardPrintDialog({
             <select
               className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
               value={optionId}
-              onChange={(e) => setOptionId(e.target.value as DownloadOptionId)}
+              onChange={(e) => {
+                const next = e.target.value as DownloadOptionId;
+                setOptionId(next);
+                if (next === "phone-wallpaper") {
+                  const pick = boards.some((b) => b.id === activeBoardId) ? activeBoardId : boards[0]?.id;
+                  if (pick) setSelectedBoardIds([pick]);
+                } else if (selectedBoardIds.length <= 1) {
+                  setSelectedBoardIds(boards.map((b) => b.id));
+                }
+              }}
             >
               {DOWNLOAD_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -153,21 +168,23 @@ export function BoardPrintDialog({
             )}
           </div>
 
-          {!isPhoneWallpaper && boards.length > 1 && (
+          {boards.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <Label className="text-xs">Vision</Label>
-                <button
-                  type="button"
-                  className="text-[11px] text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
-                  onClick={() =>
-                    setSelectedBoardIds(
-                      selectedBoardIds.length === boards.length ? [] : boards.map((b) => b.id),
-                    )
-                  }
-                >
-                  {selectedBoardIds.length === boards.length ? "Deselect all" : "Select all"}
-                </button>
+                <Label className="text-xs">Boards</Label>
+                {!isPhoneWallpaper && boards.length > 1 ? (
+                  <button
+                    type="button"
+                    className="text-[11px] text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+                    onClick={() =>
+                      setSelectedBoardIds(
+                        selectedBoardIds.length === boards.length ? [] : boards.map((b) => b.id),
+                      )
+                    }
+                  >
+                    {selectedBoardIds.length === boards.length ? "Deselect all" : "Select all"}
+                  </button>
+                ) : null}
               </div>
               <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-neutral-200 p-2">
                 {boards.map((board) => {
@@ -177,10 +194,20 @@ export function BoardPrintDialog({
                       key={board.id}
                       className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-neutral-50"
                     >
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={(value) => toggleBoard(board.id, value === true)}
-                      />
+                      {isPhoneWallpaper ? (
+                        <input
+                          type="radio"
+                          name="download-board"
+                          checked={checked}
+                          onChange={() => selectPhoneWallpaperBoard(board.id)}
+                          className="h-4 w-4 shrink-0 accent-neutral-900"
+                        />
+                      ) : (
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(value) => toggleBoard(board.id, value === true)}
+                        />
+                      )}
                       <span className="min-w-0 truncate">
                         {board.title}
                         {board.id === activeBoardId ? (
@@ -192,25 +219,23 @@ export function BoardPrintDialog({
                 })}
               </div>
               <p className="text-[11px] leading-snug text-neutral-500">
-                {selectedBoards.length === 0
-                  ? "Select at least one board."
-                  : selectedBoards.length === 1
+                {isPhoneWallpaper
+                  ? selectedBoards.length === 1
                     ? "One board — downloads as PNG."
-                    : `${selectedBoards.length} boards — one page each in a PDF.`}
+                    : "Pick one board."
+                  : selectedBoards.length === 0
+                    ? "Select at least one board."
+                    : selectedBoards.length === 1
+                      ? "One board — downloads as PDF."
+                      : `${selectedBoards.length} boards — one page each in a PDF.`}
               </p>
             </div>
-          )}
-
-          {isPhoneWallpaper && activeBoard && (
-            <p className="text-[11px] leading-snug text-neutral-500">
-              Downloading <span className="font-medium text-neutral-700">{activeBoard.title}</span> only.
-            </p>
           )}
         </div>
 
         <Button className="gap-2" disabled={busy || !canDownload} onClick={() => void handleDownload()}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          {isPhoneWallpaper ? "Download PNG" : downloadAsPdf ? "Download PDF" : "Download PNG"}
+          {isPhoneWallpaper ? "Download PNG" : "Download PDF"}
         </Button>
       </DialogContent>
     </Dialog>

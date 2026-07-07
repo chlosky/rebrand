@@ -222,14 +222,14 @@ export default function AndroidPostPaywallLoading() {
         });
         logAndroidPostPaywall("navigate dashboard", { gate, totalMs });
 
-        window.setTimeout(() => navigateRef.current("/workspace?tab=create", { replace: true }), 250);
+        window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 250);
       } catch (e) {
         console.error("[android-post-paywall] provisioning failed:", e);
         logAndroidPostPaywall("provisioning error", { error: String((e as Error)?.message ?? e) });
         if (!alive) return;
         clearAndroidPostPurchaseEntitlementLatch();
         logAndroidPostPaywall("navigate dashboard after error");
-        window.setTimeout(() => navigateRef.current("/workspace?tab=create", { replace: true }), 650);
+        window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 650);
       }
     })();
 

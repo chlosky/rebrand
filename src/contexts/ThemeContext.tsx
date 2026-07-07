@@ -10,9 +10,7 @@ import {
 } from "react";
 import { applyAppDocumentChrome } from "@/lib/appDocumentChrome";
 import {
-  readStoredAppearance,
   writeStoredAppearance,
-  APPEARANCE_STORAGE_KEY,
 } from "@/lib/appearancePreference";
 
 export type Appearance = "light" | "dark";
@@ -60,13 +58,7 @@ if (typeof window !== "undefined" && !window.__appLocationChangePatched) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Appearance>(() => {
-    const appearance = readStoredAppearance();
-    if (typeof window !== "undefined" && !localStorage.getItem(APPEARANCE_STORAGE_KEY)) {
-      writeStoredAppearance("light");
-    }
-    return appearance;
-  });
+  const [theme] = useState<Appearance>("light");
 
   const [pathname, setPathname] = useState(() => window.location.pathname);
 
@@ -96,9 +88,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyAppDocumentChrome(path, theme);
   }, [theme, pathname]);
 
-  const setTheme = useCallback((appearance: Appearance) => {
-    setThemeState(appearance);
-    writeStoredAppearance(appearance);
+  const setTheme = useCallback((_appearance: Appearance) => {
+    writeStoredAppearance("light");
   }, []);
 
   // Memoize so every navigation doesn't hand all `useTheme()` consumers a new

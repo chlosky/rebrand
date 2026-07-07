@@ -79,8 +79,6 @@
       "community": "Community",
       "tips": "Tips",
       "yourJourney": "Reminders",
-      "newBoard": "Start a New Board",
-      "create": "Create",
       "imageLibrary": "Image Library",
       "projects": "Projects"
     },
@@ -88,10 +86,12 @@
       "journalTitle": "Journal",
       "journalDescription": "Reflect and capture what shifted this week."
     },
-    "newBoard": {
-      "title": "Start a new board",
-      "subtitle": "Open your plotting desk to lay out vision boards, plan items, and clippings.",
-      "openBoards": "Open plotting desk"
+    "projects": {
+      "title": "Your vision",
+      "subtitle": "Jump back into a set you've already started.",
+      "startNewSet": "Start a new set",
+      "creating": "Starting…",
+      "empty": "No sets yet — start your first set above."
     },
     "library": {
       "heading": "Library",
@@ -179,12 +179,6 @@
     "imageLibrary": {
       "title": "Your image library",
       "subtitle": "Upload clippings and photos here. They stay in your account and show up when you add images on boards."
-    },
-    "projects": {
-      "title": "Your vision",
-      "subtitle": "Jump back into a workspace you've already started.",
-      "open": "Open vision",
-      "empty": "No workspaces yet — start from Create when you're ready."
     },
     "locked": {
       "createTitle": "Create is for members",

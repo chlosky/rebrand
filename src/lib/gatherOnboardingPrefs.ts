@@ -22,6 +22,11 @@ export interface OnboardingPrefsPayload {
   onboarding_answers?: Record<string, unknown> | null;
   embody_active_practices?: string[] | null;
   preferred_locale?: string | null;
+  preferred_reminder_channels?: string | null;
+  phone_number_e164?: string | null;
+  sms_reminders_enabled?: boolean | null;
+  sms_reminder_consent_at?: string | null;
+  sms_reminder_consent_source?: string | null;
 }
 
 /**
@@ -109,6 +114,28 @@ export async function gatherOnboardingPrefs(): Promise<OnboardingPrefsPayload | 
   prefs.preferred_locale = resolveAppLocale(
     i18n.resolvedLanguage || i18n.language || readStoredPreferredLocale() || draft.locale,
   );
+
+  if (typeof draft.preferredReminderChannels === "string" && draft.preferredReminderChannels.trim()) {
+    prefs.preferred_reminder_channels = draft.preferredReminderChannels.trim();
+  }
+  const draftWithSms = draft as {
+    phoneNumberE164?: string;
+    smsReminderConsent?: boolean;
+    preferredReminderChannels?: string;
+  };
+  if (typeof draftWithSms.phoneNumberE164 === "string" && draftWithSms.phoneNumberE164.trim()) {
+    prefs.phone_number_e164 = draftWithSms.phoneNumberE164.trim();
+    prefs.phone = draftWithSms.phoneNumberE164.trim();
+  }
+  if (
+    draftWithSms.smsReminderConsent === true &&
+    typeof draftWithSms.preferredReminderChannels === "string" &&
+    draftWithSms.preferredReminderChannels.includes("sms")
+  ) {
+    prefs.sms_reminders_enabled = true;
+    prefs.sms_reminder_consent_at = new Date().toISOString();
+    prefs.sms_reminder_consent_source = "onboarding";
+  }
 
   if (Object.keys(prefs).length === 0) return null;
   return prefs;

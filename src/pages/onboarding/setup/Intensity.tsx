@@ -128,7 +128,7 @@ export default function SetupIntensity() {
         : `${setupBase}/plot-loading`;
 
   const handleBack = () => {
-    navigate(`${setupBase}/attribution`);
+    navigate(`${setupBase}/reminder-channels`);
   };
 
   const persistAndContinue = async (opts: {

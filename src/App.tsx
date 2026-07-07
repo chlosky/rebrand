@@ -21,11 +21,11 @@ import NotFound from "./pages/NotFound";
 const Welcome = lazy(() => import("./pages/onboarding/Welcome"));
 import Settings from "./pages/Settings";
 import RoutineReminderSettings from "./pages/RoutineReminderSettings";
+import PlanReminderSettings from "./pages/PlanReminderSettings";
 import Boards from "./pages/features/Boards";
 import BoardAccountability from "./pages/features/BoardAccountability";
 import ActivityTracking from "./pages/features/ActivityTracking";
 import Chrono from "./pages/features/Chrono";
-import Reminders from "./pages/features/Reminders";
 import ReportAppIssue from "./pages/ReportAppIssue";
 import AdminSupportInbox from "./pages/admin/AdminSupportInbox";
 import EmailCollection from "./pages/onboarding/EmailCollection";
@@ -53,6 +53,7 @@ import SetupPrimaryIntentGated from "@/components/onboarding/SetupPrimaryIntentG
 import SetupOfficePlanningSystemGated from "@/components/onboarding/SetupOfficePlanningSystemGated";
 import SetupToolPreferenceGated from "@/components/onboarding/SetupToolPreferenceGated";
 import SetupBeginJourneyGated from "@/components/onboarding/SetupBeginJourneyGated";
+import SetupReminderChannels from "./pages/onboarding/setup/ReminderChannels";
 import Activate from "./pages/Activate";
 import PaymentProcessing from "./pages/PaymentProcessing";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -241,6 +242,7 @@ const App = () => {
               <Route path="/onboarding/setup/focus-details" element={<SetupFocusDetails />} />
               <Route path="/onboarding/setup/email" element={<SetupEmail />} />
               <Route path="/onboarding/setup/attribution" element={<SetupAttribution />} />
+              <Route path="/onboarding/setup/reminder-channels" element={<SetupReminderChannels />} />
               <Route path="/onboarding/setup/notifications" element={<SetupNotificationPrePermission />} />
               <Route path="/onboarding/setup/intensity" element={<SetupIntensity />} />
               <Route path="/onboarding/setup/tool-preference" element={<SetupToolPreferenceGated />} />
@@ -268,6 +270,7 @@ const App = () => {
               <Route path="/onboarding/suite/setup/focus-details" element={<SetupFocusDetails />} />
               <Route path="/onboarding/suite/setup/email" element={<SetupEmail />} />
               <Route path="/onboarding/suite/setup/attribution" element={<SetupAttribution />} />
+              <Route path="/onboarding/suite/setup/reminder-channels" element={<SetupReminderChannels />} />
               <Route path="/onboarding/suite/setup/notifications" element={<SetupNotificationPrePermission />} />
               <Route path="/onboarding/suite/setup/intensity" element={<SetupIntensity />} />
               <Route path="/onboarding/suite/setup/tool-preference" element={<SetupToolPreferenceGated />} />
@@ -325,10 +328,9 @@ const App = () => {
                 <Route index element={<Navigate to="/dashboard/boards" replace />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="settings/routine-reminders" element={<RoutineReminderSettings />} />
+                <Route path="settings/plan-reminders" element={<PlanReminderSettings />} />
                 <Route path="report-issue" element={<ReportAppIssue />} />
                 <Route path="admin/support" element={<AdminSupportInbox />} />
-                <Route path="reminders" element={<Reminders />} />
-                <Route path="your-journey" element={<Navigate to="/dashboard/reminders" replace />} />
                 <Route path="boards" element={<Boards />} />
                 <Route path="boards/accountability" element={<BoardAccountability />} />
                 <Route path="timeline" element={<Chrono />} />

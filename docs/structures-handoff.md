@@ -18,12 +18,12 @@ Reference for **Layouts** (sidebar) and what lands on the canvas.
 
 ### “Add row” / “Add line”
 
-1. **Priority grid** — `placeInteractivePriority()` draws 6 numbered rows + clickable **`+ add row`** on the canvas.
-2. **Checklist** — `placeInteractiveChecklist()` with **`+ add line`** on the canvas.
+1. **Priority grid** — `placeInteractivePriority()` draws 6 rows + a clickable **add-row control** at the bottom of the structure.
+2. **Checklist** — `placeInteractiveChecklist()` draws rows + a clickable **add-row control** at the bottom of the structure.
 
-Both are **on-canvas controls inside a Fabric group**, not sidebar UI. Click the text or press **Enter** while typing a row to append another row.
+Both are **on-canvas controls inside a Fabric group**, not sidebar UI. Click the bottom control area or press **Enter** while typing a row to append another row.
 
-**Guide chat** does not configure `+ add row` separately. It returns JSON like `{ "type": "add_diagram", "diagram": "eisenhower" }` which calls `addDiagramOverlay("eisenhower")` → `placeInteractivePriority()`.
+**Guide chat** does not configure the add-row control separately. It returns JSON like `{ "type": "add_diagram", "diagram": "eisenhower" }` which calls `addDiagramOverlay("eisenhower")` → `placeInteractivePriority()`.
 
 ### Custom props on structure objects
 
@@ -47,7 +47,7 @@ Saved on Fabric objects inside groups (registered in `FabricObject.customPropert
 export const PLOT_STRUCTURES = [
   { type: "checklist", title: "Checklist" },
   { type: "divider", title: "Divider" },
-  { type: "zones", title: "Zones", items: ["Entry", "Kitchen", "Bedrooms"] },
+  { type: "zones", title: "Zones" },
   { type: "eisenhower", title: "Priority grid" },
   { type: "kanban", title: "Flow columns" },
   { type: "timeline", title: "Timeline" },
@@ -103,7 +103,7 @@ Small CSS previews on each card only — **not** what appears on the board.
 - **4 rows** to start, each row:
   - `Rect` checkbox (`structureRole: "checkbox"`, `evented: true`)
   - `IText` label (`structureRole: "label"`, `editable: true`)
-- Bottom: `FabricText` **`+ add line`** (`structureRole: "add-row"`, clickable)
+- Bottom: `FabricText` (empty text) (`structureRole: "add-row"`, clickable)
 
 ```ts
 const STRUCTURE_ROW_H = 38;
@@ -116,7 +116,7 @@ const STRUCTURE_BOX = 20;
 |--------|---------|
 | Click checkbox | Toggle fill + label strikethrough |
 | Click label text | `enterEditing()` — type item |
-| Click `+ add line` | Append new checkbox + empty label row |
+| Click add-row control | Append new checkbox + empty label row |
 | **Enter** while editing label | Exit edit + append row (via `rebindStructureHandlers`) |
 
 ### Add row
@@ -124,7 +124,7 @@ const STRUCTURE_BOX = 20;
 1. Count existing checkboxes → `rowIndex`
 2. `rowTop = 8 + rowIndex * STRUCTURE_ROW_H`
 3. `group.add(box, label)`
-4. Move `+ add line` down: `top: rowTop + STRUCTURE_ROW_H + 4`
+4. Move add-row control down: `top: rowTop + STRUCTURE_ROW_H + 4`
 5. `rebindStructureHandlers(canvas)` so Enter works on new label
 
 ### Group flags
@@ -148,7 +148,7 @@ objectCaching: false,
 - Vertical divider at ~55% width (`frame-v`)
 - Horizontal header line
 - **6 rows**: left cell = item text, right cell = rank number (1–6)
-- Bottom: **`+ add row`** (`structureRole: "add-row"`)
+- Bottom: `FabricText` (empty text) (`structureRole: "add-row"`)
 
 Not a classic 2×2 Eisenhower matrix — it's an **item | rank** list layout.
 
@@ -177,7 +177,7 @@ if (diagram === "eisenhower") {
 - `rowTop = 44 + rowIndex * STRUCTURE_ROW_H`
 - Adds `priority-left` + `priority-right` cells
 - Extends `frame-v` height
-- Moves `+ add row` down
+- Moves add-row control down
 
 ---
 
@@ -304,4 +304,4 @@ Edge function calls `supabase.auth.getUser(token)` with JWT from `Authorization`
 }
 ```
 
-The `add_diagram` action creates the priority grid with `+ add row` — same as the Layouts tab.
+The `add_diagram` action creates the priority grid with the add-row control — same as the Layouts tab.

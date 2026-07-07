@@ -55,6 +55,7 @@ export type BoardReminder = {
   status: string;
   ical_uid: string | null;
   last_sent_at: string | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };

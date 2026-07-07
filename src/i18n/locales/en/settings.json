@@ -58,7 +58,11 @@
     "dataTrainingHeading": "Data training",
     "dataTrainingDescription": "Help improve the experience by allowing anonymized usage to be used for model training. Default is off.",
     "dataTrainingLabel": "Allow data training",
-    "timeZoneLabel": "Time zone"
+    "timeZoneLabel": "Time zone",
+    "planRemindersHeading": "Plan reminders",
+    "planRemindersDescription": "Default channels and text reminder setup for dates, goals and next steps from The Plan.",
+    "planRemindersButtonTitle": "Plan reminder preferences",
+    "planRemindersButtonSubtitle": "Email, calendar export and text nudges"
   },
   "deletion": {
     "heading": "Delete account",
@@ -187,7 +191,40 @@
     "routineNotifPermissionFailed": "Could not request notification permission.",
     "routineNotifOn": "Routine notifications enabled",
     "routineIntensitySaved": "Routine intensity updated",
-    "routineIntensitySaveFailed": "Could not save your routine intensity."
+    "routineIntensitySaveFailed": "Could not save your routine intensity.",
+    "planRemindersLoadFailed": "Could not load plan reminder preferences.",
+    "planRemindersSaveFailed": "Could not save plan reminder preferences.",
+    "planSmsEnabled": "Text reminders turned on.",
+    "planSmsDisabled": "Text reminders turned off.",
+    "planPhoneSaved": "Phone number saved."
   },
-  "legalDisclaimer": ""
+  "legalDisclaimer": "",
+  "planReminders": {
+    "title": "Plan reminders",
+    "subtitle": "Defaults for The Plan — per-step choices on Action still apply",
+    "backAria": "Back to settings",
+    "loading": "Loading your reminder preferences…",
+    "channelsHeading": "Default reminder channels",
+    "channelsDescription": "These are your account defaults. Each next step on Action can still choose its own channels before you finalize.",
+    "channelSystemLine": "Calendar = scheduled follow-through. Email = soft accountability. Text = stronger nudge.",
+    "emailLabel": "Email reminders",
+    "calendarLabel": "Calendar export",
+    "calendarHint": "Calendar export is unlimited. Export from Action after you finalize a plan.",
+    "smsHeading": "Text reminders",
+    "smsDescription": "Short stronger nudges for important next steps. Not marketing texts.",
+    "smsDailyLimit": "Up to 5 text reminders per day.",
+    "smsCounter": "{{used}} of {{limit}} text reminders used today",
+    "smsLabel": "Text reminders",
+    "phoneLabel": "Phone number for text reminders",
+    "phoneHint": "Used only for text reminders you choose.",
+    "phoneRequired": "Add a phone number before turning on text reminders.",
+    "phoneInvalid": "Enter a valid U.S. phone number.",
+    "consentRequired": "Please agree to receive text reminders.",
+    "smsConsent": "I agree to receive text reminders for dates, goals and next steps I create in Palette. Message and data rates may apply. I can turn text reminders off anytime.",
+    "turnOffSms": "Turn off text reminders",
+    "savePhone": "Save phone number",
+    "proRequired": "Text reminders require an active Palette Plotting plan.",
+    "smsCharNote": "Text reminders are short by design — {{max}} characters max per message.",
+    "perStepNote": "Tip: Open Action to set Calendar, Email or Text on individual next steps before finalizing."
+  }
 }

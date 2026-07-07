@@ -14,7 +14,6 @@ if (typeof window !== "undefined") {
 
 import "./i18n";
 import App from "./App.tsx";
-import { readStoredAppearance } from "@/lib/appearancePreference";
 import { applyNativeSafeAreaRootVars } from "@/lib/nativeSafeArea";
 import {
   attachOneSignalListenersOnce,
@@ -26,15 +25,9 @@ import { captureAndPersistAttribution, captureAttributionFromUrl } from "@/lib/a
 applyNativeSafeAreaRootVars();
 
 if (Capacitor.isNativePlatform()) {
-  const appearance = readStoredAppearance();
-  const isDark = appearance === "dark";
-  if (isDark) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-  const bg = isDark ? "#0f0d14" : "#ffffff";
-  document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+  document.documentElement.classList.remove("dark");
+  document.documentElement.style.colorScheme = "light";
+  const bg = "#ffffff";
   document.documentElement.style.backgroundColor = bg;
   document.body.style.backgroundColor = bg;
   const root = document.getElementById("root");

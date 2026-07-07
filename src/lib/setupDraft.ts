@@ -54,6 +54,9 @@ export type SetupDraft = {
   moodboardFocusKey?: string;
   /** UI locale (`en` | `es-419`) — set on welcome switcher or auto-detect. */
   locale?: "en" | "es-419";
+  preferredReminderChannels?: string;
+  phoneNumberE164?: string;
+  smsReminderConsent?: boolean;
 };
 
 const KEY = "pp_setup_draft_v1";

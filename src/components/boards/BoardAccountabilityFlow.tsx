@@ -7,15 +7,19 @@ import type {
   AccountabilityMap,
   AccountabilityPlan,
   MapCadence,
+  ReminderChannelFlags,
 } from "@/lib/boards/accountabilityMap";
 import {
   CADENCE_OPTIONS,
   DAILY_TIME_QUICK_OPTIONS,
+  DEFAULT_REMINDER_CHANNELS,
   naturalizeTitle,
+  SMS_MAX_LENGTH,
   stripChromeFromInput,
+  stripSmsText,
+  smsTextFromTitle,
   WEEKDAY_OPTIONS,
 } from "@/lib/boards/accountabilityMap";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -23,9 +27,13 @@ type BoardAccountabilityFlowProps = {
   map: AccountabilityMap | null;
   boards: Board[];
   onChange: (map: AccountabilityMap) => void;
+  smsReady?: boolean;
+  hasPro?: boolean;
+  onRequestSmsSetup?: () => void;
 };
 
 const MAP_GRID = "grid-cols-[240px_minmax(220px,280px)_minmax(460px,1fr)]";
+const PLAN_ACTION_GRID = "grid-cols-[minmax(220px,280px)_32px_minmax(460px,1fr)]";
 
 function newId(prefix: string) {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -42,23 +50,39 @@ function suggestedBorder(status: string) {
 const PILL_SELECT =
   "h-7 shrink-0 rounded-lg border-0 bg-neutral-100 px-2 text-[11px] text-neutral-700 outline-none focus:ring-1 focus:ring-neutral-300";
 
+type ReminderType = "calendar" | "email" | "sms";
+
+function primaryReminderType(channels: ReminderChannelFlags): ReminderType {
+  if (channels.sms) return "sms";
+  if (channels.calendar) return "calendar";
+  return "email";
+}
+
+function reminderTypeToChannels(type: ReminderType): ReminderChannelFlags {
+  return { calendar: type === "calendar", email: type === "email", sms: type === "sms" };
+}
+
 function CadenceTimingControls({
   cadence,
+  remind_date,
   remind_day_of_month,
   remind_day_of_week,
   remind_time,
   locked,
   onCadence,
+  onRemindDate,
   onDayOfMonth,
   onDayOfWeek,
   onTime,
 }: {
   cadence: MapCadence;
+  remind_date: string | null;
   remind_day_of_month: number | null;
   remind_day_of_week: string | null;
   remind_time: string | null;
   locked: boolean;
   onCadence: (c: MapCadence) => void;
+  onRemindDate: (d: string) => void;
   onDayOfMonth: (d: number) => void;
   onDayOfWeek: (d: string) => void;
   onTime: (t: string) => void;
@@ -92,12 +116,25 @@ function CadenceTimingControls({
           </option>
         ))}
       </select>
-      <div className="w-[80px] shrink-0">
-        {cadence === "monthly" ? (
+      <div
+        className={cn(
+          "shrink-0",
+          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[120px]" : "w-[80px]",
+        )}
+      >
+        {cadence === "once" ? (
+          <input
+            type="date"
+            disabled={locked}
+            value={remind_date ?? ""}
+            onChange={(e) => onRemindDate(e.target.value)}
+            className={cn(PILL_SELECT, "w-full")}
+          />
+        ) : cadence === "monthly" ? (
           <select
             disabled={locked}
-            value={remind_day_of_month === -1 ? "last" : String(remind_day_of_month ?? 1)}
-            onChange={(e) => onDayOfMonth(e.target.value === "last" ? -1 : parseInt(e.target.value, 10))}
+          value={String(Math.min(31, Math.max(1, remind_day_of_month ?? 1)))}
+          onChange={(e) => onDayOfMonth(parseInt(e.target.value, 10))}
             className={cn(PILL_SELECT, "w-full")}
           >
             {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -105,7 +142,6 @@ function CadenceTimingControls({
                 Day {d}
               </option>
             ))}
-            <option value="last">Last</option>
           </select>
         ) : cadence === "weekly" ? (
           <select
@@ -144,6 +180,7 @@ function PlanNodeRow({
   status,
   locked,
   onTitle,
+  onAddAction,
   onReject,
   onDelete,
   className,
@@ -153,6 +190,7 @@ function PlanNodeRow({
   status: string;
   locked: boolean;
   onTitle: (v: string) => void;
+  onAddAction?: () => void;
   onReject: () => void;
   onDelete: () => void;
   className?: string;
@@ -160,7 +198,7 @@ function PlanNodeRow({
   return (
     <div
       className={cn(
-        "flex min-h-[40px] w-full items-center gap-1.5 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
+        "flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
         suggestedBorder(status),
         className,
       )}
@@ -177,6 +215,19 @@ function PlanNodeRow({
         className="h-8 min-w-[120px] flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
         placeholder={placeholder}
       />
+      {!locked && onAddAction ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddAction();
+          }}
+          className="shrink-0 rounded-full border border-dashed border-neutral-300 bg-white/70 px-2.5 py-1 text-[10px] text-neutral-500 hover:border-neutral-400 hover:text-neutral-700"
+        >
+          <Plus className="mr-1 inline h-3 w-3" />
+          Add action
+        </button>
+      ) : null}
       <RejectOrDeleteButton
         suggested={status === "suggested"}
         locked={locked}
@@ -188,79 +239,134 @@ function PlanNodeRow({
 }
 
 function ActionNodeRow({
-  title,
-  placeholder,
-  status,
+  action,
   locked,
-  cadence,
-  remind_day_of_month,
-  remind_day_of_week,
-  remind_time,
-  onTitle,
-  onCadence,
-  onDayOfMonth,
-  onDayOfWeek,
-  onTime,
+  smsReady,
+  hasPro,
+  onRequestSmsSetup,
+  onPatch,
   onReject,
   onDelete,
-  className,
 }: {
-  title: string;
-  placeholder: string;
-  status: string;
+  action: AccountabilityAction;
   locked: boolean;
-  cadence: MapCadence;
-  remind_day_of_month: number | null;
-  remind_day_of_week: string | null;
-  remind_time: string | null;
-  onTitle: (v: string) => void;
-  onCadence: (c: MapCadence) => void;
-  onDayOfMonth: (d: number) => void;
-  onDayOfWeek: (d: string) => void;
-  onTime: (t: string) => void;
+  smsReady: boolean;
+  hasPro: boolean;
+  onRequestSmsSetup?: () => void;
+  onPatch: (patch: Partial<AccountabilityAction>) => void;
   onReject: () => void;
   onDelete: () => void;
-  className?: string;
 }) {
+  const smsLen = stripSmsText(action.sms_text ?? smsTextFromTitle(action.title)).length;
+  const smsOver = smsLen > SMS_MAX_LENGTH;
+
+  const reminderType = primaryReminderType(action.channels);
+
+  const onReminderTypeChange = (type: ReminderType) => {
+    if (type === "sms") {
+      if (!hasPro) return;
+      if (!smsReady) {
+        onRequestSmsSetup?.();
+        return;
+      }
+    }
+    const channels = reminderTypeToChannels(type);
+    const patch: Partial<AccountabilityAction> = { channels };
+    if (type === "sms" && !action.sms_text) {
+      patch.sms_text = smsTextFromTitle(action.title);
+    }
+    if (type !== "sms") {
+      patch.sms_text = null;
+    }
+    onPatch(patch);
+  };
+
   return (
-    <div
-      className={cn(
-        "inline-flex min-h-[40px] w-[460px] max-w-full flex-nowrap items-center gap-1.5 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
-        suggestedBorder(status),
-        className,
-      )}
-      data-map-node
-    >
-      <Input
-        value={title}
-        disabled={locked}
-        onChange={(e) => onTitle(stripChromeFromInput(e.target.value))}
-        onBlur={(e) => {
-          const cleaned = naturalizeTitle(e.target.value);
-          if (cleaned !== e.target.value) onTitle(cleaned);
-        }}
-        className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
-        placeholder={placeholder}
-      />
-      <CadenceTimingControls
-        cadence={cadence}
-        remind_day_of_month={remind_day_of_month}
-        remind_day_of_week={remind_day_of_week}
-        remind_time={remind_time}
-        locked={locked}
-        onCadence={onCadence}
-        onDayOfMonth={onDayOfMonth}
-        onDayOfWeek={onDayOfWeek}
-        onTime={onTime}
-      />
-      <RejectOrDeleteButton
-        suggested={status === "suggested"}
-        locked={locked}
-        onReject={onReject}
-        onDelete={onDelete}
-      />
+    <div className="flex w-full max-w-full flex-col gap-1" data-map-node>
+      <div
+        className={cn(
+          "inline-flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
+          suggestedBorder(action.status),
+        )}
+      >
+        <Input
+          value={action.title}
+          disabled={locked}
+          onChange={(e) => onPatch({ title: stripChromeFromInput(e.target.value) })}
+          onBlur={(e) => {
+            const cleaned = naturalizeTitle(e.target.value);
+            if (cleaned !== e.target.value) onPatch({ title: cleaned });
+          }}
+          className="h-8 min-w-[100px] flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
+          placeholder="Action"
+        />
+        <select
+          disabled={locked}
+          value={reminderType}
+          onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
+          className={cn(PILL_SELECT, "w-[96px]")}
+          title="Reminder type"
+        >
+          <option value="calendar">Calendar</option>
+          <option value="email">Email</option>
+          <option value="sms" disabled={!hasPro}>
+            Text
+          </option>
+        </select>
+        <CadenceTimingControls
+          cadence={action.cadence}
+          remind_date={action.remind_date}
+          remind_day_of_month={action.remind_day_of_month}
+          remind_day_of_week={action.remind_day_of_week}
+          remind_time={action.remind_time}
+          locked={locked}
+          onCadence={(c) => onPatch({ cadence: c, ...applyCadenceFields(c) })}
+          onRemindDate={(d) => onPatch({ remind_date: d })}
+          onDayOfMonth={(d) => onPatch({ remind_day_of_month: d })}
+          onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
+          onTime={(t) => onPatch({ remind_time: t })}
+        />
+        <RejectOrDeleteButton
+          suggested={action.status === "suggested"}
+          locked={locked}
+          onReject={onReject}
+          onDelete={onDelete}
+        />
+      </div>
+
+      {action.channels.sms && !locked ? (
+        <div className="flex flex-wrap items-center gap-2 px-2.5 pb-0.5">
+          <span className="shrink-0 text-[10px] text-neutral-500">Text reminder</span>
+          <Input
+            value={action.sms_text ?? smsTextFromTitle(action.title)}
+            onChange={(e) =>
+              onPatch({ sms_text: stripSmsText(e.target.value).slice(0, SMS_MAX_LENGTH) })
+            }
+            className="h-7 min-w-[160px] flex-1 text-sm"
+            maxLength={SMS_MAX_LENGTH}
+            placeholder="70 characters max"
+          />
+          <span className={cn("shrink-0 text-[10px]", smsOver ? "text-destructive" : "text-neutral-400")}>
+            {smsLen}/{SMS_MAX_LENGTH}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+function applyCadenceFields(cadence: MapCadence): Pick<
+  AccountabilityAction,
+  "remind_day_of_month" | "remind_day_of_week" | "remind_date"
+> {
+  if (cadence === "monthly") return { remind_day_of_month: 1, remind_day_of_week: null, remind_date: null };
+  if (cadence === "weekly") return { remind_day_of_month: null, remind_day_of_week: "monday", remind_date: null };
+  if (cadence === "once") {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return { remind_day_of_month: null, remind_day_of_week: null, remind_date: d.toISOString().slice(0, 10) };
+  }
+  return { remind_day_of_month: null, remind_day_of_week: null, remind_date: null };
 }
 
 function RejectOrDeleteButton({
@@ -287,17 +393,17 @@ function RejectOrDeleteButton({
   );
 }
 
-export function BoardAccountabilityFlow({ map, boards, onChange }: BoardAccountabilityFlowProps) {
+export function BoardAccountabilityFlow({
+  map,
+  boards,
+  onChange,
+  smsReady = false,
+  hasPro = false,
+  onRequestSmsSetup,
+}: BoardAccountabilityFlowProps) {
   const boardById = new Map(boards.map((b) => [b.id, b]));
   const viewportRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const panPos = useRef({ x: 48, y: 48 });
-  const panDrag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
-
-  const applyPan = () => {
-    if (!canvasRef.current) return;
-    canvasRef.current.style.transform = `translate(${panPos.current.x}px, ${panPos.current.y}px)`;
-  };
+  const panDrag = useRef<{ sx: number; sy: number; sl: number; st: number } | null>(null);
 
   const isInteractiveTarget = (target: EventTarget | null) =>
     !!(target as Element)?.closest?.(
@@ -305,35 +411,44 @@ export function BoardAccountabilityFlow({ map, boards, onChange }: BoardAccounta
     );
 
   const onPanStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || isInteractiveTarget(e.target)) return;
-    panDrag.current = { sx: e.clientX, sy: e.clientY, ox: panPos.current.x, oy: panPos.current.y };
-    viewportRef.current?.setPointerCapture(e.pointerId);
-    viewportRef.current?.classList.add("cursor-grabbing");
-    viewportRef.current?.classList.remove("cursor-grab");
+    if (e.pointerType !== "mouse" || e.button !== 0 || isInteractiveTarget(e.target)) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    panDrag.current = { sx: e.clientX, sy: e.clientY, sl: el.scrollLeft, st: el.scrollTop };
+    el.setPointerCapture(e.pointerId);
+    el.classList.add("cursor-grabbing");
+    el.classList.remove("cursor-grab");
   };
 
   const onPanMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!panDrag.current) return;
-    panPos.current = {
-      x: panDrag.current.ox + e.clientX - panDrag.current.sx,
-      y: panDrag.current.oy + e.clientY - panDrag.current.sy,
-    };
-    applyPan();
+    if (!panDrag.current || !viewportRef.current) return;
+    const dx = e.clientX - panDrag.current.sx;
+    const dy = e.clientY - panDrag.current.sy;
+    viewportRef.current.scrollLeft = panDrag.current.sl - dx;
+    viewportRef.current.scrollTop = panDrag.current.st - dy;
   };
 
   const onPanEnd = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!panDrag.current) return;
     panDrag.current = null;
-    if (viewportRef.current?.hasPointerCapture(e.pointerId)) {
-      viewportRef.current.releasePointerCapture(e.pointerId);
+    const el = viewportRef.current;
+    if (el?.hasPointerCapture(e.pointerId)) {
+      el.releasePointerCapture(e.pointerId);
     }
-    viewportRef.current?.classList.remove("cursor-grabbing");
-    viewportRef.current?.classList.add("cursor-grab");
+    el?.classList.remove("cursor-grabbing");
+    el?.classList.add("cursor-grab");
   };
 
   const locked = map?.finalized ?? false;
 
-  const patch = (next: AccountabilityMap) => onChange(next);
+  const patch = (next: AccountabilityMap) => {
+    const withEdited = { ...next, edited_at: new Date().toISOString() };
+    if (map?.finalized) {
+      onChange({ ...withEdited, finalized: false, reminders: [], analysis_status: "draft_ready" });
+    } else {
+      onChange(withEdited);
+    }
+  };
 
   const updatePlan = (id: string, patchPlan: Partial<AccountabilityPlan>) => {
     if (!map) return;
@@ -403,11 +518,18 @@ export function BoardAccountabilityFlow({ map, boards, onChange }: BoardAccounta
       plan_id: planId,
       title: "",
       cadence: "weekly",
+      remind_date: null,
       remind_day_of_month: null,
       remind_day_of_week: "monday",
       remind_time: "09:00",
       status: "accepted",
       kind: "action",
+      step_type: "task",
+      reminder_enabled: true,
+      channels: { ...DEFAULT_REMINDER_CHANNELS },
+      sms_text: null,
+      source_evidence: null,
+      confidence: null,
     };
     patch({ ...map, actions: [...map.actions, action] });
   };
@@ -418,43 +540,47 @@ export function BoardAccountabilityFlow({ map, boards, onChange }: BoardAccounta
     return { remind_day_of_month: null, remind_day_of_week: null };
   };
 
+  const lowConfidence =
+    map?.meta_confidence != null && map.meta_confidence < 0.65 && !map.finalized;
+
   return (
     <main
       ref={viewportRef}
-      className="min-h-0 min-w-0 flex-1 cursor-grab touch-none overflow-hidden"
+      className="min-h-0 min-w-0 flex-1 cursor-grab overflow-auto overscroll-contain touch-pan-x touch-pan-y"
       onPointerDown={onPanStart}
       onPointerMove={onPanMove}
       onPointerUp={onPanEnd}
       onPointerCancel={onPanEnd}
       onPointerLeave={onPanEnd}
     >
-      <div
-        ref={canvasRef}
-        className="inline-block min-w-[1180px] select-none p-12"
-        style={{ transform: `translate(${panPos.current.x}px, ${panPos.current.y}px)` }}
-      >
+      <div className="inline-block min-w-[1180px] p-12">
         {!map?.focuses?.length ? (
-          <div className="flex min-h-[280px] items-center justify-center text-center">
-            <div>
-              <p className="text-sm text-neutral-700">
-                Run Analyze to turn your focus boards and The Plan into an action map.
-              </p>
-              <p className="mt-2 text-xs text-neutral-500">
-                Edit the map, remove what does not fit, add your own actions, then finalize reminders.
-              </p>
-            </div>
+          <div className="flex min-h-[320px] max-w-lg flex-col items-center justify-center px-6 text-center">
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Turn your workspace into an action map
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+              Analyze your Vision workspace to draft focus areas, plans, actions and reminders. You
+              can edit everything before anything is finalized.
+            </p>
+            <p className="mt-3 text-xs text-neutral-500">Nothing is sent until you review and finalize.</p>
           </div>
         ) : (
           <>
+            {lowConfidence ? (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+                Palette found a few possible actions. Review closely before finalizing.
+              </div>
+            ) : null}
             <div
               className={cn(
                 "mb-6 grid gap-8 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500",
                 MAP_GRID,
               )}
             >
-              <span>Focuses</span>
-              <span>Plans</span>
-              <span>Actions</span>
+              <span>Focus</span>
+              <span>Plan</span>
+              <span className="pl-6">Action</span>
             </div>
 
             <div className="space-y-6">
@@ -467,93 +593,86 @@ export function BoardAccountabilityFlow({ map, boards, onChange }: BoardAccounta
                   <section key={focus.id} className={cn("relative grid items-start gap-8", MAP_GRID)}>
                     <div className="relative">
                       <div
-                        className="relative min-h-[72px] rounded-2xl border border-black/5 px-4 py-3 shadow-sm"
+                        className="relative min-h-[92px] rounded-2xl border border-black/5 px-4 py-3 shadow-sm"
                         style={{ backgroundColor: headerFill }}
                       >
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-600">Focus</p>
                         <p className="mt-2 line-clamp-2 text-base font-semibold text-neutral-950">{focus.title}</p>
+                        {!locked ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addPlan(focus.id);
+                            }}
+                            className="mt-3 rounded-full border border-black/10 bg-white/55 px-2.5 py-1 text-[10px] font-medium text-neutral-700 hover:bg-white/75"
+                          >
+                            <Plus className="mr-1 inline h-3 w-3" />
+                            Add plan
+                          </button>
+                        ) : null}
                       </div>
                       {plansForFocus.length > 0 ? (
                         <div className="pointer-events-none absolute right-0 top-1/2 h-px w-8 translate-x-full bg-neutral-300" />
                       ) : null}
                     </div>
 
-                    <div className="relative space-y-3">
-                      {plansForFocus.map((plan) => (
-                        <div key={plan.id} className="relative">
-                          <PlanNodeRow
-                            title={plan.title}
-                            placeholder="Plan name"
-                            status={plan.status}
-                            locked={locked}
-                            onTitle={(v) => updatePlan(plan.id, { title: v })}
-                            onReject={() => rejectPlan(plan.id)}
-                            onDelete={() => deletePlan(plan.id)}
-                          />
-                          <div className="pointer-events-none absolute right-0 top-1/2 h-px w-8 translate-x-full bg-neutral-300" />
-                        </div>
-                      ))}
-                      {!locked ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-8 gap-1 rounded-full text-[11px]"
-                          onClick={() => addPlan(focus.id)}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Add plan
-                        </Button>
+                    <div className="col-span-2 relative">
+                      {plansForFocus.length > 0 ? (
+                        <div className="pointer-events-none absolute bottom-5 left-0 top-5 w-px bg-neutral-300" />
                       ) : null}
-                    </div>
-
-                    <div className="space-y-4">
-                      {plansForFocus.length === 0 ? (
-                        <p className="text-xs text-neutral-400">Actions connect to a plan</p>
-                      ) : (
-                        plansForFocus.map((plan) => {
-                          const actionsForPlan = visible(map.actions.filter((a) => a.plan_id === plan.id));
-                          return (
-                            <div key={plan.id} className="relative pl-6">
-                              <div className="pointer-events-none absolute left-0 top-5 h-px w-6 bg-neutral-300" />
-                              <div className="flex flex-col items-start gap-2">
+                      <div className="space-y-3 pl-6">
+                      {plansForFocus.length === 0 ? null : plansForFocus.map((plan) => {
+                        const actionsForPlan = visible(map.actions.filter((a) => a.plan_id === plan.id));
+                        return (
+                          <div
+                            key={plan.id}
+                            className={cn("grid items-start", PLAN_ACTION_GRID)}
+                          >
+                            <div className="relative">
+                              <div className="pointer-events-none absolute left-[-24px] top-5 h-px w-6 bg-neutral-300" />
+                              <PlanNodeRow
+                                title={plan.title}
+                                placeholder="Plan name"
+                                status={plan.status}
+                                locked={locked}
+                                onTitle={(v) => updatePlan(plan.id, { title: v })}
+                                onAddAction={() => addAction(plan.id)}
+                                onReject={() => rejectPlan(plan.id)}
+                                onDelete={() => deletePlan(plan.id)}
+                              />
+                            </div>
+                            <div className="relative min-h-[40px]">
+                              {actionsForPlan.length > 0 ? (
+                                <div className="pointer-events-none absolute left-0 right-0 top-5 h-px bg-neutral-300" />
+                              ) : null}
+                            </div>
+                            <div className="relative pl-6">
+                              {actionsForPlan.length > 0 ? (
+                                <div className="pointer-events-none absolute bottom-5 left-0 top-5 w-px bg-neutral-300" />
+                              ) : null}
+                              <div className="flex flex-col items-start gap-3">
                                 {actionsForPlan.map((action) => (
-                                  <ActionNodeRow
-                                    key={action.id}
-                                    title={action.title}
-                                    placeholder="Action"
-                                    status={action.status}
-                                    locked={locked}
-                                    cadence={action.cadence}
-                                    remind_day_of_month={action.remind_day_of_month}
-                                    remind_day_of_week={action.remind_day_of_week}
-                                    remind_time={action.remind_time}
-                                    onTitle={(v) => updateAction(action.id, { title: v })}
-                                    onCadence={(c) =>
-                                      updateAction(action.id, { cadence: c, ...applyCadence(c) })
-                                    }
-                                    onDayOfMonth={(d) => updateAction(action.id, { remind_day_of_month: d })}
-                                    onDayOfWeek={(d) => updateAction(action.id, { remind_day_of_week: d })}
-                                    onTime={(t) => updateAction(action.id, { remind_time: t })}
-                                    onReject={() => rejectAction(action.id)}
-                                    onDelete={() => deleteAction(action.id)}
-                                  />
+                                  <div key={action.id} className="relative w-full">
+                                    <div className="pointer-events-none absolute left-[-24px] top-5 h-px w-6 bg-neutral-300" />
+                                    <ActionNodeRow
+                                      action={action}
+                                      locked={locked}
+                                      smsReady={smsReady}
+                                      hasPro={hasPro}
+                                      onRequestSmsSetup={onRequestSmsSetup}
+                                      onPatch={(patchAction) => updateAction(action.id, patchAction)}
+                                      onReject={() => rejectAction(action.id)}
+                                      onDelete={() => deleteAction(action.id)}
+                                    />
+                                  </div>
                                 ))}
-                                {!locked ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => addAction(plan.id)}
-                                    className="flex h-9 items-center gap-1 rounded-full border border-dashed border-neutral-300 bg-white/70 px-3 text-[11px] text-neutral-500 hover:border-neutral-400 hover:text-neutral-700"
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                    Add action
-                                  </button>
-                                ) : null}
                               </div>
                             </div>
-                          );
-                        })
-                      )}
+                          </div>
+                        );
+                      })}
+                      </div>
                     </div>
                   </section>
                 );

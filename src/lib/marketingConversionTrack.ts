@@ -563,3 +563,36 @@ export function trackMarketingConversion(
   fireNativeMetaAppEvents(action, withEventId);
   fireNativeAppsFlyer(action, withEventId);
 }
+
+export type ReminderAnalyticsEvent =
+  | "reminder_channel_screen_viewed"
+  | "reminder_channel_selected_calendar"
+  | "reminder_channel_selected_email"
+  | "reminder_channel_selected_sms"
+  | "sms_consent_granted"
+  | "sms_consent_declined"
+  | "sms_reminder_created"
+  | "sms_reminder_sent"
+  | "sms_reminder_failed"
+  | "sms_reminder_skipped_daily_limit"
+  | "sms_reminder_opted_out";
+
+export function trackReminderAnalytics(event: ReminderAnalyticsEvent, detail?: EventDetail): void {
+  try {
+    const w = window as Window & { gtag?: (...args: unknown[]) => void };
+    w.gtag?.("event", event, {
+      event_category: "reminder_channels",
+      ...detail,
+    });
+  } catch {
+    /* ignore */
+  }
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    const list = raw ? (JSON.parse(raw) as unknown[]) : [];
+    list.push({ action: event, detail, at: new Date().toISOString() });
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(list.slice(-20)));
+  } catch {
+    /* ignore */
+  }
+}

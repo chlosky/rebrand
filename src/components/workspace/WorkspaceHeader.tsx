@@ -1,11 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import {
-  Check,
   CircleHelp,
   LogOut,
-  Moon,
   Settings,
-  Sun,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -42,7 +39,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   const { t } = useTranslation("dashboard");
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -86,31 +83,6 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
         </button>
 
         <div className="flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" size="icon" className={iconBtn} aria-label={t("nav.appearance")}>
-                {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className={cn("w-52 z-50", dark ? "border border-white bg-black text-white" : "bg-white")}
-            >
-              <DropdownMenuLabel>{t("nav.appearance")}</DropdownMenuLabel>
-              <DropdownMenuSeparator className={dark ? "bg-white" : undefined} />
-              <DropdownMenuItem className="gap-2" onClick={() => setTheme("light")}>
-                <span className="h-3 w-3 rounded-full border border-zinc-300 bg-white" aria-hidden />
-                <span className="flex-1">{t("appearance.light")}</span>
-                {theme === "light" ? <Check className="h-4 w-4 opacity-70" /> : null}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2" onClick={() => setTheme("dark")}>
-                <span className="h-3 w-3 rounded-full border border-white bg-black" aria-hidden />
-                <span className="flex-1">{t("appearance.dark")}</span>
-                {theme === "dark" ? <Check className="h-4 w-4 opacity-70" /> : null}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <Button
             type="button"
             variant="outline"

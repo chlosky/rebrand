@@ -1,570 +1,383 @@
-export type LibraryColorCard = {
-  name: string;
-  bestFor: string;
-  description: string;
-  swatch: string;
-  fill?: string;
-};
-
 export type LibraryBlock =
   | { type: "paragraph"; text: string }
+  | { type: "subheading"; text: string }
+  | { type: "callout"; text: string }
+  | { type: "divider" }
   | { type: "bullets"; items: string[] }
   | { type: "checklist"; items: string[] }
-  | { type: "callout"; text: string }
-  | { type: "subheading"; text: string }
-  | { type: "divider" }
-  | { type: "boardEntry"; label: string; text: string }
-  | { type: "colorCards"; colors: LibraryColorCard[] }
-  | { type: "image"; src: string; alt: string; caption?: string; aspect?: "square" | "wide" | "tall" }
-  | {
-      type: "imageGrid";
-      images: { src: string; alt: string; label?: string }[];
-      columns?: 2 | 3;
-    }
-  | {
-      type: "swatchStrip";
-      colors: { label: string; swatch: string; fill: string }[];
-      caption?: string;
-    }
-  | { type: "zoneMap"; zones: { id: string; label: string; color: string }[] }
-  | { type: "kanbanPreview"; columns: { title: string; items: string[] }[] };
+  | { type: "boardEntry"; label: string; text: string };
 
 export type FreeLibraryGuide = {
   slug: string;
-  category: "life_rebranding" | "moodboarding" | "home_organization" | "office_work";
   title: string;
   tagline: string;
   readMinutes: number;
-  coverImage?: string;
-  heroImage?: { src: string; alt: string };
   blocks: LibraryBlock[];
+  heroImage?: {
+    src: string;
+    alt: string;
+  };
 };
 
 export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
-    slug: "life-rebrand-starter",
-    category: "life_rebranding",
-    title: "The quiet rebrand",
-    tagline: "Plot the new you before you announce her.",
-    readMinutes: 7,
-    coverImage: "/library/life-rebrand-cover.png",
-    heroImage: {
-      src: "/board/reviews/review-01.png",
-      alt: "Rose gold focus board in a home office",
-    },
+    slug: "life-rebrand",
+    title: "Life Rebrand",
+    tagline: "Turn a vague reset into boards you can actually use.",
+    readMinutes: 6,
     blocks: [
       {
         type: "paragraph",
-        text: "A rebrand is not a personality transplant. It is deciding which version of you gets the front row — then building a private room where that version stops being theoretical.",
-      },
-      {
-        type: "callout",
-        text: "Rule one: nobody has to know you are rebranding until the plot is too obvious to ignore.",
-      },
-      {
-        type: "subheading",
-        text: "How this connects to the board system",
+        text: "A life rebrand gets messy when everything lives in your head at once: the new routines, the new look, the money goals, the room reset, the social shift, the career move, the body goals, the screenshots, the shopping list, and the version of yourself you are trying to step into.",
       },
       {
         type: "paragraph",
-        text: "Palette Plotting separates your wall into jobs — three focus boards for the life you are stepping into, plus one plan board for what you actually do this week. You do not need the full setup today. You need to know why the split matters.",
+        text: "The point of a rebrand board is not to make a pretty collage and hope it changes your life. The point is to separate the areas that need movement, make the direction visible, and keep the next steps close enough that you actually act on them.",
       },
+      {
+        type: "callout",
+        text: "A good life rebrand board system answers three questions: What am I becoming? What needs to change around me? What do I need to do next?",
+      },
+      { type: "subheading", text: "Start with the areas that actually need a reset" },
+      {
+        type: "paragraph",
+        text: "Do not start by picking random images. Start by naming the categories that are asking for structure. Most people do not need ten boards. They need three strong focus areas and one place for action.",
+      },
+      {
+        type: "bullets",
+        items: [
+          "Identity: style, body, beauty, routines, standards, confidence, visibility.",
+          "Money and work: income, career, business, offers, clients, savings, sales, systems.",
+          "Home and environment: bedroom, office, kitchen, closet, storage, daily flow.",
+          "Relationships and lifestyle: dating, friendships, family, social life, travel, rest.",
+          "Plan: dates, tasks, purchases, appointments, deadlines, numbers, next steps.",
+        ],
+      },
+      { type: "divider" },
+      { type: "subheading", text: "Give every board a job" },
       {
         type: "boardEntry",
         label: "Focus board",
-        text: "Images, phrases, and vibes for one lane of your rebrand — identity, money, love, home, whatever season you are in.",
+        text: "Use this for the direction. Add images, statements, proof, references, and reminders that show where the category is going.",
       },
       {
         type: "boardEntry",
         label: "Plan board",
-        text: "Dates, numbers, to-dos, and the next move. The part most vision boards skip.",
+        text: "Use this for movement. Add dates, purchases, calls, appointments, deadlines, numbers, and tasks that need action.",
       },
       {
-        type: "divider",
+        type: "boardEntry",
+        label: "Reset board",
+        text: "Use this when you are rebuilding a room, routine, or season and need to compare what is staying, leaving, or changing.",
       },
-      {
-        type: "subheading",
-        text: "Pick three lanes, not twelve",
-      },
-      {
-        type: "paragraph",
-        text: "Most people fail because they try to fix love, money, body, career, and aesthetic all in one chaotic collage. Pick three lanes for this season. Everything else waits outside the studio door.",
-      },
-      {
-        type: "imageGrid",
-        columns: 3,
-        images: [
-          {
-            src: "/board/reviews/review-01.png",
-            alt: "Pink acrylic board in a home office",
-            label: "Identity",
-          },
-          {
-            src: "/board/reviews/review-06.png",
-            alt: "Pink acrylic board with weekly planning",
-            label: "Money",
-          },
-          {
-            src: "/board/reviews/review-04.png",
-            alt: "White acrylic board in a bedroom",
-            label: "Space",
-          },
-        ],
-      },
-      {
-        type: "bullets",
-        items: [
-          "Lane 1 — identity (how you carry yourself, what you repeat)",
-          "Lane 2 — environment (what your eyes land on daily)",
-          "Lane 3 — proof (one habit that makes the rebrand feel real)",
-        ],
-      },
-      {
-        type: "subheading",
-        text: "Color picks for a personal rebrand",
-      },
-      {
-        type: "paragraph",
-        text: "Board color is not decoration — it tells your brain which category you are in before you read a single word. These three are a strong starting trio for a quiet rebrand season.",
-      },
-      {
-        type: "colorCards",
-        colors: [
-          {
-            name: "Rose Gold",
-            bestFor: "identity, self-worth, warmth, personal rebrand",
-            description:
-              "Soft but polished. Use when the board should feel personal — the self board, confidence rebuild, or the corner of your wall that needs to feel elevated without shouting.",
-            swatch: "#E8B4B8",
-            fill: "#F5E1E3",
-          },
-          {
-            name: "Black",
-            bestFor: "discipline, boundaries, serious goals, locked-in energy",
-            description:
-              "Deliberate and sharp. Good for money, work, or any lane where you need structure more than softness.",
-            swatch: "#1C1C1C",
-            fill: "#F5F5F5",
-          },
-          {
-            name: "Yellow",
-            bestFor: "fresh starts, optimism, creative reset, momentum",
-            description:
-              "Brightens a room that has felt stuck. Use for new chapters, social goals, or a wall that needs more lift.",
-            swatch: "#FFD93D",
-            fill: "#FFF8DC",
-          },
-        ],
-      },
-      {
-        type: "swatchStrip",
-        caption: "Acrylic swatches on a wall — each color owns one lane.",
-        colors: [
-          { label: "Rose", swatch: "#E8B4B8", fill: "#F5E1E3" },
-          { label: "Black", swatch: "#1C1C1C", fill: "#F5F5F5" },
-          { label: "Yellow", swatch: "#FFD93D", fill: "#FFF8DC" },
-          { label: "Plan", swatch: "#F0F0F0", fill: "#FFFFFF" },
-        ],
-      },
-      {
-        type: "divider",
-      },
-      {
-        type: "subheading",
-        text: "The 48-hour plot",
-      },
+      { type: "divider" },
+      { type: "subheading", text: "What to put on the board" },
       {
         type: "checklist",
         items: [
-          "Hour 0–2: Screenshot the aesthetic — not to copy, to name the vibe.",
-          "Day 1: Write five lines you would say if the rebrand already happened.",
-          "Day 2: Change one visible thing in your space (desk, mirror, lock screen).",
-          "Day 3: Do one small public move (outfit, bio line, calendar block) that matches the plot.",
+          "A short label for the category.",
+          "Three to five images that show the direction.",
+          "One photo from your real life so the board does not feel detached.",
+          "Two or three statements that sound like you, not like filler.",
+          "One number if the category needs a target.",
+          "One date if the category needs timing.",
+          "One proof item that shows movement has already started.",
+          "One sticky note for the next step.",
         ],
       },
       {
-        type: "image",
-        src: "/board/reviews/review-06.png",
-        alt: "Pink acrylic focus board with weekly planning",
-        caption: "One lane, one board, one habit — that is how the rebrand stops being a fantasy.",
-        aspect: "wide",
+        type: "paragraph",
+        text: "A rebrand board should not become a dumping ground. If everything goes on the board, the board stops saying anything. Keep the board sharp enough that you can understand it in a few seconds.",
+      },
+      { type: "subheading", text: "Use the tool this way" },
+      {
+        type: "bullets",
+        items: [
+          "Create one board for each major category.",
+          "Use Statements for the words you want to see often.",
+          "Use Sticky notes for active next steps.",
+          "Use images for direction, not clutter.",
+          "Use the Plan board for anything with a date, cost, or deadline.",
+          "Review the boards weekly and remove what no longer fits.",
+        ],
       },
       {
         type: "callout",
-        text: "You are not wishing. You are rehearsing. The difference is whether you built a room for it.",
+        text: "The goal is not to document every dream. The goal is to build a visual system that keeps your new direction in front of you while you move.",
       },
     ],
   },
+
   {
-    slug: "moodboard-girly",
-    category: "moodboarding",
-    title: "Moodboard without the mess",
-    tagline: "Curate the vibe before you buy the life.",
+    slug: "moodboarding",
+    title: "Moodboarding",
+    tagline: "Build a board that has taste, direction, and a reason for every piece.",
+    readMinutes: 5,
+    blocks: [
+      {
+        type: "paragraph",
+        text: "A moodboard is not just a pile of pretty images. A good moodboard gives a project a visual language. It helps you decide what belongs, what does not, and what the final direction should feel like before you start buying, designing, filming, decorating, or rebuilding.",
+      },
+      {
+        type: "paragraph",
+        text: "The mistake most people make is collecting images with no filter. They save anything attractive, then wonder why the board feels scattered. A strong moodboard needs a point of view.",
+      },
+      {
+        type: "callout",
+        text: "Before you add images, decide what the moodboard is supposed to help you choose.",
+      },
+      { type: "subheading", text: "Pick the decision the board is making" },
+      {
+        type: "bullets",
+        items: [
+          "A room direction.",
+          "A brand direction.",
+          "A content style.",
+          "An office setup.",
+          "A closet or beauty direction.",
+          "A product launch mood.",
+          "A life season or personal style shift.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "Once you know the decision, every image has to earn its place. If it looks good but does not help the decision, leave it out.",
+      },
+      { type: "divider" },
+      { type: "subheading", text: "Use a simple image mix" },
+      {
+        type: "checklist",
+        items: [
+          "One anchor image that sets the main feeling.",
+          "Two texture or material references.",
+          "Two room, outfit, desk, product, or lifestyle references.",
+          "One detail image for color, lighting, or finish.",
+          "One real-life photo if the board is connected to your actual space or style.",
+          "One statement that names the direction in plain language.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "The anchor image matters. It keeps the rest of the board from drifting. If the board starts to look confused, go back to the anchor and remove anything that fights it.",
+      },
+      { type: "subheading", text: "What to avoid" },
+      {
+        type: "bullets",
+        items: [
+          "Too many unrelated aesthetics on one board.",
+          "Images that are pretty but do not fit the actual goal.",
+          "Overloading the board with quotes.",
+          "Using colors that fight the room, brand, or product.",
+          "Making the board so full that you cannot tell what matters.",
+        ],
+      },
+      { type: "divider" },
+      { type: "subheading", text: "Use the board as a filter" },
+      {
+        type: "paragraph",
+        text: "Once your moodboard is built, use it to make choices. If you are buying furniture, picking outfits, styling content, planning a launch, or setting up an office, the board should help you say yes or no faster.",
+      },
+      {
+        type: "boardEntry",
+        label: "Images",
+        text: "Use them for direction, examples, texture, lighting, and references.",
+      },
+      {
+        type: "boardEntry",
+        label: "Statements",
+        text: "Use them to name the mood in your own words.",
+      },
+      {
+        type: "boardEntry",
+        label: "Sticky notes",
+        text: "Use them for decisions: buy, remove, test, film, order, compare, save.",
+      },
+      {
+        type: "callout",
+        text: "A finished moodboard should make your next choice easier. If it only looks nice, it is not doing enough.",
+      },
+    ],
+  },
+
+  {
+    slug: "home-organization",
+    title: "Home Organization",
+    tagline: "Use boards to turn a messy home project into zones, decisions, and next steps.",
     readMinutes: 6,
-    coverImage: "/library/moodboard-cover.png",
-    heroImage: {
-      src: "/board/dry-erase/hero-mood-board.png",
-      alt: "Moodboard collage on a plotting desk",
-    },
     blocks: [
       {
         type: "paragraph",
-        text: "A moodboard is a decision filter: does this image belong to the life you are building?",
-      },
-      {
-        type: "subheading",
-        text: "Four-corner grid",
+        text: "Home organization gets overwhelming when you try to fix the whole house at once. The closet, kitchen, desk, entryway, bathroom, laundry, storage bins, labels, purchases, and donation piles all start competing for attention.",
       },
       {
         type: "paragraph",
-        text: "Use four corners — not because the number is sacred, but because four forces you to edit. Each corner is a board lane waiting to happen.",
-      },
-      {
-        type: "imageGrid",
-        images: [
-          {
-            src: "/board/dry-erase/hero-yellow-planner.png",
-            alt: "Yellow weekly planner board",
-            label: "Money",
-          },
-          {
-            src: "/board/neon/hero-pink-glow.png",
-            alt: "Pink glow moodboard",
-            label: "Body",
-          },
-          {
-            src: "/board/home-decor/hero-rose-gold-desk.png",
-            alt: "Rose gold desk setup",
-            label: "Space",
-          },
-          {
-            src: "/board/reviews/review-03.png",
-            alt: "Pink acrylic board above a gaming desk",
-            label: "Plot twist",
-          },
-        ],
-      },
-      {
-        type: "boardEntry",
-        label: "Money energy",
-        text: "Receipts, numbers, offers, the desk you work from — anything that says revenue is real.",
-      },
-      {
-        type: "boardEntry",
-        label: "Body & presence",
-        text: "How you want to look in rooms that matter. Not every body goal — the version you are rehearsing.",
-      },
-      {
-        type: "boardEntry",
-        label: "Space",
-        text: "The apartment, the trip, the corner of your room. Environment is part of the plot.",
-      },
-      {
-        type: "boardEntry",
-        label: "Plot twist",
-        text: "One image that scares you a little. Good sign. If nothing on the board stretches you, it is wallpaper.",
-      },
-      {
-        type: "divider",
-      },
-      {
-        type: "subheading",
-        text: "Moodboard color energy",
-      },
-      {
-        type: "colorCards",
-        colors: [
-          {
-            name: "Neon Pink",
-            bestFor: "visibility, confidence, content, bold public goals",
-            description:
-              "Not quiet. Use when the board needs energy — creator goals, events, anything that should be seen.",
-            swatch: "#FF4DA6",
-            fill: "#FFE0F0",
-          },
-          {
-            name: "Green",
-            bestFor: "money, growth, business, stability",
-            description:
-              "Strong for sales, savings, business goals, or anything connected to growth and grounded abundance.",
-            swatch: "#3CB371",
-            fill: "#E0F5EA",
-          },
-          {
-            name: "Sky Blue",
-            bestFor: "calm planning, soft structure, aesthetic mood",
-            description:
-              "Lighter and more focused. Good for mood-first boards, routines, or a gentler productivity lane.",
-            swatch: "#87CEEB",
-            fill: "#E3F4FC",
-          },
-        ],
-      },
-      {
-        type: "subheading",
-        text: "Editing rules",
-      },
-      {
-        type: "checklist",
-        items: [
-          "If it needs a paragraph of explanation, cut it.",
-          "If three images say the same thing, keep the hottest one.",
-          "Add one text card with a date — moodboards without deadlines become wallpaper.",
-          "Leave one empty corner on purpose — room to plot the next chapter.",
-        ],
-      },
-      {
-        type: "image",
-        src: "/board/dry-erase/hero-pink-kawaii-desk.png",
-        alt: "Curated moodboard desk setup",
-        caption: "Arrange before you shop. The board is the product until the life catches up.",
-        aspect: "wide",
+        text: "A board helps because it separates the project into zones. Instead of carrying the whole reset in your head, you can see the rooms, decisions, purchases, and next steps in one place.",
       },
       {
         type: "callout",
-        text: "Stop saving. Start arranging. Pro unlocks drag-and-drop boards so this grid becomes your actual wall.",
+        text: "Do not organize by vibes first. Organize by zones, use, and what keeps breaking down.",
       },
-    ],
-  },
-  {
-    slug: "home-org-reset",
-    category: "home_organization",
-    title: "Home zones that actually work",
-    tagline: "Zones before bins. Always.",
-    readMinutes: 7,
-    coverImage: "/library/home-org-cover.png",
-    heroImage: {
-      src: "/board/home-decor/hero-command-center.png",
-      alt: "Home command center with organized zones",
-    },
-    blocks: [
+      { type: "subheading", text: "Choose the zones" },
       {
         type: "paragraph",
-        text: "Home organization fails when you buy containers before you understand how you move through a room. You are not Marie Kondo-ing your trauma. You are designing traffic patterns.",
-      },
-      {
-        type: "subheading",
-        text: "Zone map sketch",
-      },
-      {
-        type: "paragraph",
-        text: "Draw your room in four blobs. Anything that lives in the wrong blob is why you feel behind. Move the object, not your ambition.",
-      },
-      {
-        type: "zoneMap",
-        zones: [
-          { id: "enter", label: "Enter", color: "#E8B4B8" },
-          { id: "work", label: "Work", color: "#87CEEB" },
-          { id: "rest", label: "Rest", color: "#98FB98" },
-          { id: "stash", label: "Stash", color: "#F0F0F0" },
-        ],
-      },
-      {
-        type: "boardEntry",
-        label: "Home board",
-        text: "Images of the rooms you want, launchpad setups, labels, and the aesthetic you maintain — not every mess, just the zones you care about.",
-      },
-      {
-        type: "boardEntry",
-        label: "Plan board",
-        text: "Sunday reset checklist, donation dates, and the one surface you refuse to let die.",
-      },
-      {
-        type: "divider",
-      },
-      {
-        type: "subheading",
-        text: "Colors for home organization",
-      },
-      {
-        type: "colorCards",
-        colors: [
-          {
-            name: "White",
-            bestFor: "minimal planning, home organization, clean visual systems",
-            description:
-              "Keeps the board quiet so your images and labels do the talking. Ideal for a plan board or a minimalist home setup.",
-            swatch: "#F0F0F0",
-            fill: "#FFFFFF",
-          },
-          {
-            name: "Light Green",
-            bestFor: "renewal, soft growth, home resets, ease",
-            description:
-              "Softer than green. Good for fresh starts, new habits, or a gentler pace in shared spaces.",
-            swatch: "#98FB98",
-            fill: "#EDFCEB",
-          },
-          {
-            name: "Light Pink",
-            bestFor: "care, softness, reset routines, peaceful categories",
-            description:
-              "Works for rest zones, daily care, beauty routines, or any home lane that needs less pressure.",
-            swatch: "#F8BBD0",
-            fill: "#FDE8F0",
-          },
-        ],
-      },
-      {
-        type: "subheading",
-        text: "The Sunday reset (15 minutes, max)",
-      },
-      {
-        type: "checklist",
-        items: [
-          "Surfaces first — if you can see it, it gets decided now.",
-          "One inbound spot — mail, bags, random. Everything else is outbound.",
-          "Reset the launchpad — keys, charger, tomorrow's outfit. That is your real front door.",
-        ],
-      },
-      {
-        type: "imageGrid",
-        columns: 2,
-        images: [
-          {
-            src: "/board/reviews/review-07.png",
-            alt: "Red acrylic board in an entryway launchpad",
-            label: "Launchpad",
-          },
-          {
-            src: "/board/reviews/review-02.png",
-            alt: "Black acrylic board in a kitchen",
-            label: "Maintain zone",
-          },
-        ],
-      },
-      {
-        type: "callout",
-        text: "Bins are for items that already have a job. If it does not have a job, it is clutter with packaging.",
+        text: "Start with the areas that create the most friction. You do not need to organize every drawer to make the home feel better. Fix the zones you touch every day.",
       },
       {
         type: "bullets",
         items: [
-          "Label with verbs: open, file, donate, ship — not cute words.",
-          "One aesthetic zone you actually maintain (desk, vanity, coffee station).",
-          "Hide the chaos behind one beautiful thing you see every morning.",
+          "Entryway: keys, shoes, bags, mail, packages.",
+          "Kitchen: pantry, counters, dishes, meal prep, cleaning supplies.",
+          "Closet: daily clothes, laundry flow, shoes, bags, seasonal storage.",
+          "Bathroom: skincare, hair tools, towels, backups, cleaning products.",
+          "Bedroom: nightstand, bedding, clothes, surfaces, reset routine.",
+          "Office or desk: cords, papers, tech, tools, notebooks, work setup.",
         ],
       },
-    ],
-  },
-  {
-    slug: "office-planning-lite",
-    category: "office_work",
-    title: "Office brain, color-coded",
-    tagline: "Kanban energy without the corporate coma.",
-    readMinutes: 7,
-    coverImage: "/library/office-cover.png",
-    heroImage: {
-      src: "/board/dry-erase/hero-weekly-planner.png",
-      alt: "Weekly planner board on a desk",
-    },
-    blocks: [
+      { type: "divider" },
+      { type: "subheading", text: "Make one board for the reset" },
       {
         type: "paragraph",
-        text: "You do not need another scattered template. You need a board you will look at when the laptop opens — and a ruthless rule about what earns a spot on it.",
-      },
-      {
-        type: "subheading",
-        text: "Three columns, no philosophy",
-      },
-      {
-        type: "kanbanPreview",
-        columns: [
-          { title: "Now", items: ["Invoice client A", "Film reel hook", "Inbox zero (20 min)"] },
-          { title: "This week", items: ["Launch preview", "Price test"] },
-          { title: "Later", items: ["Rebrand photoshoot", "Course outline"] },
-        ],
-      },
-      {
-        type: "paragraph",
-        text: "This is the plan board mindset in miniature. Three tasks in Now. Outcomes in This week. Everything else is a parking lot — review Friday or it becomes a guilt museum.",
-      },
-      {
-        type: "divider",
-      },
-      {
-        type: "subheading",
-        text: "Office color coding",
-      },
-      {
-        type: "colorCards",
-        colors: [
-          {
-            name: "Blue",
-            bestFor: "career, strategy, serious work, long-term goals",
-            description:
-              "Structured feel. Use for business strategy, professional growth, certifications, or goals that need consistency.",
-            swatch: "#2563EB",
-            fill: "#E0EBFF",
-          },
-          {
-            name: "Sky Blue",
-            bestFor: "focus, calm planning, WFH, study, soft structure",
-            description:
-              "Lighter and more focused. Good for work blocks, home office planning, or a calmer version of productivity.",
-            swatch: "#87CEEB",
-            fill: "#E3F4FC",
-          },
-          {
-            name: "Orange",
-            bestFor: "creative projects, content, side businesses, build mode",
-            description:
-              "Warmth plus action. Use for content ideas, launches, product experiments, or anything in make-and-ship mode.",
-            swatch: "#FF8C42",
-            fill: "#FFE8D6",
-          },
-        ],
-      },
-      {
-        type: "swatchStrip",
-        caption: "One accent color per project — your brain lands faster.",
-        colors: [
-          { label: "Career", swatch: "#2563EB", fill: "#E0EBFF" },
-          { label: "Focus", swatch: "#87CEEB", fill: "#E3F4FC" },
-          { label: "Build", swatch: "#FF8C42", fill: "#FFE8D6" },
-        ],
-      },
-      {
-        type: "subheading",
-        text: "Money & revenue row",
-      },
-      {
-        type: "boardEntry",
-        label: "Money row",
-        text: "Invoice, follow-up, price test, content that sells. If your planner has no revenue line, you are organizing a hobby.",
-      },
-      {
-        type: "imageGrid",
-        columns: 2,
-        images: [
-          {
-            src: "/board/dry-erase/hero-yellow-planner.png",
-            alt: "Yellow acrylic planner board above a desk",
-            label: "WFH",
-          },
-          {
-            src: "/board/dry-erase/hero-weekly-planner.png",
-            alt: "Plan board with tasks and dates",
-            label: "Plan board",
-          },
-        ],
+        text: "The board should show what is changing. Add photos of the actual space, not just inspiration photos. A home board works better when it includes the real mess, the desired look, and the decisions needed to close the gap.",
       },
       {
         type: "checklist",
         items: [
-          "Monday: set the three Now cards. Midweek: move one thing to Done publicly (story, email, shipped file).",
-          "Friday: kill two Later items without mercy.",
-          "Keep a single 'waiting on' list — other people's delays are not your backlog.",
+          "Photo of the current space.",
+          "Reference photo for the direction.",
+          "List of zones inside the room.",
+          "Items to remove, donate, sell, or store.",
+          "Items to buy.",
+          "Measurements if storage or furniture is involved.",
+          "One sticky note for the next action.",
+          "One date for when the zone should be finished.",
+        ],
+      },
+      { type: "subheading", text: "Separate inspiration from action" },
+      {
+        type: "boardEntry",
+        label: "Inspiration",
+        text: "Use images for the look: shelves, bins, labels, closet systems, kitchen counters, room references, or storage ideas.",
+      },
+      {
+        type: "boardEntry",
+        label: "Action",
+        text: "Use sticky notes for the work: measure shelf, order bins, clear drawer, donate clothes, label pantry, move cords, book pickup.",
+      },
+      {
+        type: "boardEntry",
+        label: "Proof",
+        text: "Add before and after photos as the room changes. This keeps the board useful instead of theoretical.",
+      },
+      { type: "divider" },
+      { type: "subheading", text: "Use the board during the reset" },
+      {
+        type: "bullets",
+        items: [
+          "Start with one zone, not the whole room.",
+          "Remove what obviously does not belong.",
+          "Group similar items together.",
+          "Decide what needs a container after you see what is left.",
+          "Add purchases to the board before buying.",
+          "Move finished tasks off the board so it stays current.",
         ],
       },
       {
         type: "callout",
-        text: "Color is not decoration — it is speed. Pro gives you the full desk: boards, structures, clippings, and reminders wired to this system.",
+        text: "The board should keep you from buying random organizing products before you know what the space actually needs.",
+      },
+    ],
+  },
+
+  {
+    slug: "office-optimization",
+    title: "Office Optimization",
+    tagline: "Design a workspace that supports better work, cleaner decisions, and less friction.",
+    readMinutes: 6,
+    blocks: [
+      {
+        type: "paragraph",
+        text: "An office is not just a desk and a chair. It is the place where your work either gets easier or starts leaking energy. Bad lighting, messy cords, poor storage, an ugly background, uncomfortable seating, and scattered tools all make work feel heavier than it needs to be.",
+      },
+      {
+        type: "paragraph",
+        text: "Office optimization is about making the space support the work you actually do. The board helps you plan the setup before you start buying things or rearranging the room for the fifth time.",
+      },
+      {
+        type: "callout",
+        text: "A strong office board should answer: What work happens here, what gets in the way, and what needs to change first?",
+      },
+      { type: "subheading", text: "Start with the work zones" },
+      {
+        type: "paragraph",
+        text: "Most offices need more than one zone, even if they are in one room. Name the zones before you start styling the space.",
+      },
+      {
+        type: "bullets",
+        items: [
+          "Deep work zone: desk, monitor, chair, keyboard, lighting.",
+          "Admin zone: papers, bills, forms, printer, filing, mail.",
+          "Creative zone: camera, product shots, samples, props, sketching, planning.",
+          "Storage zone: cables, supplies, inventory, notebooks, packaging, tools.",
+          "Background zone: what appears on camera, behind the desk, or in photos.",
+        ],
+      },
+      { type: "divider" },
+      { type: "subheading", text: "Build the office board" },
+      {
+        type: "checklist",
+        items: [
+          "Photo of your current desk or office.",
+          "Reference image for the setup you want.",
+          "List of problems the room needs to solve.",
+          "Measurements for desk, wall, shelves, monitor, rug, or storage.",
+          "Shopping list with prices.",
+          "Cable and tech list.",
+          "Lighting plan.",
+          "One next-step sticky note.",
+        ],
+      },
+      {
+        type: "paragraph",
+        text: "The goal is not to make the office look expensive. The goal is to make the room work harder for you. A cleaner desk, better lighting, a real place for supplies, and a background you are not embarrassed by can change the way the space feels immediately.",
+      },
+      { type: "subheading", text: "Plan before you buy" },
+      {
+        type: "boardEntry",
+        label: "Need",
+        text: "The thing that solves an actual problem: chair, lamp, cord tray, storage, monitor arm, shelf, whiteboard, planner, file box.",
+      },
+      {
+        type: "boardEntry",
+        label: "Nice",
+        text: "The thing that improves the space but should not outrank function: decor, art, tray, candle, plant, book stack, color accent.",
+      },
+      {
+        type: "boardEntry",
+        label: "Later",
+        text: "The thing that can wait until the main setup works: larger furniture, custom storage, upgraded tech, full room redesign.",
+      },
+      { type: "divider" },
+      { type: "subheading", text: "Use the board to optimize the room" },
+      {
+        type: "bullets",
+        items: [
+          "Put the current office photo on the board first.",
+          "Mark the biggest source of friction.",
+          "Add the reference setup you actually want to work inside.",
+          "List the first three changes that would improve the room fastest.",
+          "Add purchases only after measuring.",
+          "Move active tasks to the Plan board.",
+          "Review the setup after one week of actual use.",
+        ],
+      },
+      {
+        type: "callout",
+        text: "Office optimization is not about copying someone else's desk. It is about building a room that makes your work easier to start, easier to continue, and easier to finish.",
       },
     ],
   },
 ];
 
 export function getFreeLibraryGuide(slug: string): FreeLibraryGuide | undefined {
-  return FREE_LIBRARY_GUIDES.find((g) => g.slug === slug);
+  return FREE_LIBRARY_GUIDES.find((guide) => guide.slug === slug);
 }

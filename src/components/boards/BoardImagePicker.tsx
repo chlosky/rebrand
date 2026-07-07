@@ -15,7 +15,6 @@ import type { BoardImageAsset } from "@/lib/boards/types";
 type BoardImagePickerProps = {
   userId: string;
   onPickImage?: (url: string) => void;
-  onScanPhysical?: () => void;
   embedded?: boolean;
   /** Workspace Image Library: user uploads only (no stock collection). */
   uploadsOnly?: boolean;
@@ -28,7 +27,6 @@ const uploadsCache = new Map<string, { path: string; signedUrl: string }[]>();
 export function BoardImagePicker({
   userId,
   onPickImage,
-  onScanPhysical,
   embedded,
   uploadsOnly = false,
 }: BoardImagePickerProps) {
@@ -91,14 +89,15 @@ export function BoardImagePicker({
   return (
     <div className={cn("flex h-full flex-col bg-transparent", !embedded && "border-r border-neutral-200 bg-white")}>
       {!uploadsOnly && (
-        <div className="flex border-b border-neutral-200">
+        <div className="flex items-center justify-center gap-4 border-b border-neutral-200 px-3 py-2">
           {(["library", "uploads"] as const).map((t) => (
             <button
               key={t}
               type="button"
               className={cn(
-                "flex-1 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide",
-                tab === t ? "border-b-2 border-neutral-900 text-neutral-900" : "text-neutral-500",
+                "px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wide",
+                "border-b border-transparent",
+                tab === t ? "border-neutral-500 text-neutral-900" : "text-neutral-500 hover:text-neutral-800",
               )}
               onClick={() => setTab(t)}
             >
@@ -127,18 +126,6 @@ export function BoardImagePicker({
 
       {(tab === "uploads" || uploadsOnly) && (
         <div className="flex gap-2 border-b border-neutral-100 p-2">
-          {onScanPhysical && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-8 flex-1 gap-1.5 px-2 text-[11px] font-medium"
-              onClick={onScanPhysical}
-            >
-              <Camera className="h-3.5 w-3.5 shrink-0" />
-              Scan Board
-            </Button>
-          )}
           <Button
             variant="secondary"
             size="sm"

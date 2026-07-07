@@ -935,6 +935,42 @@ const Settings = () => {
             >
               <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                 <Bell className="h-4 w-4" />
+                {t("preferences.planRemindersHeading")}
+              </h3>
+              <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
+                {t("preferences.planRemindersDescription")}
+              </p>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-between h-auto py-3",
+                  theme === "dark" && "border-white/12 bg-transparent hover:bg-white/[0.06]",
+                )}
+                onClick={() => navigate("/dashboard/settings/plan-reminders")}
+              >
+                <span className="text-left">
+                  <span className="block font-medium">{t("preferences.planRemindersButtonTitle")}</span>
+                  <span
+                    className={cn(
+                      "block text-xs font-normal mt-0.5",
+                      theme === "dark" ? "text-white/55" : "text-muted-foreground",
+                    )}
+                  >
+                    {t("preferences.planRemindersButtonSubtitle")}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 opacity-60" />
+              </Button>
+            </Card>
+
+            <Card
+              className={cn(
+                theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3",
+                theme === "dark" && "!bg-transparent",
+              )}
+            >
+              <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+                <Bell className="h-4 w-4" />
                 {t("preferences.emailHeading")}
               </h3>
               <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>

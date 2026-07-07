@@ -359,6 +359,26 @@
       "title": "Choose a guide",
       "subtitle": "An AI companion for questions while you rebrand."
     },
+    "reminderChannels": {
+      "title": "What kind of reminder helps you follow through?",
+      "subtitle": "Choose how Palette should remind you about dates, goals and next steps from The Plan.",
+      "calendarTitle": "I usually follow through when it is on my calendar",
+      "calendarLabel": "Calendar export",
+      "calendarDescription": "Best for appointments, deadlines and scheduled next steps.",
+      "emailTitle": "I need a reminder, but not a hard interruption",
+      "emailLabel": "Email reminders",
+      "emailDescription": "Best for check-ins, weekly reviews and longer notes from The Plan.",
+      "smsTitle": "I need a stronger nudge",
+      "smsLabel": "Text reminders",
+      "smsDescription": "Best for the reminders you really do not want to miss.",
+      "helper": "Use text for your most important reminders. Use email or calendar for everything else.",
+      "systemLine": "Calendar = scheduled follow-through. Email = soft accountability. Text = stronger nudge.",
+      "smsConsent": "I agree to receive text reminders for dates, goals and next steps I create in Palette. Message and data rates may apply. I can turn text reminders off anytime.",
+      "phoneLabel": "Phone number for text reminders",
+      "phoneHint": "Used only for text reminders you choose.",
+      "dailyLimit": "Up to 5 text reminders per day.",
+      "continue": "Continue"
+    },
     "attribution": {
       "title": "How did you find Palette Plotting?",
       "subtitle": "This helps us understand what's working.",
@@ -373,19 +393,19 @@
       }
     },
     "intensity": {
-      "title": "How often do you want board reminders?",
+      "title": "How often do you want check-ins?",
       "titleByIntent": {
-        "life_rebranding": "How often do you want board reminders?",
+        "life_rebranding": "How often do you want check-ins?",
         "home_organization": "How intense is your reset?",
         "office_work": "How intense is your planning?",
         "moodboarding": "How often do you want to plot?"
       },
-      "subtitle": "You can turn these off or change them anytime.",
+      "subtitle": "Set a rhythm for following through on The Plan. You can change this anytime.",
       "continue": "Continue",
       "setRoutine": "Continue",
-      "notificationsQuestion": "Send reminders for dates and goals from The Plan?",
-      "notificationsDescription": "Email reminders are available now. Push notifications will arrive with the mobile app.",
-      "notificationsHint": "Email reminders are available now. Push notifications will arrive with the mobile app.",
+      "notificationsQuestion": "Send push nudges on your phone?",
+      "notificationsDescription": "Optional in-app push for your daily rhythm. Email and calendar reminders work on web too.",
+      "notificationsHint": "Optional in-app push for your daily rhythm. Email and calendar reminders work on web too.",
       "yes": "Yes",
       "notNow": "Not now",
       "dailyTime": "Daily notification time",

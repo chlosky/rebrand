@@ -1,6 +1,39 @@
 export type ActionItemStatus = "suggested" | "accepted" | "rejected";
 
-export type MapCadence = "monthly" | "weekly" | "daily";
+export type MapCadence = "once" | "monthly" | "weekly" | "daily";
+
+export type StepType =
+  | "task"
+  | "deadline"
+  | "appointment"
+  | "purchase"
+  | "follow_up"
+  | "review"
+  | "custom";
+
+export type ReminderChannelFlags = {
+  calendar: boolean;
+  email: boolean;
+  sms: boolean;
+};
+
+export const DEFAULT_REMINDER_CHANNELS: ReminderChannelFlags = {
+  calendar: false,
+  email: true,
+  sms: false,
+};
+
+export const STEP_TYPE_OPTIONS: StepType[] = [
+  "task",
+  "deadline",
+  "appointment",
+  "purchase",
+  "follow_up",
+  "review",
+  "custom",
+];
+
+export const SMS_MAX_LENGTH = 70;
 
 export type AccountabilityFocus = {
   id: string;
@@ -30,11 +63,18 @@ export type AccountabilityAction = {
   plan_id: string;
   title: string;
   cadence: MapCadence;
+  remind_date: string | null;
   remind_day_of_month: number | null;
   remind_day_of_week: string | null;
   remind_time: string | null;
   status: ActionItemStatus;
   kind: "action" | "micro";
+  step_type: StepType;
+  reminder_enabled: boolean;
+  channels: ReminderChannelFlags;
+  sms_text: string | null;
+  source_evidence: string | null;
+  confidence: number | null;
 };
 
 export type AccountabilityReminderCadence = "quarterly" | "monthly" | "weekly" | "daily";
@@ -48,12 +88,19 @@ export type AccountabilityReminder = {
   remind_time?: string | null;
   day_of_month?: number | null;
   day_of_week?: string | null;
+  sms_text?: string | null;
 };
 
 export type AccountabilityMap = {
   version: 2;
   summary: string;
   finalized: boolean;
+  analysis_status?: "draft" | "draft_ready" | "needs_more_content" | "finalized";
+  analyzed_at?: string | null;
+  edited_at?: string | null;
+  finalized_at?: string | null;
+  meta_confidence?: number | null;
+  unmapped_items?: { text: string; reason: string }[];
   review_cycle: AccountabilityReviewCycle;
   focuses: AccountabilityFocus[];
   plans: AccountabilityPlan[];
@@ -83,7 +130,7 @@ export const DAILY_TIME_QUICK_OPTIONS = [
   "22:00",
 ] as const;
 
-export const CADENCE_OPTIONS: MapCadence[] = ["monthly", "weekly", "daily"];
+export const CADENCE_OPTIONS: MapCadence[] = ["once", "monthly", "weekly", "daily"];
 
 const DEFAULT_TIME = "09:00";
 
@@ -103,8 +150,45 @@ function asStatus(v: unknown): ActionItemStatus {
 }
 
 function asCadence(v: unknown, fallback: MapCadence = "weekly"): MapCadence {
-  if (v === "monthly" || v === "weekly" || v === "daily") return v;
+  if (v === "once" || v === "monthly" || v === "weekly" || v === "daily") return v;
   return fallback;
+}
+
+function asStepType(v: unknown): StepType {
+  const allowed: StepType[] = [
+    "task",
+    "deadline",
+    "appointment",
+    "purchase",
+    "follow_up",
+    "review",
+    "custom",
+  ];
+  return allowed.includes(v as StepType) ? (v as StepType) : "task";
+}
+
+function parseChannels(raw: unknown): ReminderChannelFlags {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_REMINDER_CHANNELS };
+  const o = raw as Record<string, unknown>;
+  return {
+    calendar: o.calendar === true,
+    email: o.email !== false,
+    sms: o.sms === true,
+  };
+}
+
+export function stripSmsText(text: string): string {
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function smsTextFromTitle(title: string): string {
+  return stripSmsText(title).slice(0, SMS_MAX_LENGTH);
 }
 
 export function isJunkBoardText(text: string): boolean {
@@ -202,6 +286,9 @@ function normalizePlan(raw: Record<string, unknown>): AccountabilityPlan {
   }
 
   if (cadence === "monthly" && remind_day_of_month == null) remind_day_of_month = 1;
+  if (cadence === "monthly" && remind_day_of_month !== -1 && remind_day_of_month != null) {
+    remind_day_of_month = Math.min(31, Math.max(1, remind_day_of_month));
+  }
   if (cadence === "weekly" && !remind_day_of_week) remind_day_of_week = "monday";
   if (!remind_time) remind_time = DEFAULT_TIME;
 
@@ -223,29 +310,55 @@ function normalizeAction(raw: Record<string, unknown>): AccountabilityAction {
     typeof raw.remind_day_of_month === "number" ? raw.remind_day_of_month : null;
   let remind_day_of_week = asString(raw.remind_day_of_week);
   let remind_time = asString(raw.remind_time);
+  let remind_date = asString(raw.remind_date);
+
+  const reminder =
+    raw.reminder && typeof raw.reminder === "object" ? (raw.reminder as Record<string, unknown>) : null;
 
   if (asString(raw.remind_at)) {
     const iso = raw.remind_at as string;
     if (!remind_day_of_week) remind_day_of_week = dayOfWeekFromIso(iso);
     if (!remind_time) remind_time = timeFromIso(iso);
+    if (!remind_date) remind_date = iso.slice(0, 10);
   }
 
   if (cadence === "monthly" && remind_day_of_month == null) remind_day_of_month = 1;
+  if (cadence === "monthly" && remind_day_of_month !== -1 && remind_day_of_month != null) {
+    remind_day_of_month = Math.min(31, Math.max(1, remind_day_of_month));
+  }
   if (cadence === "weekly" && !remind_day_of_week) remind_day_of_week = "monday";
   if (!remind_time) remind_time = DEFAULT_TIME;
 
   const kind = raw.kind === "micro" ? "micro" : "action";
+  const channels = reminder?.channels ? parseChannels(reminder.channels) : parseChannels(raw.channels);
+  const smsRaw =
+    asString(raw.sms_text) ??
+    asString(reminder?.smsText) ??
+    asString(reminder?.sms_text) ??
+    null;
+  const sms_text = smsRaw ? stripSmsText(smsRaw).slice(0, SMS_MAX_LENGTH) : null;
 
   return {
     id: asString(raw.id) ?? `action-${crypto.randomUUID().slice(0, 8)}`,
     plan_id: asString(raw.plan_id) ?? asString(raw.weekly_action_id) ?? "",
     title: naturalizeTitle(asString(raw.title) ?? ""),
     cadence,
+    remind_date,
     remind_day_of_month: cadence === "monthly" ? remind_day_of_month : null,
     remind_day_of_week: cadence === "weekly" ? remind_day_of_week : null,
     remind_time,
     status: asStatus(raw.status),
     kind,
+    step_type: asStepType(raw.step_type ?? raw.type),
+    reminder_enabled: reminder?.enabled !== false && raw.reminder_enabled !== false,
+    channels,
+    sms_text,
+    source_evidence:
+      asString(raw.source_evidence) ??
+      (Array.isArray((raw.source as Record<string, unknown> | undefined)?.evidence)
+        ? ((raw.source as { evidence: string[] }).evidence[0] ?? null)
+        : null),
+    confidence: typeof raw.confidence === "number" ? raw.confidence : null,
   };
 }
 
@@ -287,6 +400,8 @@ function migrateLegacyMap(o: Record<string, unknown>): { plans: AccountabilityPl
         plan_id: row.weekly_action_id,
         cadence: "daily",
         kind: "micro",
+        reminder_enabled: true,
+        channels: DEFAULT_REMINDER_CHANNELS,
       }),
     );
   }
@@ -340,6 +455,20 @@ export function normalizeAccountabilityMap(raw: unknown): AccountabilityMap | nu
     version: 2,
     summary: asString(o.summary) ?? "",
     finalized: Boolean(o.finalized),
+    analysis_status:
+      o.analysis_status === "draft_ready" ||
+      o.analysis_status === "needs_more_content" ||
+      o.analysis_status === "finalized" ||
+      o.analysis_status === "draft"
+        ? o.analysis_status
+        : "draft_ready",
+    analyzed_at: asString(o.analyzed_at),
+    edited_at: asString(o.edited_at),
+    finalized_at: asString(o.finalized_at),
+    meta_confidence: typeof o.meta_confidence === "number" ? o.meta_confidence : null,
+    unmapped_items: Array.isArray(o.unmapped_items)
+      ? (o.unmapped_items as { text: string; reason: string }[])
+      : [],
     review_cycle: normalizeReviewCycle(
       ((o.review_cycle ?? o.quarterly_reset) as Record<string, unknown>) ?? {},
     ),
@@ -350,69 +479,99 @@ export function normalizeAccountabilityMap(raw: unknown): AccountabilityMap | nu
   });
 }
 
-function pushNodeReminder(
-  reminders: AccountabilityReminder[],
-  node: {
-    title: string;
-    cadence: MapCadence;
-    remind_day_of_month: number | null;
-    remind_day_of_week: string | null;
-    remind_time: string | null;
-  },
-  goalTitle: string,
-) {
-  if (!node.title.trim()) return;
-  if (node.cadence === "monthly") {
-    reminders.push({
-      title: node.title,
-      cadence: "monthly",
-      goal_title: goalTitle,
-      channels: ["email"],
-      day_of_month: node.remind_day_of_month ?? 1,
-      remind_time: node.remind_time ?? DEFAULT_TIME,
-    });
-  } else if (node.cadence === "weekly") {
-    reminders.push({
-      title: node.title,
-      cadence: "weekly",
-      goal_title: goalTitle,
-      channels: ["email"],
-      day_of_week: node.remind_day_of_week ?? "monday",
-      remind_time: node.remind_time ?? DEFAULT_TIME,
-    });
-  } else {
-    reminders.push({
-      title: node.title,
-      cadence: "daily",
-      goal_title: goalTitle,
-      channels: ["email"],
-      remind_time: node.remind_time ?? DEFAULT_TIME,
-    });
-  }
-}
-
 export function buildRemindersFromMap(map: AccountabilityMap): AccountabilityReminder[] {
   const reminders: AccountabilityReminder[] = [];
-  const focusTitle = (focusId: string) => map.focuses.find((f) => f.id === focusId)?.title ?? "";
 
-  if (map.review_cycle.title.trim()) {
-    reminders.push({
-      title: map.review_cycle.title,
-      cadence: "quarterly",
-      goal_title: "All focuses",
-      channels: ["email"],
-      remind_date: map.review_cycle.remind_date,
-      remind_time: map.review_cycle.remind_time ?? DEFAULT_TIME,
-    });
-  }
+  const focusTitleForPlan = (planId: string) => {
+    const plan = map.plans.find((p) => p.id === planId);
+    if (!plan) return "";
+    return map.focuses.find((f) => f.id === plan.focus_id)?.title ?? "";
+  };
+
+  const channelsForAction = (action: AccountabilityAction): string[] => {
+    const out: string[] = [];
+    if (action.channels.calendar) out.push("calendar");
+    if (action.channels.email) out.push("email");
+    if (action.channels.sms) out.push("sms");
+    return out.length > 0 ? out : ["email"];
+  };
 
   for (const action of map.actions) {
     if (action.status === "rejected") continue;
-    const plan = map.plans.find((p) => p.id === action.plan_id);
-    pushNodeReminder(reminders, action, plan ? focusTitle(plan.focus_id) : "");
+    if (!action.reminder_enabled) continue;
+    if (!action.title.trim()) continue;
+
+    const channels = channelsForAction(action);
+    const sms_text =
+      action.channels.sms && action.sms_text
+        ? stripSmsText(action.sms_text).slice(0, SMS_MAX_LENGTH)
+        : action.channels.sms
+          ? smsTextFromTitle(action.title)
+          : null;
+
+    const base = {
+      title: action.title.trim(),
+      goal_title: focusTitleForPlan(action.plan_id),
+      channels,
+      remind_time: action.remind_time ?? DEFAULT_TIME,
+      sms_text,
+    };
+
+    if (action.cadence === "once") {
+      reminders.push({
+        ...base,
+        cadence: "quarterly",
+        remind_date: action.remind_date ?? defaultReviewDate(),
+      });
+      continue;
+    }
+
+    if (action.cadence === "monthly") {
+      reminders.push({
+        ...base,
+        cadence: "monthly",
+        day_of_month: action.remind_day_of_month ?? 1,
+      });
+      continue;
+    }
+
+    if (action.cadence === "weekly") {
+      reminders.push({
+        ...base,
+        cadence: "weekly",
+        day_of_week: action.remind_day_of_week ?? "monday",
+      });
+      continue;
+    }
+
+    reminders.push({
+      ...base,
+      cadence: "daily",
+    });
   }
 
   return reminders.slice(0, 20);
+}
+
+export type FinalizeValidationResult = { ok: true } | { ok: false; message: string };
+
+export function validateMapForFinalize(map: AccountabilityMap): FinalizeValidationResult {
+  const activeActions = map.actions.filter((a) => a.status !== "rejected" && a.reminder_enabled);
+  if (activeActions.length === 0) {
+    return { ok: false, message: "Add at least one action before finalizing." };
+  }
+  for (const action of activeActions) {
+    if (!action.title.trim()) {
+      return { ok: false, message: "Every action needs a title before finalizing." };
+    }
+    if (action.channels.sms) {
+      const sms = action.sms_text ? stripSmsText(action.sms_text) : smsTextFromTitle(action.title);
+      if (sms.length > SMS_MAX_LENGTH) {
+        return { ok: false, message: "Text reminders must be 70 characters or less." };
+      }
+    }
+  }
+  return { ok: true };
 }
 
 function parseHm(time: string): { h: number; m: number } {
@@ -447,23 +606,29 @@ export function reminderToIso(reminder: AccountabilityReminder, from = new Date(
   }
 
   if (reminder.cadence === "monthly") {
-    const dom = reminder.day_of_month ?? 1;
+    const requested = reminder.day_of_month ?? 1;
     const d = new Date(from);
-    if (dom === -1) {
-      d.setDate(lastDayOfMonth(d.getFullYear(), d.getMonth()));
-    } else {
-      d.setDate(Math.min(dom, lastDayOfMonth(d.getFullYear(), d.getMonth())));
-    }
+
+    const dom =
+      requested === -1
+        ? lastDayOfMonth(d.getFullYear(), d.getMonth())
+        : Math.min(31, Math.max(1, requested));
+
+    d.setDate(Math.min(dom, lastDayOfMonth(d.getFullYear(), d.getMonth())));
     setLocalTime(d, time);
+
     if (d.getTime() <= from.getTime()) {
       d.setMonth(d.getMonth() + 1);
-      if (dom === -1) {
-        d.setDate(lastDayOfMonth(d.getFullYear(), d.getMonth()));
-      } else {
-        d.setDate(Math.min(dom, lastDayOfMonth(d.getFullYear(), d.getMonth())));
-      }
+
+      const nextDom =
+        requested === -1
+          ? lastDayOfMonth(d.getFullYear(), d.getMonth())
+          : Math.min(31, Math.max(1, requested));
+
+      d.setDate(Math.min(nextDom, lastDayOfMonth(d.getFullYear(), d.getMonth())));
       setLocalTime(d, time);
     }
+
     return d.toISOString();
   }
 
@@ -490,14 +655,22 @@ export function reminderToIso(reminder: AccountabilityReminder, from = new Date(
 }
 
 export function finalizeAccountabilityMap(map: AccountabilityMap): AccountabilityMap {
+  const validation = validateMapForFinalize(map);
+  if (!validation.ok) {
+    throw new Error(validation.message);
+  }
+
   const accept = <T extends { status: ActionItemStatus }>(item: T): T => ({
     ...item,
     status: item.status === "rejected" ? "rejected" : "accepted",
   });
 
+  const now = new Date().toISOString();
   const next: AccountabilityMap = {
     ...map,
     finalized: true,
+    analysis_status: "finalized",
+    finalized_at: now,
     plans: map.plans.map(accept),
     actions: map.actions.map(accept),
     reminders: [],

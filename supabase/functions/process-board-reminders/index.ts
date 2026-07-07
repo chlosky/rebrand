@@ -1,136 +1,768 @@
 /**
- * Cron: send due board reminders via email (and queue push when enabled).
+
+ * Cron: send due board reminders via email and optional transactional SMS (Brevo).
+
  * Invoke with CRON_SECRET like send-routine-push-notifications.
+
  */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+
+
 const corsHeaders = {
+
   "Access-Control-Allow-Origin": "*",
+
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
+
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+
+
+const DEFAULT_TIME = "09:00";
+
+const DEFAULT_SMS_DAILY_LIMIT = 5;
+
+const WEEKDAY_OPTIONS = [
+
+  "monday",
+
+  "tuesday",
+
+  "wednesday",
+
+  "thursday",
+
+  "friday",
+
+  "saturday",
+
+  "sunday",
+
+] as const;
+
+
+
+function parseHm(time: string): { h: number; m: number } {
+
+  const [h, m] = time.split(":").map((x) => parseInt(x, 10));
+
+  return { h: Number.isFinite(h) ? h : 9, m: Number.isFinite(m) ? m : 0 };
+
+}
+
+
+
+function setLocalTime(d: Date, time: string) {
+
+  const { h, m } = parseHm(time);
+
+  d.setHours(h, m, 0, 0);
+
+}
+
+
+
+function weekdayIndex(day: string): number {
+
+  const i = WEEKDAY_OPTIONS.indexOf(day.toLowerCase() as (typeof WEEKDAY_OPTIONS)[number]);
+
+  return i >= 0 ? i : 0;
+
+}
+
+
+
+function lastDayOfMonth(year: number, month: number) {
+
+  return new Date(year, month + 1, 0).getDate();
+
+}
+
+
+
+function localDayKey(date: Date, timezone: string): string {
+
+  try {
+
+    return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(date);
+
+  } catch {
+
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(date);
+
   }
+
+}
+
+
+
+function stripSmsContent(content: string): string {
+
+  return content
+
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+
+    .replace(/[\r\n]+/g, " ")
+
+    .replace(/[\u2018\u2019]/g, "'")
+
+    .replace(/[\u201C\u201D]/g, '"')
+
+    .replace(/\s+/g, " ")
+
+    .trim();
+
+}
+
+
+
+function buildSmsContent(title: string, body?: string | null): string {
+
+  const raw = body ? `${title}: ${body}` : `Palette: ${title}`;
+
+  return stripSmsContent(raw).slice(0, 70);
+
+}
+
+
+
+function isRecurringActionReminder(metadata: Record<string, unknown> | null | undefined): boolean {
+
+  if (!metadata || metadata.source_page !== "action") return false;
+
+  const cadence = metadata.cadence;
+
+  return cadence === "daily" || cadence === "weekly" || cadence === "monthly";
+
+}
+
+
+
+function nextActionRemindAt(metadata: Record<string, unknown>, from = new Date()): string {
+
+  const cadence = String(metadata.cadence ?? "daily");
+
+  const time = String(metadata.remind_time ?? DEFAULT_TIME);
+
+
+
+  if (cadence === "monthly") {
+
+    const requested = typeof metadata.day_of_month === "number" ? metadata.day_of_month : 1;
+
+    const d = new Date(from);
+
+    const dom =
+
+      requested === -1
+
+        ? lastDayOfMonth(d.getFullYear(), d.getMonth())
+
+        : Math.min(31, Math.max(1, requested));
+
+    d.setDate(Math.min(dom, lastDayOfMonth(d.getFullYear(), d.getMonth())));
+
+    setLocalTime(d, time);
+
+    if (d.getTime() <= from.getTime()) {
+
+      d.setMonth(d.getMonth() + 1);
+
+      const nextDom =
+
+        requested === -1
+
+          ? lastDayOfMonth(d.getFullYear(), d.getMonth())
+
+          : Math.min(31, Math.max(1, requested));
+
+      d.setDate(Math.min(nextDom, lastDayOfMonth(d.getFullYear(), d.getMonth())));
+
+      setLocalTime(d, time);
+
+    }
+
+    return d.toISOString();
+
+  }
+
+
+
+  if (cadence === "weekly") {
+
+    const target = weekdayIndex(String(metadata.day_of_week ?? "monday"));
+
+    const d = new Date(from);
+
+    const current = d.getDay() === 0 ? 6 : d.getDay() - 1;
+
+    let delta = target - current;
+
+    if (delta < 0) delta += 7;
+
+    d.setDate(d.getDate() + delta);
+
+    setLocalTime(d, time);
+
+    if (d.getTime() <= from.getTime()) {
+
+      d.setDate(d.getDate() + 7);
+
+    }
+
+    return d.toISOString();
+
+  }
+
+
+
+  const d = new Date(from);
+
+  setLocalTime(d, time);
+
+  if (d.getTime() <= from.getTime()) {
+
+    d.setDate(d.getDate() + 1);
+
+  }
+
+  return d.toISOString();
+
+}
+
+
+
+serve(async (req) => {
+
+  if (req.method === "OPTIONS") {
+
+    return new Response("ok", { headers: corsHeaders });
+
+  }
+
+
 
   const cronSecret = Deno.env.get("CRON_SECRET");
+
   const provided = req.headers.get("x-cron-secret") ?? new URL(req.url).searchParams.get("secret");
+
   if (!cronSecret || provided !== cronSecret) {
+
     return new Response(JSON.stringify({ error: "Forbidden" }), {
+
       status: 403,
+
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+
     });
+
   }
+
+
 
   const supabase = createClient(
+
     Deno.env.get("SUPABASE_URL") ?? "",
+
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+
   );
 
+
+
   const now = new Date().toISOString();
+
   const { data: due, error } = await supabase
+
     .from("board_reminders")
-    .select("id, user_id, title, body, channels, remind_at")
+
+    .select("id, user_id, title, body, channels, remind_at, metadata, sms_content, sms_attempt_count, timezone")
+
     .eq("status", "scheduled")
+
     .lte("remind_at", now)
+
     .limit(50);
 
+
+
   if (error) {
+
     console.error(error);
+
     return new Response(JSON.stringify({ error: "query failed" }), {
+
       status: 500,
+
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+
     });
+
   }
 
-  let sent = 0;
+
+
+  const smsCountCache = new Map<string, number>();
+
+
+
+  async function smsSentTodayForUser(userId: string, timezone: string): Promise<number> {
+
+    const cacheKey = `${userId}:${localDayKey(new Date(), timezone)}`;
+
+    const cached = smsCountCache.get(cacheKey);
+
+    if (cached !== undefined) return cached;
+
+
+
+    const todayKey = localDayKey(new Date(), timezone);
+
+    const { data: logs } = await supabase
+
+      .from("palette_sms_send_log")
+
+      .select("sent_at")
+
+      .eq("user_id", userId)
+
+      .eq("status", "sent");
+
+
+
+    const total = (logs ?? []).filter((row) => localDayKey(new Date(row.sent_at), timezone) === todayKey).length;
+
+    smsCountCache.set(cacheKey, total);
+
+    return total;
+
+  }
+
+
+
+  let emailSent = 0;
+
   let smsSent = 0;
+
+  let smsSkippedLimit = 0;
+
+
+
   for (const reminder of due ?? []) {
+
     const { data: profile } = await supabase
+
       .from("profiles")
+
       .select("email, phone")
+
       .eq("id", reminder.user_id)
+
       .maybeSingle();
+
+
 
     const { data: prefs } = await supabase
+
       .from("user_preferences")
-      .select("texts_enabled")
+
+      .select(
+
+        "phone_number_e164, sms_reminders_enabled, sms_reminder_consent_at, sms_reminder_opted_out_at, sms_daily_limit, timezone",
+
+      )
+
       .eq("user_id", reminder.user_id)
+
       .maybeSingle();
 
+
+
     const email = profile?.email;
-    const phone = profile?.phone?.trim();
-    const smsAllowed = prefs?.texts_enabled !== false;
+
+    const phone =
+
+      (typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()) ||
+
+      profile?.phone?.trim() ||
+
+      null;
+
+    const userTimezone =
+
+      (typeof prefs?.timezone === "string" && prefs.timezone.trim()) ||
+
+      (typeof reminder.timezone === "string" && reminder.timezone.trim()) ||
+
+      "UTC";
+
+    const dailyLimit =
+
+      typeof prefs?.sms_daily_limit === "number" && prefs.sms_daily_limit > 0
+
+        ? prefs.sms_daily_limit
+
+        : DEFAULT_SMS_DAILY_LIMIT;
+
+
+
+    const smsConsentOk =
+
+      prefs?.sms_reminders_enabled === true &&
+
+      prefs?.sms_reminder_consent_at != null &&
+
+      prefs?.sms_reminder_opted_out_at == null;
+
+
+
     const channels: string[] = reminder.channels ?? ["email"];
-    const smsBody = reminder.body
-      ? `${reminder.title}: ${reminder.body}`
-      : `Palette Plotting — ${reminder.title}`;
+
+    const smsBody =
+
+      typeof reminder.sms_content === "string" && reminder.sms_content.trim()
+
+        ? stripSmsContent(reminder.sms_content).slice(0, 70)
+
+        : buildSmsContent(reminder.title, reminder.body);
+
+
+
+    let emailDelivered = false;
+
+    let smsDelivered = false;
+
+    let smsLimitDeferred = false;
+
+
 
     if (channels.includes("email") && email) {
+
       const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email-notification`;
+
       const res = await fetch(fnUrl, {
+
         method: "POST",
+
         headers: {
+
           Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+
           "Content-Type": "application/json",
+
         },
+
         body: JSON.stringify({
+
           to: email,
+
           subject: `Palette Plotting — ${reminder.title}`,
+
           textBody: reminder.body ?? `Reminder: ${reminder.title}`,
+
           htmlBody: `<p><strong>${reminder.title}</strong></p>${reminder.body ? `<p>${reminder.body}</p>` : ""}<p><a href="https://paletteplot.com/dashboard/boards">Open your boards</a></p>`,
+
           tag: "board-reminder",
+
         }),
+
       });
+
       await supabase.from("board_reminder_deliveries").insert({
+
         reminder_id: reminder.id,
+
         channel: "email",
+
         status: res.ok ? "sent" : "failed",
+
         error: res.ok ? null : await res.text(),
+
       });
-      if (res.ok) sent++;
+
+      if (res.ok) {
+
+        emailSent++;
+
+        emailDelivered = true;
+
+      }
+
     }
 
-    if (channels.includes("sms") && phone && smsAllowed) {
-      const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms-notification`;
-      const res = await fetch(fnUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phoneNumber: phone,
-          message: `${smsBody} — paletteplot.com/dashboard/boards`,
-        }),
-      });
+
+
+    if (channels.includes("sms")) {
+
+      let smsStatus = "failed";
+
+      let smsError: string | null = null;
+
+      let providerMessageId: string | null = null;
+
+
+
+      if (!smsConsentOk) {
+
+        smsStatus = "skipped_no_consent";
+
+        smsError = "sms_not_enabled_or_no_consent";
+
+      } else if (!phone) {
+
+        smsStatus = "skipped_no_phone";
+
+        smsError = "missing_phone_number";
+
+      } else {
+
+        const sentToday = await smsSentTodayForUser(reminder.user_id, userTimezone);
+
+        if (sentToday >= dailyLimit) {
+
+          smsStatus = "skipped_limit";
+
+          smsError = "daily_sms_limit_reached";
+
+          smsSkippedLimit++;
+
+          smsLimitDeferred = true;
+
+        } else if (!smsBody || smsBody.length > 70) {
+
+          smsStatus = "failed";
+
+          smsError = "invalid_sms_content";
+
+        } else {
+
+          const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms-notification`;
+
+          const res = await fetch(fnUrl, {
+
+            method: "POST",
+
+            headers: {
+
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+
+              "Content-Type": "application/json",
+
+            },
+
+            body: JSON.stringify({
+
+              phoneNumber: phone,
+
+              message: smsBody,
+
+              purpose: "board-reminder",
+
+            }),
+
+          });
+
+
+
+          let payload: Record<string, unknown> = {};
+
+          try {
+
+            payload = await res.json();
+
+          } catch {
+
+            payload = {};
+
+          }
+
+
+
+          if (res.ok && payload?.success === true) {
+
+            smsStatus = "sent";
+
+            providerMessageId =
+
+              typeof payload.messageId === "string" ? payload.messageId : null;
+
+            smsDelivered = true;
+
+            smsSent++;
+
+            const cacheKey = `${reminder.user_id}:${localDayKey(new Date(), userTimezone)}`;
+
+            smsCountCache.set(cacheKey, sentToday + 1);
+
+          } else {
+
+            smsStatus = "failed";
+
+            smsError =
+
+              typeof payload?.error === "string"
+
+                ? payload.error
+
+                : await res.text().catch(() => "sms_send_failed");
+
+          }
+
+        }
+
+      }
+
+
+
       await supabase.from("board_reminder_deliveries").insert({
+
         reminder_id: reminder.id,
+
         channel: "sms",
-        status: res.ok ? "sent" : "failed",
-        error: res.ok ? null : await res.text(),
+
+        status: smsStatus,
+
+        provider_message_id: providerMessageId,
+
+        error: smsError,
+
       });
-      if (res.ok) smsSent++;
+
+
+
+      await supabase.from("palette_sms_send_log").insert({
+
+        user_id: reminder.user_id,
+
+        reminder_id: reminder.id,
+
+        phone_number_e164: phone ?? "unknown",
+
+        content: smsBody || reminder.title,
+
+        provider: "brevo",
+
+        provider_message_id: providerMessageId,
+
+        status: smsStatus,
+
+        error_message: smsError,
+
+      });
+
+
+
+      await supabase
+
+        .from("board_reminders")
+
+        .update({
+
+          sms_content: smsBody,
+
+          sms_sent_at: smsStatus === "sent" ? now : null,
+
+          sms_brevo_message_id: providerMessageId,
+
+          sms_send_status: smsStatus,
+
+          sms_send_error: smsError,
+
+          sms_attempt_count: (reminder.sms_attempt_count ?? 0) + 1,
+
+        })
+
+        .eq("id", reminder.id);
+
     }
+
+
 
     if (channels.includes("push")) {
-      // Hook for OneSignal when native app ships — log as queued
+
       await supabase.from("board_reminder_deliveries").insert({
+
         reminder_id: reminder.id,
+
         channel: "push",
+
         status: "queued",
+
       });
+
     }
 
-    await supabase
-      .from("board_reminders")
-      .update({ status: "sent", last_sent_at: now })
-      .eq("id", reminder.id);
+
+
+    const anyDelivered = emailDelivered || smsDelivered;
+
+    if (!anyDelivered && !smsLimitDeferred) continue;
+
+
+
+    const metadata = (reminder.metadata ?? null) as Record<string, unknown> | null;
+
+    if (isRecurringActionReminder(metadata)) {
+
+      await supabase
+
+        .from("board_reminders")
+
+        .update({
+
+          status: "scheduled",
+
+          last_sent_at: anyDelivered ? now : reminder.remind_at,
+
+          remind_at: nextActionRemindAt(metadata!, new Date()),
+
+        })
+
+        .eq("id", reminder.id);
+
+    } else if (anyDelivered || smsLimitDeferred) {
+
+      await supabase
+
+        .from("board_reminders")
+
+        .update({ status: "sent", last_sent_at: now })
+
+        .eq("id", reminder.id);
+
+    }
+
   }
 
-  return new Response(JSON.stringify({ processed: due?.length ?? 0, email_sent: sent, sms_sent: smsSent }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+
+
+  return new Response(
+
+    JSON.stringify({
+
+      processed: due?.length ?? 0,
+
+      email_sent: emailSent,
+
+      sms_sent: smsSent,
+
+      sms_skipped_daily_limit: smsSkippedLimit,
+
+      daily_sms_limit: DEFAULT_SMS_DAILY_LIMIT,
+
+    }),
+
+    {
+
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+    },
+
+  );
+
 });
+

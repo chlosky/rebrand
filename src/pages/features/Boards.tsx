@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, ListChecks, Loader2, Plus, ScanLine, Trash2 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, ListChecks, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
@@ -23,7 +23,6 @@ import {
 } from "@/lib/boards/api";
 import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { BoardPrintDialog } from "@/components/boards/BoardPrintDialog";
-import { BoardPhysicalScanDialog } from "@/components/boards/BoardPhysicalScanDialog";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -32,6 +31,8 @@ import "@/styles/board-editor.css";
 export default function Boards() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const workspaceParam = searchParams.get("workspace");
   const isMobile = useIsMobile();
   const editorMapRef = useRef(new Map<string, BoardCanvasHandle>());
   const activeEditorRef = useRef<BoardCanvasHandle | null>(null);
@@ -42,7 +43,6 @@ export default function Boards() {
   const [workspace, setWorkspace] = useState<BoardWorkspaceWithBoards | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
   const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
 
@@ -99,10 +99,14 @@ export default function Boards() {
     setLoading(true);
     try {
       const workspaces = await fetchUserWorkspaces(user.id);
-      const full =
-        workspaces.length === 0
-          ? await ensureDefaultWorkspace(user.id)
-          : await fetchWorkspaceWithBoards(workspaces[0].id);
+      let full: BoardWorkspaceWithBoards | null = null;
+      if (workspaceParam) {
+        full = await fetchWorkspaceWithBoards(workspaceParam);
+      } else if (workspaces.length === 0) {
+        full = await ensureDefaultWorkspace(user.id);
+      } else {
+        full = await fetchWorkspaceWithBoards(workspaces[0].id);
+      }
       if (!full) throw new Error("workspace missing");
       setWorkspace(full);
       setActiveBoardId((prev) => {
@@ -116,12 +120,11 @@ export default function Boards() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, workspaceParam]);
 
   useEffect(() => {
     void loadWorkspace();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [loadWorkspace]);
 
   useEffect(() => {
     document.title = "Vision | Palette Plotting";
@@ -359,10 +362,6 @@ export default function Boards() {
                 <span className="hidden sm:inline">Remove</span>
               </Button>
             )}
-            <Button variant="outline" size="sm" className="hidden gap-1 text-xs md:flex" onClick={() => setScanOpen(true)}>
-              <ScanLine className="h-3.5 w-3.5" />
-              Scan
-            </Button>
             <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setDownloadOpen(true)}>
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
@@ -434,7 +433,6 @@ export default function Boards() {
               userId={user.id}
               onBoardColorChange={handleBoardColorFromAi}
               onPickImage={handlePickImage}
-              onScanPhysical={() => setScanOpen(true)}
             />
           </div>
         ) : (
@@ -447,7 +445,6 @@ export default function Boards() {
               userId={user.id}
               onBoardColorChange={handleBoardColorFromAi}
               onPickImage={handlePickImage}
-              onScanPhysical={() => setScanOpen(true)}
             />
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -499,12 +496,6 @@ export default function Boards() {
                 if (editor) return editor.getLayoutJson();
                 return workspace.boards.find((b) => b.id === boardId)?.layout_json ?? {};
               }}
-            />
-            <BoardPhysicalScanDialog
-              open={scanOpen}
-              onOpenChange={setScanOpen}
-              userId={user.id}
-              editorRef={activeEditorRef}
             />
           </>
         )}

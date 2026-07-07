@@ -24,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
 
-export type BoardZoomPreset = "fit" | 1 | 1.25 | 1.5;
+export type BoardZoomPreset = "fit" | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5;
 
 type BoardToolbarProps = {
   editorRef: React.RefObject<BoardCanvasHandle | null>;
@@ -153,6 +153,9 @@ export function BoardToolbar({
               {(
                 [
                   { id: "fit" as const, label: "Fit all" },
+                  { id: 0.25 as const, label: "25%" },
+                  { id: 0.5 as const, label: "50%" },
+                  { id: 0.75 as const, label: "75%" },
                   { id: 1 as const, label: "100%" },
                   { id: 1.25 as const, label: "125%" },
                   { id: 1.5 as const, label: "150%" },
@@ -175,7 +178,19 @@ export function BoardToolbar({
                 title="Zoom out"
                 onClick={() =>
                   onZoomPresetChange(
-                    zoomPreset === 1.5 ? 1.25 : zoomPreset === 1.25 ? 1 : zoomPreset === 1 ? "fit" : "fit",
+                    zoomPreset === 1.5
+                      ? 1.25
+                      : zoomPreset === 1.25
+                        ? 1
+                        : zoomPreset === 1
+                          ? 0.75
+                          : zoomPreset === 0.75
+                            ? 0.5
+                            : zoomPreset === 0.5
+                              ? 0.25
+                              : zoomPreset === 0.25
+                                ? "fit"
+                                : "fit",
                   )
                 }
                 className="rounded p-1 text-neutral-500 hover:bg-neutral-100"
@@ -187,7 +202,19 @@ export function BoardToolbar({
                 title="Zoom in"
                 onClick={() =>
                   onZoomPresetChange(
-                    zoomPreset === "fit" ? 1 : zoomPreset === 1 ? 1.25 : zoomPreset === 1.25 ? 1.5 : 1.5,
+                    zoomPreset === "fit"
+                      ? 1
+                      : zoomPreset === 0.25
+                        ? 0.5
+                        : zoomPreset === 0.5
+                          ? 0.75
+                          : zoomPreset === 0.75
+                            ? 1
+                            : zoomPreset === 1
+                              ? 1.25
+                              : zoomPreset === 1.25
+                                ? 1.5
+                                : 1.5,
                   )
                 }
                 className="rounded p-1 text-neutral-500 hover:bg-neutral-100"

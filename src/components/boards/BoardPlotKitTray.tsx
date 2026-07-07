@@ -26,7 +26,6 @@ type BoardPlotKitTrayProps = {
   userId: string;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
   onPickImage: (url: string) => void;
-  onScanPhysical?: () => void;
 };
 
 export function BoardPlotKitTray({
@@ -37,7 +36,6 @@ export function BoardPlotKitTray({
   userId,
   onBoardColorChange,
   onPickImage,
-  onScanPhysical,
 }: BoardPlotKitTrayProps) {
   const [sheetTab, setSheetTab] = useState<PlotDockTab | null>(null);
   const close = () => setSheetTab(null);
@@ -100,7 +98,6 @@ export function BoardPlotKitTray({
                     onPickImage(url);
                     close();
                   }}
-                  onScanPhysical={onScanPhysical}
                 />
               </div>
             )}

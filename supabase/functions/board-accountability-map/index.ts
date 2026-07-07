@@ -20,8 +20,6 @@ type BoardRow = {
   sort_order: number;
 };
 
-type ActionItemStatus = "suggested" | "accepted" | "rejected";
-
 function isJunkBoardText(text: string): boolean {
   const t = text.trim().toLowerCase().replace(/\s+/g, " ");
   if (!t) return true;
@@ -40,7 +38,7 @@ function collectTextsFromLayout(layout: unknown): { texts: string[]; imageCount:
       if (!raw || typeof raw !== "object") continue;
       const o = raw as Record<string, unknown>;
       const role = String(o.structureRole ?? "");
-      if (role === "add-row" || role === "checkbox") continue;
+      if (role === "add-row" || role === "add-button" || role === "checkbox") continue;
       if (typeof o.text === "string") {
         const t = o.text.trim();
         if (t.length > 1 && !isJunkBoardText(t)) texts.push(t);
@@ -68,93 +66,6 @@ function defaultReviewDate(): string {
   return d.toISOString().slice(0, 10);
 }
 
-function buildFlowMap(boards: BoardRow[], summary?: string) {
-  const focuses = focusBoards(boards);
-  const planBoard = boards.find((b) => b.role === "plan");
-  const planTexts = planBoard ? collectTextsFromLayout(planBoard.layout_json).texts : [];
-
-  const allPlans: Record<string, unknown>[] = [];
-  const allActions: Record<string, unknown>[] = [];
-  const focusNodes = focuses.map((board, i) => {
-    const { texts } = collectTextsFromLayout(board.layout_json);
-    const headline = pickHeadline(texts, board.title);
-    const detail = texts.map((t) => naturalizeTitle(t)).find((t) => t && t !== headline);
-    const focusId = `focus-${i + 1}`;
-    const plan1 = `plan-${i + 1}-1`;
-    const plan2 = `plan-${i + 1}-2`;
-
-    allPlans.push({
-      id: plan1,
-      focus_id: focusId,
-      title: sanitizeNodeTitle(headline, board.title),
-      cadence: "monthly",
-      remind_day_of_month: null,
-      remind_day_of_week: null,
-      remind_time: null,
-      status: "suggested",
-    });
-    allPlans.push({
-      id: plan2,
-      focus_id: focusId,
-      title: planTexts[i] ? sanitizeNodeTitle(planTexts[i], `More ${board.title}`) : `More ${board.title}`,
-      cadence: "monthly",
-      remind_day_of_month: null,
-      remind_day_of_week: null,
-      remind_time: null,
-      status: "suggested",
-    });
-
-    allActions.push({
-      id: `action-${i + 1}-1`,
-      plan_id: plan1,
-      title: detail ? detail.slice(0, 60) : `Progress on ${headline}`,
-      cadence: "weekly",
-      remind_day_of_month: null,
-      remind_day_of_week: "wednesday",
-      remind_time: "15:00",
-      status: "suggested",
-      kind: "action",
-    });
-    allActions.push({
-      id: `action-${i + 1}-2`,
-      plan_id: plan1,
-      title: `Review ${board.title} board`,
-      cadence: "monthly",
-      remind_day_of_month: 1,
-      remind_day_of_week: null,
-      remind_time: "09:00",
-      status: "suggested",
-      kind: "action",
-    });
-
-    return {
-      id: focusId,
-      board_id: board.id,
-      title: board.title,
-    };
-  });
-
-  return scrubMapTitles(
-    {
-      version: 2 as const,
-      summary:
-        summary ??
-        "Review the map for each focus — remove what does not fit, add your own, then finalize reminders.",
-      finalized: false,
-      review_cycle: {
-        title: "Accountability review",
-        remind_date: defaultReviewDate(),
-        remind_time: "09:00",
-      },
-      focuses: focusNodes,
-      plans: allPlans,
-      actions: allActions,
-      reminders: [] as Record<string, unknown>[],
-    },
-    focusNodes,
-  );
-}
-
 function naturalizeTitle(title: string): string {
   const t = title
     .replace(/\+?\s*add\s*line/gi, "")
@@ -174,14 +85,6 @@ function sanitizeNodeTitle(title: string, fallback: string): string {
   return cleaned || fallback;
 }
 
-function pickHeadline(texts: string[], fallback: string): string {
-  for (const raw of texts) {
-    const t = naturalizeTitle(raw);
-    if (t) return t.slice(0, 80);
-  }
-  return fallback;
-}
-
 function scrubMapTitles(
   map: Record<string, unknown>,
   focuses: { id: string; title: string }[],
@@ -198,12 +101,39 @@ function scrubMapTitles(
     return p ? String(p.title ?? "Action") : "Action";
   };
   const actions = Array.isArray(map.actions)
-    ? (map.actions as Record<string, unknown>[]).map((a) => ({
-        ...a,
-        title: sanitizeNodeTitle(String(a.title ?? ""), planTitle(String(a.plan_id ?? ""))),
-      }))
+    ? (map.actions as Record<string, unknown>[]).map((a) => {
+        const reminder =
+          a.reminder && typeof a.reminder === "object"
+            ? (a.reminder as Record<string, unknown>)
+            : null;
+        const channels = reminder?.channels ?? a.channels;
+        const smsText = reminder?.smsText ?? reminder?.sms_text ?? a.sms_text ?? null;
+        return {
+          ...a,
+          title: sanitizeNodeTitle(String(a.title ?? ""), planTitle(String(a.plan_id ?? ""))),
+          channels,
+          sms_text: typeof smsText === "string" ? smsText.slice(0, 70) : null,
+          reminder_enabled: reminder?.enabled !== false,
+        };
+      })
     : [];
   return { ...map, plans, actions };
+}
+
+function workspaceHasEnoughContent(boardPayload: { texts: string[]; image_count: number }[]): boolean {
+  const textChars = boardPayload.reduce((sum, b) => sum + b.texts.join(" ").length, 0);
+  const imageCount = boardPayload.reduce((sum, b) => sum + b.image_count, 0);
+  return textChars >= 24 || imageCount >= 2;
+}
+
+function needsMoreContentResponse() {
+  return new Response(
+    JSON.stringify({
+      status: "needs_more_content",
+      message: "Not enough workspace content to draft a useful action map.",
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
 }
 
 serve(async (req) => {
@@ -286,10 +216,14 @@ serve(async (req) => {
         id: b.id,
         title: b.title,
         role: b.role,
-        texts: texts.slice(0, 24),
+        texts: texts.slice(0, 32),
         image_count: imageCount,
       };
     });
+
+    if (!workspaceHasEnoughContent(boardPayload)) {
+      return needsMoreContentResponse();
+    }
 
     const corpus = boardPayload
       .map((b) => `${b.title} (${b.role}): ${b.texts.join(" | ")}`)
@@ -297,9 +231,7 @@ serve(async (req) => {
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openaiKey || !screenBoardsCorpus(corpus)) {
-      return new Response(JSON.stringify(buildFlowMap(boardRows)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return needsMoreContentResponse();
     }
 
     const focusIds = focusList.map((b, i) => ({
@@ -308,68 +240,78 @@ serve(async (req) => {
       board_title: b.title,
     }));
 
-    const prompt = `You are building a Palette Plotting ACTION MAP from a workspace (up to 3 focus boards + The Plan).
+    const prompt = `You are drafting a first-pass ACTION MAP for Palette Plotting from the user's actual Vision workspace.
 
-Board content:
+The user will review and edit everything before any reminders go live. Do not auto-finalize.
+
+Workspace boards:
 ${JSON.stringify(boardPayload, null, 2)}
 
-Focus slots (use exactly these):
+Focus slots (use exactly these ids and board titles):
 ${JSON.stringify(focusIds, null, 2)}
 
-The visible map zones are: Focuses | Plans | Actions.
+Visible columns: Focus | Plan | Action
 
-Rules:
-- Return version 2 JSON with: review_cycle, focuses, plans, actions (NOT monthly_goals/weekly_actions/daily_actions).
-- Focus titles = board titles — do not rename.
-- Weight The Plan board (role "plan") for plan and action suggestions.
-- 2-3 plans per focus. Plans are names only — title + focus_id. No scheduling on plans.
-- 1-3 actions per plan. Actions link via plan_id and carry reminder timing (cadence + day + time).
-- All plans and actions status "suggested". Every action kind is "action" (no micro-actions).
-- Titles must be natural and specific — complete first-pass suggestions the user can edit.
-- Never include UI chrome like "+ add line", "add row", or placeholder instructions in titles.
-- Fill every plan and action with a real title derived from board content.
+CHANNEL RULES (suggest per action; user controls final selection):
+- calendar: scheduled follow-through — appointments, deadlines, due dates, date-specific work
+- email: soft accountability — longer details, weekly reviews, summaries, non-urgent check-ins
+- sms: stronger nudge — short, high-priority only; OFF by default unless clearly urgent
 
-Bad titles: "Monthly goal: ...", "Weekly touchpoint — + add line", "5-minute action toward", "+ add line", empty strings
-Good plan titles: "Healthier Eating", "Career growth", "More HAPPY"
-Good action titles: "Mediterranean meals", "Walk outside after lunch", "Review HAPPY board"
+SMS RULES (if you suggest sms):
+- sms must be optional; default sms false for most items
+- smsText max 70 characters, ASCII, no emoji, no links, no motivational fluff
+- derive smsText from the action title only — short practical nudge
+- usually pair sms with email or calendar, not sms alone for everything
+- if sms is false, smsText must be null
 
-Timing fields on actions only (no ISO datetimes):
-- action cadence monthly: remind_day_of_month (1-31 or -1), remind_time HH:mm
-- action cadence weekly: remind_day_of_week (lowercase), remind_time HH:mm
-- action cadence daily: remind_time HH:mm only
+AI BEHAVIOR:
+- Use only content supported by the workspace — do not invent focus areas or filler goals
+- No generic "Daily Gratitude", "Review board", or placeholder actions unless the workspace supports them
+- No therapy language, manifesting, alignment, or fake specificity
+- Keep titles short and editable
+- Prefer concrete actions over vague motivation
+- Mark uncertain items with lower confidence (0.4-0.6) and source_evidence
+- If workspace is too thin, return { "status": "needs_more_content", "message": "..." }
 
-Plans still include cadence/remind fields in JSON for schema compat — use monthly, null timing.
+STRUCTURE:
+- 1-3 plans per focus, each with 1-4 actions
+- focus titles = board titles (do not rename)
+- weight The Plan board (role "plan") for dates, deadlines, purchases, appointments
+- all plans/actions status "suggested"
+- step_type one of: task, deadline, appointment, purchase, follow_up, review, custom
+- cadence on actions: once, daily, weekly, monthly
+- timing on actions only: remind_date (YYYY-MM-DD for once), remind_day_of_month, remind_day_of_week, remind_time (HH:mm 24h)
 
-review_cycle: title, remind_date (YYYY-MM-DD ~3 months out), remind_time 09:00
+Each action JSON:
+{
+  "id": "action-1-1",
+  "plan_id": "plan-1-1",
+  "title": "short concrete title from workspace",
+  "step_type": "task",
+  "cadence": "weekly",
+  "remind_day_of_week": "monday",
+  "remind_time": "09:00",
+  "status": "suggested",
+  "kind": "action",
+  "confidence": 0.8,
+  "source_evidence": "From: Career board",
+  "reminder_enabled": true,
+  "channels": { "calendar": false, "email": true, "sms": false },
+  "sms_text": null
+}
 
 Return JSON only:
 {
   "version": 2,
-  "summary": "2 sentences",
+  "summary": "Palette drafted this from your workspace. Review before finalizing.",
+  "analysis_status": "draft_ready",
+  "meta_confidence": 0.0,
   "finalized": false,
-  "review_cycle": { "title": "Accountability review", "remind_date": "YYYY-MM-DD", "remind_time": "09:00" },
+  "review_cycle": { "title": "Review cycle", "remind_date": "YYYY-MM-DD", "remind_time": "09:00" },
   "focuses": [{ "id": "focus-1", "board_id": "uuid", "title": "board title" }],
-  "plans": [{
-    "id": "plan-1-1",
-    "focus_id": "focus-1",
-    "title": "Healthier Eating",
-    "cadence": "monthly",
-    "remind_day_of_month": null,
-    "remind_day_of_week": null,
-    "remind_time": null,
-    "status": "suggested"
-  }],
-  "actions": [{
-    "id": "action-1-1",
-    "plan_id": "plan-1-1",
-    "title": "Mediterranean meals",
-    "cadence": "weekly",
-    "remind_day_of_month": null,
-    "remind_day_of_week": "monday",
-    "remind_time": "15:00",
-    "status": "suggested",
-    "kind": "action"
-  }],
+  "plans": [{ "id": "plan-1-1", "focus_id": "focus-1", "title": "...", "cadence": "monthly", "remind_day_of_month": null, "remind_day_of_week": null, "remind_time": null, "status": "suggested" }],
+  "actions": [ ... ],
+  "unmapped_items": [{ "text": "...", "reason": "..." }],
   "reminders": []
 }`;
 
@@ -388,15 +330,14 @@ Return JSON only:
           },
           { role: "user", content: prompt },
         ],
-        temperature: 0.4,
+        temperature: 0.35,
         response_format: { type: "json_object" },
       }),
     });
 
     if (!aiRes.ok) {
-      return new Response(JSON.stringify(buildFlowMap(boardRows)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("OpenAI error:", await aiRes.text());
+      return needsMoreContentResponse();
     }
 
     const aiJson = await aiRes.json();
@@ -405,22 +346,22 @@ Return JSON only:
     try {
       parsed = JSON.parse(raw);
     } catch {
-      return new Response(JSON.stringify(buildFlowMap(boardRows)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return needsMoreContentResponse();
+    }
+
+    if (parsed.status === "needs_more_content") {
+      return needsMoreContentResponse();
     }
 
     const hasPlans = Array.isArray(parsed.plans) && parsed.plans.length > 0;
-    const hasLegacy = Array.isArray(parsed.monthly_goals) && parsed.monthly_goals.length > 0;
+    const hasActions = Array.isArray(parsed.actions) && parsed.actions.length > 0;
 
-    if (parsed.version !== 2 || !Array.isArray(parsed.focuses) || (!hasPlans && !hasLegacy)) {
-      const summary = typeof parsed.summary === "string" ? parsed.summary : undefined;
-      return new Response(JSON.stringify(buildFlowMap(boardRows, summary)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (parsed.version !== 2 || !Array.isArray(parsed.focuses) || !hasPlans || !hasActions) {
+      return needsMoreContentResponse();
     }
 
     const reviewRaw = (parsed.review_cycle ?? parsed.quarterly_reset) as Record<string, unknown> | undefined;
+    const now = new Date().toISOString();
 
     const map = scrubMapTitles(
       {
@@ -428,35 +369,27 @@ Return JSON only:
         summary:
           typeof parsed.summary === "string" && parsed.summary.trim()
             ? parsed.summary.trim()
-            : "Review the map for each focus, then finalize.",
+            : "Palette drafted this from your workspace. Review before finalizing.",
+        analysis_status: "draft_ready",
+        analyzed_at: now,
+        edited_at: null,
+        finalized_at: null,
+        meta_confidence: typeof parsed.meta_confidence === "number" ? parsed.meta_confidence : null,
         finalized: false,
         review_cycle: {
-          title:
-            typeof reviewRaw?.title === "string"
-              ? reviewRaw.title
-              : "Accountability review",
+          title: typeof reviewRaw?.title === "string" ? reviewRaw.title : "Review cycle",
           remind_date:
-            typeof reviewRaw?.remind_date === "string"
-              ? reviewRaw.remind_date
-              : defaultReviewDate(),
-          remind_time:
-            typeof reviewRaw?.remind_time === "string"
-              ? reviewRaw.remind_time
-              : "09:00",
+            typeof reviewRaw?.remind_date === "string" ? reviewRaw.remind_date : defaultReviewDate(),
+          remind_time: typeof reviewRaw?.remind_time === "string" ? reviewRaw.remind_time : "09:00",
         },
         focuses: parsed.focuses,
-        plans: hasPlans ? parsed.plans : [],
-        actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+        plans: parsed.plans,
+        actions: parsed.actions,
+        unmapped_items: Array.isArray(parsed.unmapped_items) ? parsed.unmapped_items : [],
         reminders: [],
       },
       parsed.focuses as { id: string; title: string }[],
     );
-
-    if (!hasPlans && hasLegacy) {
-      return new Response(JSON.stringify(buildFlowMap(boardRows, map.summary)), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     return new Response(JSON.stringify(map), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

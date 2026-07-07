@@ -118,7 +118,7 @@
     "privacyPolicy": "Privacy Policy",
     "appNotificationsConsent": "I consent to app notifications (optional). New tools, promotions and app news. Opt out in Settings → Notification preferences.",
     "emailMarketingConsent": "I consent to email marketing communications (optional, separate from transactional emails minimally required). Opt out in settings.",
-    "smsMarketingConsent": "I consent to SMS marketing communications (optional). Opt out in settings. Message and data rates may apply."
+    "smsMarketingConsent": "I consent to optional promotional texts from Palette Plotting (not plan reminders). Opt out in Settings. Message and data rates may apply."
   },
   "errors": {
     "cancelled": "Cancelled",

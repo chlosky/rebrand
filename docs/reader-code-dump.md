@@ -1,3 +1,12 @@
+# Reader code dump (handoff)
+
+This is a **single handoff doc** you can paste into ChatGPT.
+
+## `LibraryReader` page/component
+
+```tsx
+// src/components/workspace/LibraryReader.tsx
+// NOTE: this is a verbatim copy from the repo at time of export.
 import { ChevronLeft } from "lucide-react";
 import type { FreeLibraryGuide, LibraryBlock } from "@/pages/workspace/freeLibraryGuides";
 import { cn } from "@/lib/utils";
@@ -305,3 +314,18 @@ export function LibraryReader({
     </article>
   );
 }
+```
+
+## Guide data model (types) + content source
+
+```ts
+// src/pages/workspace/freeLibraryGuides.ts
+// Contains:
+// - `LibraryBlock` union type
+// - `FreeLibraryGuide` type
+// - `FREE_LIBRARY_GUIDES` array (actual copy/content)
+// - `getFreeLibraryGuide(slug)`
+//
+// NOTE: this file is large; open it in the repo and copy as needed.
+```
+

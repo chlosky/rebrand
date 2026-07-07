@@ -254,7 +254,7 @@ export default function PostPaywallLoading() {
         }
 
         logPostPaywall("navigate dashboard");
-        window.setTimeout(() => navigateRef.current("/workspace?tab=create", { replace: true }), 250);
+        window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 250);
       } catch (e) {
         console.error("[post-paywall] provisioning failed:", e);
         logPostPaywall("provisioning error", { error: String((e as Error)?.message ?? e) });
@@ -262,7 +262,7 @@ export default function PostPaywallLoading() {
         markIapSubscriptionConfirmed(getIapPostPurchaseLatchUserId());
         clearIapPostPurchaseEntitlementLatch();
         logPostPaywall("navigate dashboard after error");
-        window.setTimeout(() => navigateRef.current("/workspace?tab=create", { replace: true }), 650);
+        window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 650);
       }
     })();
 

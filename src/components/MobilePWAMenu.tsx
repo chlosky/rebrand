@@ -32,8 +32,7 @@ export const MobilePWAMenu = () => {
   const isToolPage =
     location.pathname.startsWith("/dashboard/") &&
     !isDashboardRoot &&
-    location.pathname !== "/dashboard/settings" &&
-    location.pathname !== "/dashboard/reminders";
+    location.pathname !== "/dashboard/settings";
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);

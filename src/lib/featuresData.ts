@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, type LucideIcon } from "lucide-react";
+import { LayoutGrid, type LucideIcon } from "lucide-react";
 import type { IconType } from "react-icons";
 import type { TFunction } from "i18next";
 
@@ -16,12 +16,6 @@ export function getDashboardFeatures(t: TFunction<"dashboard">): Feature[] {
       title: t("tools.boards.title"),
       description: t("tools.boards.description"),
       path: "/dashboard/boards",
-    },
-    {
-      icon: Bell,
-      title: t("tools.yourJourney.title"),
-      description: t("tools.yourJourney.description"),
-      path: "/dashboard/reminders",
     },
   ];
 }

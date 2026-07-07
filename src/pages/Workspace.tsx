@@ -10,9 +10,9 @@ import {
 
   FolderKanban,
 
-  LayoutGrid,
-
   Lock,
+
+  Plus,
 
 } from "lucide-react";
 
@@ -28,16 +28,17 @@ import { cn } from "@/lib/utils";
 
 import { useTranslation } from "react-i18next";
 
-import { fetchUserWorkspaces } from "@/lib/boards/api";
+import { fetchUserWorkspaces, createWorkspaceFromTemplate } from "@/lib/boards/api";
+import { DEFAULT_FOUR_BOARD_TEMPLATE } from "@/lib/boards/starterTemplates";
 
 import type { BoardWorkspace } from "@/lib/boards/types";
 
 import { SETUP_PRIMARY_CTA_CLASS } from "@/lib/onboardingSetupTheme";
 import { COMMUNITY_IN_APP_ENABLED } from "@/lib/communityRelease";
+import { toast } from "sonner";
 
 import { WorkspaceHeader, workspaceShellClass } from "@/components/workspace/WorkspaceHeader";
 
-import { ProgressMilestonesTabs } from "@/components/ProgressMilestonesTabs";
 import { LibraryReader } from "@/components/workspace/LibraryReader";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 
@@ -51,35 +52,21 @@ import {
 
 
 
-type WorkspaceTab = "library" | "journey" | "new-board" | "create" | "images" | "projects";
+type WorkspaceTab = "library" | "images" | "projects";
 
-const WORKSPACE_TABS: WorkspaceTab[] = ["library", "journey", "new-board", "create", "images", "projects"];
-
-
-
-const CREATE_STARTERS = [
-
-  { labelKey: "workspace.create.starters.vision", path: "/dashboard/boards" },
-
-  { labelKey: "workspace.create.starters.home", path: "/dashboard/boards" },
-
-  { labelKey: "workspace.create.starters.kanban", path: "/dashboard/boards" },
-
-  { labelKey: "workspace.create.starters.mood", path: "/dashboard/boards" },
-
-] as const;
+const WORKSPACE_TABS: WorkspaceTab[] = ["library", "images", "projects"];
 
 
 
-const CATEGORY_LABEL_KEYS: Record<string, string> = {
+const GUIDE_CATEGORY_LABEL_KEYS: Record<string, string> = {
 
-  life_rebranding: "workspace.library.categories.lifeRebrand",
+  "life-rebrand": "workspace.library.categories.lifeRebrand",
 
   moodboarding: "workspace.library.categories.moodboard",
 
-  home_organization: "workspace.library.categories.homeOrg",
+  "home-organization": "workspace.library.categories.homeOrg",
 
-  office_work: "workspace.library.categories.office",
+  "office-optimization": "workspace.library.categories.office",
 
 };
 
@@ -248,6 +235,7 @@ export default function Workspace() {
   const dark = theme === "dark";
 
   const [workspaces, setWorkspaces] = useState<BoardWorkspace[]>([]);
+  const [creatingSet, setCreatingSet] = useState(false);
 
 
 
@@ -256,9 +244,11 @@ export default function Workspace() {
   const tab: WorkspaceTab =
     tabParam === "tips"
       ? "library"
-      : WORKSPACE_TABS.includes(tabParam as WorkspaceTab)
-        ? (tabParam as WorkspaceTab)
-        : "library";
+      : tabParam === "new-board" || tabParam === "create"
+        ? "projects"
+        : WORKSPACE_TABS.includes(tabParam as WorkspaceTab)
+          ? (tabParam as WorkspaceTab)
+          : "library";
 
 
 
@@ -289,6 +279,18 @@ export default function Workspace() {
     setSearchParams({ tab: "library" }, { replace: true });
 
   };
+
+
+
+  useEffect(() => {
+
+    if (tabParam === "new-board" || tabParam === "create") {
+
+      setSearchParams({ tab: "projects" }, { replace: true });
+
+    }
+
+  }, [tabParam, setSearchParams]);
 
 
 
@@ -340,6 +342,22 @@ export default function Workspace() {
 
   const goUpgrade = () => navigate("/resubscribe");
 
+  const startNewSet = async () => {
+    if (!user?.id || creatingSet) return;
+    setCreatingSet(true);
+    try {
+      const setNumber = workspaces.length + 1;
+      const name = workspaces.length === 0 ? "My first set" : `Set ${setNumber}`;
+      const created = await createWorkspaceFromTemplate(user.id, DEFAULT_FOUR_BOARD_TEMPLATE, name);
+      setWorkspaces((prev) => [created, ...prev]);
+      navigate(`/dashboard/boards?workspace=${created.id}`);
+    } catch {
+      toast.error("Could not start a new set");
+    } finally {
+      setCreatingSet(false);
+    }
+  };
+
 
 
   const tabs = (
@@ -375,48 +393,6 @@ export default function Workspace() {
 
       />
       ) : null}
-
-      <TabButton
-
-        active={tab === "journey"}
-
-        locked={!hasPro}
-
-        label={t("workspace.tabs.yourJourney")}
-
-        onClick={() => setTab("journey")}
-
-        dark={dark}
-
-      />
-
-      <TabButton
-
-        active={tab === "new-board"}
-
-        locked={!hasPro}
-
-        label={t("workspace.tabs.newBoard")}
-
-        onClick={() => setTab("new-board")}
-
-        dark={dark}
-
-      />
-
-      <TabButton
-
-        active={tab === "create"}
-
-        locked={!hasPro}
-
-        label={t("workspace.tabs.create")}
-
-        onClick={() => setTab("create")}
-
-        dark={dark}
-
-      />
 
       <TabButton
 
@@ -494,51 +470,27 @@ export default function Workspace() {
 
             >
 
-              {guide.coverImage ? (
+              <span
 
-                <div className={cn("relative w-24 shrink-0 border-r sm:w-28", dark ? "border-white bg-black" : "bg-zinc-100")}>
+                className={cn(
 
-                  <img
+                  "flex w-24 shrink-0 items-center justify-center sm:w-28",
 
-                    src={guide.coverImage}
+                  dark ? "border-r border-white bg-black text-white" : "bg-[#f3f0eb] text-zinc-600",
 
-                    alt={guide.title}
+                )}
 
-                    className="h-full min-h-[5.5rem] w-full object-cover"
+              >
 
-                    loading="lazy"
+                <BookOpen className="h-5 w-5" strokeWidth={1.75} />
 
-                    decoding="async"
-
-                  />
-
-                </div>
-
-              ) : (
-
-                <span
-
-                  className={cn(
-
-                    "flex w-24 shrink-0 items-center justify-center sm:w-28",
-
-                    dark ? "border-r border-white bg-black text-white" : "bg-[#f3f0eb] text-zinc-600",
-
-                  )}
-
-                >
-
-                  <BookOpen className="h-5 w-5" strokeWidth={1.75} />
-
-                </span>
-
-              )}
+              </span>
 
               <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-4">
 
                 <span className={cn("text-[11px] font-semibold uppercase tracking-wider", dark ? "text-white" : "text-zinc-400")}>
 
-                  {t(CATEGORY_LABEL_KEYS[guide.category])}
+                  {t(GUIDE_CATEGORY_LABEL_KEYS[guide.slug])}
 
                 </span>
 
@@ -573,332 +525,6 @@ export default function Workspace() {
       );
 
     }
-
-  }
-
-
-
-  if (tab === "journey") {
-
-    panel = (
-
-      <div className="relative min-h-[22rem]">
-
-        <div className="space-y-4">
-
-          <div>
-
-            <p className={cn("text-sm leading-snug", dark ? "text-white" : "text-zinc-500")}>
-
-              {t("tools:journey.subtitle")}
-
-            </p>
-
-            <h2 className={cn("mt-2 font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
-
-              {t("tools:journey.yourProgress")}
-
-            </h2>
-
-          </div>
-
-          {hasPro ? (
-
-            <>
-
-              <div className={cn("rounded-xl border p-4", cardClass)}>
-
-                <ProgressMilestonesTabs syncHash={false} />
-
-              </div>
-
-              <button
-
-                type="button"
-
-                onClick={() => navigate("/dashboard/chrono")}
-
-                className={cn("flex w-full items-center gap-3 rounded-xl border px-4 py-4 text-left transition-colors", cardClass)}
-
-              >
-
-                <span
-
-                  className={cn(
-
-                    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
-
-                    dark ? "border-white bg-black text-white" : "border-zinc-200 bg-zinc-50 text-zinc-900",
-
-                  )}
-
-                >
-
-                  <BookOpen className="h-4 w-4" />
-
-                </span>
-
-                <span className="min-w-0 flex-1">
-
-                  <span className={cn("block text-sm font-semibold", dark ? "text-white" : "text-zinc-900")}>
-
-                    {t("workspace.journey.journalTitle")}
-
-                  </span>
-
-                  <span className={cn("mt-0.5 block text-xs", dark ? "text-white" : "text-zinc-500")}>
-
-                    {t("workspace.journey.journalDescription")}
-
-                  </span>
-
-                </span>
-
-                <ChevronRight className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
-
-              </button>
-
-            </>
-
-          ) : null}
-
-        </div>
-
-        {!hasPro && !loading ? (
-
-          <LockedOverlay
-
-            dark={dark}
-
-            title={t("workspace.locked.journeyTitle")}
-
-            body={t("workspace.locked.journeyBody")}
-
-            onUpgrade={goUpgrade}
-
-            upgradeLabel={t("workspace.locked.upgrade")}
-
-          />
-
-        ) : null}
-
-      </div>
-
-    );
-
-  }
-
-
-
-  if (tab === "new-board") {
-
-    panel = (
-
-      <div className="relative min-h-[22rem]">
-
-        <div
-
-          className={cn(
-
-            "flex min-h-[22rem] flex-col items-center justify-center rounded-2xl border px-6 py-10 shadow-sm",
-
-            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
-
-          )}
-
-        >
-
-          <h2 className={cn("text-center font-welcome-serif text-2xl leading-snug sm:text-[1.65rem]", dark ? "text-white" : "text-zinc-900")}>
-
-            {t("workspace.newBoard.title")}
-
-          </h2>
-
-          <p className={cn("mt-3 max-w-md text-center text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
-
-            {t("workspace.newBoard.subtitle")}
-
-          </p>
-
-          {hasPro ? (
-
-            <Button
-
-              className={cn(
-
-                "mt-8",
-
-                dark
-
-                  ? "h-12 rounded-xl border border-white bg-white font-semibold text-black hover:bg-white"
-
-                  : SETUP_PRIMARY_CTA_CLASS,
-
-              )}
-
-              onClick={() => navigate("/dashboard/boards")}
-
-            >
-
-              {t("workspace.newBoard.openBoards")}
-
-            </Button>
-
-          ) : null}
-
-        </div>
-
-        {!hasPro && !loading ? (
-
-          <LockedOverlay
-
-            dark={dark}
-
-            title={t("workspace.locked.newBoardTitle")}
-
-            body={t("workspace.locked.newBoardBody")}
-
-            onUpgrade={goUpgrade}
-
-            upgradeLabel={t("workspace.locked.upgrade")}
-
-          />
-
-        ) : null}
-
-      </div>
-
-    );
-
-  }
-
-
-
-  if (tab === "create") {
-
-    panel = (
-
-      <div className="relative min-h-[22rem]">
-
-        <div
-
-          className={cn(
-
-            "flex min-h-[22rem] flex-col items-center justify-center rounded-2xl border px-6 py-10 shadow-sm",
-
-            dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
-
-          )}
-
-        >
-
-          <p
-
-            className={cn(
-
-              "mb-6 text-center font-welcome-serif text-2xl leading-snug sm:text-[1.65rem]",
-
-              dark ? "text-white" : "text-zinc-900",
-
-            )}
-
-          >
-
-            {t("workspace.create.prompt")}
-
-          </p>
-
-          <div
-
-            className={cn(
-
-              "w-full max-w-md rounded-2xl border px-4 py-3 text-sm",
-
-              dark ? "border-white bg-black text-white" : "border-zinc-200 bg-[#faf8f5] text-zinc-400",
-
-            )}
-
-          >
-
-            {t("workspace.create.placeholder")}
-
-          </div>
-
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
-
-            {CREATE_STARTERS.map((starter) => (
-
-              <button
-
-                key={starter.labelKey}
-
-                type="button"
-
-                onClick={() => hasPro && navigate(starter.path)}
-
-                disabled={!hasPro}
-
-                className={cn(
-
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60",
-
-                  dark
-
-                    ? "border-white bg-black text-white hover:bg-white hover:text-black"
-
-                    : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
-
-                )}
-
-              >
-
-                {t(starter.labelKey)}
-
-              </button>
-
-            ))}
-
-          </div>
-
-          {hasPro ? (
-
-            <Button
-
-              className={cn("mt-8", dark ? "h-12 rounded-xl border border-white bg-white font-semibold text-black hover:bg-white" : SETUP_PRIMARY_CTA_CLASS)}
-
-              onClick={() => navigate("/dashboard/boards")}
-
-            >
-
-              {t("workspace.create.openBoards")}
-
-            </Button>
-
-          ) : null}
-
-        </div>
-
-        {!hasPro && !loading ? (
-
-          <LockedOverlay
-
-            dark={dark}
-
-            title={t("workspace.locked.createTitle")}
-
-            body={t("workspace.locked.createBody")}
-
-            onUpgrade={goUpgrade}
-
-            upgradeLabel={t("workspace.locked.upgrade")}
-
-          />
-
-        ) : null}
-
-      </div>
-
-    );
 
   }
 
@@ -1022,13 +648,15 @@ export default function Workspace() {
 
                 className={cn("rounded-lg", dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200")}
 
-                onClick={() => navigate("/dashboard/boards")}
+                disabled={creatingSet}
+
+                onClick={() => void startNewSet()}
 
               >
 
-                <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
 
-                {t("workspace.projects.open")}
+                {creatingSet ? t("workspace.projects.creating") : t("workspace.projects.startNewSet")}
 
               </Button>
 
@@ -1050,7 +678,7 @@ export default function Workspace() {
 
                       type="button"
 
-                      onClick={() => navigate("/dashboard/boards")}
+                      onClick={() => navigate(`/dashboard/boards?workspace=${ws.id}`)}
 
                       className={cn(
 
@@ -1174,7 +802,7 @@ export default function Workspace() {
           </h1>
         ) : null}
 
-        {loading && tab !== "library" && tab !== "journey" && tab !== "new-board" ? (
+        {loading && tab !== "library" ? (
 
           <div
 

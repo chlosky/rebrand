@@ -21,7 +21,9 @@ import {
   Star,
   Diamond,
   ArrowRight,
-  ChartPie,
+  Heart,
+  MessageCircle,
+  Database,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,16 +47,16 @@ export type BoardMarkTextSize = "S" | "M" | "L" | "XL";
 export type BoardMarkShapeType =
   | "rect"
   | "circle"
-  | "ellipse"
   | "triangle"
   | "line"
-  | "semicircle"
-  | "pie"
   | "hexagon"
   | "pentagon"
   | "star"
   | "diamond"
-  | "arrow";
+  | "arrow"
+  | "heart"
+  | "bubble"
+  | "cylinder";
 
 export type BoardMarkStickerId =
   | "star"
@@ -89,16 +91,16 @@ export const BOARD_MARK_SHAPE_OPTIONS: {
 }[] = [
   { id: "rect", label: "Rect", Icon: Square },
   { id: "circle", label: "Circle", Icon: CircleIcon },
-  { id: "ellipse", label: "Ellipse", Icon: CircleIcon },
   { id: "triangle", label: "Triangle", Icon: TriangleIcon },
   { id: "line", label: "Line", Icon: Minus },
-  { id: "semicircle", label: "Semi", Icon: ChartPie },
-  { id: "pie", label: "Pie", Icon: ChartPie },
   { id: "hexagon", label: "Hex", Icon: Hexagon },
   { id: "pentagon", label: "Pent", Icon: Pentagon },
   { id: "star", label: "Star", Icon: Star },
   { id: "diamond", label: "Diamond", Icon: Diamond },
   { id: "arrow", label: "Arrow", Icon: ArrowRight },
+  { id: "heart", label: "Heart", Icon: Heart },
+  { id: "bubble", label: "Bubble", Icon: MessageCircle },
+  { id: "cylinder", label: "Cylinder", Icon: Database },
 ];
 
 /** Unicode emoji only — no third-party artwork; safe for commercial product use. */

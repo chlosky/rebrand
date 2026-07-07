@@ -72,12 +72,13 @@ export async function ensureStarterWorkspaceFromCategories(
 export async function createWorkspaceFromTemplate(
   userId: string,
   template: BoardStarterTemplate,
+  name?: string,
 ): Promise<BoardWorkspaceWithBoards> {
   const { data: workspace, error: wErr } = await supabase
     .from("board_workspaces")
     .insert({
       user_id: userId,
-      name: template.name,
+      name: name?.trim() || template.name,
       preset_slug: template.slug,
     })
     .select()
@@ -154,19 +155,10 @@ export async function deleteBoard(boardId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function fetchBoardReminders(boardId: string): Promise<BoardReminder[]> {
-  const { data, error } = await supabase
-    .from("board_reminders")
-    .select("*")
-    .eq("board_id", boardId)
-    .order("remind_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as BoardReminder[];
-}
-
 export async function createBoardReminder(
   input: Omit<BoardReminder, "id" | "created_at" | "updated_at" | "last_sent_at" | "ical_uid" | "status"> & {
     status?: string;
+    metadata?: Record<string, unknown> | null;
   },
 ): Promise<BoardReminder> {
   const { data, error } = await supabase.from("board_reminders").insert(input).select().single();
@@ -174,8 +166,21 @@ export async function createBoardReminder(
   return data as BoardReminder;
 }
 
-export async function deleteBoardReminder(reminderId: string): Promise<void> {
-  const { error } = await supabase.from("board_reminders").delete().eq("id", reminderId);
+export async function deletePendingActionRemindersForChannel(params: {
+  boardId: string;
+  userId: string;
+  channel: "email" | "sms";
+}): Promise<void> {
+  const { error } = await supabase
+    .from("board_reminders")
+    .delete()
+    .eq("board_id", params.boardId)
+    .eq("user_id", params.userId)
+    .eq("source", "ai_extracted")
+    .eq("status", "scheduled")
+    .contains("channels", [params.channel])
+    .filter("metadata->>source_page", "eq", "action");
+
   if (error) throw error;
 }
 

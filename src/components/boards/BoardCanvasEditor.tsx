@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Canvas, Circle, Ellipse, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
+import { Canvas, Circle, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
 import type { BoardLayoutMode } from "@/lib/boards/types";
 import { cn } from "@/lib/utils";
@@ -43,11 +43,27 @@ const MARK_TEXT_FILL = "#000000";
 const MARK_SHAPE_STROKE = "#111111";
 const MARK_DRAW_WIDTH = 4;
 
+const STICKY_PADDING = 16;
+const STICKY_DEFAULT_W = 280;
+const STICKY_DEFAULT_H = 200;
+
+const TEXT_CAPABLE_SHAPES = new Set<BoardMarkShapeType>([
+  "rect",
+  "circle",
+  "triangle",
+  "hexagon",
+  "pentagon",
+  "diamond",
+  "heart",
+  "bubble",
+]);
+
 for (const prop of [
   "structureId",
   "structureType",
   "structureRole",
   "structureWidth",
+  "structureHeight",
   "rowIndex",
   "columnIndex",
   "itemIndex",
@@ -55,6 +71,11 @@ for (const prop of [
   "markKind",
   "shapeType",
   "stickerId",
+  "textCapable",
+  "stickyWidth",
+  "stickyHeight",
+  "shapeWidth",
+  "shapeHeight",
 ] as const) {
   if (!FabricObject.customProperties.includes(prop)) {
     FabricObject.customProperties.push(prop);
@@ -63,6 +84,696 @@ for (const prop of [
 
 function structureProp(obj: FabricObjectType, key: string): unknown {
   return typeof obj.get === "function" ? obj.get(key) : undefined;
+}
+
+function findEditableTextInGroup(group: Group): Textbox | IText | null {
+  const found = group.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
+  return found instanceof Textbox || found instanceof IText ? found : null;
+}
+
+function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
+  let root: FabricObject = obj;
+  while (root.group) root = root.group as FabricObject;
+
+  let textObj: Textbox | IText | null = null;
+
+  if (root instanceof Textbox || root instanceof IText) {
+    textObj = root;
+  } else if (root instanceof Group) {
+    textObj = findEditableTextInGroup(root);
+  }
+
+  if (!textObj) return false;
+
+  canvas.setActiveObject(textObj);
+  canvas.requestRenderAll();
+
+  requestAnimationFrame(() => {
+    textObj.enterEditing();
+    if (textObj instanceof IText) {
+      textObj.selectAll();
+    } else if (textObj instanceof Textbox) {
+      const len = textObj.text?.length ?? 0;
+      textObj.selectionStart = len;
+      textObj.selectionEnd = len;
+    }
+    canvas.requestRenderAll();
+  });
+
+  return true;
+}
+
+function createStickyNoteGroup(params: {
+  left: number;
+  top: number;
+  width?: number;
+  height?: number;
+  text?: string;
+  fill?: string;
+}): Group {
+  const w = params.width ?? STICKY_DEFAULT_W;
+  const h = params.height ?? STICKY_DEFAULT_H;
+  const fill = params.fill ?? "#FFF9C4";
+  const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
+
+  const rect = new Rect({
+    left: 0,
+    top: 0,
+    width: w,
+    height: h,
+    fill,
+    stroke,
+    strokeWidth: 1,
+    rx: 8,
+    ry: 8,
+    selectable: false,
+    evented: false,
+    markKind: "sticky-bg",
+  });
+
+  const note = new Textbox(params.text ?? "", {
+    left: STICKY_PADDING,
+    top: STICKY_PADDING,
+    width: w - STICKY_PADDING * 2,
+    fontSize: 22,
+    fontFamily: "system-ui, sans-serif",
+    fill: "#171717",
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    splitByGrapheme: true,
+    editable: true,
+    evented: true,
+    selectable: false,
+    markKind: "sticky-text",
+  });
+
+  return new Group([rect, note], {
+    left: params.left,
+    top: params.top,
+    subTargetCheck: true,
+    objectCaching: false,
+    markKind: "sticky",
+    stickyWidth: w,
+    stickyHeight: h,
+  });
+}
+
+function normalizeStickyResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  const padding = STICKY_PADDING;
+  const currentW =
+    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
+  const currentH =
+    typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
+
+  const nextW = Math.max(120, currentW * sx);
+  const nextH = Math.max(90, currentH * sy);
+
+  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
+  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
+
+  if (rect) {
+    rect.set({ left: 0, top: 0, width: nextW, height: nextH, scaleX: 1, scaleY: 1 });
+  }
+
+  if (text) {
+    text.set({
+      left: padding,
+      top: padding,
+      width: nextW - padding * 2,
+      textAlign: "left",
+      originX: "left",
+      originY: "top",
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+
+  group.set({ scaleX: 1, scaleY: 1, width: nextW, height: nextH, stickyWidth: nextW, stickyHeight: nextH });
+  group.setCoords();
+}
+
+function restoreStickyAfterLoad(group: Group) {
+  group.set({ subTargetCheck: true, objectCaching: false, markKind: "sticky" });
+  const w = (group.get("stickyWidth") as number) ?? STICKY_DEFAULT_W;
+  const h = (group.get("stickyHeight") as number) ?? STICKY_DEFAULT_H;
+  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
+  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
+  if (rect) {
+    rect.set({ left: 0, top: 0, width: w, height: h, scaleX: 1, scaleY: 1, markKind: "sticky-bg" });
+  }
+  if (text) {
+    text.set({
+      left: STICKY_PADDING,
+      top: STICKY_PADDING,
+      width: w - STICKY_PADDING * 2,
+      textAlign: "left",
+      originX: "left",
+      originY: "top",
+      editable: true,
+      evented: true,
+      selectable: false,
+      markKind: "sticky-text",
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+  group.set({ stickyWidth: w, stickyHeight: h, scaleX: 1, scaleY: 1 });
+  group.setCoords();
+}
+
+function normalizeTextCapableShapeResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  const currentW =
+    typeof group.get("shapeWidth") === "number" ? Number(group.get("shapeWidth")) : group.width ?? 120;
+  const currentH =
+    typeof group.get("shapeHeight") === "number" ? Number(group.get("shapeHeight")) : group.height ?? 90;
+
+  const nextW = Math.max(60, currentW * sx);
+  const nextH = Math.max(50, currentH * sy);
+
+  const shapeObj = group
+    .getObjects()
+    .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
+  const text = group.getObjects().find((o) => o.get("markKind") === "shape-text") as Textbox | undefined;
+
+  if (shapeObj) {
+    const sw = shapeObj.width ?? currentW;
+    const sh = shapeObj.height ?? currentH;
+    const scaleShapeX = nextW / (sw * (shapeObj.scaleX ?? 1));
+    const scaleShapeY = nextH / (sh * (shapeObj.scaleY ?? 1));
+    if (shapeObj instanceof Circle) {
+      const r = (shapeObj.radius ?? 55) * Math.min(scaleShapeX, scaleShapeY);
+      shapeObj.set({ radius: r, left: nextW / 2, top: nextH / 2, originX: "center", originY: "center", scaleX: 1, scaleY: 1 });
+    } else if (shapeObj instanceof Rect) {
+      shapeObj.set({ left: 0, top: 0, width: nextW, height: nextH, scaleX: 1, scaleY: 1 });
+    } else {
+      shapeObj.set({
+        scaleX: (shapeObj.scaleX ?? 1) * scaleShapeX,
+        scaleY: (shapeObj.scaleY ?? 1) * scaleShapeY,
+        left: nextW / 2,
+        top: nextH / 2,
+        originX: "center",
+        originY: "center",
+      });
+      shapeObj.set({ scaleX: 1, scaleY: 1 });
+      shapeObj.scale(scaleShapeX);
+    }
+  }
+
+  if (text) {
+    text.set({
+      left: nextW / 2,
+      top: nextH / 2,
+      width: nextW * 0.85,
+      scaleX: 1,
+      scaleY: 1,
+      originX: "center",
+      originY: "center",
+    });
+  }
+
+  group.set({ scaleX: 1, scaleY: 1, width: nextW, height: nextH, shapeWidth: nextW, shapeHeight: nextH });
+  group.setCoords();
+}
+
+function restoreShapeGroupAfterLoad(group: Group) {
+  group.set({ subTargetCheck: true, objectCaching: false });
+  const w = (group.get("shapeWidth") as number) ?? 120;
+  const h = (group.get("shapeHeight") as number) ?? 90;
+  const text = group.getObjects().find((o) => o.get("markKind") === "shape-text") as Textbox | undefined;
+  if (text) {
+    text.set({
+      editable: true,
+      evented: true,
+      selectable: false,
+      textAlign: "center",
+      originX: "center",
+      originY: "center",
+      left: w / 2,
+      top: h / 2,
+      width: w * 0.85,
+    });
+  }
+  group.setCoords();
+}
+
+function createStructureId(): string {
+  return crypto.randomUUID();
+}
+
+function createStructureAddButton(
+  structureId: string,
+  structureType: string,
+  left: number,
+  top: number,
+): FabricObjectType[] {
+  const btnSize = 24;
+  const circle = new Circle({
+    left,
+    top,
+    radius: btnSize / 2,
+    fill: "#ffffff",
+    stroke: DECAL_MUTED,
+    strokeWidth: 1.5,
+    selectable: false,
+    evented: true,
+    hoverCursor: "pointer",
+    originX: "center",
+    originY: "center",
+  });
+  circle.set({ structureId, structureType, structureRole: "add-button" });
+
+  const plus = new FabricText("+", {
+    left,
+    top,
+    fontSize: 16,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_MUTED,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: true,
+    hoverCursor: "pointer",
+  });
+  plus.set({ structureId, structureType, structureRole: "add-button" });
+
+  return [circle, plus];
+}
+
+function isAddButtonHit(obj: FabricObjectType): boolean {
+  const role = structureProp(obj, "structureRole");
+  return role === "add-button" || role === "add-row";
+}
+
+function buildShapePrimitive(
+  shapeType: BoardMarkShapeType,
+  groupW: number,
+  groupH: number,
+  stroke: string,
+  fill: string,
+): FabricObject {
+  if (shapeType === "rect") {
+    return new Rect({
+      left: 0,
+      top: 0,
+      width: groupW,
+      height: groupH,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      rx: 4,
+      ry: 4,
+      selectable: false,
+      evented: false,
+    });
+  }
+  if (shapeType === "circle") {
+    const r = Math.min(groupW, groupH) / 2;
+    return new Circle({
+      left: groupW / 2,
+      top: groupH / 2,
+      radius: r,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false,
+    });
+  }
+  if (shapeType === "triangle") {
+    return new Triangle({
+      left: groupW / 2,
+      top: groupH / 2,
+      width: groupW,
+      height: groupH,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false,
+    });
+  }
+  if (shapeType === "hexagon") {
+    const hw = groupW / 2;
+    const hh = groupH / 2;
+    return new Polygon(
+      [
+        { x: 0, y: -hh },
+        { x: hw * 0.86, y: -hh / 2 },
+        { x: hw * 0.86, y: hh / 2 },
+        { x: 0, y: hh },
+        { x: -hw * 0.86, y: hh / 2 },
+        { x: -hw * 0.86, y: -hh / 2 },
+      ],
+      {
+        left: groupW / 2,
+        top: groupH / 2,
+        originX: "center",
+        originY: "center",
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  if (shapeType === "pentagon") {
+    const hw = groupW / 2;
+    const hh = groupH / 2;
+    return new Polygon(
+      [
+        { x: 0, y: -hh },
+        { x: hw, y: -hh * 0.3 },
+        { x: hw * 0.62, y: hh },
+        { x: -hw * 0.62, y: hh },
+        { x: -hw, y: -hh * 0.3 },
+      ],
+      {
+        left: groupW / 2,
+        top: groupH / 2,
+        originX: "center",
+        originY: "center",
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  if (shapeType === "diamond") {
+    const hw = groupW / 2;
+    const hh = groupH / 2;
+    return new Polygon(
+      [
+        { x: 0, y: -hh },
+        { x: hw, y: 0 },
+        { x: 0, y: hh },
+        { x: -hw, y: 0 },
+      ],
+      {
+        left: groupW / 2,
+        top: groupH / 2,
+        originX: "center",
+        originY: "center",
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  if (shapeType === "heart") {
+    return new Path(
+      "M 50 88 C 20 66 6 52 6 34 C 6 20 16 10 30 10 C 38 10 45 14 50 20 C 55 14 62 10 70 10 C 84 10 94 20 94 34 C 94 52 80 66 50 88 Z",
+      {
+        left: groupW / 2 - 50,
+        top: groupH / 2 - 50,
+        fill,
+        stroke,
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      },
+    );
+  }
+  // bubble
+  return new Path(
+    "M 8 10 Q 8 2 16 2 L 104 2 Q 112 2 112 10 L 112 58 Q 112 66 104 66 L 58 66 L 44 82 L 46 66 L 16 66 Q 8 66 8 58 Z",
+    {
+      left: groupW / 2 - 60,
+      top: groupH / 2 - 42,
+      fill,
+      stroke,
+      strokeWidth: 3,
+      selectable: false,
+      evented: false,
+    },
+  );
+}
+
+function createTextCapableShapeGroup(
+  shapeType: BoardMarkShapeType,
+  cx: number,
+  cy: number,
+  stroke = MARK_SHAPE_STROKE,
+): Group {
+  const groupW = 120;
+  const groupH = 90;
+  const fill = `${stroke}33`;
+  const shape = buildShapePrimitive(shapeType, groupW, groupH, stroke, fill);
+  const text = new Textbox("", {
+    left: groupW / 2,
+    top: groupH / 2,
+    width: groupW * 0.85,
+    fontSize: 18,
+    fontFamily: "system-ui, sans-serif",
+    fill: MARK_TEXT_FILL,
+    textAlign: "center",
+    originX: "center",
+    originY: "center",
+    editable: true,
+    evented: true,
+    selectable: false,
+    markKind: "shape-text",
+  });
+  return new Group([shape, text], {
+    left: cx - groupW / 2,
+    top: cy - groupH / 2,
+    subTargetCheck: true,
+    objectCaching: false,
+    markKind: "shape",
+    shapeType,
+    textCapable: true,
+    shapeWidth: groupW,
+    shapeHeight: groupH,
+  });
+}
+
+function createChecklistRowParts(
+  structureId: string,
+  rowIndex: number,
+  width: number,
+): FabricObjectType[] {
+  const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
+  const box = new Rect({
+    left: 0,
+    top: rowTop,
+    width: STRUCTURE_BOX,
+    height: STRUCTURE_BOX,
+    fill: "transparent",
+    stroke: DECAL_INK,
+    strokeWidth: 2,
+    rx: 2,
+    ry: 2,
+    selectable: false,
+    evented: true,
+    hoverCursor: "pointer",
+  });
+  box.set({
+    structureId,
+    structureType: "checklist",
+    structureRole: "checkbox",
+    rowIndex,
+    checked: false,
+  });
+
+  const checkmark = new FabricText("✓", {
+    left: STRUCTURE_BOX / 2,
+    top: rowTop + STRUCTURE_BOX / 2,
+    fontSize: 14,
+    fontFamily: STRUCTURE_FONT,
+    fill: "#ffffff",
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+    visible: false,
+  });
+  checkmark.set({
+    structureId,
+    structureType: "checklist",
+    structureRole: "checkmark",
+    rowIndex,
+  });
+
+  const label = new IText("", {
+    left: STRUCTURE_BOX + 10,
+    top: rowTop - 2,
+    width: width - STRUCTURE_BOX - 40,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  label.set({ structureId, structureType: "checklist", structureRole: "label", rowIndex });
+
+  return [box, checkmark, label];
+}
+
+function createChecklistGroup(left: number, top: number, width: number): Group {
+  const structureId = createStructureId();
+  const rowCount = 4;
+  const parts: FabricObjectType[] = [];
+
+  for (let i = 0; i < rowCount; i++) {
+    parts.push(...createChecklistRowParts(structureId, i, width));
+  }
+
+  const btnTop = 8 + rowCount * STRUCTURE_ROW_H + 16;
+  parts.push(...createStructureAddButton(structureId, "checklist", width - 14, btnTop));
+
+  const group = new Group(parts, {
+    left,
+    top,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+  });
+  group.set({ structureId, structureType: "checklist", structureWidth: width });
+  return group;
+}
+
+function createPriorityRowParts(
+  structureId: string,
+  rowIndex: number,
+  width: number,
+): FabricObjectType[] {
+  const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
+  const midX = width * 0.55;
+  const left = new IText("", {
+    left: 8,
+    top: rowTop,
+    width: midX - 20,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    textAlign: "left",
+    originX: "left",
+    originY: "top",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  left.set({ structureId, structureType: "priority", structureRole: "priority-left", rowIndex });
+
+  const right = new IText(String(rowIndex + 1), {
+    left: midX + 8,
+    top: rowTop,
+    width: width - midX - 40,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    textAlign: "right",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  right.set({ structureId, structureType: "priority", structureRole: "priority-right", rowIndex });
+
+  return [left, right];
+}
+
+function createPriorityGroup(left: number, top: number, width: number): Group {
+  const structureId = createStructureId();
+  const midX = width * 0.55;
+  const rowCount = 4;
+  const parts: FabricObjectType[] = [];
+
+  const headerLine = new Rect({
+    left: 0,
+    top: 34,
+    width,
+    height: 2,
+    fill: DECAL_LINE,
+    selectable: false,
+    evented: false,
+  });
+  headerLine.set({ structureRole: "header-line" });
+  parts.push(headerLine);
+
+  const frameV = new Rect({
+    left: midX,
+    top: 0,
+    width: 2,
+    height: 44 + rowCount * STRUCTURE_ROW_H + 36,
+    fill: DECAL_LINE,
+    selectable: false,
+    evented: false,
+  });
+  frameV.set({ structureRole: "frame-v" });
+  parts.push(frameV);
+
+  for (let i = 0; i < rowCount; i++) {
+    parts.push(...createPriorityRowParts(structureId, i, width));
+  }
+
+  const btnTop = 44 + rowCount * STRUCTURE_ROW_H + 18;
+  parts.push(...createStructureAddButton(structureId, "priority", width - 14, btnTop));
+
+  const group = new Group(parts, {
+    left,
+    top,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+  });
+  group.set({ structureId, structureType: "priority", structureWidth: width });
+  return group;
+}
+
+function addChecklistRow(canvas: Canvas, group: Group) {
+  const structureId = structureProp(group, "structureId") as string;
+  const width = getStructureLayoutWidth(group);
+  const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length;
+  const parts = createChecklistRowParts(structureId, rowIndex, width);
+  group.add(...parts);
+  reflowChecklist(group);
+  canvas.requestRenderAll();
+}
+
+function addPriorityRow(canvas: Canvas, group: Group) {
+  const structureId = structureProp(group, "structureId") as string;
+  const width = getStructureLayoutWidth(group);
+  const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "priority-left").length;
+  const parts = createPriorityRowParts(structureId, rowIndex, width);
+  group.add(...parts);
+  reflowPriority(group);
+  canvas.requestRenderAll();
+}
+
+function enterStructureTextEditing(canvas: Canvas, target: FabricObject): boolean {
+  const role = structureProp(target, "structureRole");
+  if (role !== "label" && role !== "priority-left" && role !== "priority-right") return false;
+  if (!(target instanceof IText) && !(target instanceof Textbox)) return false;
+  return enterObjectTextEditing(canvas, target);
 }
 
 function walkStructureObjects(canvas: Canvas, visit: (obj: FabricObjectType) => void) {
@@ -91,33 +802,56 @@ function getStructureLayoutWidth(group: Group): number {
   return Math.max(group.width ?? 300, 200);
 }
 
-function restoreStructureGroupState(group: Group) {
+function restoreAllGroupsAfterLoad(canvas: Canvas) {
+  canvas.getObjects().forEach((obj) => {
+    if (!(obj instanceof Group)) return;
+    if (obj.get("markKind") === "sticky") {
+      restoreStickyAfterLoad(obj);
+    } else if (obj.get("markKind") === "shape" && obj.get("textCapable")) {
+      restoreShapeGroupAfterLoad(obj);
+    } else if (structureProp(obj, "structureId")) {
+      restoreStructureAfterLoad(obj);
+    }
+  });
+}
+
+function restoreStructureAfterLoad(group: Group) {
   group.set({ subTargetCheck: true, interactive: true, objectCaching: false });
   const structureType = structureProp(group, "structureType");
   if (structureType === "checklist") {
     for (const child of group.getObjects()) {
       if (structureProp(child, "structureRole") === "checkbox" && child instanceof Rect) {
         const checked = !!structureProp(child, "checked");
-        child.set({ fill: checked ? DECAL_INK : "transparent" });
+        child.set({ fill: "transparent" });
         const rowIndex = structureProp(child, "rowIndex");
+        const checkmark = group
+          .getObjects()
+          .find(
+            (o) =>
+              structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
+          );
+        if (checkmark instanceof FabricText) {
+          checkmark.set({ visible: checked });
+        }
         const label = group
           .getObjects()
           .find(
             (o) =>
               structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
           );
-        if (label instanceof IText) {
-          label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK });
+        if (label instanceof IText || label instanceof Textbox) {
+          label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK, editable: true, evented: true });
         }
       }
     }
+    reflowChecklist(group);
   }
-  if (structureType === "checklist" || structureType === "priority") {
-    reflowInteractiveStructure(group);
+  if (structureType === "priority") {
+    reflowPriority(group);
   }
 }
 
-function normalizeInteractiveStructureResize(group: Group) {
+function normalizeStructureResize(group: Group) {
   const sx = group.scaleX ?? 1;
   const sy = group.scaleY ?? 1;
   if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
@@ -127,19 +861,19 @@ function normalizeInteractiveStructureResize(group: Group) {
   for (const child of group.getObjects()) {
     const csx = child.scaleX ?? 1;
     const csy = child.scaleY ?? 1;
-    if (child instanceof IText) {
+    if (child instanceof IText || child instanceof Textbox) {
       if (csx !== 1 || csy !== 1) {
-        child.set({ fontSize: (child.fontSize ?? 18) * csy, scaleX: 1, scaleY: 1 });
+        child.set({ scaleX: 1, scaleY: 1 });
       }
     } else if (child instanceof FabricText) {
       if (csx !== 1 || csy !== 1) {
-        child.set({ fontSize: (child.fontSize ?? 14) * csy, scaleX: 1, scaleY: 1 });
+        child.set({ scaleX: 1, scaleY: 1 });
       }
     } else if (child instanceof Rect) {
       const role = structureProp(child, "structureRole");
-      if (role === "checkbox") {
-        child.set({ width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
-      } else if (role === "frame-v") {
+      if (role === "checkbox" || role === "divider-line" || role === "header-line") {
+        child.set({ scaleX: 1, scaleY: 1 });
+      } else if (role === "frame-v" || role === "divider") {
         child.set({ scaleX: 1, scaleY: 1 });
       } else {
         child.set({
@@ -149,102 +883,143 @@ function normalizeInteractiveStructureResize(group: Group) {
           scaleY: 1,
         });
       }
+    } else if (child instanceof Circle) {
+      child.set({ scaleX: 1, scaleY: 1 });
     }
   }
 
   group.set({ scaleX: 1, scaleY: 1, structureWidth: newWidth });
 }
 
-function reflowInteractiveStructure(group: Group) {
-  const structureType = structureProp(group, "structureType") as string | undefined;
+function positionStructureAddButton(group: Group, structureType: string) {
   const width = getStructureLayoutWidth(group);
+  const boxes = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "checkbox")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+  const leftCells = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "priority-left")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+  const rowCount = structureType === "checklist" ? boxes.length : leftCells.length;
+  const baseTop = structureType === "checklist" ? 8 + rowCount * STRUCTURE_ROW_H + 4 : 44 + rowCount * STRUCTURE_ROW_H + 6;
+  const btnLeft = width - 14;
+  const btnTop = baseTop + 12;
 
-  if (structureType === "checklist") {
-    const boxes = group
+  for (const obj of group.getObjects()) {
+    if (structureProp(obj, "structureRole") !== "add-button") continue;
+    if (obj instanceof Circle) {
+      obj.set({ left: btnLeft, top: btnTop, scaleX: 1, scaleY: 1 });
+    } else if (obj instanceof FabricText) {
+      obj.set({ left: btnLeft, top: btnTop, scaleX: 1, scaleY: 1 });
+    }
+  }
+}
+
+function reflowChecklist(group: Group) {
+  const width = getStructureLayoutWidth(group);
+  const boxes = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "checkbox")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+
+  for (const box of boxes) {
+    if (!(box instanceof Rect)) continue;
+    const rowIndex = structureProp(box, "rowIndex") as number;
+    const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
+    const checked = !!structureProp(box, "checked");
+    box.set({ left: 0, top: rowTop, width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
+    box.set({ fill: "transparent" });
+
+    const checkmark = group
       .getObjects()
-      .filter((o) => structureProp(o, "structureRole") === "checkbox")
-      .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
-
-    for (const box of boxes) {
-      if (!(box instanceof Rect)) continue;
-      const rowIndex = structureProp(box, "rowIndex") as number;
-      const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
-      const checked = !!structureProp(box, "checked");
-      box.set({ left: 0, top: rowTop, width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
-      box.set({ fill: checked ? DECAL_INK : "transparent" });
-
-      const label = group
-        .getObjects()
-        .find(
-          (o) =>
-            structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
-        );
-      if (label instanceof IText) {
-        label.set({
-          left: STRUCTURE_BOX + 10,
-          top: rowTop - 2,
-          width: width - STRUCTURE_BOX - 24,
-          scaleX: 1,
-          scaleY: 1,
-          linethrough: checked,
-          fill: checked ? DECAL_MUTED : DECAL_INK,
-        });
-      }
+      .find(
+        (o) =>
+          structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
+      );
+    if (checkmark instanceof FabricText) {
+      checkmark.set({
+        left: STRUCTURE_BOX / 2,
+        top: rowTop + STRUCTURE_BOX / 2,
+        visible: checked,
+        originX: "center",
+        originY: "center",
+        scaleX: 1,
+        scaleY: 1,
+      });
     }
 
-    const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-    if (addBtn) {
-      addBtn.set({ top: 8 + boxes.length * STRUCTURE_ROW_H + 4, scaleX: 1, scaleY: 1 });
+    const label = group
+      .getObjects()
+      .find(
+        (o) =>
+          structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
+      );
+    if (label instanceof IText || label instanceof Textbox) {
+      label.set({
+        left: STRUCTURE_BOX + 10,
+        top: rowTop - 2,
+        width: width - STRUCTURE_BOX - 40,
+        scaleX: 1,
+        scaleY: 1,
+        linethrough: checked,
+        fill: checked ? DECAL_MUTED : DECAL_INK,
+      });
     }
   }
 
-  if (structureType === "priority") {
-    const midX = width * 0.55;
-    const leftCells = group
-      .getObjects()
-      .filter((o) => structureProp(o, "structureRole") === "priority-left")
-      .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
-    const rowCount = leftCells.length;
-
-    const headerLine = group
-      .getObjects()
-      .find((o) => o instanceof Rect && !structureProp(o, "structureRole") && (o.top ?? 0) <= 34);
-    if (headerLine instanceof Rect) {
-      headerLine.set({ width, scaleX: 1, scaleY: 1 });
-    }
-
-    const lastRowTop = 44 + Math.max(0, rowCount - 1) * STRUCTURE_ROW_H;
-    const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
-    if (frameV instanceof Rect) {
-      frameV.set({ left: midX, height: lastRowTop + STRUCTURE_ROW_H + 28, scaleX: 1, scaleY: 1 });
-    }
-
-    for (const left of leftCells) {
-      if (!(left instanceof IText)) continue;
-      const rowIndex = structureProp(left, "rowIndex") as number;
-      const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
-      left.set({ left: 8, top: rowTop, width: midX - 20, scaleX: 1, scaleY: 1 });
-
-      const right = group
-        .getObjects()
-        .find(
-          (o) =>
-            structureProp(o, "structureRole") === "priority-right" &&
-            structureProp(o, "rowIndex") === rowIndex,
-        );
-      if (right instanceof IText) {
-        right.set({ left: midX + 8, top: rowTop, width: width - midX - 16, scaleX: 1, scaleY: 1 });
-      }
-    }
-
-    const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-    if (addBtn) {
-      addBtn.set({ top: 44 + rowCount * STRUCTURE_ROW_H + 6, scaleX: 1, scaleY: 1 });
-    }
-  }
-
+  positionStructureAddButton(group, "checklist");
   group.set({ structureWidth: width });
   group.setCoords();
+}
+
+function reflowPriority(group: Group) {
+  const width = getStructureLayoutWidth(group);
+  const midX = width * 0.55;
+  const leftCells = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "priority-left")
+    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+  const rowCount = leftCells.length;
+
+  const headerLine = group.getObjects().find((o) => structureProp(o, "structureRole") === "header-line");
+  if (headerLine instanceof Rect) {
+    headerLine.set({ width, scaleX: 1, scaleY: 1 });
+  }
+
+  const lastRowTop = 44 + Math.max(0, rowCount - 1) * STRUCTURE_ROW_H;
+  const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
+  if (frameV instanceof Rect) {
+    frameV.set({ left: midX, height: lastRowTop + STRUCTURE_ROW_H + 36, scaleX: 1, scaleY: 1 });
+  }
+
+  for (const left of leftCells) {
+    if (!(left instanceof IText) && !(left instanceof Textbox)) continue;
+    const rowIndex = structureProp(left, "rowIndex") as number;
+    const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
+    left.set({ left: 8, top: rowTop, width: midX - 20, scaleX: 1, scaleY: 1 });
+
+    const right = group
+      .getObjects()
+      .find(
+        (o) =>
+          structureProp(o, "structureRole") === "priority-right" &&
+          structureProp(o, "rowIndex") === rowIndex,
+      );
+    if (right instanceof IText || right instanceof Textbox) {
+      right.set({ left: midX + 8, top: rowTop, width: width - midX - 40, scaleX: 1, scaleY: 1 });
+    }
+  }
+
+  positionStructureAddButton(group, "priority");
+  group.set({ structureWidth: width });
+  group.setCoords();
+}
+
+function reflowInteractiveStructure(group: Group) {
+  const structureType = structureProp(group, "structureType") as string | undefined;
+  if (structureType === "checklist") reflowChecklist(group);
+  else if (structureType === "priority") reflowPriority(group);
 }
 
 const makeDecalLine = (
@@ -489,6 +1264,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const bg = boardFillForKey(colorKey);
         await canvas.loadFromJSON(JSON.parse(json));
         canvas.backgroundColor = bg;
+        restoreAllGroupsAfterLoad(canvas);
         canvas.discardActiveObject();
         canvas.requestRenderAll();
         restoringHistoryRef.current = false;
@@ -673,17 +1449,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.on("object:modified", (event) => {
           const target = event.target;
           if (target instanceof Group) {
-            const structureId = target.get("structureId");
-            const structureType = target.get("structureType");
-            if (
-              structureId &&
-              structureType &&
-              (structureType === "priority" || structureType === "checklist")
-            ) {
-              normalizeInteractiveStructureResize(target);
-              reflowInteractiveStructure(target);
-              rebindStructureHandlersRef.current(canvas);
-              canvas.requestRenderAll();
+            if (target.get("markKind") === "sticky") {
+              normalizeStickyResize(target);
+            } else if (target.get("markKind") === "shape" && target.get("textCapable")) {
+              normalizeTextCapableShapeResize(target);
+            } else if (target.get("structureId")) {
+              const structureType = target.get("structureType");
+              if (structureType === "priority" || structureType === "checklist") {
+                normalizeStructureResize(target);
+                reflowInteractiveStructure(target);
+                rebindStructureHandlersRef.current(canvas);
+              }
             }
           }
           onHistoryDebounced();
@@ -698,6 +1474,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             path.set({ markKind: "draw" });
           }
         });
+        canvas.on("mouse:dblclick", (opt) => {
+          const target = opt.target;
+          if (!target) return;
+          if (enterObjectTextEditing(canvas, target as FabricObject)) {
+            opt.e.preventDefault?.();
+            opt.e.stopPropagation?.();
+          }
+        });
         canvas.on("mouse:down", (opt) => {
           const e = opt.e as MouseEvent;
           if (canvas.isDrawingMode) return;
@@ -710,7 +1494,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               const role = structureProp(hit, "structureRole");
               if (
                 role &&
-                (role === "checkbox" || role === "add-row" || role === "label" || role === "priority-left" || role === "priority-right")
+                (role === "checkbox" ||
+                  role === "checkmark" ||
+                  role === "add-button" ||
+                  role === "add-row" ||
+                  role === "label" ||
+                  role === "priority-left" ||
+                  role === "priority-right")
               ) {
                 if (handleStructurePointerRef.current(canvas, hit)) {
                   opt.e.preventDefault?.();
@@ -804,11 +1594,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (hasObjects) {
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
-          canvas.getObjects().forEach((obj) => {
-            if (obj instanceof Group && structureProp(obj, "structureId")) {
-              restoreStructureGroupState(obj);
-            }
-          });
+          restoreAllGroupsAfterLoad(canvas);
           canvas.requestRenderAll();
           resetHistory(canvas);
           rebindStructureHandlersRef.current(canvas);
@@ -825,8 +1611,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText(text, {
-        left: ARTBOARD_WIDTH * 0.15,
-        top: ARTBOARD_HEIGHT * 0.2,
+        left: ARTBOARD_WIDTH / 2,
+        top: ARTBOARD_HEIGHT * 0.38,
+        originX: "center",
+        originY: "top",
         fontSize: 42,
         fontFamily: "system-ui, sans-serif",
         fill: MARK_TEXT_FILL,
@@ -845,43 +1633,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const addStickyNote = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const w = 280;
-      const h = 200;
-      const left = ARTBOARD_WIDTH * 0.1;
-      const top = ARTBOARD_HEIGHT * 0.35;
-      const rect = new Rect({
-        left: 0,
-        top: 0,
-        width: w,
-        height: h,
-        fill: "#FFF9C4",
-        stroke: "#E8D44D",
-        strokeWidth: 1,
-        rx: 8,
-        ry: 8,
-        selectable: false,
-        evented: false,
-      });
-      const note = new Textbox("", {
-        left: 16,
-        top: 16,
-        width: w - 32,
-        fontSize: 22,
-        fontFamily: "system-ui, sans-serif",
-        fill: "#171717",
-        splitByGrapheme: true,
-      });
-      const sticky = new Group([rect, note], {
-        left,
-        top,
-        subTargetCheck: true,
+      const sticky = createStickyNoteGroup({
+        left: ARTBOARD_WIDTH / 2 - STICKY_DEFAULT_W / 2,
+        top: ARTBOARD_HEIGHT * 0.38 - STICKY_DEFAULT_H / 2,
       });
       canvas.add(sticky);
-      canvas.setActiveObject(note);
-      canvas.requestRenderAll();
-      requestAnimationFrame(() => {
-        note.enterEditing();
-      });
+      enterObjectTextEditing(canvas, sticky);
       scheduleSave();
     }, [readOnly, scheduleSave]);
 
@@ -909,43 +1666,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const w = 280;
-      const h = 200;
-      const left = normX * ARTBOARD_WIDTH - w / 2;
-      const top = normY * ARTBOARD_HEIGHT - h / 2;
-      const rect = new Rect({
-        left: 0,
-        top: 0,
-        width: w,
-        height: h,
-        fill: "#FFF9C4",
-        stroke: "#E8D44D",
-        strokeWidth: 1,
-        rx: 8,
-        ry: 8,
-        selectable: false,
-        evented: false,
-      });
-      const note = new Textbox("", {
-        left: 16,
-        top: 16,
-        width: w - 32,
-        fontSize: 22,
-        fontFamily: "system-ui, sans-serif",
-        fill: "#171717",
-        splitByGrapheme: true,
-      });
-      const sticky = new Group([rect, note], {
-        left,
-        top,
-        subTargetCheck: true,
+      const w = STICKY_DEFAULT_W;
+      const h = STICKY_DEFAULT_H;
+      const sticky = createStickyNoteGroup({
+        left: normX * ARTBOARD_WIDTH - w / 2,
+        top: normY * ARTBOARD_HEIGHT - h / 2,
       });
       canvas.add(sticky);
-      canvas.setActiveObject(note);
-      canvas.requestRenderAll();
-      requestAnimationFrame(() => {
-        note.enterEditing();
-      });
+      enterObjectTextEditing(canvas, sticky);
       scheduleSave();
     }, [readOnly, scheduleSave]);
 
@@ -977,6 +1705,15 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!canvas || readOnly) return;
         const cx = normX * ARTBOARD_WIDTH;
         const cy = normY * ARTBOARD_HEIGHT;
+
+        if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
+          const group = createTextCapableShapeGroup(shapeType, cx, cy, stroke);
+          canvas.add(group);
+          enterObjectTextEditing(canvas, group);
+          scheduleSave();
+          return;
+        }
+
         const fill = `${stroke}33`;
         const mark = { markKind: "shape" as const, shapeType };
         let shape: FabricObject;
@@ -1003,17 +1740,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             strokeWidth: 3,
             ...mark,
           });
-        } else if (shapeType === "ellipse") {
-          shape = new Ellipse({
-            left: cx - 70,
-            top: cy - 45,
-            rx: 70,
-            ry: 45,
-            fill,
-            stroke,
-            strokeWidth: 3,
-            ...mark,
-          });
         } else if (shapeType === "triangle") {
           shape = new Triangle({
             left: cx - 50,
@@ -1030,30 +1756,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             stroke,
             strokeWidth: 3,
             fill: "transparent",
-            ...mark,
-          });
-        } else if (shapeType === "semicircle") {
-          shape = new Circle({
-            left: cx - 55,
-            top: cy - 55,
-            radius: 55,
-            startAngle: 0,
-            endAngle: 180,
-            fill,
-            stroke,
-            strokeWidth: 3,
-            ...mark,
-          });
-        } else if (shapeType === "pie") {
-          shape = new Circle({
-            left: cx - 55,
-            top: cy - 55,
-            radius: 55,
-            startAngle: -90,
-            endAngle: 0,
-            fill,
-            stroke,
-            strokeWidth: 3,
             ...mark,
           });
         } else if (shapeType === "hexagon") {
@@ -1141,10 +1843,47 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               ...mark,
             },
           );
+        } else if (shapeType === "heart") {
+          shape = new Path(
+            "M 50 88 C 20 66 6 52 6 34 C 6 20 16 10 30 10 C 38 10 45 14 50 20 C 55 14 62 10 70 10 C 84 10 94 20 94 34 C 94 52 80 66 50 88 Z",
+            {
+              left: cx - 50,
+              top: cy - 50,
+              fill,
+              stroke,
+              strokeWidth: 3,
+              ...mark,
+            },
+          );
+        } else if (shapeType === "bubble") {
+          shape = new Path(
+            "M 8 10 Q 8 2 16 2 L 104 2 Q 112 2 112 10 L 112 58 Q 112 66 104 66 L 58 66 L 44 82 L 46 66 L 16 66 Q 8 66 8 58 Z",
+            {
+              left: cx - 60,
+              top: cy - 42,
+              fill,
+              stroke,
+              strokeWidth: 3,
+              ...mark,
+            },
+          );
+        } else if (shapeType === "cylinder") {
+          shape = new Path(
+            "M 16 14 Q 16 2 60 2 Q 104 2 104 14 L 104 72 Q 104 84 60 84 Q 16 84 16 72 Z M 16 14 Q 16 26 60 26 Q 104 26 104 14",
+            {
+              left: cx - 60,
+              top: cy - 43,
+              fill,
+              stroke,
+              strokeWidth: 3,
+              ...mark,
+            },
+          );
         } else {
-          shape = new Path("M 0 0 L 120 0 L 95 -14 L 120 0 L 95 14 Z", {
-            left: cx - 60,
-            top: cy - 7,
+          // arrow
+          shape = new Path("M 0 0 L 92 0 L 92 -16 L 128 0 L 92 16 L 92 0 L 0 0 Z", {
+            left: cx - 64,
+            top: cy - 16,
             fill,
             stroke,
             strokeWidth: 3,
@@ -1191,9 +1930,24 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         while (root.group) root = root.group;
         if (root.get("markKind") !== "shape") return;
         const center = root.getCenterPoint();
+        const stroke = (root.stroke as string) || MARK_SHAPE_STROKE;
+        let existingText = "";
+        if (root instanceof Group && root.get("textCapable")) {
+          const textObj = findEditableTextInGroup(root);
+          existingText = textObj?.text ?? "";
+        }
         canvas.remove(root);
         deleteTargetRef.current = null;
-        addShapeAtPoint(shapeType, center.x / ARTBOARD_WIDTH, center.y / ARTBOARD_HEIGHT, (root.stroke as string) || MARK_SHAPE_STROKE);
+        if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
+          const group = createTextCapableShapeGroup(shapeType, center.x, center.y, stroke);
+          const textObj = findEditableTextInGroup(group);
+          if (textObj && existingText) textObj.set("text", existingText);
+          canvas.add(group);
+          canvas.setActiveObject(group);
+          canvas.requestRenderAll();
+        } else {
+          addShapeAtPoint(shapeType, center.x / ARTBOARD_WIDTH, center.y / ARTBOARD_HEIGHT, stroke);
+        }
         recordHistory();
       },
       [addShapeAtPoint, readOnly, recordHistory],
@@ -1331,32 +2085,15 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!canvas || readOnly) return;
         const w = 260;
         const h = 170;
-        const left = x * ARTBOARD_WIDTH;
-        const top = y * ARTBOARD_HEIGHT;
-        const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
-        const rect = new Rect({
-          left: 0,
-          top: 0,
+        const sticky = createStickyNoteGroup({
+          left: x * ARTBOARD_WIDTH,
+          top: y * ARTBOARD_HEIGHT,
           width: w,
           height: h,
+          text,
           fill,
-          stroke,
-          strokeWidth: 1,
-          rx: 8,
-          ry: 8,
-          selectable: false,
-          evented: false,
         });
-        const note = new Textbox(text, {
-          left: 14,
-          top: 14,
-          width: w - 28,
-          fontSize: 20,
-          fontFamily: "system-ui, sans-serif",
-          fill: "#171717",
-          splitByGrapheme: true,
-        });
-        canvas.add(new Group([rect, note], { left, top, subTargetCheck: true }));
+        canvas.add(sticky);
         canvas.requestRenderAll();
       },
       [readOnly],
@@ -1366,100 +2103,19 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (canvas: Canvas) => {
         if (readOnly) return;
 
-        const addRow = (structureId: string, structureType: string) => {
+        const addRowForStructure = (structureId: string, structureType: string) => {
           const group = findStructureGroup(canvas, structureId, structureType);
           if (!group) return;
-
-          if (structureType === "checklist") {
-            const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length;
-            const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
-            const box = new Rect({
-              left: 0,
-              top: rowTop,
-              width: STRUCTURE_BOX,
-              height: STRUCTURE_BOX,
-              fill: "transparent",
-              stroke: DECAL_INK,
-              strokeWidth: 2,
-              rx: 2,
-              ry: 2,
-              selectable: false,
-              evented: true,
-              hoverCursor: "pointer",
-            });
-            box.set({
-              structureId,
-              structureType,
-              structureRole: "checkbox",
-              rowIndex,
-              checked: false,
-            });
-            const label = new IText("", {
-              left: STRUCTURE_BOX + 10,
-              top: rowTop - 2,
-              width: Math.max(120, getStructureLayoutWidth(group) - STRUCTURE_BOX - 24),
-              fontSize: 18,
-              fontFamily: STRUCTURE_FONT,
-              fill: DECAL_INK,
-              editable: true,
-              selectable: false,
-              evented: true,
-            });
-            label.set({ structureId, structureType, structureRole: "label", rowIndex });
-            group.add(box, label);
-            const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-            if (addBtn) addBtn.set({ top: rowTop + STRUCTURE_ROW_H + 4 });
-          }
-
-          if (structureType === "priority") {
-            const rowIndex = group
-              .getObjects()
-              .filter((o) => structureProp(o, "structureRole") === "priority-left").length;
-            const rowTop = 44 + rowIndex * STRUCTURE_ROW_H;
-            const midX = getStructureLayoutWidth(group) * 0.55;
-            const left = new IText("", {
-              left: 8,
-              top: rowTop,
-              width: midX - 20,
-              fontSize: 18,
-              fontFamily: STRUCTURE_FONT,
-              fill: DECAL_INK,
-              editable: true,
-              selectable: false,
-              evented: true,
-            });
-            left.set({ structureId, structureType, structureRole: "priority-left", rowIndex });
-            const right = new IText(String(rowIndex + 1), {
-              left: midX + 8,
-              top: rowTop,
-              width: getStructureLayoutWidth(group) - midX - 16,
-              fontSize: 18,
-              fontFamily: STRUCTURE_FONT,
-              fill: DECAL_INK,
-              textAlign: "right",
-              editable: true,
-              selectable: false,
-              evented: true,
-            });
-            right.set({ structureId, structureType, structureRole: "priority-right", rowIndex });
-            group.add(left, right);
-            const addBtn = group.getObjects().find((o) => structureProp(o, "structureRole") === "add-row");
-            if (addBtn) addBtn.set({ top: rowTop + STRUCTURE_ROW_H + 6 });
-            const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
-            if (frameV instanceof Rect) {
-              frameV.set({ height: rowTop + STRUCTURE_ROW_H + 28 });
-            }
-          }
-
+          if (structureType === "checklist") addChecklistRow(canvas, group);
+          else if (structureType === "priority") addPriorityRow(canvas, group);
           group.setCoords();
-          canvas.requestRenderAll();
           recordHistory();
           scheduleSave();
           rebindStructureHandlersRef.current(canvas);
         };
 
         walkStructureObjects(canvas, (obj) => {
-          if (!(obj instanceof IText)) return;
+          if (!(obj instanceof IText) && !(obj instanceof Textbox)) return;
           const role = structureProp(obj, "structureRole");
           if (role !== "label" && role !== "priority-left" && role !== "priority-right") return;
           const structureId = structureProp(obj, "structureId") as string | undefined;
@@ -1471,7 +2127,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             if (!e || e.key !== "Enter") return;
             e.preventDefault();
             obj.exitEditing();
-            addRow(structureId, structureType);
+            addRowForStructure(structureId, structureType);
           });
         });
       },
@@ -1487,31 +2143,31 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const structureType = structureProp(target, "structureType") as string | undefined;
         if (!role || !structureId || !structureType) return false;
 
-        if (
-          (role === "label" || role === "priority-left" || role === "priority-right") &&
-          target instanceof IText
-        ) {
-          canvas.setActiveObject(target);
-          target.enterEditing();
-          canvas.requestRenderAll();
-          return true;
+        if (role === "label" || role === "priority-left" || role === "priority-right") {
+          return enterStructureTextEditing(canvas, target as FabricObject);
         }
 
         if (role === "checkbox" && target instanceof Rect) {
           const checked = !structureProp(target, "checked");
-          target.set({
-            checked,
-            fill: checked ? DECAL_INK : "transparent",
-          });
+          target.set({ checked, fill: checked ? DECAL_INK : "transparent" });
           const rowIndex = structureProp(target, "rowIndex") as number | undefined;
           const group = findStructureGroup(canvas, structureId, structureType);
+          const checkmark = group
+            ?.getObjects()
+            .find(
+              (o) =>
+                structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
+            );
+          if (checkmark instanceof FabricText) {
+            checkmark.set({ visible: checked });
+          }
           const label = group
             ?.getObjects()
             .find(
               (o) =>
                 structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
             );
-          if (label instanceof IText) {
+          if (label instanceof IText || label instanceof Textbox) {
             label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK });
           }
           canvas.requestRenderAll();
@@ -1520,92 +2176,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           return true;
         }
 
-        if (role === "add-row") {
-          rebindStructureHandlersRef.current(canvas);
+        if (isAddButtonHit(target)) {
           const group = findStructureGroup(canvas, structureId, structureType);
           if (!group) return true;
-          const addRow = () => {
-            const rowIndex =
-              structureType === "checklist"
-                ? group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length
-                : group.getObjects().filter((o) => structureProp(o, "structureRole") === "priority-left").length;
-            const rowTop = (structureType === "checklist" ? 8 : 44) + rowIndex * STRUCTURE_ROW_H;
-
-            if (structureType === "checklist") {
-              const box = new Rect({
-                left: 0,
-                top: rowTop,
-                width: STRUCTURE_BOX,
-                height: STRUCTURE_BOX,
-                fill: "transparent",
-                stroke: DECAL_INK,
-                strokeWidth: 2,
-                rx: 2,
-                ry: 2,
-                selectable: false,
-                evented: true,
-                hoverCursor: "pointer",
-              });
-              box.set({
-                structureId,
-                structureType,
-                structureRole: "checkbox",
-                rowIndex,
-                checked: false,
-              });
-              const label = new IText("", {
-                left: STRUCTURE_BOX + 10,
-                top: rowTop - 2,
-                width: Math.max(120, getStructureLayoutWidth(group) - STRUCTURE_BOX - 24),
-                fontSize: 18,
-                fontFamily: STRUCTURE_FONT,
-                fill: DECAL_INK,
-                editable: true,
-                selectable: false,
-                evented: true,
-              });
-              label.set({ structureId, structureType, structureRole: "label", rowIndex });
-              group.add(box, label);
-            } else {
-              const midX = getStructureLayoutWidth(group) * 0.55;
-              const left = new IText("", {
-                left: 8,
-                top: rowTop,
-                width: midX - 20,
-                fontSize: 18,
-                fontFamily: STRUCTURE_FONT,
-                fill: DECAL_INK,
-                editable: true,
-                selectable: false,
-                evented: true,
-              });
-              left.set({ structureId, structureType, structureRole: "priority-left", rowIndex });
-              const right = new IText(String(rowIndex + 1), {
-                left: midX + 8,
-                top: rowTop,
-                width: getStructureLayoutWidth(group) - midX - 16,
-                fontSize: 18,
-                fontFamily: STRUCTURE_FONT,
-                fill: DECAL_INK,
-                textAlign: "right",
-                editable: true,
-                selectable: false,
-                evented: true,
-              });
-              right.set({ structureId, structureType, structureRole: "priority-right", rowIndex });
-              group.add(left, right);
-              const frameV = group.getObjects().find((o) => structureProp(o, "structureRole") === "frame-v");
-              if (frameV instanceof Rect) frameV.set({ height: rowTop + STRUCTURE_ROW_H + 28 });
-            }
-
-            target.set({ top: rowTop + STRUCTURE_ROW_H + (structureType === "checklist" ? 4 : 6) });
-            group.setCoords();
-            canvas.requestRenderAll();
-            recordHistory();
-            scheduleSave();
-            rebindStructureHandlersRef.current(canvas);
-          };
-          addRow();
+          if (structureType === "checklist") addChecklistRow(canvas, group);
+          else if (structureType === "priority") addPriorityRow(canvas, group);
+          recordHistory();
+          scheduleSave();
+          rebindStructureHandlersRef.current(canvas);
           return true;
         }
 
@@ -1619,73 +2197,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const placeInteractiveChecklist = (left: number, top: number, width: number) => {
       const canvas = fabricRef.current;
       if (!canvas) return;
-      const structureId = crypto.randomUUID();
-      const rowCount = 4;
-      const parts: FabricObjectType[] = [];
-
-      for (let i = 0; i < rowCount; i++) {
-        const rowTop = 8 + i * STRUCTURE_ROW_H;
-        const box = new Rect({
-          left: 0,
-          top: rowTop,
-          width: STRUCTURE_BOX,
-          height: STRUCTURE_BOX,
-          fill: "transparent",
-          stroke: DECAL_INK,
-          strokeWidth: 2,
-          rx: 2,
-          ry: 2,
-          selectable: false,
-          evented: true,
-          hoverCursor: "pointer",
-        });
-        box.set({
-          structureId,
-          structureType: "checklist",
-          structureRole: "checkbox",
-          rowIndex: i,
-          checked: false,
-        });
-        const label = new IText("", {
-          left: STRUCTURE_BOX + 10,
-          top: rowTop - 2,
-          width: width - STRUCTURE_BOX - 24,
-          fontSize: 18,
-          fontFamily: STRUCTURE_FONT,
-          fill: DECAL_INK,
-          editable: true,
-          selectable: false,
-          evented: true,
-        });
-        label.set({ structureId, structureType: "checklist", structureRole: "label", rowIndex: i });
-        parts.push(box, label);
-      }
-
-      const addBtn = new FabricText("+ add line", {
-        left: 0,
-        top: 8 + rowCount * STRUCTURE_ROW_H + 4,
-        fontSize: 14,
-        fontFamily: STRUCTURE_FONT,
-        fill: DECAL_MUTED,
-        selectable: false,
-        evented: true,
-        hoverCursor: "pointer",
-      });
-      addBtn.set({ structureId, structureType: "checklist", structureRole: "add-row" });
-      parts.push(addBtn);
-
-      const group = new Group(parts, {
-        left,
-        top,
-        subTargetCheck: true,
-        interactive: true,
-        objectCaching: false,
-        cornerStyle: "circle",
-        borderColor: "rgba(17,17,17,0.45)",
-        cornerColor: "#111111",
-        transparentCorners: false,
-      });
-      group.set({ structureId, structureType: "checklist", structureWidth: width });
+      const group = createChecklistGroup(left, top, width);
       canvas.add(group);
       canvas.setActiveObject(group);
       canvas.requestRenderAll();
@@ -1697,89 +2209,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const placeInteractivePriority = (left: number, top: number, width: number) => {
       const canvas = fabricRef.current;
       if (!canvas) return;
-      const structureId = crypto.randomUUID();
-      const midX = width * 0.55;
-      const rowCount = 6;
-      const parts: FabricObjectType[] = [];
-
-      parts.push(
-        new Rect({
-          left: 0,
-          top: 34,
-          width,
-          height: 2,
-          fill: DECAL_LINE,
-          selectable: false,
-          evented: false,
-        }),
-      );
-      const frameV = new Rect({
-        left: midX,
-        top: 0,
-        width: 2,
-        height: 44 + rowCount * STRUCTURE_ROW_H + 16,
-        fill: DECAL_LINE,
-        selectable: false,
-        evented: false,
-      });
-      frameV.set({ structureRole: "frame-v" });
-      parts.push(frameV);
-
-      for (let i = 0; i < rowCount; i++) {
-        const rowTop = 44 + i * STRUCTURE_ROW_H;
-        const leftCell = new IText("", {
-          left: 8,
-          top: rowTop,
-          width: midX - 20,
-          fontSize: 18,
-          fontFamily: STRUCTURE_FONT,
-          fill: DECAL_INK,
-          editable: true,
-          selectable: false,
-          evented: true,
-        });
-        leftCell.set({ structureId, structureType: "priority", structureRole: "priority-left", rowIndex: i });
-        const rightCell = new IText(String(i + 1), {
-          left: midX + 8,
-          top: rowTop,
-          width: width - midX - 16,
-          fontSize: 18,
-          fontFamily: STRUCTURE_FONT,
-          fill: DECAL_INK,
-          textAlign: "right",
-          editable: true,
-          selectable: false,
-          evented: true,
-        });
-        rightCell.set({ structureId, structureType: "priority", structureRole: "priority-right", rowIndex: i });
-        parts.push(leftCell, rightCell);
-      }
-
-      const addBtn = new FabricText("+ add row", {
-        left: 0,
-        top: 44 + rowCount * STRUCTURE_ROW_H + 6,
-        fontSize: 14,
-        fontFamily: STRUCTURE_FONT,
-        fill: DECAL_MUTED,
-        selectable: false,
-        evented: true,
-        hoverCursor: "pointer",
-      });
-      addBtn.set({ structureId, structureType: "priority", structureRole: "add-row" });
-      parts.push(addBtn);
-
-      const group = new Group(parts, {
-        left,
-        top,
-        subTargetCheck: true,
-        interactive: true,
-        objectCaching: false,
-        cornerStyle: "circle",
-        borderColor: "rgba(17,17,17,0.45)",
-        cornerColor: "#111111",
-        transparentCorners: false,
-      });
-      group.set({ structureId, structureType: "priority", structureWidth: width });
+      const group = createPriorityGroup(left, top, width);
       canvas.add(group);
       canvas.setActiveObject(group);
       canvas.requestRenderAll();
@@ -1915,6 +2345,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         }
 
         if (diagram === "divider") {
+          const structureId = createStructureId();
           const line = new Rect({
             left: left + width / 2,
             top: top + height / 2,
@@ -1925,6 +2356,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             ry: 2,
             originX: "center",
             originY: "center",
+          });
+          line.set({
+            structureId,
+            structureType: "divider",
+            structureRole: "divider-line",
           });
           canvas.add(line);
           canvas.setActiveObject(line);
@@ -1982,8 +2418,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const clones = await Promise.all(temp.getObjects().map((obj) => obj.clone()));
       temp.dispose();
       for (const obj of clones) {
-        if (obj instanceof Group && structureProp(obj, "structureId")) {
-          restoreStructureGroupState(obj);
+        if (obj instanceof Group) {
+          if (obj.get("markKind") === "sticky") restoreStickyAfterLoad(obj);
+          else if (obj.get("markKind") === "shape" && obj.get("textCapable")) restoreShapeGroupAfterLoad(obj);
+          else if (structureProp(obj, "structureId")) restoreStructureAfterLoad(obj);
         }
         canvas.add(obj as FabricObject);
       }
@@ -2130,25 +2568,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const editMarkSelected = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
-      const active = canvas.getActiveObject();
+      const active = deleteTargetRef.current ?? canvas.getActiveObject();
       if (!active) return;
-
-      let textObj: IText | Textbox | null = null;
-      if (active instanceof IText || active instanceof Textbox) {
-        textObj = active;
-      } else if (active instanceof Group) {
-        const found = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
-        textObj = found instanceof Textbox || found instanceof IText ? found : null;
-      } else if (active.group instanceof Group) {
-        const found = active.group.getObjects().find((o) => o instanceof Textbox || o instanceof IText);
-        textObj = found instanceof Textbox || found instanceof IText ? found : null;
-      }
-
-      if (!textObj || !("enterEditing" in textObj)) return;
-      if (textObj.group) canvas.setActiveObject(textObj.group);
-      textObj.enterEditing();
-      if (textObj instanceof IText) textObj.selectAll();
-      canvas.requestRenderAll();
+      enterObjectTextEditing(canvas, active);
     }, [readOnly]);
 
     const applyMarkFontSize = useCallback(
@@ -2199,6 +2621,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         if (isTextObject(root)) {
           root.set("fill", hex);
+        } else if (root.get("markKind") === "sticky") {
+          const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
+          if (rect instanceof Rect) {
+            rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
+          }
+        } else if (root.get("markKind") === "shape" && root.get("textCapable")) {
+          const shapeObj = root
+            .getObjects()
+            .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
+          if (shapeObj) shapeObj.set({ stroke: hex, fill: `${hex}33` });
+          drawColorRef.current = hex;
         } else if (root.get("markKind") === "shape") {
           root.set({ stroke: hex, fill: `${hex}33` });
           drawColorRef.current = hex;
@@ -2211,9 +2644,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             if (!text) return;
             text.set("fill", hex);
           } else {
-            const rect = root.getObjects().find((o) => o instanceof Rect);
+            const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
+            const shapeObj = root
+              .getObjects()
+              .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
             const textbox = root.getObjects().find((o) => o instanceof Textbox);
             if (rect instanceof Rect && textbox instanceof Textbox) {
+              rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
+            } else if (shapeObj && root.get("textCapable")) {
+              shapeObj.set({ stroke: hex, fill: `${hex}33` });
+            } else if (rect instanceof Rect && textbox instanceof Textbox) {
               rect.set({ fill: hex, stroke: hex });
             } else {
               const text = root.getObjects().find(isTextObject);
