@@ -654,7 +654,7 @@ export function ProgressMilestonesTabs({ syncHash = true }: ProgressMilestonesTa
                   ref={categoryButtonRef}
                   variant="outline"
                   className={cn(
-                    "h-10 shrink-0 px-3 font-normal shadow-none border-border/80 bg-card hover:bg-accent/40",
+                    "h-10 shrink-0 px-3 font-normal shadow-none border-border/80 bg-card",
                     !selectedCategory && "text-muted-foreground",
                   )}
                   style={

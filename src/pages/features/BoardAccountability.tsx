@@ -23,9 +23,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BoardAccountabilityFlow } from "@/components/boards/BoardAccountabilityFlow";
+import { BoardActionKitTray } from "@/components/boards/BoardActionKitTray";
 import { BoardGuideChatPanel } from "@/components/boards/BoardCompanionPanel";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import {
@@ -55,6 +55,8 @@ export type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
 function storageKey(workspaceId: string) {
   return `board-accountability-map:${workspaceId}`;
 }
+
+const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
 
 const DAILY_SMS_LIMIT = 5;
 
@@ -97,8 +99,9 @@ export default function BoardAccountability() {
   const [showNeedsContent, setShowNeedsContent] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [exportingIcal, setExportingIcal] = useState(false);
-  const [smsUsedToday, setSmsUsedToday] = useState(0);
   const [smsRemindersEnabled, setSmsRemindersEnabled] = useState(false);
+  const [smsPhoneConfigured, setSmsPhoneConfigured] = useState(false);
+  const [smsConsentOk, setSmsConsentOk] = useState(false);
   const [showSmsConsentDialog, setShowSmsConsentDialog] = useState(false);
   const [smsConsentChecked, setSmsConsentChecked] = useState(false);
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
@@ -109,8 +112,9 @@ export default function BoardAccountability() {
     [workspace],
   );
 
-  const visionBoardsHref = workspace
-    ? `/dashboard/boards?workspace=${workspace.id}`
+  const activeWorkspaceId = workspaceParam ?? workspace?.id ?? null;
+  const visionBoardsHref = activeWorkspaceId
+    ? `/dashboard/boards?workspace=${activeWorkspaceId}`
     : "/dashboard/boards";
 
   const persistMap = useCallback(
@@ -134,9 +138,14 @@ export default function BoardAccountability() {
         workspaces = await fetchUserWorkspaces(user.id);
       }
 
+      const remembered =
+        !workspaceParam && isMobile ? sessionStorage.getItem(ACTIVE_WORKSPACE_KEY) : null;
+
       let full: BoardWorkspaceWithBoards | null = null;
       if (workspaceParam) {
         full = await fetchWorkspaceWithBoards(workspaceParam);
+      } else if (remembered) {
+        full = await fetchWorkspaceWithBoards(remembered);
       } else if (workspaces.length > 0) {
         full = await loadDefaultWorkspace(user.id);
       }
@@ -148,29 +157,35 @@ export default function BoardAccountability() {
         navigate("/workspace?tab=projects", { replace: true });
         return;
       }
+      sessionStorage.setItem(ACTIVE_WORKSPACE_KEY, full.id);
       setWorkspace(full);
+
+      let nextMap: AccountabilityMap | null = null;
       const cached = sessionStorage.getItem(storageKey(full.id));
       if (cached) {
         try {
           const parsed: unknown = JSON.parse(cached);
-          const normalized = normalizeAccountabilityMap(parsed);
-          if (normalized) {
-            setMap(normalized);
-          }
+          nextMap = normalizeAccountabilityMap(parsed);
         } catch {
           /* ignore */
         }
       }
+      setMap(nextMap);
     } catch {
       toast.error("Could not load your boards");
     } finally {
       setLoading(false);
     }
-  }, [hasPro, navigate, proLoading, user?.id, workspaceParam]);
+  }, [hasPro, isMobile, navigate, proLoading, user?.id, workspaceParam]);
 
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  useEffect(() => {
+    if (!isMobile || workspaceParam || !workspace?.id) return;
+    navigate(`/dashboard/boards/accountability?workspace=${workspace.id}`, { replace: true });
+  }, [isMobile, navigate, workspace?.id, workspaceParam]);
 
   useEffect(() => {
     document.title = "Action | Palette Plotting";
@@ -215,7 +230,8 @@ export default function BoardAccountability() {
         return;
       }
       persistMap(normalized);
-      toast.success("Action map drafted — review and edit before finalizing");
+      toast.dismiss();
+      toast.success("Action map drafted — review and edit before finalizing", { duration: 1500 });
     } catch (error: unknown) {
       const status =
         error && typeof error === "object" && "context" in error
@@ -260,12 +276,9 @@ export default function BoardAccountability() {
         setShowSmsConsentDialog(true);
         throw new Error("Turn on text reminders to use this channel.");
       }
-      if (smsUsedToday >= DAILY_SMS_LIMIT) {
-        throw new Error("You've used today's 5 text reminders. Use email or calendar instead.");
-      }
       const smsInPlan = finalizedMap.reminders.filter((r) => r.reminder_type === "sms").length;
-      if (smsUsedToday + smsInPlan > DAILY_SMS_LIMIT) {
-        throw new Error("You've used today's 5 text reminders. Use email or calendar instead.");
+      if (smsInPlan > DAILY_SMS_LIMIT) {
+        throw new Error("You can set up to 5 text reminders. Use email or calendar for the rest.");
       }
     }
 
@@ -336,7 +349,6 @@ export default function BoardAccountability() {
       const next = finalizeAccountabilityMap(map);
       await scheduleAllReminders(next);
       persistMap(next);
-      void refreshSmsUsage();
       toast.success("Your action map is finalized. Your reminders are ready.");
     } catch (e) {
       toast.error(actionErrorMessage(e, "Couldn't finalize your plan"));
@@ -351,44 +363,62 @@ export default function BoardAccountability() {
   );
   const remindersDisabled = !map?.finalized;
 
-  const reminderHelperText = remindersDisabled
-    ? hasDraft
-      ? "Finalize your plan to enable reminders."
-      : "Analyze your workspace first."
-    : "Your reminder channels are active for finalized actions.";
+  const smsConfiguredCount = useMemo(() => {
+    if (!map) return 0;
+    if (map.finalized && map.reminders?.length) {
+      return map.reminders.filter((r) => r.reminder_type === "sms").length;
+    }
+    let count = 0;
+    for (const focus of map.focuses ?? []) {
+      for (const goal of focus.goals ?? []) {
+        for (const plan of goal.plans ?? []) {
+          for (const action of plan.actions ?? []) {
+            if (action.reminder_type === "sms" || action.channels?.sms) count++;
+          }
+        }
+      }
+    }
+    return count;
+  }, [map]);
 
-  const smsCounterText = `${smsUsedToday} of ${DAILY_SMS_LIMIT} text reminders used today`;
+  const smsCounterText = `${smsConfiguredCount} of ${DAILY_SMS_LIMIT} text reminders used`;
 
-  const refreshSmsUsage = useCallback(async () => {
+  const loadSmsPrefs = useCallback(async () => {
     if (!user?.id) return;
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
-    const { data: logs } = await supabase
-      .from("palette_sms_send_log")
-      .select("sent_at")
+    const { data: prefs } = await supabase
+      .from("user_preferences")
+      .select("sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at")
       .eq("user_id", user.id)
-      .eq("status", "sent");
-    const count = (logs ?? []).filter(
-      (row) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(row.sent_at)) === todayKey,
-    ).length;
-    setSmsUsedToday(count);
+      .maybeSingle();
+    setSmsRemindersEnabled(prefs?.sms_reminders_enabled === true);
+    const phone =
+      typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()
+        ? prefs.phone_number_e164.trim()
+        : "";
+    setSmsPhoneConfigured(Boolean(phone));
+    setSmsConsentOk(
+      prefs?.sms_reminder_consent_at != null && prefs?.sms_reminder_opted_out_at == null,
+    );
+    if (phone) setSmsPhoneInput(phone.replace(/^\+1/, ""));
   }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
-    void (async () => {
-      const { data: prefs } = await supabase
-        .from("user_preferences")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setSmsRemindersEnabled(prefs?.sms_reminders_enabled === true);
-      if (typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()) {
-        setSmsPhoneInput(prefs.phone_number_e164.replace(/^\+1/, ""));
-      }
-      void refreshSmsUsage();
-    })();
-  }, [user?.id, refreshSmsUsage]);
+    void loadSmsPrefs();
+  }, [user?.id, loadSmsPrefs]);
+
+  useEffect(() => {
+    const syncPrefs = () => void loadSmsPrefs();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") syncPrefs();
+    };
+    window.addEventListener("focus", syncPrefs);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", syncPrefs);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [loadSmsPrefs]);
 
   const completeSmsOptIn = async (): Promise<boolean> => {
     if (!user?.id) return false;
@@ -419,6 +449,8 @@ export default function BoardAccountability() {
     }
     await supabase.from("profiles").update({ phone: e164 }).eq("id", user.id);
     setSmsRemindersEnabled(true);
+    setSmsPhoneConfigured(true);
+    setSmsConsentOk(true);
     trackReminderAnalytics("sms_consent_granted");
     setShowSmsConsentDialog(false);
     if (pendingFinalizeAfterSms) {
@@ -451,7 +483,7 @@ export default function BoardAccountability() {
     }
   };
 
-  const smsReady = smsRemindersEnabled;
+  const smsReady = hasPro && smsRemindersEnabled && smsPhoneConfigured && smsConsentOk;
 
   if (!user) return null;
 
@@ -461,18 +493,20 @@ export default function BoardAccountability() {
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <header className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
-          <div className="flex items-center gap-2">
-            {isMobile && <MobilePWAMenu />}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(visionBoardsHref)}>
-              <ArrowLeft className="h-4 w-4" />
+        <header className="flex shrink-0 items-center justify-between gap-1 border-b border-neutral-200 bg-white px-4 py-3 max-md:px-2 max-md:py-1.5">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 max-md:gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 max-md:h-7 max-md:w-7"
+              onClick={() => navigate(visionBoardsHref)}
+            >
+              <ArrowLeft className="h-4 w-4 max-md:h-3.5 max-md:w-3.5" />
             </Button>
-            <ListChecks className="h-5 w-5 text-neutral-700" />
-            <div>
-              <h1 className="text-sm font-semibold text-neutral-900">Action</h1>
-            </div>
+            <ListChecks className="h-5 w-5 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
+            <h1 className="text-sm font-semibold text-neutral-900 max-md:text-xs max-md:font-medium">Action</h1>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="hidden min-w-0 items-center gap-1.5 md:flex">
             <Button
               variant="outline"
               size="sm"
@@ -502,24 +536,34 @@ export default function BoardAccountability() {
               {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
               Finalize
             </Button>
-            <div className="ml-1 flex items-center gap-2 border-l border-neutral-200 pl-2">
+            <div className="ml-1 flex shrink-0 items-center gap-2 border-l border-neutral-200 pl-2">
               <LayoutGrid className="h-5 w-5 shrink-0 text-neutral-700" />
-              <div>
-                <h2 className="text-sm font-semibold text-neutral-900">Vision</h2>
-              </div>
+              <h2 className="text-sm font-semibold text-neutral-900">Vision</h2>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 shrink-0"
                 onClick={() => navigate(visionBoardsHref)}
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-1 border-l border-neutral-200 pl-2 md:hidden">
+            <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-neutral-700" />
+            <h2 className="text-xs font-medium text-neutral-900">Vision</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              onClick={() => navigate(visionBoardsHref)}
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </header>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-neutral-200 bg-white px-4 py-2 text-xs">
+        <div className="hidden shrink-0 flex-wrap items-center gap-4 border-b border-neutral-200 bg-white px-4 py-2 text-xs md:flex">
           {map?.summary ? (
             <p className="min-w-0 flex-1 text-[11px] leading-snug text-neutral-600">{map.summary}</p>
           ) : !hasDraft ? (
@@ -535,15 +579,12 @@ export default function BoardAccountability() {
               Finalized
             </span>
           ) : null}
+          {map ? <p className="shrink-0 text-[11px] text-stone-500">{smsCounterText}</p> : null}
         </div>
 
-        {isMobile ? (
+        {isMobile && map ? (
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2">
-            {!remindersDisabled ? (
-              <p className="text-[11px] text-stone-500">{smsCounterText}</p>
-            ) : reminderHelperText ? (
-              <p className="text-[11px] text-stone-500">{reminderHelperText}</p>
-            ) : null}
+            <p className="text-[11px] text-stone-500">{smsCounterText}</p>
           </div>
         ) : null}
 
@@ -572,29 +613,49 @@ export default function BoardAccountability() {
             ) : null}
 
             {isMobile && workspace ? (
-              <div className="shrink-0 border-b border-stone-300/80 bg-[#f3f0eb]">
-                <BoardGuideChatPanel
-                  mode="action"
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-[4.25rem]">
+                <BoardAccountabilityFlow
+                  map={map}
+                  boards={workspace.boards}
+                  onChange={persistMap}
+                  smsReady={smsReady}
+                  hasPro={hasPro}
+                  compact
+                  onRequestSmsSetup={() => {
+                    setPendingFinalizeAfterSms(false);
+                    setShowSmsConsentDialog(true);
+                  }}
+                />
+                <BoardActionKitTray
                   workspaceId={workspace.id}
                   actionMap={map}
                   onActionMapChange={persistMap}
-                  compact
-                  showHeader={false}
+                  analyzing={analyzing}
+                  loading={loading}
+                  onAnalyze={() => void runAnalyze()}
+                  exportingIcal={exportingIcal}
+                  remindersDisabled={remindersDisabled}
+                  hasCalendarReminders={hasCalendarReminders}
+                  onExportIcal={runExportIcal}
+                  finalizing={finalizing}
+                  hasDraft={hasDraft}
+                  finalized={Boolean(map?.finalized)}
+                  onFinalize={() => void runFinalize()}
                 />
               </div>
-            ) : null}
-
-            <BoardAccountabilityFlow
-              map={map}
-              boards={workspace.boards}
-              onChange={persistMap}
-              smsReady={smsReady}
-              hasPro={hasPro}
-              onRequestSmsSetup={() => {
-                setPendingFinalizeAfterSms(false);
-                setShowSmsConsentDialog(true);
-              }}
-            />
+            ) : (
+              <BoardAccountabilityFlow
+                map={map}
+                boards={workspace.boards}
+                onChange={persistMap}
+                smsReady={smsReady}
+                hasPro={hasPro}
+                onRequestSmsSetup={() => {
+                  setPendingFinalizeAfterSms(false);
+                  setShowSmsConsentDialog(true);
+                }}
+              />
+            )}
           </div>
         )}
       </div>

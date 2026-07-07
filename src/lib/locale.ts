@@ -55,11 +55,11 @@ export function oneSignalLanguageForApp(_locale: AppLocale): string {
 export const LEGAL_SITE_ORIGIN = "https://paletteplot.com";
 
 export function legalTermsPath(): string {
-  return "/terms";
+  return "/policies/app-terms";
 }
 
 export function legalPrivacyPath(): string {
-  return "/privacy";
+  return "/policies/app-privacy";
 }
 
 export function legalTermsUrl(): string {

@@ -23,14 +23,12 @@ export function TextHelpHeaderBubble({ variant = "default" }: TextHelpHeaderBubb
           onDark
             ? cn(
                 "border-2 border-white/60 bg-white/5 text-white shadow-sm",
-                "hover:bg-white/12 hover:text-white active:text-white focus-visible:text-white",
                 "[&_svg]:text-white",
               )
             : cn(
                 "border-primary/30 bg-primary/[0.06] shadow-sm",
-                "!text-foreground hover:!text-foreground active:!text-foreground focus-visible:!text-foreground",
-                "hover:bg-primary/12 active:bg-primary/[0.14]",
-                "[&_svg]:!text-foreground [&_svg]:opacity-90 hover:[&_svg]:!text-foreground active:[&_svg]:!text-foreground",
+                "!text-foreground",
+                "[&_svg]:!text-foreground [&_svg]:opacity-90",
               ),
         )}
       >

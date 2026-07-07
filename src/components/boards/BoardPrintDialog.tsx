@@ -17,6 +17,7 @@ import {
 } from "@/lib/boards/renderBoard";
 import { downloadPhoneWallpaper } from "@/lib/boards/phoneWallpaper";
 import type { Board } from "@/lib/boards/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 
 type DownloadOptionId = BoardPrintPreset["id"] | "phone-wallpaper";
@@ -49,6 +50,7 @@ export function BoardPrintDialog({
   activeBoardId,
   getLayoutJson,
 }: BoardPrintDialogProps) {
+  const isMobile = useIsMobile();
   const [optionId, setOptionId] = useState<DownloadOptionId>("letter");
   const [selectedBoardIds, setSelectedBoardIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -109,7 +111,7 @@ export function BoardPrintDialog({
           title: board.title,
         }));
 
-        await downloadBoardsPrintPdf(sources, printPreset);
+        await downloadBoardsPrintPdf(sources, printPreset, { shareOnMobile: isMobile });
         toast.success(
           sources.length === 1
             ? `Downloaded ${sources[0].title} as PDF (${printPreset.label})`
@@ -127,7 +129,10 @@ export function BoardPrintDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        onOpenAutoFocus={isMobile ? (e) => e.preventDefault() : undefined}
+      >
         <DialogHeader>
           <DialogTitle>Download</DialogTitle>
           <DialogDescription>

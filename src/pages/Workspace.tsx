@@ -541,12 +541,6 @@ export default function Workspace() {
 
           ))}
 
-          <p className={cn("pt-2 text-center text-xs leading-relaxed", dark ? "text-white" : "text-zinc-400")}>
-
-            {t("workspace.library.marketingNote")}
-
-          </p>
-
         </div>
 
       );
@@ -812,8 +806,6 @@ export default function Workspace() {
     <div className={workspaceShellClass(dark)}>
 
       <WorkspaceHeader tabs={activeGuide ? undefined : tabs} />
-
-
 
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
 

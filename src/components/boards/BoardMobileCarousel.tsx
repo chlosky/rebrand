@@ -1,30 +1,20 @@
 import { useCallback, useEffect, useRef, type ComponentProps } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BoardCanvasEditor, type BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import { BoardEditableTitle } from "@/components/boards/BoardEditableTitle";
-import { cn } from "@/lib/utils";
 
 type BoardMobileCarouselProps = {
   boards: Board[];
   activeId: string;
   onSelect: (id: string) => void;
   onSave: (boardId: string, layout: Record<string, unknown>) => void;
-  onAddBoard: () => void;
-  onRemoveBoard?: () => void;
-  canRemoveBoard?: boolean;
   registerEditor: (boardId: string, handle: BoardCanvasHandle | null) => void;
   onRenameBoard: (boardId: string, title: string) => void | Promise<void>;
-  onTitleStyleChange: (
-    boardId: string,
-    patch: { title_color?: string | null; title_font?: string | null },
-  ) => void | Promise<void>;
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
   onBoardColorChange?: (boardId: string, colorKey: string) => void | Promise<void>;
   onRequestImagePick?: () => void;
-  onMoveBoard?: (boardId: string, direction: -1 | 1) => void;
 };
 
 type RegisteredBoardCanvasEditorProps = ComponentProps<typeof BoardCanvasEditor> & {
@@ -48,20 +38,18 @@ export function BoardMobileCarousel({
   activeId,
   onSelect,
   onSave,
-  onAddBoard,
-  onRemoveBoard,
-  canRemoveBoard = false,
   registerEditor,
   onRenameBoard,
-  onTitleStyleChange,
   onHistoryChange,
   onBoardColorChange,
   onRequestImagePick,
-  onMoveBoard,
 }: BoardMobileCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const saveHandlers = useRef(new Map<string, (layout: Record<string, unknown>) => void>());
   const scrollingProgrammatically = useRef(false);
+  const scrollResetTimer = useRef<number | undefined>(undefined);
+  const swipeRef = useRef({ startX: 0, startY: 0, tracking: false });
+  const activeIndexRef = useRef(0);
 
   const getSaveHandler = useCallback(
     (boardId: string) => {
@@ -74,19 +62,42 @@ export function BoardMobileCarousel({
   );
 
   const activeIndex = Math.max(0, boards.findIndex((b) => b.id === activeId));
+  activeIndexRef.current = activeIndex;
+
+  const scrollToIndex = useCallback(
+    (index: number, select = true) => {
+      const clamped = Math.max(0, Math.min(boards.length - 1, index));
+      const el = scrollRef.current;
+      const child = el?.children[clamped] as HTMLElement | undefined;
+      if (!el || !child) return clamped;
+
+      scrollingProgrammatically.current = true;
+      el.scrollLeft = child.offsetLeft;
+
+      const next = boards[clamped];
+      if (select && next && next.id !== activeId) onSelect(next.id);
+
+      if (scrollResetTimer.current !== undefined) window.clearTimeout(scrollResetTimer.current);
+      scrollResetTimer.current = window.setTimeout(() => {
+        scrollingProgrammatically.current = false;
+        scrollResetTimer.current = undefined;
+      }, 450);
+
+      return clamped;
+    },
+    [activeId, boards, onSelect],
+  );
+
+  const goToIndex = useCallback(
+    (index: number) => {
+      scrollToIndex(index, true);
+    },
+    [scrollToIndex],
+  );
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || boards.length === 0) return;
-    const child = el.children[activeIndex] as HTMLElement | undefined;
-    if (!child) return;
-    scrollingProgrammatically.current = true;
-    child.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    const t = window.setTimeout(() => {
-      scrollingProgrammatically.current = false;
-    }, 400);
-    return () => window.clearTimeout(t);
-  }, [activeIndex, boards.length]);
+    scrollToIndex(activeIndex, false);
+  }, [activeIndex, boards.length, scrollToIndex]);
 
   const handleScroll = useCallback(() => {
     if (scrollingProgrammatically.current) return;
@@ -105,8 +116,49 @@ export function BoardMobileCarousel({
       }
     }
     const next = boards[bestIdx];
-    if (next && next.id !== activeId) onSelect(next.id);
+    if (next && next.id !== activeId) {
+      scrollingProgrammatically.current = true;
+      onSelect(next.id);
+      if (scrollResetTimer.current !== undefined) window.clearTimeout(scrollResetTimer.current);
+      scrollResetTimer.current = window.setTimeout(() => {
+        scrollingProgrammatically.current = false;
+        scrollResetTimer.current = undefined;
+      }, 450);
+    }
   }, [activeId, boards, onSelect]);
+
+  useEffect(() => {
+    const root = scrollRef.current?.parentElement;
+    if (!root || boards.length <= 1) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      swipeRef.current.startX = e.touches[0].clientX;
+      swipeRef.current.startY = e.touches[0].clientY;
+      swipeRef.current.tracking = true;
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!swipeRef.current.tracking) return;
+      swipeRef.current.tracking = false;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const dx = touch.clientX - swipeRef.current.startX;
+      const dy = touch.clientY - swipeRef.current.startY;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.1) return;
+      const current = activeIndexRef.current;
+      goToIndex(current + (dx < 0 ? 1 : -1));
+    };
+
+    root.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
+    root.addEventListener("touchend", onTouchEnd, { capture: true, passive: true });
+    root.addEventListener("touchcancel", onTouchEnd, { capture: true, passive: true });
+    return () => {
+      root.removeEventListener("touchstart", onTouchStart, { capture: true });
+      root.removeEventListener("touchend", onTouchEnd, { capture: true });
+      root.removeEventListener("touchcancel", onTouchEnd, { capture: true });
+    };
+  }, [boards.length, goToIndex]);
 
   return (
     <div className="board-mobile-carousel relative flex h-0 min-h-0 flex-1 flex-col">
@@ -125,38 +177,34 @@ export function BoardMobileCarousel({
               className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-100 px-2 py-2"
               style={{ backgroundColor: boardFillForKey(board.color_key) }}
             >
-              {onMoveBoard && board.id === activeId && boards.length > 1 ? (
+              {boards.length > 1 ? (
                 <button
                   type="button"
-                  aria-label="Move board left"
+                  aria-label="Previous board"
                   disabled={activeIndex === 0}
-                  onClick={() => onMoveBoard(board.id, -1)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-600 disabled:opacity-30"
+                  onClick={() => goToIndex(activeIndex - 1)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-600 active:bg-black/5 disabled:opacity-30"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
               ) : (
-                <span className="w-8 shrink-0" />
+                <span className="w-10 shrink-0" />
               )}
               <BoardEditableTitle
                 boardId={board.id}
                 title={board.title}
                 headerFill={boardFillForKey(board.color_key)}
-                titleColor={board.title_color}
-                titleFont={board.title_font}
                 onRename={onRenameBoard}
-                onStyleChange={onTitleStyleChange}
-                showStyleControls={board.id === activeId}
                 className="min-w-0 flex-1 text-center text-sm font-semibold"
                 inputClassName="w-full text-center text-sm font-semibold"
               />
-              {onMoveBoard && board.id === activeId && boards.length > 1 ? (
+              {boards.length > 1 ? (
                 <button
                   type="button"
-                  aria-label="Move board right"
+                  aria-label="Next board"
                   disabled={activeIndex === boards.length - 1}
-                  onClick={() => onMoveBoard(board.id, 1)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-600 disabled:opacity-30"
+                  onClick={() => goToIndex(activeIndex + 1)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-600 active:bg-black/5 disabled:opacity-30"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -165,10 +213,10 @@ export function BoardMobileCarousel({
                   Plan
                 </span>
               ) : (
-                <span className="w-8 shrink-0" />
+                <span className="w-10 shrink-0" />
               )}
             </div>
-            <div className="relative min-h-0 flex-1 overflow-hidden px-1 pb-1">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
               <RegisteredBoardCanvasEditor
                 boardId={board.id}
                 registerEditor={registerEditor}
@@ -182,6 +230,7 @@ export function BoardMobileCarousel({
                 isActive={board.id === activeId}
                 embedded
                 cellFit="cover"
+                fabricSelectionControls
                 onBoardColorPick={(hex) => void onBoardColorChange?.(board.id, hex)}
                 onRequestImagePick={board.id === activeId ? onRequestImagePick : undefined}
               />
@@ -189,45 +238,6 @@ export function BoardMobileCarousel({
           </div>
         ))}
       </div>
-
-      <div className="flex shrink-0 items-center justify-center gap-1.5 border-t border-neutral-100 bg-white py-1.5">
-        {boards.map((board, i) => (
-          <button
-            key={board.id}
-            type="button"
-            aria-label={`Go to ${board.title}`}
-            onClick={() => onSelect(board.id)}
-            className={cn(
-              "h-2 rounded-full transition-all",
-              i === activeIndex ? "w-5 bg-neutral-900" : "w-2 bg-neutral-300",
-            )}
-          />
-        ))}
-        <Button
-          variant="outline"
-          size="icon"
-          className="ml-2 h-8 w-8 rounded-full border-dashed"
-          onClick={onAddBoard}
-          aria-label="Add focus board"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        {canRemoveBoard && onRemoveBoard && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-red-600"
-            onClick={onRemoveBoard}
-            aria-label="Delete this board"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      <p className="shrink-0 pb-0.5 text-center text-[10px] text-neutral-400">
-        Swipe boards · tap empty space to add · hold items to edit
-      </p>
     </div>
   );
 }

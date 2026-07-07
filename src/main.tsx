@@ -7,8 +7,6 @@ if (typeof window !== "undefined") {
   const path = window.location.pathname.replace(/\/$/, "");
   if (path.startsWith("/onboarding/subliminal")) {
     window.location.replace(`/${window.location.search}${window.location.hash}`);
-  } else if (path === "/onboarding/welcome") {
-    void import("./pages/onboarding/Welcome");
   }
 }
 

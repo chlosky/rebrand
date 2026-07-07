@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,15 +11,12 @@ import { Bell, Calendar, ChevronLeft, Mail, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { SMS_MAX_LENGTH } from "@/lib/boards/accountabilityMap";
 import { trackReminderAnalytics } from "@/lib/marketingConversionTrack";
-
-const DAILY_SMS_LIMIT = 5;
 
 function normalizeToE164(phone: string): string | null {
   const trimmed = phone.trim();
@@ -48,14 +45,6 @@ function channelsToPreference(channels: { email: boolean; calendar: boolean; sms
   return parts.length > 0 ? parts.join("_") : "email_calendar";
 }
 
-function localDayKey(date: Date, timezone: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(date);
-  } catch {
-    return new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(date);
-  }
-}
-
 export default function PlanReminderSettings() {
   const { t } = useTranslation("settings");
   const navigate = useNavigate();
@@ -71,7 +60,6 @@ export default function PlanReminderSettings() {
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [smsConsentChecked, setSmsConsentChecked] = useState(false);
-  const [smsUsedToday, setSmsUsedToday] = useState(0);
   const [timezone, setTimezone] = useState("America/New_York");
 
   useEffect(() => {
@@ -79,19 +67,6 @@ export default function PlanReminderSettings() {
       navigate("/login", { replace: true });
     }
   }, [user, navigate]);
-
-  const refreshSmsUsage = useCallback(async () => {
-    if (!user?.id) return;
-    const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const todayKey = localDayKey(new Date(), tz);
-    const { data: logs } = await supabase
-      .from("palette_sms_send_log")
-      .select("sent_at")
-      .eq("user_id", user.id)
-      .eq("status", "sent");
-    const count = (logs ?? []).filter((row) => localDayKey(new Date(row.sent_at), tz) === todayKey).length;
-    setSmsUsedToday(count);
-  }, [user?.id, timezone]);
 
   useEffect(() => {
     if (!user) return;
@@ -122,7 +97,6 @@ export default function PlanReminderSettings() {
         if (typeof prefs?.timezone === "string" && prefs.timezone.trim()) {
           setTimezone(prefs.timezone.trim());
         }
-        await refreshSmsUsage();
       } catch (e) {
         console.error("[PlanReminderSettings] load failed:", e);
         toast.error(t("toasts.planRemindersLoadFailed"));
@@ -130,7 +104,7 @@ export default function PlanReminderSettings() {
         setLoading(false);
       }
     })();
-  }, [user, refreshSmsUsage, t]);
+  }, [user, t]);
 
   const persistPreferences = async (patch: Record<string, unknown>) => {
     if (!user) return false;
@@ -276,12 +250,8 @@ export default function PlanReminderSettings() {
               </button>
               <div className="min-w-0">
                 <h1 className="text-lg font-bold truncate">{t("planReminders.title")}</h1>
-                <p className={cn("text-xs truncate", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                  {t("planReminders.subtitle")}
-                </p>
               </div>
             </div>
-            {isMobile && <MobilePWAMenu />}
           </div>
         </header>
 
@@ -303,12 +273,6 @@ export default function PlanReminderSettings() {
                     <Bell className="h-4 w-4" />
                     {t("planReminders.channelsHeading")}
                   </h2>
-                  <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                    {t("planReminders.channelsDescription")}
-                  </p>
-                  <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                    {t("planReminders.channelSystemLine")}
-                  </p>
 
                   <div className="space-y-4 pt-2">
                     <div className="flex items-center justify-between gap-3">
@@ -352,10 +316,6 @@ export default function PlanReminderSettings() {
                   <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
                     {t("planReminders.smsDailyLimit")}
                   </p>
-                  <p className={cn("text-xs font-medium", theme === "dark" ? "text-white/80" : "text-foreground")}>
-                    {t("planReminders.smsCounter", { used: smsUsedToday, limit: DAILY_SMS_LIMIT })}
-                  </p>
-
                   <div className="flex items-center justify-between gap-3 pt-2">
                     <Label htmlFor="plan-sms-reminders">{t("planReminders.smsLabel")}</Label>
                     <Switch
@@ -424,10 +384,6 @@ export default function PlanReminderSettings() {
                     {t("planReminders.smsCharNote", { max: SMS_MAX_LENGTH })}
                   </p>
                 </Card>
-
-                <p className={cn("text-xs px-1", theme === "dark" ? "text-white/45" : "text-muted-foreground")}>
-                  {t("planReminders.perStepNote")}
-                </p>
               </div>
             )}
           </div>

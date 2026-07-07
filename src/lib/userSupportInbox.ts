@@ -22,10 +22,8 @@ const SUBMISSION_TYPE_KEYS: Record<string, "submissionTypes.report" | "submissio
   help_me_create: "submissionTypes.helpMeCreate",
 };
 
-export function caseTypeLabel(c: UserInboxCase): string {
-  return c.message_type === "help_me_create"
-    ? i18n.t("support:inbox.caseTypes.helpMeCreate")
-    : i18n.t("support:inbox.caseTypes.appSupportFeedback");
+export function caseTypeLabel(_c: UserInboxCase): string {
+  return i18n.t("support:inbox.caseTypes.appSupportFeedback");
 }
 
 function localizedInboxToolLabel(raw: string | null | undefined): string {

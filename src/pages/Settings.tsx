@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { User, Bell, KeyRound, CreditCard, AlertTriangle, Trash2, Zap, ChevronRight } from "lucide-react";
+import { User, Bell, KeyRound, CreditCard, AlertTriangle, Trash2, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -30,9 +29,13 @@ import {
   openRevenueCatWebBillingPortal,
   resolveRevenueCatWebBillingStatus,
 } from "@/services/revenueCatManageBilling";
-import { bootstrapRevenueCat, resolveRevenueCatUILocale, syncRevenueCatUILocale } from "@/services/revenueCat";
+import {
+  isWebRevenueCatBillingEnabled,
+  isWebStripeCheckoutEnabled,
+} from "@/lib/webBillingConfig";
 import { useTranslation } from "react-i18next";
 import { resolveAppLocale, legalTermsPath, legalPrivacyPath } from "@/lib/locale";
+import { SITE_ORIGIN } from "@/lib/siteBrand";
 
 const PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/account/subscriptions";
 
@@ -140,13 +143,17 @@ const Settings = () => {
 
         setStripeCustomerId(plan?.stripe_customer_id?.trim() || null);
 
-        const refreshRcWebBillingStatus = () => {
-          void resolveRevenueCatWebBillingStatus(user.id)
-            .then(({ webBilling }) => setRcWebBillingAvailable(webBilling))
-            .catch(() => setRcWebBillingAvailable(false));
-        };
-        refreshRcWebBillingStatus();
-        window.setTimeout(refreshRcWebBillingStatus, 1500);
+        if (isWebRevenueCatBillingEnabled()) {
+          const refreshRcWebBillingStatus = () => {
+            void resolveRevenueCatWebBillingStatus(user.id)
+              .then(({ webBilling }) => setRcWebBillingAvailable(webBilling))
+              .catch(() => setRcWebBillingAvailable(false));
+          };
+          refreshRcWebBillingStatus();
+          window.setTimeout(refreshRcWebBillingStatus, 1500);
+        } else {
+          setRcWebBillingAvailable(false);
+        }
 
         // Fetch user preferences (email reminders and text reminders)
         const { data: prefs, error: prefsError } = await (supabase as any)
@@ -537,23 +544,15 @@ const Settings = () => {
   /**
    * Manage billing routing:
    *
-   * - Apple keeps the original native RevenueCat subscription-management path.
-   * - Android tries RevenueCat's management URL, then falls back to the Play subscriptions handoff.
-   * - Stripe/RC web opens RevenueCat's management URL.
+   * - Stripe (default): Stripe Customer Portal via `create-customer-portal`.
+   * - Apple / Google Play: legacy app-store paths when `last_payment_source` says so.
+   * - RevenueCat Web Billing: only when `VITE_WEB_CHECKOUT_PROVIDER=revenuecat`.
    */
   const handleManageBilling = async () => {
     if (!user) {
       toast.error(t("toasts.billingLoginRequired"));
       return;
     }
-
-    if (Capacitor.isNativePlatform()) {
-      await bootstrapRevenueCat(user.id);
-    }
-    await syncRevenueCatUILocale();
-    console.info("[Settings][Billing] RC UI locale before manage billing", {
-      locale: resolveRevenueCatUILocale(),
-    });
 
     if (lastPaymentSource === "apple") {
       if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios" && appleIAP.canManageBillingNatively) {
@@ -565,6 +564,11 @@ const Settings = () => {
         return;
       }
 
+      toast.error(t("toasts.iosSubscriptionsHint"));
+      return;
+    }
+
+    if (lastPaymentSource === "google_play") {
       if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
         try {
           await Browser.open({ url: PLAY_SUBSCRIPTIONS_URL });
@@ -575,43 +579,60 @@ const Settings = () => {
         return;
       }
 
-      toast.error(t("toasts.iosSubscriptionsHint"));
+      toast.error(t("toasts.portalFailedFallback"));
       return;
     }
 
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
+    const useStripePortal =
+      isWebStripeCheckoutEnabled() ||
+      lastPaymentSource === "stripe" ||
+      Boolean(stripeCustomerId);
+
+    if (useStripePortal) {
       try {
-        const openedPortal = await openRevenueCatWebBillingPortal(user.id);
-        if (openedPortal) {
-          setRcWebBillingAvailable(true);
+        const portalToast = toast.loading(t("billing.openingPortal"));
+
+        if (!stripeCustomerId) {
+          await supabase.functions.invoke("sync-stripe-customer", { body: {} });
+        }
+
+        const returnUrl = window.location.origin.startsWith("http")
+          ? `${window.location.origin}/dashboard/settings`
+          : `${SITE_ORIGIN}/dashboard/settings`;
+
+        const { data, error } = await supabase.functions.invoke("create-customer-portal", {
+          body: { returnUrl },
+        });
+        toast.dismiss(portalToast);
+
+        if (error) throw error;
+
+        const payload = data as { url?: string | null; message?: string; error?: string } | null;
+        const url = typeof payload?.url === "string" ? payload.url.trim() : "";
+        if (!url) {
+          toast.error(payload?.message?.trim() || t("toasts.portalFailed"));
           return;
         }
-      } catch (error) {
-        console.error("Manage billing (RevenueCat portal):", error);
-      }
 
-      try {
-        await Browser.open({ url: PLAY_SUBSCRIPTIONS_URL });
-      } catch (err) {
-        console.error("Manage billing (Play):", err);
-        toast.error(t("toasts.playSubscriptionsFailed"));
+        if (Capacitor.isNativePlatform()) {
+          await Browser.open({ url });
+        } else {
+          window.location.href = url;
+        }
+        return;
+      } catch (error) {
+        console.error("Manage billing (Stripe portal):", error);
+        toast.error(t("toasts.portalFailed"));
+        return;
       }
-      return;
     }
 
-    const isRcManagedBilling =
-      lastPaymentSource === "stripe" ||
-      rcWebBillingAvailable === true;
-
-    if (isRcManagedBilling) {
+    if (isWebRevenueCatBillingEnabled() && rcWebBillingAvailable) {
       try {
         const portalToast = toast.loading(t("billing.openingPortal"));
         const openedPortal = await openRevenueCatWebBillingPortal(user.id);
         toast.dismiss(portalToast);
-        if (openedPortal) {
-          setRcWebBillingAvailable(true);
-          return;
-        }
+        if (openedPortal) return;
       } catch (error) {
         console.error("Manage billing (RevenueCat portal):", error);
         toast.error(t("toasts.portalFailed"));
@@ -627,10 +648,12 @@ const Settings = () => {
   // This useEffect is no longer needed as it's handled in fetchUserData
 
   const billingOptionsLoading =
+    isWebRevenueCatBillingEnabled() &&
     !Capacitor.isNativePlatform() &&
     rcWebBillingAvailable === null &&
     lastPaymentSource !== "stripe" &&
-    lastPaymentSource !== "apple";
+    lastPaymentSource !== "apple" &&
+    lastPaymentSource !== "google_play";
 
   return (
     <div
@@ -658,22 +681,12 @@ const Settings = () => {
           <div>
             <h1
               className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"}
-              onClick={() => navigate("/dashboard/boards")}
+              onClick={() => navigate("/workspace")}
             >
               {t("header")}
             </h1>
             {isMobile && <p className="text-xs text-muted-foreground">{userEmail}</p>}
             </div>
-            {/* PWA Browser Mobile Menu */}
-            {isMobile && (
-              <div className="md:hidden">
-                {isMobile && (
-              <div className="md:hidden">
-                <MobilePWAMenu />
-              </div>
-            )}
-              </div>
-            )}
           </div>
         </div>
       </header>
@@ -891,42 +904,6 @@ const Settings = () => {
 
           {/* Settings Tab */}
           <TabsContent key={`settings-${localeKey}`} value="settings" className="space-y-3">
-            <Card
-              className={cn(
-                theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3",
-                theme === "dark" && "!bg-transparent",
-              )}
-            >
-              <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                <Zap className="h-4 w-4" />
-                {t("preferences.routineHeading")}
-              </h3>
-              <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                {t("preferences.routineDescription")}
-              </p>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between h-auto py-3",
-                  theme === "dark" && "border-white/12 bg-transparent hover:bg-white/[0.06]",
-                )}
-                onClick={() => navigate("/dashboard/settings/routine-reminders")}
-              >
-                <span className="text-left">
-                  <span className="block font-medium">{t("preferences.routineButtonTitle")}</span>
-                  <span
-                    className={cn(
-                      "block text-xs font-normal mt-0.5",
-                      theme === "dark" ? "text-white/55" : "text-muted-foreground",
-                    )}
-                  >
-                    {t("preferences.routineButtonSubtitle")}
-                  </span>
-                </span>
-                <ChevronRight className="h-4 w-4 shrink-0 opacity-60" />
-              </Button>
-            </Card>
-
             <Card
               className={cn(
                 theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3",
@@ -1232,13 +1209,6 @@ const Settings = () => {
                   onClick={() => navigate("/dmca")}
                 >
                   {t("legal.dmca")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate("/eula")}
-                >
-                  {t("legal.eula")}
                 </Button>
                 <Button
                   variant="ghost"

@@ -267,26 +267,26 @@ if (appRoot) appRoot.style.backgroundColor = bg;
 }
 
 function applyMarketingSiteSurfaces() {
-themeMeta.setAttribute('content', '#000000');
+themeMeta.setAttribute('content', '#ffffff');
 var appleStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-if (appleStatus) appleStatus.setAttribute('content', 'black-translucent');
-document.documentElement.style.colorScheme = 'dark';
-document.documentElement.style.backgroundColor = '#000000';
-if (document.body) document.body.style.backgroundColor = '#000000';
+if (appleStatus) appleStatus.setAttribute('content', 'default');
+document.documentElement.style.colorScheme = 'light';
+document.documentElement.style.backgroundColor = '#ffffff';
+if (document.body) document.body.style.backgroundColor = '#ffffff';
 var appRoot = document.getElementById('root');
-if (appRoot) appRoot.style.backgroundColor = '#000000';
+if (appRoot) appRoot.style.backgroundColor = '#ffffff';
 if (document.documentElement.classList.contains('dark')) {
 document.documentElement.classList.remove('dark');
 }
 }
 
-// React marketing shell (FAQ, quiz, legal, etc.) — keep black safe-area inlets.
+// React marketing shell (FAQ, quiz, legal, etc.) — white safe-area inlets.
 if (document.documentElement.getAttribute('data-marketing-site') === 'true') {
 applyMarketingSiteSurfaces();
 return;
 }
 
-// Marketing pages: black chrome (status bar / safe area). Not dashboard, onboarding, or login.
+// Marketing pages: white chrome (status bar / safe area). Not dashboard, onboarding, or login.
 function isMarketingSitePath(pathname) {
 var path = pathname === '/' ? '/' : pathname.replace(/\/$/, '') || '/';
 if (path === '/login') return false;

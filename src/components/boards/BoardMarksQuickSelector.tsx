@@ -12,6 +12,7 @@ import {
   Pencil,
   Shapes,
   Sparkles,
+  LayoutGrid,
   Square,
   Circle as CircleIcon,
   Triangle as TriangleIcon,
@@ -27,6 +28,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PLOT_STRUCTURES } from "@/components/boards/BoardPlottingWorkbench";
+import type { BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
 
 export type BoardMarksQuickAction =
   | "statement"
@@ -35,6 +38,7 @@ export type BoardMarksQuickAction =
   | "draw"
   | "shapes"
   | "stickers"
+  | "structures"
   | "edit"
   | "color"
   | "size"
@@ -152,6 +156,7 @@ type BoardMarksQuickSelectorProps = {
   onElementSizePick?: (size: BoardMarkTextSize) => void;
   onShapePick?: (shape: BoardMarkShapeType) => void;
   onStickerPick?: (sticker: BoardMarkStickerId) => void;
+  onStructurePick?: (structure: BoardDiagramType) => void;
 };
 
 const TEXT_SIZE_OPTIONS: { id: BoardMarkTextSize; label: string }[] = [
@@ -183,19 +188,14 @@ function spreadAngles(count: number, startDeg = -90): number[] {
 
 const EMPTY_ACTIONS: WheelItem[] = [
   { id: "statement", label: "Text", Icon: Type },
-  { id: "image", label: "Image", Icon: ImagePlus },
   { id: "sticky", label: "Note", Icon: StickyNote },
   { id: "draw", label: "Draw", Icon: Pencil },
-  { id: "shapes", label: "Shapes", Icon: Shapes },
-  { id: "stickers", label: "Stickers", Icon: Sparkles },
   { id: "color", label: "Recolor", Icon: Palette },
 ];
 
 const OBJECT_ACTIONS: WheelItem[] = [
   { id: "edit", label: "Edit", Icon: Type },
   { id: "size", label: "Size", Icon: CaseSensitive },
-  { id: "shapes", label: "Shape", Icon: Shapes },
-  { id: "stickers", label: "Sticker", Icon: Sparkles },
   { id: "copy", label: "Copy", Icon: ClipboardCopy },
   { id: "color", label: "Recolor", Icon: Palette },
   { id: "delete", label: "Delete", Icon: Trash2, accent: "text-red-300" },
@@ -218,18 +218,19 @@ export function BoardMarksQuickSelector({
   onElementSizePick,
   onShapePick,
   onStickerPick,
+  onStructurePick,
 }: BoardMarksQuickSelectorProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
   const [shapesOpen, setShapesOpen] = useState(false);
   const [stickersOpen, setStickersOpen] = useState(false);
-  const subMenuOpen = paletteOpen || sizeOpen || shapesOpen || stickersOpen;
+  const [structuresOpen, setStructuresOpen] = useState(false);
+  const subMenuOpen = paletteOpen || sizeOpen || shapesOpen || stickersOpen || structuresOpen;
 
   const wheelItems = (() => {
     if (mode === "object") {
       const actions = OBJECT_ACTIONS.filter((item) => {
         if (item.id === "size" || item.id === "edit") return textCapable;
-        if (item.id === "shapes") return shapeCapable;
         if (item.id === "stickers") return stickerCapable;
         return true;
       });
@@ -237,9 +238,8 @@ export function BoardMarksQuickSelector({
       return actions.map((item, i) => ({ ...item, angle: angles[i] }));
     }
     const actions = [
-      ...EMPTY_ACTIONS.slice(0, 6),
+      ...EMPTY_ACTIONS,
       ...(canPaste ? [{ id: "paste" as const, label: "Paste", Icon: ClipboardPaste }] : []),
-      EMPTY_ACTIONS[6],
     ];
     const angles = spreadAngles(actions.length);
     return actions.map((item, i) => ({ ...item, angle: angles[i] }));
@@ -248,12 +248,14 @@ export function BoardMarksQuickSelector({
   const paletteLabel = mode === "empty" ? "Board color" : "Element color";
   const shapesLabel = mode === "empty" ? "Pick shape" : "Change shape";
   const stickersLabel = mode === "empty" ? "Pick sticker" : "Change sticker";
+  const structuresLabel = "Pick structure";
 
   const backToMain = () => {
     setPaletteOpen(false);
     setSizeOpen(false);
     setShapesOpen(false);
     setStickersOpen(false);
+    setStructuresOpen(false);
   };
 
   useEffect(() => {
@@ -265,11 +267,12 @@ export function BoardMarksQuickSelector({
       else if (sizeOpen) setSizeOpen(false);
       else if (shapesOpen) setShapesOpen(false);
       else if (stickersOpen) setStickersOpen(false);
+      else if (structuresOpen) setStructuresOpen(false);
       else onClose();
     };
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [onClose, paletteOpen, sizeOpen, shapesOpen, stickersOpen]);
+  }, [onClose, paletteOpen, sizeOpen, shapesOpen, stickersOpen, structuresOpen]);
 
   const handleBackdropClick = () => {
     if (subMenuOpen) backToMain();
@@ -281,6 +284,7 @@ export function BoardMarksQuickSelector({
       setSizeOpen(false);
       setShapesOpen(false);
       setStickersOpen(false);
+      setStructuresOpen(false);
       setPaletteOpen(true);
       return;
     }
@@ -288,6 +292,7 @@ export function BoardMarksQuickSelector({
       setPaletteOpen(false);
       setShapesOpen(false);
       setStickersOpen(false);
+      setStructuresOpen(false);
       setSizeOpen(true);
       return;
     }
@@ -295,13 +300,23 @@ export function BoardMarksQuickSelector({
       setPaletteOpen(false);
       setSizeOpen(false);
       setStickersOpen(false);
+      setStructuresOpen(false);
       setShapesOpen(true);
+      return;
+    }
+    if (id === "structures") {
+      setPaletteOpen(false);
+      setSizeOpen(false);
+      setShapesOpen(false);
+      setStickersOpen(false);
+      setStructuresOpen(true);
       return;
     }
     if (id === "stickers") {
       setPaletteOpen(false);
       setSizeOpen(false);
       setShapesOpen(false);
+      setStructuresOpen(false);
       setStickersOpen(true);
       return;
     }
@@ -326,6 +341,11 @@ export function BoardMarksQuickSelector({
 
   const handleStickerPick = (sticker: BoardMarkStickerId) => {
     onStickerPick?.(sticker);
+    onClose();
+  };
+
+  const handleStructurePick = (structure: BoardDiagramType) => {
+    onStructurePick?.(structure);
     onClose();
   };
 
@@ -539,6 +559,35 @@ export function BoardMarksQuickSelector({
                   style={{ left, top }}
                 >
                   {emoji}
+                </button>
+              );
+            })}
+
+          {structuresOpen &&
+            PLOT_STRUCTURES.map(({ type, title }, index) => {
+              const total = PLOT_STRUCTURES.length;
+              const angle = -90 + (360 / total) * index;
+              const rad = (angle * Math.PI) / 180;
+              const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
+              const top = CENTER + Math.sin(rad) * SWATCH_RADIUS;
+
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  title={title}
+                  aria-label={`${structuresLabel}: ${title}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStructurePick(type);
+                  }}
+                  className={cn(
+                    "absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 px-0.5 text-[8px] font-semibold leading-tight text-white",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  )}
+                  style={{ left, top }}
+                >
+                  {title.split(" ")[0]}
                 </button>
               );
             })}

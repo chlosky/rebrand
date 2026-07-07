@@ -239,6 +239,18 @@ export function smsTextFromTitle(title: string): string {
   return stripSmsText(title).slice(0, SMS_MAX_LENGTH);
 }
 
+export function isGenericPlaceholderTitle(text: string): boolean {
+  const t = text.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!t) return false;
+  if (t === "review board" || t === "review cycle" || t === "daily gratitude") return true;
+  if (t === "accountability review") return true;
+  if (/^review\s+(the\s+)?(focus\s+)?board(\s+\d+)?\.?$/.test(t)) return true;
+  if (/^review\s+focus\s+board\s*\d*\.?$/.test(t)) return true;
+  if (/^weekly\s+review(\s+(of|for))?\s+(the\s+)?(focus\s+)?board/.test(t)) return true;
+  if (/^check\s+(in\s+on\s+)?(the\s+)?(focus\s+)?board/.test(t)) return true;
+  return false;
+}
+
 export function isJunkBoardText(text: string): boolean {
   const t = text.trim().toLowerCase().replace(/\s+/g, " ");
   if (!t) return true;
@@ -260,7 +272,8 @@ export function naturalizeTitle(title: string): string {
     .replace(/\s*[—-]\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return isJunkBoardText(t) ? "" : t;
+  if (isJunkBoardText(t) || isGenericPlaceholderTitle(t)) return "";
+  return t;
 }
 
 export function stripChromeFromInput(text: string): string {
@@ -273,19 +286,20 @@ export function sanitizeNodeTitle(title: string, fallback: string): string {
 }
 
 export function scrubMapTitles(map: AccountabilityMap): AccountabilityMap {
-  const focusName = (id: string) => map.focuses.find((f) => f.id === id)?.title ?? "Focus";
-
   const plans = map.plans.map((p) => ({
     ...p,
-    title: sanitizeNodeTitle(p.title, focusName(p.focus_id)),
+    title: sanitizeNodeTitle(p.title, ""),
   }));
 
-  const planTitle = (id: string) => plans.find((p) => p.id === id)?.title ?? "Action";
-
-  const actions = map.actions.map((a) => ({
-    ...a,
-    title: sanitizeNodeTitle(a.title, planTitle(a.plan_id)),
-  }));
+  const actions = map.actions.map((a) => {
+    if (isGenericPlaceholderTitle(a.title)) {
+      return { ...a, title: "", status: "rejected" as const };
+    }
+    return {
+      ...a,
+      title: sanitizeNodeTitle(a.title, ""),
+    };
+  });
 
   return { ...map, plans, actions };
 }

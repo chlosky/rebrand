@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -517,11 +516,6 @@ export default function AdminSupportInbox() {
               <h1 className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate("/dashboard/boards")}>
                 Support Inbox
               </h1>
-              {isMobile && (
-                <div className="flex items-center gap-2">
-                  <MobilePWAMenu />
-                </div>
-              )}
             </div>
           </header>
 

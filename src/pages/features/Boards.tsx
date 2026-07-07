@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, ListChecks, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BoardToolbar, type BoardZoomPreset } from "@/components/boards/BoardToolbar";
-import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
+import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
+import { STRUCTURE_DECAL_SIZE } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardDesktopGrid } from "@/components/boards/BoardDesktopGrid";
 import { BoardPlottingWorkbench } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardPlotKitTray } from "@/components/boards/BoardPlotKitTray";
@@ -28,6 +28,8 @@ import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import "@/styles/board-editor.css";
+
+const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
 
 export default function Boards() {
   const { user } = useAuth();
@@ -71,6 +73,7 @@ export default function Boards() {
 
   const selectBoard = useCallback(
     (id: string) => {
+      activeBoardIdRef.current = id;
       setActiveBoardId(id);
       const handle = editorMapRef.current.get(id) ?? null;
       activeEditorRef.current = handle;
@@ -79,11 +82,26 @@ export default function Boards() {
     [syncUndoRedoFromEditor],
   );
 
+  const getActiveBoardEditor = useCallback(() => {
+    const id = activeBoardIdRef.current;
+    if (!id) return activeEditorRef.current;
+    return editorMapRef.current.get(id) ?? activeEditorRef.current;
+  }, []);
+
+  const placeStructureOnActiveBoard = useCallback((type: BoardDiagramType, items?: string[]) => {
+    const boardId = activeBoardIdRef.current;
+    if (!boardId) return;
+    const placement = STRUCTURE_DECAL_SIZE[type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+    const x = Math.max(0, Math.min(1 - placement.w, 0.5 - placement.w / 2));
+    const y = Math.max(0, Math.min(1 - placement.h, 0.5 - placement.h / 2));
+    getActiveBoardEditor()?.addDiagramOverlay(type, x, y, placement.w, placement.h, items);
+  }, [getActiveBoardEditor]);
+
   const registerEditor = useCallback((boardId: string, handle: BoardCanvasHandle | null) => {
     if (handle) editorMapRef.current.set(boardId, handle);
     else editorMapRef.current.delete(boardId);
     if (boardId === activeBoardIdRef.current) {
-      activeEditorRef.current = handle;
+      activeEditorRef.current = handle ?? editorMapRef.current.get(boardId) ?? null;
     }
   }, []);
 
@@ -103,6 +121,7 @@ export default function Boards() {
     return firstBoard && firstBoard.artboard_width > firstBoard.artboard_height ? "matrix" : "row";
   }, [workspace?.boards]);
   const isLandscapeSet = workspacePresentation === "matrix";
+  const activeWorkspaceId = workspaceParam ?? workspace?.id ?? null;
 
   const loadWorkspace = useCallback(async () => {
     if (!user?.id || proLoading) return;
@@ -114,9 +133,14 @@ export default function Boards() {
         workspaces = await fetchUserWorkspaces(user.id);
       }
 
+      const remembered =
+        !workspaceParam && isMobile ? sessionStorage.getItem(ACTIVE_WORKSPACE_KEY) : null;
+
       let full: BoardWorkspaceWithBoards | null = null;
       if (workspaceParam) {
         full = await fetchWorkspaceWithBoards(workspaceParam);
+      } else if (remembered) {
+        full = await fetchWorkspaceWithBoards(remembered);
       } else if (workspaces.length > 0) {
         full = await loadDefaultWorkspace(user.id);
       }
@@ -130,6 +154,7 @@ export default function Boards() {
         return;
       }
 
+      sessionStorage.setItem(ACTIVE_WORKSPACE_KEY, full.id);
       setWorkspace(full);
       setActiveBoardId((prev) => {
         const nextId =
@@ -142,11 +167,16 @@ export default function Boards() {
     } finally {
       setLoading(false);
     }
-  }, [hasPro, navigate, proLoading, user?.id, workspaceParam]);
+  }, [hasPro, isMobile, navigate, proLoading, user?.id, workspaceParam]);
 
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  useEffect(() => {
+    if (!isMobile || workspaceParam || !workspace?.id) return;
+    navigate(`/dashboard/boards?workspace=${workspace.id}`, { replace: true });
+  }, [isMobile, navigate, workspace?.id, workspaceParam]);
 
   useEffect(() => {
     document.title = "Vision | Palette Plotting";
@@ -209,24 +239,6 @@ export default function Boards() {
       toast.error("Could not rename board");
     }
   }, []);
-
-  const handleTitleStyleChange = useCallback(
-    async (boardId: string, patch: { title_color?: string | null; title_font?: string | null }) => {
-      try {
-        await updateBoardMeta(boardId, patch);
-        setWorkspace((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            boards: prev.boards.map((b) => (b.id === boardId ? { ...b, ...patch } : b)),
-          };
-        });
-      } catch {
-        toast.error("Could not update title style");
-      }
-    },
-    [],
-  );
 
   const handlePickImage = useCallback(async (url: string) => {
     try {
@@ -330,15 +342,6 @@ export default function Boards() {
     [workspace],
   );
 
-  const handleMoveBoard = useCallback(
-    (boardId: string, direction: -1 | 1) => {
-      if (!workspace) return;
-      const fromIndex = workspace.boards.findIndex((b) => b.id === boardId);
-      if (fromIndex < 0) return;
-      void handleReorderBoards(fromIndex, fromIndex + direction);
-    },
-    [handleReorderBoards, workspace],
-  );
 
   const handleRemoveBoard = async () => {
     if (!workspace || !activeBoard) return;
@@ -370,59 +373,74 @@ export default function Boards() {
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <header className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
-          <div className="flex items-center gap-2">
-            {isMobile && <MobilePWAMenu />}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/workspace")}>
-              <ArrowLeft className="h-4 w-4" />
+        <header className="flex shrink-0 items-center justify-between gap-1 border-b border-neutral-200 bg-white px-4 py-3 max-md:px-2 max-md:py-1.5">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 max-md:gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 max-md:h-7 max-md:w-7"
+              onClick={() => navigate("/workspace")}
+            >
+              <ArrowLeft className="h-4 w-4 max-md:h-3.5 max-md:w-3.5" />
             </Button>
-            <LayoutGrid className="h-5 w-5 text-neutral-700" />
-            <div>
-              <h1 className="text-sm font-semibold text-neutral-900">Vision</h1>
-            </div>
+            <LayoutGrid className="h-5 w-5 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
+            <h1 className="text-sm font-semibold text-neutral-900 max-md:text-xs max-md:font-medium">Vision</h1>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleAddBoard}>
+          <div className="flex min-w-0 items-center gap-1.5 max-md:gap-0.5 max-md:overflow-x-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-xs max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
+              onClick={handleAddBoard}
+            >
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Add board</span>
             </Button>
-            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => void handleDuplicateBoard()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-xs max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
+              onClick={() => void handleDuplicateBoard()}
+            >
               <CopyPlus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Duplicate Board</span>
             </Button>
-            {canRemoveBoard && (
+            {canRemoveBoard && !isMobile && (
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="gap-1 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
                 onClick={handleRemoveBoard}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Delete Board</span>
               </Button>
             )}
-            <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setDownloadOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-xs max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
+              onClick={() => setDownloadOpen(true)}
+            >
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
             </Button>
-            <div className="ml-1 flex items-center gap-2 border-l border-neutral-200 pl-2">
-              <ListChecks className="h-5 w-5 shrink-0 text-neutral-700" />
-              <div>
-                <h2 className="text-sm font-semibold text-neutral-900">Action</h2>
-              </div>
+            <div className="ml-1 flex shrink-0 items-center gap-2 border-l border-neutral-200 pl-2 max-md:ml-0.5 max-md:gap-1 max-md:pl-1.5">
+              <ListChecks className="h-5 w-5 shrink-0 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
+              <h2 className="text-sm font-semibold text-neutral-900 max-md:text-xs max-md:font-medium">Action</h2>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 shrink-0 max-md:h-7 max-md:w-7"
                 onClick={() =>
                   navigate(
-                    workspace
-                      ? `/dashboard/boards/accountability?workspace=${workspace.id}`
+                    activeWorkspaceId
+                      ? `/dashboard/boards/accountability?workspace=${activeWorkspaceId}`
                       : "/dashboard/boards/accountability",
                   )
                 }
               >
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 max-md:h-3.5 max-md:w-3.5" />
               </Button>
             </div>
           </div>
@@ -437,6 +455,8 @@ export default function Boards() {
             }}
             orientation="horizontal"
             className="shrink-0"
+            compact={isMobile}
+            onDeleteBoard={isMobile && canRemoveBoard ? handleRemoveBoard : undefined}
             zoomPreset={!isMobile ? boardZoom : undefined}
             onZoomPresetChange={!isMobile ? setBoardZoom : undefined}
             canUndo={undoRedo.canUndo}
@@ -464,22 +484,19 @@ export default function Boards() {
               activeId={activeBoard.id}
               onSelect={selectBoard}
               onSave={handleSaveLayoutFor}
-              onAddBoard={handleAddBoard}
-              onRemoveBoard={handleRemoveBoard}
-              canRemoveBoard={canRemoveBoard}
               registerEditor={registerEditor}
               onRenameBoard={handleRenameBoard}
-              onTitleStyleChange={handleTitleStyleChange}
               onHistoryChange={handleHistoryChange}
               onBoardColorChange={handleBoardColorFromAi}
               onRequestImagePick={openQuickImagePicker}
-              onMoveBoard={boards.length > 1 ? handleMoveBoard : undefined}
             />
             <BoardPlotKitTray
               workspaceId={workspace.id}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
+              getEditor={getActiveBoardEditor}
+              onPlaceStructure={placeStructureOnActiveBoard}
               userId={user.id}
               onBoardColorChange={handleBoardColorFromAi}
               onPickImage={handlePickImage}
@@ -506,7 +523,6 @@ export default function Boards() {
                 registerEditor={registerEditor}
                 onAddBoard={handleAddBoard}
                 onRenameBoard={handleRenameBoard}
-                onTitleStyleChange={handleTitleStyleChange}
                 zoomPreset={boardZoom}
                 presentationMode={workspacePresentation}
                 onHistoryChange={handleHistoryChange}

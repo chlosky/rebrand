@@ -75,7 +75,7 @@ export const IosAppHeader = ({
                 className={
                   cosmicShell
                     ? "h-8 border-white/20 bg-white/10 px-3 text-sm text-white hover:bg-white/15 hover:text-white"
-                    : "border-foreground/20 hover:bg-primary/10 h-8 px-3 text-sm"
+                    : "border-foreground/20 h-8 px-3 text-sm"
                 }
                 onClick={() => void handleSignOut()}
                 disabled={isSigningOut}
@@ -89,7 +89,7 @@ export const IosAppHeader = ({
                 className={
                   cosmicShell
                     ? "h-8 border-white/20 bg-white/10 px-3 text-sm text-white hover:bg-white/15 hover:text-white"
-                    : "border-foreground/20 hover:bg-primary/10 h-8 px-3 text-sm"
+                    : "border-foreground/20 h-8 px-3 text-sm"
                 }
                 onClick={() => navigate("/login")}
               >

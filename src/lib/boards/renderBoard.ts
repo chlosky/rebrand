@@ -2,6 +2,7 @@ import { StaticCanvas, FabricImage } from "fabric";
 import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
 import { boardFillForKey } from "@/lib/boards/colors";
 import { fitArtboardInBox } from "@/lib/boards/layoutScale";
+import { saveBoardImageBlob } from "@/lib/boards/saveBoardImage";
 
 /** Browsers choke on huge PNG data URLs — cap longest side when compositing. */
 const MAX_EXPORT_SIDE_PX = 8192;
@@ -286,6 +287,7 @@ export async function downloadBoardPrint(
 export async function downloadBoardsPrintPdf(
   boards: BoardPrintSource[],
   preset: BoardPrintPreset,
+  options?: { shareOnMobile?: boolean },
 ): Promise<void> {
   if (boards.length === 0) return;
 
@@ -317,7 +319,13 @@ export async function downloadBoardsPrintPdf(
     boards.length === 1
       ? boardFileSlug(boards[0].title)
       : `${boards.length}-boards`;
-  pdf.save(`palette-plot-${slug}-${preset.id}.pdf`);
+  const fileName = `palette-plot-${slug}-${preset.id}.pdf`;
+  if (options?.shareOnMobile) {
+    const blob = pdf.output("blob") as Blob;
+    await saveBoardImageBlob(blob, fileName);
+    return;
+  }
+  pdf.save(fileName);
 }
 
 export async function openBoardPrintWindow(

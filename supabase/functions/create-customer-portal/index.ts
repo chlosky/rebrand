@@ -86,6 +86,81 @@ const getAllowedOrigin = (origin: string | null): string => {
   return '*';
 };
 
+function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function resolvePortalReturnUrl(req: Request, bodyReturnUrl?: unknown): string {
+  const candidates: string[] = [];
+
+  if (typeof bodyReturnUrl === "string" && bodyReturnUrl.trim()) {
+    candidates.push(bodyReturnUrl.trim());
+  }
+
+  const origin = req.headers.get("origin") || req.headers.get("referer");
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        candidates.push(`${url.protocol}//${url.host}/dashboard/settings`);
+      }
+    } catch {
+      // ignore invalid origin
+    }
+  }
+
+  const siteUrl = (
+    Deno.env.get("SITE_URL") ||
+    Deno.env.get("APP_URL") ||
+    Deno.env.get("VITE_APP_URL") ||
+    "https://paletteplot.com"
+  ).replace(/\/$/, "");
+  candidates.push(`${siteUrl}/dashboard/settings`);
+
+  for (const candidate of candidates) {
+    if (isHttpUrl(candidate)) return candidate;
+  }
+
+  return "https://paletteplot.com/dashboard/settings";
+}
+
+async function findStripeCustomerId(
+  stripeSecretKey: string,
+  user: { id: string; email?: string | null },
+): Promise<string | null> {
+  if (user.email) {
+    try {
+      const customersResponse = await fetch(
+        `https://api.stripe.com/v1/customers?email=${encodeURIComponent(user.email)}&limit=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${stripeSecretKey}`,
+          },
+        },
+      );
+
+      if (customersResponse.ok) {
+        const customers = await customersResponse.json();
+        const rows = customers.data ?? [];
+        const byMetadata = rows.find((c: { metadata?: { user_id?: string } }) =>
+          c.metadata?.user_id === user.id
+        );
+        if (byMetadata?.id) return byMetadata.id;
+        if (rows[0]?.id) return rows[0].id;
+      }
+    } catch (err) {
+      console.error("Error searching Stripe customers by email:", err);
+    }
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   // Get origin early and set up CORS headers - MUST be first thing
   const origin = req.headers.get('origin');
@@ -110,16 +185,37 @@ serve(async (req) => {
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     
     if (!stripeSecretKey) {
-      throw new Error('Not configured');
+      return new Response(
+        JSON.stringify({ url: null, error: "not_configured" }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('No authorization header');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ url: null, error: "unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) throw new Error('Unauthorized');
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ url: null, error: "unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    let bodyReturnUrl: unknown = undefined;
+    try {
+      const body = await req.json();
+      bodyReturnUrl = body?.returnUrl;
+    } catch {
+      // empty body is fine
+    }
 
     // Get user's Stripe customer ID from user_plans first
     const { data: userPlan } = await supabase
@@ -128,8 +224,25 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    let customerId = userPlan?.stripe_customer_id;
-    let subscriptionId = userPlan?.stripe_subscription_id;
+    let customerId = userPlan?.stripe_customer_id?.trim() || null;
+    let subscriptionId = userPlan?.stripe_subscription_id?.trim() || null;
+
+    if (!customerId || !subscriptionId) {
+      const { data: obSession } = await supabase
+        .from('onboarding_sessions')
+        .select('stripe_customer_id, stripe_subscription_id')
+        .eq('user_id', user.id)
+        .order('paid_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!customerId && typeof obSession?.stripe_customer_id === 'string') {
+        customerId = obSession.stripe_customer_id.trim() || null;
+      }
+      if (!subscriptionId && typeof obSession?.stripe_subscription_id === 'string') {
+        subscriptionId = obSession.stripe_subscription_id.trim() || null;
+      }
+    }
 
     // If no customer_id but we have a subscription_id, fetch customer from Stripe
     if (!customerId && subscriptionId) {
@@ -162,41 +275,32 @@ serve(async (req) => {
       }
     }
 
-    // Last resort: Try to find customer by email in Stripe
-    if (!customerId && user.email) {
-      try {
-        const customersResponse = await fetch(
-          `https://api.stripe.com/v1/customers?email=${encodeURIComponent(user.email)}&limit=1`,
-          {
-            headers: {
-              'Authorization': `Bearer ${stripeSecretKey}`,
-            },
-          }
-        );
-
-        if (customersResponse.ok) {
-          const customers = await customersResponse.json();
-          if (customers.data && customers.data.length > 0) {
-            customerId = customers.data[0].id;
-            
-            // Update user_plans with the customer_id we found
-            await supabase
-              .from('user_plans')
-              .upsert({
-                user_id: user.id,
-                stripe_customer_id: customerId,
-              }, {
-                onConflict: 'user_id'
-              });
-          }
-        }
-      } catch (err) {
-        console.error('Error searching for customer by email:', err);
+    // Last resort: Try to find customer by email / metadata in Stripe
+    if (!customerId) {
+      customerId = await findStripeCustomerId(stripeSecretKey, user);
+      if (customerId) {
+        await supabase
+          .from('user_plans')
+          .upsert({
+            user_id: user.id,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            last_payment_source: 'stripe',
+          }, {
+            onConflict: 'user_id'
+          });
       }
     }
 
     if (!customerId) {
-      throw new Error('No Stripe customer found. Please subscribe first to manage billing.');
+      return new Response(
+        JSON.stringify({
+          url: null,
+          error: "no_customer",
+          message: "No Stripe billing profile found for this account. Subscribe first, or use the email from checkout.",
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // Verify customer exists in Stripe before creating portal session
@@ -211,92 +315,43 @@ serve(async (req) => {
       );
 
       if (!customerCheckResponse.ok) {
-        // Customer doesn't exist in Stripe - try to find by email
         console.warn(`Customer ${customerId} not found in Stripe, searching by email...`);
-        
-        if (user.email) {
-          const customersResponse = await fetch(
-            `https://api.stripe.com/v1/customers?email=${encodeURIComponent(user.email)}&limit=1`,
-            {
-              headers: {
-                'Authorization': `Bearer ${stripeSecretKey}`,
-              },
-            }
+        const resolved = await findStripeCustomerId(stripeSecretKey, user);
+        if (!resolved) {
+          return new Response(
+            JSON.stringify({
+              url: null,
+              error: "no_customer",
+              message: "No Stripe billing profile found for this account. Subscribe first, or use the email from checkout.",
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
           );
-
-          if (customersResponse.ok) {
-            const customers = await customersResponse.json();
-            if (customers.data && customers.data.length > 0) {
-              const validCustomerId = customers.data[0].id;
-              
-              // Update database with valid customer ID
-              await supabase
-                .from('user_plans')
-                .upsert({
-                  user_id: user.id,
-                  stripe_customer_id: validCustomerId,
-                  last_payment_source: 'stripe',
-                }, {
-                  onConflict: 'user_id'
-                });
-              
-              customerId = validCustomerId;
-              console.log(`Updated customer ID to ${validCustomerId} from email search`);
-            } else {
-              throw new Error('No Stripe customer found. Please subscribe first to manage billing.');
-            }
-          } else {
-            throw new Error('No Stripe customer found. Please subscribe first to manage billing.');
-          }
-        } else {
-          throw new Error('No Stripe customer found. Please subscribe first to manage billing.');
         }
+
+        customerId = resolved;
+        await supabase
+          .from('user_plans')
+          .upsert({
+            user_id: user.id,
+            stripe_customer_id: customerId,
+            last_payment_source: 'stripe',
+          }, {
+            onConflict: 'user_id'
+          });
       }
     } catch (err) {
-      if (err instanceof Error && err.message.includes('No Stripe customer found')) {
-        throw err;
-      }
       console.error('Error verifying customer:', err);
-      throw new Error('No Stripe customer found. Please subscribe first to manage billing.');
+      return new Response(
+        JSON.stringify({
+          url: null,
+          error: "no_customer",
+          message: "No Stripe billing profile found for this account. Subscribe first, or use the email from checkout.",
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
-    // Get origin for return URL
-    let returnUrl: string | null = null;
-    
-    try {
-      const origin = req.headers.get('origin') || req.headers.get('referer');
-      if (origin) {
-        const baseUrl = origin.replace(/\/$/, '');
-        const url = new URL(baseUrl);
-        returnUrl = `${url.protocol}//${url.host}/settings`;
-      }
-    } catch (err) {
-      console.error('Error parsing origin URL:', err);
-    }
-    
-    // Fallback to environment variable if origin detection failed
-    if (!returnUrl) {
-      const appUrl = Deno.env.get('APP_URL') || Deno.env.get('VITE_APP_URL');
-      if (appUrl) {
-        returnUrl = `${appUrl.replace(/\/$/, '')}/settings`;
-      } else {
-        // Last resort: construct from Supabase URL (if it's a custom domain)
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-        if (supabaseUrl) {
-          try {
-            const url = new URL(supabaseUrl);
-            // Extract base domain (remove .supabase.co or custom domain)
-            const host = url.host.replace(/\.supabase\.co$/, '');
-            returnUrl = `https://${host}/settings`;
-          } catch {
-            // If all else fails, throw error - we need a valid return URL
-            throw new Error('Unable to determine return URL. Please set APP_URL environment variable or ensure origin header is present.');
-          }
-        } else {
-          throw new Error('Unable to determine return URL. Please set APP_URL environment variable or ensure origin header is present.');
-        }
-      }
-    }
+    const returnUrl = resolvePortalReturnUrl(req, bodyReturnUrl);
 
     // Create Customer Portal session
     const portalResponse = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
@@ -314,7 +369,14 @@ serve(async (req) => {
     if (!portalResponse.ok) {
       const errorText = await portalResponse.text();
       console.error('Stripe Customer Portal creation error:', errorText);
-      throw new Error('Failed to create customer portal session');
+      return new Response(
+        JSON.stringify({
+          url: null,
+          error: "portal_failed",
+          message: "Could not open the billing portal. Check that Stripe Customer Portal is enabled in your Stripe dashboard.",
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     const portal = await portalResponse.json();
@@ -330,20 +392,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in create-customer-portal:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('Error details:', {
-      message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
     return new Response(
-      JSON.stringify({ 
-        error: sanitizeErrorMessage(error)
+      JSON.stringify({
+        url: null,
+        error: "portal_failed",
+        message: sanitizeErrorMessage(error),
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });

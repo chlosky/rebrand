@@ -27,10 +27,12 @@ export interface SupportReportToolOption {
 
 export function getSupportReportToolOptions(t: TFunction<"dashboard">): SupportReportToolOption[] {
   return [
-    ...getDashboardFeatures(t).map((f) => ({ value: f.path, label: f.title })),
-    { value: "/dashboard/activity-tracking", label: t("supportTools.activityTracking") },
-    { value: "/dashboard/timeline", label: t("supportTools.journal") },
-    { value: "settings", label: t("supportTools.settingsAccount") },
+    { value: "/dashboard/boards", label: t("tools.boards.title") },
+    { value: "/dashboard/boards/accountability", label: t("supportTools.action") },
+    { value: "/workspace?tab=library", label: t("workspace.tabs.library") },
+    { value: "/workspace?tab=images", label: t("workspace.tabs.imageLibrary") },
+    { value: "/workspace?tab=projects", label: t("workspace.tabs.projects") },
+    { value: "settings", label: t("profile.yourAccount") },
     { value: "billing", label: t("supportTools.billing") },
     { value: "other", label: t("supportTools.other") },
   ];

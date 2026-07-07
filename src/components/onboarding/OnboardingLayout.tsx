@@ -194,7 +194,7 @@ export const OnboardingLayout = ({
               className={cn(
                 "h-full rounded-full transition-[width] duration-300 ease-out",
                 isWelcome && typeof progressFillPctOverride !== "number"
-                  ? "bg-gradient-to-r from-rose-400 to-pink-500"
+                  ? "bg-black"
                   : isCosmicShell
                     ? "bg-white/90"
                     : "bg-black",

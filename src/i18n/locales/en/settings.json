@@ -31,12 +31,12 @@
     "changePasswordHeading": "Change Password",
     "currentPasswordLabel": "Current Password",
     "newPasswordLabel": "New Password",
-    "confirmPasswordLabel": "Confirm New Password",
+    "confirmPasswordLabel": "Confirm Password",
     "changePasswordButton": "Change Password",
     "validatingPassword": "Validating password…",
     "currentPasswordPlaceholder": "Enter current password",
-    "newPasswordPlaceholder": "Enter new password",
-    "confirmPasswordPlaceholder": "Confirm new password",
+    "newPasswordPlaceholder": "New password",
+    "confirmPasswordPlaceholder": "Confirm password",
     "smsVerificationMessage": "Your verification code is: {{code}}"
   },
   "passwordValidation": {
@@ -100,7 +100,6 @@
     "acceptableUse": "Acceptable Use Policy",
     "billingRefunds": "Billing & Refunds",
     "dmca": "DMCA Notice & Takedown Policy",
-    "eula": "End User License Agreement",
     "contact": "Contact Us"
   },
   "routine": {
@@ -213,7 +212,7 @@
     "smsHeading": "Text reminders",
     "smsDescription": "Short stronger nudges for important next steps. Not marketing texts.",
     "smsDailyLimit": "Up to 5 text reminders per day.",
-    "smsCounter": "{{used}} of {{limit}} text reminders used today",
+    "smsCounter": "{{used}} of {{limit}} text reminders used",
     "smsLabel": "Text reminders",
     "phoneLabel": "Phone number for text reminders",
     "phoneHint": "Used only for text reminders you choose.",

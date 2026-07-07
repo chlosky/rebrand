@@ -33,6 +33,7 @@ type BoardAccountabilityFlowProps = {
   smsReady?: boolean;
   hasPro?: boolean;
   onRequestSmsSetup?: () => void;
+  compact?: boolean;
 };
 
 const MAP_GRID = "grid-cols-[240px_minmax(220px,280px)_minmax(460px,1fr)]";
@@ -315,7 +316,7 @@ function ActionNodeRow({
         >
           <option value="calendar">Calendar</option>
           <option value="email">Email</option>
-          <option value="sms" disabled={!hasPro}>
+          <option value="sms" disabled={!hasPro || !smsReady}>
             Text
           </option>
         </select>
@@ -406,6 +407,7 @@ export function BoardAccountabilityFlow({
   smsReady = false,
   hasPro = false,
   onRequestSmsSetup,
+  compact = false,
 }: BoardAccountabilityFlowProps) {
   const boardById = new Map(boards.map((b) => [b.id, b]));
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -563,20 +565,36 @@ export function BoardAccountabilityFlow({
   const lowConfidence =
     map?.meta_confidence != null && map.meta_confidence < 0.65 && !map.finalized;
 
+  const emptyMap = !map?.focuses?.length;
+
   return (
     <main
       ref={viewportRef}
-      className="min-h-0 min-w-0 flex-1 cursor-grab overflow-auto overscroll-contain touch-pan-x touch-pan-y"
+      className={cn(
+        "min-h-0 min-w-0 flex-1 overscroll-contain",
+        compact && emptyMap ? "overflow-hidden" : "cursor-grab overflow-auto touch-pan-x touch-pan-y",
+      )}
       onPointerDown={onPanStart}
       onPointerMove={onPanMove}
       onPointerUp={onPanEnd}
       onPointerCancel={onPanEnd}
       onPointerLeave={onPanEnd}
     >
-      <div className="inline-block min-w-[1180px] p-12">
-        {!map?.focuses?.length ? (
-          <div className="flex min-h-[320px] max-w-lg flex-col items-center justify-center px-6 text-center">
-            <h2 className="text-lg font-semibold text-neutral-900">
+      <div
+        className={cn(
+          compact && emptyMap ? "flex h-full w-full min-w-0 flex-col p-4" : "inline-block min-w-[1180px] p-12",
+        )}
+      >
+        {emptyMap ? (
+          <div
+            className={cn(
+              "flex w-full flex-col",
+              compact
+                ? "min-h-0 flex-1 items-start justify-start text-left"
+                : "min-h-[320px] max-w-lg items-center justify-center px-6 text-center",
+            )}
+          >
+            <h2 className={cn("font-semibold text-neutral-900", compact ? "text-base" : "text-lg")}>
               Turn your workspace into an action map
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-neutral-600">

@@ -289,6 +289,7 @@ type BoardGuideChatPanelProps = {
   onActionMapChange?: (map: AccountabilityMap) => void;
   compact?: boolean;
   showHeader?: boolean;
+  inSheet?: boolean;
 };
 
 export function BoardGuideChatPanel({
@@ -301,6 +302,7 @@ export function BoardGuideChatPanel({
   onActionMapChange,
   compact = false,
   showHeader = true,
+  inSheet = false,
 }: BoardGuideChatPanelProps) {
   const welcome = welcomeTurn(mode);
   const [messages, setMessages] = useState<ChatTurn[]>([welcome]);
@@ -330,13 +332,19 @@ export function BoardGuideChatPanel({
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     requestAnimationFrame(() => {
+      const container = scrollRef.current;
+      if ((compact || inSheet) && container) {
+        container.scrollTo({ top: container.scrollHeight, behavior });
+        return;
+      }
       bottomRef.current?.scrollIntoView({ behavior, block: "end" });
     });
-  }, []);
+  }, [compact, inSheet]);
 
   useEffect(() => {
+    if (compact && messages.length <= 1) return;
     scrollChatToBottom();
-  }, [messages, sending, guideError, lastApplied, pendingGuideActions.length, scrollChatToBottom]);
+  }, [compact, messages, sending, guideError, lastApplied, pendingGuideActions.length, scrollChatToBottom]);
 
   useEffect(() => {
     return () => {
@@ -737,7 +745,12 @@ export function BoardGuideChatPanel({
 
   return (
 
-    <div className={cn("flex flex-col", compact ? "min-h-[280px]" : "min-h-0 flex-1")}>
+    <div
+      className={cn(
+        "flex flex-col",
+        inSheet ? "min-h-0 flex-1" : compact ? "min-h-[280px]" : "min-h-0 flex-1",
+      )}
+    >
       {showHeader ? (
         <div className="flex shrink-0 border-b border-stone-300/60 px-3 py-2">
           {mode === "action" ? (
@@ -771,7 +784,10 @@ export function BoardGuideChatPanel({
 
         ref={scrollRef}
 
-        className={cn("flex flex-col gap-2 overflow-y-auto p-3", compact ? "max-h-[36vh]" : "min-h-0 flex-1")}
+        className={cn(
+          "flex flex-col gap-2 overflow-y-auto p-3",
+          inSheet ? "min-h-0 flex-1" : compact ? "max-h-[36vh]" : "min-h-0 flex-1",
+        )}
 
       >
 
@@ -873,6 +889,17 @@ export function BoardGuideChatPanel({
           className="h-9 min-w-0 flex-1 border-stone-300 bg-[#faf8f5] text-xs"
 
           disabled={sending}
+
+          onFocus={() => {
+            if (compact || inSheet) {
+              requestAnimationFrame(() => {
+                const container = scrollRef.current;
+                if (container) {
+                  container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+                }
+              });
+            }
+          }}
 
         />
 

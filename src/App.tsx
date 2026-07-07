@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { isIosPaywallContext } from "@/lib/isIosPaywallContext";
@@ -18,7 +18,7 @@ import { COMMUNITY_IN_APP_ENABLED } from "./lib/communityRelease";
 import WorkspaceCommunity from "./pages/WorkspaceCommunity";
 import WorkspaceCommunitySubmit from "./pages/WorkspaceCommunitySubmit";
 import NotFound from "./pages/NotFound";
-const Welcome = lazy(() => import("./pages/onboarding/Welcome"));
+import Welcome from "./pages/onboarding/Welcome";
 import Settings from "./pages/Settings";
 import RoutineReminderSettings from "./pages/RoutineReminderSettings";
 import PlanReminderSettings from "./pages/PlanReminderSettings";
@@ -214,14 +214,7 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* Onboarding Flow */}
-              <Route
-                path="/onboarding/welcome"
-                element={
-                  <Suspense fallback={null}>
-                    <Welcome />
-                  </Suspense>
-                }
-              />
+              <Route path="/onboarding/welcome" element={<Welcome />} />
 
               <Route path="/onboarding/email" element={<EmailCollection />} />
               <Route path="/onboarding/ios-paywall" element={<IOSPaywall />} />
@@ -251,14 +244,7 @@ const App = () => {
               <Route path="/onboarding/setup/plot-synthesis" element={<SetupPlotSynthesis />} />
 
               {/* Suite web funnel (comprehensive-app ads) — same screens, /onboarding/suite paths */}
-              <Route
-                path="/onboarding/suite/welcome"
-                element={
-                  <Suspense fallback={null}>
-                    <Welcome />
-                  </Suspense>
-                }
-              />
+              <Route path="/onboarding/suite/welcome" element={<Welcome />} />
               <Route path="/onboarding/suite/setup/name" element={<SetupName />} />
               <Route path="/onboarding/suite/setup/primary-intent" element={<SetupPrimaryIntentGated />} />
               <Route path="/onboarding/suite/setup/focus-categories" element={<SetupFocusCategories />} />
@@ -345,13 +331,13 @@ const App = () => {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/help/plotting" element={<PlottingHelp />} />
               <Route path="/what-is-palette-plotting" element={<WhatIsPalettePlotting />} />
-              <Route path="/terms" element={<Navigate to="/policies/terms" replace />} />
-              <Route path="/privacy" element={<Navigate to="/policies/privacy" replace />} />
+              <Route path="/terms" element={<Navigate to="/policies/app-terms" replace />} />
+              <Route path="/privacy" element={<Navigate to="/policies/app-privacy" replace />} />
               <Route path="/acceptable-use" element={<Navigate to="/policies/acceptable-use" replace />} />
               <Route path="/dmca" element={<DMCA />} />
               <Route path="/billing" element={<Navigate to="/policies/billing" replace />} />
               <Route path="/pricingplans" element={<PricingPlans />} />
-              <Route path="/eula" element={<Navigate to="/policies/terms" replace />} />
+              <Route path="/eula" element={<Navigate to="/policies/app-terms" replace />} />
               <Route path="/quiz/blocking-manifestation" element={<Navigate to="/quiz/life-rebrand" replace />} />
               <Route path="/quiz/life-rebrand" element={<LifeRebrandQuiz />} />
 

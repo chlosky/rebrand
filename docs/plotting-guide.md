@@ -79,5 +79,5 @@ Palette Plotting separates your wall into jobs — three focus boards for the li
     // ... the rest of `blocks` are in the repo file ...
   ],
 }
-```
+``
 

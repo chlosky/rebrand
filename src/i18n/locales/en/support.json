@@ -2,13 +2,12 @@
   "pageTitle": "Help Request",
   "supportInbox": "Support Inbox",
   "tabs": {
-    "create": "Help Me Create",
-    "support": "App Support & Feedback",
+    "support": "Support & Feedback",
     "inbox": "Inbox"
   },
   "workspaceFree": {
-    "intro": "Feature requests and inbox are open on the free plan. Help Me Create — personalized plotting support — is for Pro members.",
-    "introPro": "Help, feedback, and your support inbox.",
+    "intro": "Feature requests and your inbox are open on the free plan.",
+    "introPro": "Support, feedback, and your inbox.",
     "createLockedTitle": "Help Me Create is for Pro",
     "createLockedBody": "Personalized help with boards, routines, and plotting support unlocks with Palette Plotting Pro.",
     "upgrade": "Unlock plotting tools"
@@ -64,7 +63,7 @@
   },
   "inbox": {
     "title": "Inbox",
-    "description": "Your submitted requests and replies from Palette Plotting. New requests start on the other tabs.",
+    "description": "Your submitted requests and replies from Palette Plotting. New requests start on Support & Feedback.",
     "refresh": "Refresh",
     "backToRequests": "← Back to requests",
     "loading": "Loading…",
@@ -75,15 +74,14 @@
     "replyPlaceholder": "Reply in this conversation…",
     "sending": "Sending…",
     "sendReply": "Send reply",
-    "empty": "No requests yet. Submit on Help Me Create or App Support & Feedback — replies will show up here.",
+    "empty": "No requests yet. Submit on Support & Feedback — replies will show up here.",
     "newReplyAria": "New reply",
     "supportRepliedPrefix": "Palette Plotting replied · ",
     "submittedPrefix": "Submitted {{when}}",
     "todayAt": "Today at {{time}}",
     "yesterdayAt": "Yesterday at {{time}}",
     "caseTypes": {
-      "helpMeCreate": "Help Me Create",
-      "appSupportFeedback": "App Support & Feedback"
+      "appSupportFeedback": "Support & Feedback"
     },
     "subtypes": {
       "request": "Request",

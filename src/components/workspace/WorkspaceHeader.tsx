@@ -20,18 +20,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const WORKSPACE_DARK_BG = "#000000";
-const WORKSPACE_LIGHT_BG = "#faf8f5";
+const WORKSPACE_DOCUMENT_LIGHT_BG = "#ffffff";
+const WORKSPACE_MOBILE_SHELL_BG = "#f3f0eb";
+const WORKSPACE_DESKTOP_SHELL_BG = "#faf8f5";
 
 export function workspaceShellClass(dark: boolean) {
-  return cn("min-h-screen antialiased", dark ? "bg-black text-white" : "bg-[#faf8f5] text-zinc-900");
+  return cn(
+    "min-h-[100dvh] antialiased md:min-h-screen",
+    dark ? "bg-black text-white" : "bg-[#f3f0eb] text-zinc-900 md:bg-[#faf8f5]",
+  );
 }
 
 export function workspaceHeaderClass(dark: boolean) {
   return cn(
     "border-b",
-    dark ? "border-white bg-black" : "border-zinc-200/80 bg-white/90 backdrop-blur-sm",
+    dark ? "border-white bg-black" : "border-zinc-200/80 bg-white backdrop-blur-sm",
   );
 }
 
@@ -41,6 +47,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const dark = theme === "dark";
+  const isMobile = useIsMobile();
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const userEmail = user?.email ?? "";
@@ -55,20 +62,28 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   }, [user?.id]);
 
   useEffect(() => {
-    const bg = dark ? WORKSPACE_DARK_BG : WORKSPACE_LIGHT_BG;
-    document.documentElement.style.setProperty("background-color", bg, "important");
-    document.body.style.setProperty("background-color", bg, "important");
+    const docBg = dark ? WORKSPACE_DARK_BG : WORKSPACE_DOCUMENT_LIGHT_BG;
+    const rootBg = dark
+      ? WORKSPACE_DARK_BG
+      : isMobile
+        ? WORKSPACE_MOBILE_SHELL_BG
+        : WORKSPACE_DESKTOP_SHELL_BG;
+    document.documentElement.style.setProperty("background-color", docBg, "important");
+    document.body.style.setProperty("background-color", docBg, "important");
+    const root = document.getElementById("root");
+    if (root) root.style.setProperty("background-color", rootBg, "important");
     return () => {
       document.documentElement.style.removeProperty("background-color");
       document.body.style.removeProperty("background-color");
+      if (root) root.style.removeProperty("background-color");
     };
-  }, [dark]);
+  }, [dark, isMobile]);
 
   const iconBtn = cn(
-    "h-9 w-9 rounded-lg border p-0",
+    "h-9 w-9 border-0 bg-transparent p-0 shadow-none",
     dark
-      ? "border-white bg-black text-white hover:bg-white hover:text-black"
-      : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
+      ? "text-white hover:bg-white/10 hover:text-white"
+      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
   );
 
   return (
@@ -85,7 +100,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" className={cn(iconBtn, "w-auto px-2")}>
+              <Button type="button" variant="ghost" className={cn(iconBtn, "w-auto px-1")}>
                 <Avatar className="h-6 w-6">
                   {avatarUrl ? <AvatarImage src={avatarUrl} alt={username || userEmail} /> : null}
                   <AvatarFallback className={cn("text-xs", dark ? "border border-white bg-black text-white" : "bg-zinc-100")}>
@@ -121,7 +136,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
 
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="icon"
             className={iconBtn}
             aria-label={t("nav.help")}

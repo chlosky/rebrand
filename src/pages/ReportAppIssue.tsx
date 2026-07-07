@@ -17,15 +17,13 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { getSupportReportToolOptions, getBillingPurchaseChannelOptions } from "@/lib/featuresData";
-import { CheckCircle2, Lock, Paperclip, X } from "lucide-react";
+import { CheckCircle2, Paperclip, X } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { WorkspaceHeader, workspaceShellClass } from "@/components/workspace/WorkspaceHeader";
-import { SETUP_PRIMARY_CTA_CLASS } from "@/lib/onboardingSetupTheme";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   caseListPreview,
@@ -36,7 +34,6 @@ import {
   type UserInboxCase,
 } from "@/lib/userSupportInbox";
 
-const CREATE_FOCUS_MAX = 1000;
 const DESCRIPTION_MIN = 10;
 const MAX_ATTACHMENTS = 3;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -95,16 +92,13 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
     t(`dashboard:${key}`, options)) as TFunction<"dashboard">;
   const supportReportToolOptions = useMemo(() => getSupportReportToolOptions(tDashboard), [t]);
   const billingPurchaseChannelOptions = useMemo(() => getBillingPurchaseChannelOptions(tDashboard), [t]);
-  const createHelpOptions = useMemo(
-    () => [
-      { value: "board_layout_help", label: t("createHelpOptions.boardLayoutHelp") },
-      { value: "plan_steps_help", label: t("createHelpOptions.planStepsHelp") },
-      { value: "build_weekly_routine", label: t("createHelpOptions.buildWeeklyRoutine") },
-      { value: "journal_prompt_help", label: t("createHelpOptions.journalPromptHelp") },
-      { value: "not_sure_help_me_choose", label: t("createHelpOptions.notSureHelpMeChoose") },
-    ],
-    [t],
-  );
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const { theme } = useTheme();
+  const { hasPro } = usePlottingPro();
+  const workspaceFree = workspaceMode && !hasPro;
   const submissionOptions = useMemo(() => {
     const all = [
       { value: "report" as const, label: t("submissionTypes.report") },
@@ -116,13 +110,6 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
     }
     return all;
   }, [t, workspaceFree]);
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const isMobile = useIsMobile();
-  const { user } = useAuth();
-  const { theme } = useTheme();
-  const { hasPro } = usePlottingPro();
-  const workspaceFree = workspaceMode && !hasPro;
   const homePath = workspaceMode ? "/workspace" : "/dashboard/boards";
   const shellDark = theme === "dark";
   const workspaceDarkBg = "#000000";
@@ -134,11 +121,7 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-  const [activeTab, setActiveTab] = useState<"create" | "support" | "inbox">(
-    workspaceMode ? "support" : "create",
-  );
-  const [createPlotFocus, setCreatePlotFocus] = useState("");
-  const [createHelpType, setCreateHelpType] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"support" | "inbox">("support");
 
   const [inboxCases, setInboxCases] = useState<UserInboxCase[]>([]);
   const [inboxLoading, setInboxLoading] = useState(false);
@@ -300,64 +283,6 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
     }
   };
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    const focus = createPlotFocus.trim();
-    if (!focus) {
-      toast.error(t("toasts.shareFocus"));
-      return;
-    }
-    if (!createHelpType) {
-      toast.error(t("toasts.chooseHelpType"));
-      return;
-    }
-
-    const helpLabel = createHelpOptions.find((o) => o.value === createHelpType)?.label ?? createHelpType;
-
-    if (focus.length < DESCRIPTION_MIN) {
-      toast.error(t("toasts.addMoreDetail"));
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      // Create a thread + initial message via existing support pipeline (email + record).
-      // This keeps V1 simple: you receive the content immediately and can reply in-app later.
-      // (Inbox thread creation happens on the admin side.)
-      const { data, error } = await supabase.functions.invoke("submit-app-support-report", {
-        method: "POST",
-        body: {
-          submission_type: "help_me_create",
-          tool_value: createHelpType,
-          tool_label: helpLabel,
-          description: focus.slice(0, CREATE_FOCUS_MAX),
-          attachment_storage_paths: [],
-        },
-      });
-      if (error) {
-        const body = data as { error?: string; detail?: string } | null;
-        const msg =
-          body?.error && body?.detail
-            ? `${body.error}: ${body.detail}`
-            : body?.error ?? (error instanceof Error ? error.message : t("toasts.requestFailed"));
-        throw new Error(msg);
-      }
-      const res = data as { error?: string; detail?: string; success?: boolean };
-      if (res?.error) {
-        throw new Error(res.detail ? `${res.error}: ${res.detail}` : res.error);
-      }
-      toast.success(t("toasts.submitted"));
-      setDone(true);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t("common:error");
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const selectedInboxCase = useMemo(
     () => inboxCases.find((c) => c.id === selectedCaseId) ?? null,
     [inboxCases, selectedCaseId],
@@ -497,8 +422,6 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
       ? "#0f0d14"
       : "#ffffff";
 
-  const createTabLocked = workspaceFree;
-
   const helpShell = (
     <div
       className={cn(
@@ -542,7 +465,6 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                       {t("supportInbox")}
                     </Button>
                   ) : null}
-                  {isMobile && <MobilePWAMenu />}
                 </div>
               </div>
             </header>
@@ -556,142 +478,11 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
           )}
         >
           <div className={workspaceMode ? "" : "py-3 sm:py-4"}>
-            {workspaceMode ? (
-              <p className={cn("mb-4 text-sm", shellDark ? "text-white/55" : "text-zinc-500")}>
-                {workspaceFree ? t("workspaceFree.intro") : t("workspaceFree.introPro")}
-              </p>
-            ) : null}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="max-w-xl">
-              <TabsList className={cn(helpTabsListClass, shellDark && darkTabsListClass)}>
-                <TabsTrigger value="create" className={cn("flex-1", helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>
-                  {t("tabs.create")}
-                  {createTabLocked ? <Lock className="ml-1 inline h-3 w-3 opacity-50" aria-hidden /> : null}
-                </TabsTrigger>
-                <TabsTrigger value="support" className={cn("flex-1", helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.support")}</TabsTrigger>
-                <TabsTrigger value="inbox" className={cn("flex-1", helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.inbox")}</TabsTrigger>
+              <TabsList className={cn(helpTabsListClass, "grid grid-cols-2", shellDark && darkTabsListClass)}>
+                <TabsTrigger value="support" className={cn(helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.support")}</TabsTrigger>
+                <TabsTrigger value="inbox" className={cn(helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.inbox")}</TabsTrigger>
               </TabsList>
-
-              <TabsContent value="create" className="mt-4 relative">
-                {createTabLocked ? (
-                  <div className="relative min-h-[16rem]">
-                    <div className={cn("rounded-xl border p-6 opacity-40", shellDark ? "border-white/10 bg-white/[0.03]" : "border-zinc-200 bg-white")}>
-                      <p className={cn("text-sm", shellDark ? "text-white/70" : "text-zinc-600")}>{t("create.intro")}</p>
-                    </div>
-                    <div
-                      className={cn(
-                        "absolute inset-0 flex items-center justify-center rounded-xl p-6 backdrop-blur-[2px]",
-                        shellDark ? "bg-black/85" : "bg-[#faf8f5]/88",
-                      )}
-                    >
-                      <div className="max-w-sm text-center">
-                        <div className={cn("mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full", shellDark ? "bg-white/10 text-white/70" : "bg-zinc-100 text-zinc-500")}>
-                          <Lock className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                        </div>
-                        <h3 className={cn("font-welcome-serif text-lg", shellDark ? "text-white" : "text-zinc-900")}>
-                          {t("workspaceFree.createLockedTitle")}
-                        </h3>
-                        <p className={cn("mt-2 text-sm leading-relaxed", shellDark ? "text-white/55" : "text-zinc-500")}>
-                          {t("workspaceFree.createLockedBody")}
-                        </p>
-                        <Button className={cn("mt-5 w-full", SETUP_PRIMARY_CTA_CLASS)} onClick={() => navigate("/resubscribe")}>
-                          {t("workspaceFree.upgrade")}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                <>
-                <p className={cn("text-xs mb-4", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                  {t("create.intro")}
-                </p>
-
-                {done ? (
-                  <Card className={cn("max-w-xl", theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-5 sm:p-6") : "p-5 sm:p-6")}>
-                    <div className="flex gap-3">
-                      <CheckCircle2 className="h-8 w-8 shrink-0 text-green-600 dark:text-green-500" aria-hidden />
-                      <div className="space-y-2 min-w-0">
-                        <p className="text-base font-semibold text-foreground">{t("create.successTitle")}</p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {t("create.successBody")}{" "}
-                          <a className="underline text-foreground" href="mailto:support@paletteplot.com">
-                            support@paletteplot.com
-                          </a>
-                          {t("create.successBodySuffix")}
-                        </p>
-                        <div className="pt-2 flex flex-wrap gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => navigate("/dashboard/boards")}>
-                            {t("create.backToDashboard")}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => {
-                              setDone(false);
-                              setCreatePlotFocus("");
-                              setCreateHelpType("");
-                            }}
-                          >
-                            {t("create.submitAnother")}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ) : (
-                  <Card className={cn("max-w-xl", theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6") : "p-4 sm:p-6")}>
-                    <form onSubmit={handleCreateSubmit} className="space-y-5">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <Label htmlFor="create-focus">{t("create.focusLabel")}</Label>
-                          <span className="text-[11px] tabular-nums text-muted-foreground">
-                            {createPlotFocus.length}/{CREATE_FOCUS_MAX}
-                          </span>
-                        </div>
-                        <Textarea
-                          id="create-focus"
-                          value={createPlotFocus}
-                          onChange={(e) => setCreatePlotFocus(e.target.value.slice(0, CREATE_FOCUS_MAX))}
-                          placeholder={t("create.focusPlaceholder")}
-                          rows={4}
-                          className={cn("min-h-[110px] resize-y text-sm", theme === "dark" && darkFieldClass)}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="create-help-type">{t("create.helpTypeLabel")}</Label>
-                        <Select value={createHelpType} onValueChange={setCreateHelpType}>
-                          <SelectTrigger id="create-help-type" className={cn("h-10", theme === "dark" && darkFieldClass)}>
-                            <SelectValue placeholder={t("create.chooseOne")} />
-                          </SelectTrigger>
-                          <SelectContent position="popper" className={theme === "dark" ? "z-50 border border-white/12 bg-[#0f0d14] text-white" : "bg-white z-50 border-border text-black"}>
-                            {createHelpOptions.map((o) => (
-                              <SelectItem key={o.value} value={o.value} className={theme === "dark" ? "text-white focus:bg-white/10 focus:text-white" : "text-black focus:bg-gray-100 focus:text-black"}>
-                                {o.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <p className={cn("text-xs leading-relaxed", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                        {t("create.footer")}
-                      </p>
-
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <Button type="submit" disabled={submitting}>
-                          {submitting ? t("create.submitting") : t("create.submit")}
-                        </Button>
-                        <Button type="button" variant="ghost" onClick={() => navigate("/dashboard/boards")}>
-                          {t("common:cancel")}
-                        </Button>
-                      </div>
-                    </form>
-                  </Card>
-                )}
-                </>
-                )}
-              </TabsContent>
 
               <TabsContent value="support" className="mt-4">
                 {done ? (

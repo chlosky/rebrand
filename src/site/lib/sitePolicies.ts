@@ -17,7 +17,15 @@ export const CONTACT_INFO = {
   phoneE164: "+14642490247",
 } as const;
 
-export type PolicySlug = "shipping" | "refunds" | "privacy" | "terms";
+export type PolicySlug =
+  | "shipping"
+  | "refunds"
+  | "privacy"
+  | "terms"
+  | "app-terms"
+  | "app-privacy"
+  | "acceptable-use"
+  | "billing";
 
 export type PolicySection = {
   heading?: string;
@@ -349,6 +357,197 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
           `Questions about these Terms: ${CONTACT_INFO.email} · ${CONTACT_INFO.phone}`,
           `${CONTACT_INFO.addressLine1}, ${CONTACT_INFO.addressLine2}`,
         ],
+      },
+    ],
+  },
+  "app-terms": {
+    slug: "app-terms",
+    title: "Terms of Use",
+    metaDescription:
+      "Terms of use for the Palette Plotting software — Vision boards, Action planning, workspace, and related subscription features.",
+    lastUpdated: "July 7, 2026",
+    sections: [
+      {
+        paragraphs: [
+          'These Terms of Use ("Terms") govern your access to and use of the Palette Plotting software and related services (the "Service"), operated by Palette Plotting LLC ("Palette Plotting," "we," "us," or "our"). By creating an account or using the Service, you agree to these Terms.',
+          "You must be at least 18 years old to use the Service.",
+        ],
+      },
+      {
+        heading: "The Service",
+        paragraphs: [
+          "Palette Plotting is a digital planning and vision-board platform. Depending on your plan, the Service may include Vision boards, Action planning and reminders, a workspace (library, image library, and projects), AI-assisted guidance, and related account features.",
+          "Palette Plotting is not medical, psychological, legal, or financial advice. Automated or AI-assisted responses are supplemental tools only.",
+        ],
+      },
+      {
+        heading: "Accounts and acceptable use",
+        paragraphs: [
+          "You are responsible for your account credentials and for activity under your account. You agree to provide accurate information and to use the Service lawfully and in line with our Acceptable Use Policy.",
+          "We may suspend or terminate access if you violate these Terms or misuse the Service.",
+        ],
+      },
+      {
+        heading: "Subscriptions and billing",
+        paragraphs: [
+          "Paid features may require an active subscription. Pricing, renewal, and cancellation terms are described at checkout and in our Billing & Refunds policy.",
+          "Mobile purchases may be billed through Apple or Google; web purchases may be billed through our checkout provider. Platform billing terms may also apply.",
+        ],
+      },
+      {
+        heading: "Your content",
+        paragraphs: [
+          "You retain ownership of content you upload or create in the Service. You grant Palette Plotting a limited license to host, process, and display that content as needed to operate the Service, including backups and support.",
+          "You are responsible for ensuring you have rights to any images or materials you upload.",
+        ],
+      },
+      {
+        heading: "Intellectual property",
+        paragraphs: [
+          "Palette Plotting, its branding, software, templates, and library materials are owned by Palette Plotting or its licensors and may not be copied or reused except as allowed by the Service.",
+        ],
+      },
+      {
+        heading: "Disclaimer and limitation of liability",
+        paragraphs: [
+          'The Service is provided "as is" to the fullest extent permitted by law. Palette Plotting is not liable for indirect or consequential damages. Our total liability for any claim relating to the Service is limited to the amount you paid us for the Service in the twelve months before the claim, or one hundred US dollars if you have not paid us.',
+        ],
+      },
+      {
+        heading: "Changes and contact",
+        paragraphs: [
+          "We may update these Terms by posting a revised version. Continued use after changes constitutes acceptance.",
+          `Questions: ${CONTACT_INFO.email}`,
+        ],
+      },
+    ],
+  },
+  "app-privacy": {
+    slug: "app-privacy",
+    title: "Privacy Policy",
+    metaDescription:
+      "How Palette Plotting collects, uses, and protects personal information in the software and related account features.",
+    lastUpdated: "July 7, 2026",
+    sections: [
+      {
+        paragraphs: [
+          'This Privacy Policy describes how Palette Plotting LLC ("Palette Plotting," "we," "us," or "our") handles personal information when you use the Palette Plotting software, create an account, subscribe, or contact support.',
+        ],
+      },
+      {
+        heading: "Information we collect",
+        paragraphs: ["We may collect:"],
+        list: [
+          "Account information such as name, username, email address, and phone number when you provide it",
+          "Profile, workspace, board, and support content you create or upload",
+          "Subscription and billing-related information processed by Apple, Google, Stripe, RevenueCat, or similar providers — we do not store full payment card numbers",
+          "Device, app usage, and log information needed to secure and improve the Service",
+          "Communications you send through support or feedback forms",
+          "Reminder delivery metadata when you enable email, SMS, or calendar-related features",
+        ],
+      },
+      {
+        heading: "How we use information",
+        paragraphs: ["We use personal information to:"],
+        list: [
+          "Provide and maintain the Service, including Vision, Action, and workspace features",
+          "Process subscriptions, authenticate users, and prevent fraud",
+          "Send service messages, support replies, and reminders you request",
+          "Improve reliability, security, and product experience",
+          "Comply with law and enforce our terms",
+        ],
+      },
+      {
+        heading: "AI and optional data training",
+        paragraphs: [
+          "Some features use automated or AI-assisted processing to provide guidance, analysis, or suggestions within the Service.",
+          "If you opt in to data training in your account settings, anonymized or aggregated usage may be used to improve models and product quality. You may turn this off in settings.",
+        ],
+      },
+      {
+        heading: "Sharing",
+        paragraphs: [
+          "We do not sell your personal information. We share information with service providers that help us operate the Service (hosting, authentication, billing, email, SMS, analytics, and support tools) under appropriate contractual protections, and when required by law.",
+        ],
+      },
+      {
+        heading: "Retention and your choices",
+        paragraphs: [
+          "We retain information while your account is active and as needed for billing, support, security, and legal obligations.",
+          "You may update profile information in Your Account, manage marketing and reminder preferences in settings, and request account deletion in settings. Deletion is scheduled according to the in-app flow.",
+          `Privacy requests: ${CONTACT_INFO.email}`,
+        ],
+      },
+      {
+        heading: "Children and changes",
+        paragraphs: [
+          "The Service is not intended for children under 13.",
+          "We may update this Privacy Policy from time to time. The date at the top reflects the latest version.",
+        ],
+      },
+    ],
+  },
+  "acceptable-use": {
+    slug: "acceptable-use",
+    title: "Acceptable Use Policy",
+    metaDescription: "Rules for using Palette Plotting respectfully and lawfully.",
+    lastUpdated: "July 7, 2026",
+    sections: [
+      {
+        paragraphs: [
+          "This Acceptable Use Policy applies to your use of Palette Plotting. It supplements our Terms of Use.",
+        ],
+      },
+      {
+        heading: "You may not",
+        paragraphs: ["When using the Service, you may not:"],
+        list: [
+          "Harass, threaten, or abuse others or our staff",
+          "Upload unlawful content or content you do not have rights to use",
+          "Attempt to break, scrape, reverse engineer, or overload the Service",
+          "Use the Service for spam, fraud, or impersonation",
+          "Use automated features to generate harmful, illegal, or abusive material",
+          "Share account access in a way that violates these rules",
+        ],
+      },
+      {
+        heading: "Enforcement",
+        paragraphs: [
+          "We may remove content, limit features, or suspend or terminate accounts that violate this policy or create risk for other users or for Palette Plotting.",
+          `Report concerns: ${CONTACT_INFO.email}`,
+        ],
+      },
+    ],
+  },
+  billing: {
+    slug: "billing",
+    title: "Billing & Refunds",
+    metaDescription: "Subscription billing, cancellation, and refund information for Palette Plotting.",
+    lastUpdated: "July 7, 2026",
+    sections: [
+      {
+        paragraphs: [
+          "This policy describes billing and refunds for Palette Plotting software subscriptions and related paid features.",
+        ],
+      },
+      {
+        heading: "Subscriptions",
+        paragraphs: [
+          "Paid plans renew automatically unless cancelled before the renewal date. Available plans and prices are shown at checkout or in the app store listing at the time of purchase.",
+          "You can manage or cancel a subscription through Your Account billing settings, or through Apple App Store / Google Play subscription management when you purchased on mobile.",
+        ],
+      },
+      {
+        heading: "Refunds",
+        paragraphs: [
+          "Apple App Store and Google Play purchases are subject to each platform's refund policies and billing terms.",
+          "For web purchases, refund requests are considered at Palette Plotting's discretion. Contact support@paletteplot.com with your account email and purchase details.",
+          "Nothing in this policy limits any non-waivable consumer rights that apply where you live.",
+        ],
+      },
+      {
+        heading: "Contact",
+        paragraphs: [`Billing questions: ${CONTACT_INFO.email}`],
       },
     ],
   },

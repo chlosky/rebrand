@@ -38,7 +38,8 @@ export function BoardImagePicker({
   const [uploads, setUploads] = useState(() => uploadsCache.get(userId) ?? []);
   const [loading, setLoading] = useState(() => {
     const hasUploads = uploadsCache.has(userId);
-    const hasLibrary = uploadsOnly || getCachedBoardImageLibrary() !== null;
+    if (uploadsOnly) return !hasUploads;
+    const hasLibrary = getCachedBoardImageLibrary() !== null;
     return !hasUploads && !hasLibrary;
   });
   const [uploading, setUploading] = useState(false);
@@ -51,19 +52,29 @@ export function BoardImagePicker({
 
   useEffect(() => {
     let cancelled = false;
-    const hadCache = uploadsCache.has(userId) || (!uploadsOnly && getCachedBoardImageLibrary() !== null);
-    (async () => {
-      if (!hadCache) setLoading(true);
-      try {
-        if (!uploadsOnly) {
-          const imgs = await loadBoardImageLibrary();
+    const hadUploads = uploadsCache.has(userId);
+    const hadLibrary = !uploadsOnly && getCachedBoardImageLibrary() !== null;
+    const tasks: Promise<void>[] = [];
+
+    if (!uploadsOnly && !hadLibrary) {
+      tasks.push(
+        loadBoardImageLibrary().then((imgs) => {
           if (!cancelled) setLibrary(imgs);
-        }
-        await refreshUploads();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+        }),
+      );
+    }
+
+    if (!hadUploads) {
+      tasks.push(refreshUploads().then(() => undefined));
+    } else {
+      void refreshUploads();
+    }
+
+    if (tasks.length > 0) setLoading(true);
+    Promise.all(tasks).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+
     return () => {
       cancelled = true;
     };
@@ -156,7 +167,7 @@ export function BoardImagePicker({
                 className="group overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
                 onClick={() => onPickImage?.(img.url)}
               >
-                <img src={img.url} alt={img.description} className="aspect-square w-full object-cover" loading="lazy" />
+                <img src={img.url} alt={img.description} className="aspect-square w-full object-cover" loading="lazy" decoding="async" />
               </button>
             ))}
           </div>
@@ -171,7 +182,7 @@ export function BoardImagePicker({
                 className="overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
                 onClick={() => onPickImage?.(u.signedUrl)}
               >
-                <img src={u.signedUrl} alt="" className="aspect-square w-full object-cover" />
+                <img src={u.signedUrl} alt="" className="aspect-square w-full object-cover" loading="lazy" decoding="async" />
               </button>
             ))}
           </div>

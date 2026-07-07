@@ -287,7 +287,7 @@ export function LibraryReader({
         className={cn("mb-8 border-b pb-6", dark ? "border-white" : "border-zinc-200")}
       >
         <p className={cn("text-[11px] font-semibold uppercase tracking-[0.14em]", dark ? "text-white" : "text-zinc-400")}>
-          Free reader · {guide.readMinutes} min
+          {guide.readMinutes} min read
         </p>
         <h1 className={cn("font-welcome-serif mt-2 text-3xl leading-tight", dark ? "text-white" : "text-zinc-900")}>
           {guide.title}

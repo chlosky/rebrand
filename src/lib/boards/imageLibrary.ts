@@ -22,7 +22,7 @@ export function getCachedBoardImageLibrary(): BoardImageAsset[] | null {
 export async function loadBoardImageLibrary(): Promise<BoardImageAsset[]> {
   if (cachedManifest) return cachedManifest;
 
-  const response = await fetch("/boardimagelibrary/manifest.generated.json", { cache: "no-store" });
+  const response = await fetch("/boardimagelibrary/manifest.generated.json");
   if (!response.ok) {
     throw new Error("Failed to load board image library");
   }

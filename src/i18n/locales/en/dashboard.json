@@ -54,12 +54,9 @@
     }
   },
   "supportTools": {
-    "dashboard": "Dashboard (home)",
-    "activityTracking": "Activity tracking",
-    "journal": "Journal",
-    "settingsAccount": "Settings / Account",
+    "action": "Action",
     "billing": "Billing / subscriptions",
-    "other": "Other (new tool or not listed)"
+    "other": "Other (not listed)"
   },
   "mobileMenu": {
     "toggleAria": "Toggle menu",
@@ -79,7 +76,7 @@
       "community": "Community",
       "tips": "Tips",
       "yourJourney": "Reminders",
-      "imageLibrary": "Image Library",
+      "imageLibrary": "Your Images",
       "projects": "Projects"
     },
     "journey": {
@@ -95,8 +92,7 @@
     },
     "library": {
       "heading": "Library",
-      "lead": "Short reads with swatches, visuals, and plotting teasers — not the full system.",
-      "marketingNote": "Marketing updates are optional in Your Account. Planning reminders unlock with Pro.",
+      "lead": "Short reads with swatches, visuals, and plotting ideas.",
       "categories": {
         "lifeRebrand": "Life rebrand",
         "moodboard": "Moodboarding",
@@ -177,7 +173,7 @@
       }
     },
     "imageLibrary": {
-      "title": "Your image library",
+      "title": "Your Images",
       "subtitle": "Upload clippings and photos here. They stay in your account and show up when you add images on boards."
     },
     "locked": {
@@ -187,7 +183,7 @@
       "journeyBody": "Plan reminders, progress tracking, and journal unlock with Palette Plotting Pro.",
       "newBoardTitle": "Vision is for members",
       "newBoardBody": "Start a new board on the plotting desk once you are on Pro — Library stays free.",
-      "imageLibraryTitle": "Image Library is for members",
+      "imageLibraryTitle": "Your Images is for members",
       "imageLibraryBody": "Upload and organize clippings here once you are on Pro — then drop them onto boards from the radial menu.",
       "projectsTitle": "Projects are for members",
       "projectsBody": "Your saved boards live here once you're on Pro — Library stays free.",

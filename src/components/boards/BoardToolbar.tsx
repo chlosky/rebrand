@@ -12,6 +12,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,6 +41,10 @@ type BoardToolbarProps = {
   onZoomPresetChange?: (preset: BoardZoomPreset) => void;
   canUndo?: boolean;
   canRedo?: boolean;
+  /** Mobile: keep toolbar on one row; Reset + Delete stay paired. */
+  compact?: boolean;
+  /** Mobile only: Delete menu includes delete board. */
+  onDeleteBoard?: () => void;
 };
 
 const toolBtn =
@@ -49,6 +59,8 @@ export function BoardToolbar({
   onZoomPresetChange,
   canUndo = false,
   canRedo = false,
+  compact = false,
+  onDeleteBoard,
 }: BoardToolbarProps) {
   const horizontal = orientation === "horizontal";
   const showZoom = horizontal && zoomPreset !== undefined && onZoomPresetChange !== undefined;
@@ -66,7 +78,10 @@ export function BoardToolbar({
         className={cn(
           "shrink-0 gap-1 bg-white p-2",
           horizontal
-            ? "flex flex-row flex-wrap items-center border-b border-neutral-200"
+            ? cn(
+                "flex flex-row items-center border-b border-neutral-200",
+                compact ? "flex-nowrap gap-0.5 overflow-x-auto p-1.5" : "flex-wrap gap-1 p-2",
+              )
             : "flex flex-col border-r border-neutral-200",
           className,
         )}
@@ -116,28 +131,61 @@ export function BoardToolbar({
 
         {horizontal && <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />}
 
-        <Button
-          variant="ghost"
-          className={cn(
-            toolBtn,
-            horizontal ? "h-9 w-auto text-amber-800 hover:bg-amber-50 hover:text-amber-900" : "w-full text-amber-800 hover:bg-amber-50 hover:text-amber-900",
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            className={cn(
+              toolBtn,
+              horizontal ? "h-9 w-auto text-amber-800 hover:bg-amber-50 hover:text-amber-900" : "w-full text-amber-800 hover:bg-amber-50 hover:text-amber-900",
+            )}
+            onClick={() => setResetOpen(true)}
+          >
+            <RotateCcw className="h-4 w-4" />
+            {horizontal ? "Reset board" : "Reset board"}
+          </Button>
+          {compact && onDeleteBoard ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    toolBtn,
+                    "h-9 w-auto text-red-600 hover:text-red-700 hover:bg-red-50",
+                  )}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[10.5rem]">
+                <DropdownMenuItem
+                  className="text-xs"
+                  onClick={() => editorRef.current?.deleteSelected()}
+                >
+                  Delete item
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-xs text-red-600 focus:text-red-600"
+                  onClick={onDeleteBoard}
+                >
+                  Delete board
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              className={cn(
+                toolBtn,
+                horizontal ? "h-9 w-auto text-red-600 hover:text-red-700 hover:bg-red-50" : "w-full text-red-600 hover:text-red-700 hover:bg-red-50",
+              )}
+              onClick={() => editorRef.current?.deleteSelected()}
+            >
+              <Trash2 className="h-4 w-4" />
+              {horizontal ? "Delete" : "Delete selected"}
+            </Button>
           )}
-          onClick={() => setResetOpen(true)}
-        >
-          <RotateCcw className="h-4 w-4" />
-          {horizontal ? "Reset board" : "Reset board"}
-        </Button>
-        <Button
-          variant="ghost"
-          className={cn(
-            toolBtn,
-            horizontal ? "h-9 w-auto text-red-600 hover:text-red-700 hover:bg-red-50" : "w-full text-red-600 hover:text-red-700 hover:bg-red-50",
-          )}
-          onClick={() => editorRef.current?.deleteSelected()}
-        >
-          <Trash2 className="h-4 w-4" />
-          {horizontal ? "Delete" : "Delete selected"}
-        </Button>
+        </div>
 
         {!horizontal && (
           <div className="mt-auto flex items-center gap-1 px-2 pt-4 text-[10px] text-neutral-400">

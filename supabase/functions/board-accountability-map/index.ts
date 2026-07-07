@@ -66,6 +66,18 @@ function defaultReviewDate(): string {
   return d.toISOString().slice(0, 10);
 }
 
+function isGenericPlaceholderTitle(text: string): boolean {
+  const t = text.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!t) return false;
+  if (t === "review board" || t === "review cycle" || t === "daily gratitude") return true;
+  if (t === "accountability review") return true;
+  if (/^review\s+(the\s+)?(focus\s+)?board(\s+\d+)?\.?$/.test(t)) return true;
+  if (/^review\s+focus\s+board\s*\d*\.?$/.test(t)) return true;
+  if (/^weekly\s+review(\s+(of|for))?\s+(the\s+)?(focus\s+)?board/.test(t)) return true;
+  if (/^check\s+(in\s+on\s+)?(the\s+)?(focus\s+)?board/.test(t)) return true;
+  return false;
+}
+
 function naturalizeTitle(title: string): string {
   const t = title
     .replace(/\+?\s*add\s*line/gi, "")
@@ -77,7 +89,8 @@ function naturalizeTitle(title: string): string {
     .replace(/\s*[—-]\s*$/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return isJunkBoardText(t) ? "" : t;
+  if (isJunkBoardText(t) || isGenericPlaceholderTitle(t)) return "";
+  return t;
 }
 
 function sanitizeNodeTitle(title: string, fallback: string): string {
@@ -114,21 +127,13 @@ function normalizeSingleReminderChannel(raw: unknown): {
   return { calendar: false, email: true, sms: false, reminder_type: "email" };
 }
 
-function scrubMapTitles(
-  map: Record<string, unknown>,
-  focuses: { id: string; title: string }[],
-): Record<string, unknown> {
-  const focusName = (id: string) => focuses.find((f) => f.id === id)?.title ?? "Focus";
+function scrubMapTitles(map: Record<string, unknown>): Record<string, unknown> {
   const plans = Array.isArray(map.plans)
     ? (map.plans as Record<string, unknown>[]).map((p) => ({
         ...p,
-        title: sanitizeNodeTitle(String(p.title ?? ""), focusName(String(p.focus_id ?? ""))),
+        title: sanitizeNodeTitle(String(p.title ?? ""), ""),
       }))
     : [];
-  const planTitle = (id: string) => {
-    const p = plans.find((row) => String(row.id ?? "") === id);
-    return p ? String(p.title ?? "Action") : "Action";
-  };
   const actions = Array.isArray(map.actions)
     ? (map.actions as Record<string, unknown>[]).map((a) => {
         const reminder =
@@ -138,9 +143,11 @@ function scrubMapTitles(
         const channelsRaw = reminder?.channels ?? a.channels ?? a.reminder_type;
         const smsText = reminder?.smsText ?? reminder?.sms_text ?? a.sms_text ?? null;
         const normalized = normalizeSingleReminderChannel(channelsRaw);
+        const rawTitle = String(a.title ?? "");
         return {
           ...a,
-          title: sanitizeNodeTitle(String(a.title ?? ""), planTitle(String(a.plan_id ?? ""))),
+          title: isGenericPlaceholderTitle(rawTitle) ? "" : sanitizeNodeTitle(rawTitle, ""),
+          status: isGenericPlaceholderTitle(rawTitle) ? "rejected" : a.status,
           channels: {
             calendar: normalized.calendar,
             email: normalized.email,
@@ -426,7 +433,6 @@ Return JSON only:
         unmapped_items: Array.isArray(parsed.unmapped_items) ? parsed.unmapped_items : [],
         reminders: [],
       },
-      parsed.focuses as { id: string; title: string }[],
     );
 
     return new Response(JSON.stringify(map), {

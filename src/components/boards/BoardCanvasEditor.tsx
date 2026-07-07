@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Canvas, Circle, FabricImage, FabricObject, FabricText, FixedLayout, Group, IText, LayoutManager, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
+import { Canvas, Circle, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
 import type { BoardLayoutMode } from "@/lib/boards/types";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ import {
   type BoardMarkStickerId,
   type BoardMarkTextSize,
 } from "@/components/boards/BoardMarksQuickSelector";
+import { PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE } from "@/components/boards/BoardPlottingWorkbench";
 
 export const ARTBOARD_WIDTH = 1080;
 export const ARTBOARD_HEIGHT = 1350;
@@ -95,6 +96,16 @@ const STICKY_CONTROL_STYLE = {
   hasBorders: true,
 };
 
+/** Fabric default — blue border + square handles (desktop-style). */
+const FABRIC_CONTROL_STYLE = {
+  cornerStyle: "rect" as const,
+  borderColor: "rgb(102, 153, 255)",
+  cornerColor: "rgb(102, 153, 255)",
+  transparentCorners: true,
+  hasControls: true,
+  hasBorders: true,
+};
+
 const TEXT_CAPABLE_SHAPES = new Set<BoardMarkShapeType>([
   "rect",
   "circle",
@@ -159,7 +170,12 @@ function stickyGroupFromTarget(obj: FabricObject): Group | null {
   return null;
 }
 
-function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
+function enterObjectTextEditing(
+  canvas: Canvas,
+  obj: FabricObject,
+  controlStyle: typeof STICKY_CONTROL_STYLE = STICKY_CONTROL_STYLE,
+  syncFocus = false,
+): boolean {
   const stickyGroup = stickyGroupFromTarget(obj);
   let textObj: Textbox | IText | null = null;
 
@@ -178,6 +194,7 @@ function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
   if (!textObj) return false;
 
   if (stickyGroup) {
+    updateStickyLayout(stickyGroup);
     canvas.setActiveObject(stickyGroup);
     stickyGroup.set({ hasControls: false, hasBorders: false });
   } else {
@@ -187,7 +204,7 @@ function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
 
   const restoreStickyControls = () => {
     if (!stickyGroup) return;
-    stickyGroup.set(STICKY_CONTROL_STYLE);
+    stickyGroup.set(controlStyle);
     stickyGroup.setCoords();
     if (!textObj.isEditing) {
       canvas.setActiveObject(stickyGroup);
@@ -198,7 +215,7 @@ function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
   textObj.off("editing:exited", restoreStickyControls);
   textObj.on("editing:exited", restoreStickyControls);
 
-  requestAnimationFrame(() => {
+  const beginEditing = () => {
     textObj.enterEditing();
     if (textObj instanceof IText) {
       textObj.selectAll();
@@ -207,8 +224,16 @@ function enterObjectTextEditing(canvas: Canvas, obj: FabricObject): boolean {
       textObj.selectionStart = len;
       textObj.selectionEnd = len;
     }
+    const hiddenTextarea = (textObj as Textbox & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
+    if (hiddenTextarea) {
+      hiddenTextarea.focus({ preventScroll: true });
+      if (syncFocus) hiddenTextarea.click();
+    }
     canvas.requestRenderAll();
-  });
+  };
+
+  if (syncFocus) beginEditing();
+  else requestAnimationFrame(beginEditing);
 
   return true;
 }
@@ -236,8 +261,10 @@ function createStickyNoteGroup(params: {
     strokeWidth: 1,
     rx: 8,
     ry: 8,
+    originX: "left",
+    originY: "top",
     selectable: false,
-    evented: false,
+    evented: true,
     markKind: "sticky-bg",
   });
 
@@ -261,11 +288,8 @@ function createStickyNoteGroup(params: {
   const group = new Group([rect, note], {
     left: params.left,
     top: params.top,
-    width: w,
-    height: h,
     originX: "left",
     originY: "top",
-    layoutManager: new LayoutManager(new FixedLayout()),
     subTargetCheck: true,
     interactive: true,
     objectCaching: false,
@@ -316,13 +340,13 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
     height: nextH,
     scaleX: 1,
     scaleY: 1,
+    originX: "left",
+    originY: "top",
   });
 
   group.set({
     scaleX: 1,
     scaleY: 1,
-    width: nextW,
-    height: nextH,
     originX: "left",
     originY: "top",
     stickyWidth: nextW,
@@ -332,6 +356,8 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
     objectCaching: false,
     markKind: "sticky",
   });
+  rect.setCoords();
+  text.setCoords();
   group.setCoords();
   group.canvas?.requestRenderAll();
 }
@@ -357,15 +383,11 @@ function normalizeStickyTextEdit(group: Group) {
 }
 
 function restoreStickyAfterLoad(group: Group) {
-  const strategy = group.layoutManager?.strategy;
-  const layoutManager =
-    strategy instanceof FixedLayout ? group.layoutManager : new LayoutManager(new FixedLayout());
   group.set({
     subTargetCheck: true,
     interactive: true,
     objectCaching: false,
     markKind: "sticky",
-    layoutManager,
     originX: "left",
     originY: "top",
     ...STICKY_CONTROL_STYLE,
@@ -1121,11 +1143,11 @@ function addPriorityRow(canvas: Canvas, group: Group) {
   canvas.requestRenderAll();
 }
 
-function enterStructureTextEditing(canvas: Canvas, target: FabricObject): boolean {
+function enterStructureTextEditing(canvas: Canvas, target: FabricObject, syncFocus = false): boolean {
   const role = structureProp(target, "structureRole");
   if (role !== "label" && role !== "priority-left" && role !== "priority-right") return false;
   if (!(target instanceof IText) && !(target instanceof Textbox)) return false;
-  return enterObjectTextEditing(canvas, target);
+  return enterObjectTextEditing(canvas, target, STICKY_CONTROL_STYLE, syncFocus);
 }
 
 function walkStructureObjects(canvas: Canvas, visit: (obj: FabricObjectType) => void) {
@@ -1584,6 +1606,8 @@ type BoardCanvasEditorProps = {
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
   onBoardColorPick?: (hex: string) => void;
   onRequestImagePick?: () => void;
+  /** Mobile: use Fabric blue square handles instead of black circles. */
+  fabricSelectionControls?: boolean;
 };
 
 export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditorProps>(
@@ -1604,6 +1628,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       onHistoryChange,
       onBoardColorPick,
       onRequestImagePick,
+      fabricSelectionControls = false,
     },
     ref,
   ) {
@@ -1628,6 +1653,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const deleteTargetRef = useRef<FabricObject | null>(null);
     const isActiveRef = useRef(isActive);
     isActiveRef.current = isActive;
+    const markControlStyleRef = useRef(STICKY_CONTROL_STYLE);
+    markControlStyleRef.current = fabricSelectionControls ? FABRIC_CONTROL_STYLE : STICKY_CONTROL_STYLE;
+    const syncTextFocusRef = useRef(fabricSelectionControls);
+    syncTextFocusRef.current = fabricSelectionControls;
 
     onHistoryChangeRef.current = onHistoryChange;
 
@@ -1984,7 +2013,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             const stickyGroup = target.group;
             normalizeStickyTextEdit(stickyGroup);
             if (!target.isEditing) {
-              stickyGroup.set(STICKY_CONTROL_STYLE);
+              stickyGroup.set(markControlStyleRef.current);
               canvas.discardActiveObject();
               canvas.setActiveObject(stickyGroup);
               stickyGroup.setCoords();
@@ -2000,11 +2029,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           if (obj) {
             const stickyGroup = stickyGroupFromTarget(obj);
             if (stickyGroup) {
-              stickyGroup.set(STICKY_CONTROL_STYLE);
+              updateStickyLayout(stickyGroup);
+              stickyGroup.set(markControlStyleRef.current);
               stickyGroup.setCoords();
               if (canvas.getActiveObject() !== stickyGroup) {
                 canvas.setActiveObject(stickyGroup);
               }
+              canvas.requestRenderAll();
+            } else if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
+              obj.set(markControlStyleRef.current);
+              obj.setCoords();
               canvas.requestRenderAll();
             }
           }
@@ -2024,7 +2058,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.on("mouse:dblclick", (opt) => {
           const target = opt.target;
           if (!target) return;
-          if (enterObjectTextEditing(canvas, target as FabricObject)) {
+          if (enterObjectTextEditing(canvas, target as FabricObject, markControlStyleRef.current)) {
             opt.e.preventDefault?.();
             opt.e.stopPropagation?.();
           }
@@ -2057,6 +2091,22 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                 break;
               }
               hit = hit.group ?? null;
+            }
+          }
+
+          if (syncTextFocusRef.current && target && !stickyGroupFromTarget(target)) {
+            let root: FabricObject = target;
+            while (root.group) root = root.group as FabricObject;
+            if (
+              (root instanceof IText || root instanceof Textbox) &&
+              root.get("markKind") !== "sticky-text" &&
+              !structureProp(root, "structureRole")
+            ) {
+              if (enterObjectTextEditing(canvas, root, markControlStyleRef.current, true)) {
+                opt.e.preventDefault?.();
+                opt.e.stopPropagation?.();
+                return;
+              }
             }
           }
 
@@ -2147,6 +2197,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
           restoreAllGroupsAfterLoad(canvas);
+          if (fabricSelectionControls) {
+            for (const obj of canvas.getObjects()) {
+              if (
+                obj.get("markKind") === "sticky" ||
+                (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable"))
+              ) {
+                obj.set(FABRIC_CONTROL_STYLE);
+              }
+            }
+          }
           canvas.requestRenderAll();
           resetHistory(canvas);
           rebindStructureHandlersRef.current(canvas);
@@ -2157,7 +2217,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.requestRenderAll();
         resetHistory(canvas);
       }
-    }, [boardId, colorKey, layoutJson, resetHistory]);
+    }, [boardId, colorKey, fabricSelectionControls, layoutJson, resetHistory]);
 
     const addText = useCallback((text = "") => {
       const canvas = fabricRef.current;
@@ -2175,12 +2235,22 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-      requestAnimationFrame(() => {
+      if (fabricSelectionControls) {
         t.enterEditing();
         t.selectAll();
-      });
+        const hidden = (t as IText & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
+        if (hidden) {
+          hidden.focus({ preventScroll: true });
+          hidden.click();
+        }
+      } else {
+        requestAnimationFrame(() => {
+          t.enterEditing();
+          t.selectAll();
+        });
+      }
       scheduleSave();
-    }, [readOnly, scheduleSave]);
+    }, [fabricSelectionControls, readOnly, scheduleSave]);
 
     const addStickyNote = useCallback(() => {
       const canvas = fabricRef.current;
@@ -2190,9 +2260,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         top: artboardHeight * 0.38 - STICKY_DEFAULT_H / 2,
       });
       canvas.add(sticky);
-      enterObjectTextEditing(canvas, sticky);
+      if (fabricSelectionControls) sticky.set(FABRIC_CONTROL_STYLE);
+      enterObjectTextEditing(canvas, sticky, markControlStyleRef.current, fabricSelectionControls);
       scheduleSave();
-    }, [readOnly, scheduleSave]);
+    }, [fabricSelectionControls, readOnly, scheduleSave]);
 
     const addTextAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
@@ -2208,12 +2279,22 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-      requestAnimationFrame(() => {
+      if (fabricSelectionControls) {
         t.enterEditing();
         t.selectAll();
-      });
+        const hidden = (t as IText & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
+        if (hidden) {
+          hidden.focus({ preventScroll: true });
+          hidden.click();
+        }
+      } else {
+        requestAnimationFrame(() => {
+          t.enterEditing();
+          t.selectAll();
+        });
+      }
       scheduleSave();
-    }, [readOnly, scheduleSave]);
+    }, [fabricSelectionControls, readOnly, scheduleSave]);
 
     const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
@@ -2225,9 +2306,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         top: normY * artboardHeight - h / 2,
       });
       canvas.add(sticky);
-      enterObjectTextEditing(canvas, sticky);
+      if (fabricSelectionControls) sticky.set(FABRIC_CONTROL_STYLE);
+      enterObjectTextEditing(canvas, sticky, markControlStyleRef.current, fabricSelectionControls);
       scheduleSave();
-    }, [readOnly, scheduleSave]);
+    }, [fabricSelectionControls, readOnly, scheduleSave]);
 
     const exitDrawMode = useCallback(() => {
       const canvas = fabricRef.current;
@@ -2260,8 +2342,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
           const group = createTextCapableShapeGroup(shapeType, cx, cy, stroke);
+          if (fabricSelectionControls) group.set(FABRIC_CONTROL_STYLE);
           canvas.add(group);
-          enterObjectTextEditing(canvas, group);
+          enterObjectTextEditing(canvas, group, markControlStyleRef.current, fabricSelectionControls);
           scheduleSave();
           return;
         }
@@ -2696,7 +2779,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!role || !structureId || !structureType) return false;
 
         if (role === "label" || role === "priority-left" || role === "priority-right") {
-          return enterStructureTextEditing(canvas, target as FabricObject);
+          return enterStructureTextEditing(canvas, target as FabricObject, fabricSelectionControls);
         }
 
         if (role === "checkbox" && target instanceof Rect) {
@@ -2741,7 +2824,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         return false;
       },
-      [recordHistory, scheduleSave],
+      [fabricSelectionControls, recordHistory, scheduleSave],
     );
 
     handleStructurePointerRef.current = handleStructurePointer;
@@ -2751,6 +2834,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas) return;
       const group = createChecklistGroup(left, top, width);
       canvas.add(group);
+      group.setCoords();
       canvas.setActiveObject(group);
       canvas.requestRenderAll();
       recordHistory();
@@ -2763,6 +2847,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas) return;
       const group = createPriorityGroup(left, top, width);
       canvas.add(group);
+      group.setCoords();
       canvas.setActiveObject(group);
       canvas.requestRenderAll();
       recordHistory();
@@ -2781,7 +2866,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         accent = DECAL_INK,
       ) => {
         const canvas = fabricRef.current;
-        if (!canvas || readOnly) return;
+        if (!canvas || readOnly || !artboardWidth || !artboardHeight) return;
 
         const left = x * artboardWidth;
         const top = y * artboardHeight;
@@ -2834,6 +2919,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             year: now.getFullYear(),
           });
           canvas.add(group);
+          group.setCoords();
           canvas.setActiveObject(group);
           setCalendarControl({
             structureId: String(group.get("structureId")),
@@ -2938,6 +3024,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             structureRole: "divider-line",
           });
           canvas.add(line);
+          line.setCoords();
           canvas.setActiveObject(line);
           canvas.requestRenderAll();
           recordHistory();
@@ -2952,19 +3039,24 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           top,
           subTargetCheck: false,
           objectCaching: true,
-          cornerStyle: "circle",
-          borderColor: "rgba(17,17,17,0.45)",
-          cornerColor: "#111111",
-          transparentCorners: false,
+          ...(fabricSelectionControls
+            ? FABRIC_CONTROL_STYLE
+            : {
+                cornerStyle: "circle" as const,
+                borderColor: "rgba(17,17,17,0.45)",
+                cornerColor: "#111111",
+                transparentCorners: false,
+              }),
         });
 
         canvas.add(group);
+        group.setCoords();
         canvas.setActiveObject(group);
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [artboardHeight, artboardWidth, fabricSelectionControls, readOnly, recordHistory, scheduleSave],
     );
 
     const mergeLayoutObjects = useCallback(async (
@@ -3146,8 +3238,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas || readOnly) return;
       const active = deleteTargetRef.current ?? canvas.getActiveObject();
       if (!active) return;
-      enterObjectTextEditing(canvas, active);
-    }, [readOnly]);
+      enterObjectTextEditing(canvas, active, markControlStyleRef.current, fabricSelectionControls);
+    }, [fabricSelectionControls, readOnly]);
 
     const applyMarkFontSize = useCallback(
       (size: BoardMarkTextSize) => {
@@ -3377,6 +3469,28 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [addStickerAtPoint, quickSelector, swapMarkSticker],
     );
 
+    const handleStructurePick = useCallback(
+      (diagram: BoardDiagramType) => {
+        if (!quickSelector) return;
+        const { normX, normY } = quickSelector;
+        const placement = STRUCTURE_DECAL_SIZE[diagram] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+        const w = placement.w;
+        const h = placement.h;
+        const items = PLOT_STRUCTURES.find((s) => s.type === diagram)?.items;
+        addDiagramOverlay(
+          diagram,
+          Math.max(0, Math.min(1 - w, normX - w / 2)),
+          Math.max(0, Math.min(1 - h, normY - h / 2)),
+          w,
+          h,
+          items,
+        );
+        setQuickSelector(null);
+        deleteTargetRef.current = null;
+      },
+      [addDiagramOverlay, quickSelector],
+    );
+
     useEffect(() => {
       if (!quickSelector) return;
       const onKeyDown = (e: KeyboardEvent) => {
@@ -3390,29 +3504,75 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     }, [closeQuickSelector, quickSelector]);
 
     useEffect(() => {
-      if (readOnly) return;
+      if (readOnly || !fabricSelectionControls) return;
       const wrap = canvasWrapRef.current;
       if (!wrap) return;
 
       let longPressTimer: number | undefined;
       let touchStartX = 0;
       let touchStartY = 0;
+      let drawTapStartX = 0;
+      let drawTapStartY = 0;
+      let drawTapHadMove = false;
+      const lastTapRef = { time: 0, target: null as FabricObject | null };
+      const lastDrawTapRef = { time: 0 };
+
+      const isStatementTarget = (obj: FabricObject | undefined): boolean => {
+        if (!obj) return false;
+        if (stickyGroupFromTarget(obj)) return false;
+        let root: FabricObject = obj;
+        while (root.group) root = root.group as FabricObject;
+        return (
+          (root instanceof IText || root instanceof Textbox) &&
+          root.get("markKind") !== "sticky-text" &&
+          !structureProp(root, "structureRole")
+        );
+      };
+
+      const statementRoot = (obj: FabricObject): FabricObject => {
+        let root: FabricObject = obj;
+        while (root.group) root = root.group as FabricObject;
+        return root;
+      };
+
+      const textEditTarget = (obj: FabricObject | undefined): FabricObject | null => {
+        if (!obj) return null;
+        const stickyGroup = stickyGroupFromTarget(obj);
+        if (stickyGroup) return stickyGroup;
+        let root: FabricObject = obj;
+        while (root.group) root = root.group as FabricObject;
+        if (root instanceof IText || root instanceof Textbox) return root;
+        if (root instanceof Group && root.get("textCapable")) return root;
+        return null;
+      };
 
       const onTouchStart = (e: TouchEvent) => {
         if (!isActiveRef.current) return;
-        if (fabricRef.current?.isDrawingMode) return;
         if (e.touches.length !== 1) return;
+        if (fabricRef.current?.isDrawingMode) {
+          drawTapStartX = e.touches[0].clientX;
+          drawTapStartY = e.touches[0].clientY;
+          drawTapHadMove = false;
+          return;
+        }
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
+        if (isStatementTarget(fabricRef.current?.findTarget(e) as FabricObject | undefined)) return;
         longPressTimer = window.setTimeout(() => {
-          const canvas = fabricRef.current;
-          if (!canvas) return;
+          const activeCanvas = fabricRef.current;
+          if (!activeCanvas) return;
           if (navigator.vibrate) navigator.vibrate(10);
-          openQuickSelectorRef.current(canvas, e, canvas.findTarget(e) ?? undefined);
+          openQuickSelectorRef.current(activeCanvas, e, activeCanvas.findTarget(e) ?? undefined);
         }, 420);
       };
 
       const onTouchMove = (e: TouchEvent) => {
+        if (fabricRef.current?.isDrawingMode && e.touches[0]) {
+          const dx = e.touches[0].clientX - drawTapStartX;
+          const dy = e.touches[0].clientY - drawTapStartY;
+          if (dx * dx + dy * dy > 64) drawTapHadMove = true;
+          return;
+        }
         if (!longPressTimer || !e.touches[0]) return;
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
@@ -3422,24 +3582,75 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         }
       };
 
-      const onTouchEnd = () => {
+      const onTouchEnd = (e: TouchEvent) => {
         if (longPressTimer) window.clearTimeout(longPressTimer);
         longPressTimer = undefined;
+
+        const activeCanvas = fabricRef.current;
+        if (!activeCanvas || !isActiveRef.current) return;
+
+        if (activeCanvas.isDrawingMode) {
+          if (!drawTapHadMove && e.changedTouches.length === 1) {
+            const now = Date.now();
+            if (now - lastDrawTapRef.time < 400) {
+              exitDrawMode();
+              lastDrawTapRef.time = 0;
+            } else {
+              lastDrawTapRef.time = now;
+            }
+          }
+          return;
+        }
+
+        if (e.changedTouches.length !== 1) return;
+
+        const target = activeCanvas.findTarget(e) as FabricObject | undefined;
+        if (isStatementTarget(target)) {
+          e.preventDefault();
+          enterObjectTextEditing(
+            activeCanvas,
+            statementRoot(target!),
+            markControlStyleRef.current,
+            true,
+          );
+          lastTapRef.time = 0;
+          lastTapRef.target = null;
+          return;
+        }
+
+        const editTarget = textEditTarget(target);
+        if (!editTarget) {
+          lastTapRef.time = 0;
+          lastTapRef.target = null;
+          return;
+        }
+
+        const now = Date.now();
+        if (lastTapRef.target === editTarget && now - lastTapRef.time < 400) {
+          enterObjectTextEditing(activeCanvas, editTarget, markControlStyleRef.current, true);
+          lastTapRef.time = 0;
+          lastTapRef.target = null;
+          return;
+        }
+        lastTapRef.time = now;
+        lastTapRef.target = editTarget;
       };
 
-      wrap.addEventListener("touchstart", onTouchStart, { passive: true });
-      wrap.addEventListener("touchmove", onTouchMove, { passive: true });
-      wrap.addEventListener("touchend", onTouchEnd);
-      wrap.addEventListener("touchcancel", onTouchEnd);
+      const touchRoot = wrap;
+      const capture = { capture: true as const };
+      touchRoot.addEventListener("touchstart", onTouchStart, { passive: true, ...capture });
+      touchRoot.addEventListener("touchmove", onTouchMove, { passive: true, ...capture });
+      touchRoot.addEventListener("touchend", onTouchEnd, capture);
+      touchRoot.addEventListener("touchcancel", onTouchEnd, capture);
 
       return () => {
         if (longPressTimer) window.clearTimeout(longPressTimer);
-        wrap.removeEventListener("touchstart", onTouchStart);
-        wrap.removeEventListener("touchmove", onTouchMove);
-        wrap.removeEventListener("touchend", onTouchEnd);
-        wrap.removeEventListener("touchcancel", onTouchEnd);
+        touchRoot.removeEventListener("touchstart", onTouchStart, capture);
+        touchRoot.removeEventListener("touchmove", onTouchMove, capture);
+        touchRoot.removeEventListener("touchend", onTouchEnd, capture);
+        touchRoot.removeEventListener("touchcancel", onTouchEnd, capture);
       };
-    }, [readOnly]);
+    }, [exitDrawMode, fabricSelectionControls, readOnly]);
 
     useImperativeHandle(ref, () => ({
       addText,
@@ -3489,7 +3700,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           <canvas ref={canvasElRef} />
           {!readOnly && isActive && drawingMode && (
             <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-stone-300/80 bg-white/95 px-3 py-1 text-[11px] font-medium text-stone-700 shadow-sm">
-              Esc to finish
+              {fabricSelectionControls ? "Double tap to finish" : "Esc to finish"}
             </div>
           )}
           {!readOnly && isActive && calendarControl ? (
@@ -3543,6 +3754,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               onElementSizePick={applyMarkFontSize}
               onShapePick={handleShapePick}
               onStickerPick={handleStickerPick}
+              onStructurePick={handleStructurePick}
             />
           )}
         </div>

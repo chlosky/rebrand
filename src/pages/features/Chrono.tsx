@@ -10,7 +10,6 @@ import { ChronoEntryForm } from '@/components/ChronoEntryForm';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobilePWAMenu } from '@/components/MobilePWAMenu';
 import { cn } from '@/lib/utils';
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -144,7 +143,6 @@ export default function Chrono() {
           <h1 className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"} onClick={() => navigate("/dashboard/boards")}>
             {t('chrono.title')}
           </h1>
-          {isMobile && <MobilePWAMenu />}
           </div>
         </div>
       </header>

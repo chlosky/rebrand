@@ -216,14 +216,19 @@ export async function listUserUploads(userId: string): Promise<{ path: string; s
   });
   if (error) throw error;
   const files = data ?? [];
-  const out: { path: string; signedUrl: string }[] = [];
-  for (const f of files) {
-    if (!f.name || f.id === null) continue;
-    const path = `${userId}/${f.name}`;
-    const { data: signed, error: signErr } = await supabase.storage
-      .from("board-uploads")
-      .createSignedUrl(path, 60 * 60);
-    if (!signErr && signed?.signedUrl) out.push({ path, signedUrl: signed.signedUrl });
-  }
-  return out;
+  const paths = files
+    .filter((f) => f.name && f.id !== null)
+    .map((f) => `${userId}/${f.name}`);
+  if (paths.length === 0) return [];
+
+  const signed = await Promise.all(
+    paths.map(async (path) => {
+      const { data: signedData, error: signErr } = await supabase.storage
+        .from("board-uploads")
+        .createSignedUrl(path, 60 * 60);
+      if (signErr || !signedData?.signedUrl) return null;
+      return { path, signedUrl: signedData.signedUrl };
+    }),
+  );
+  return signed.filter((item): item is { path: string; signedUrl: string } => item !== null);
 }

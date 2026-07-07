@@ -23,7 +23,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
     slug: "life-rebrand",
     title: "Life Rebrand",
-    tagline: "Turn a vague reset into boards you can actually use.",
+    tagline: "Turn a reset into boards you can use.",
     readMinutes: 6,
     blocks: [
       {
@@ -32,7 +32,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "paragraph",
-        text: "The point of a rebrand board is not to make a pretty collage and hope it changes your life. The point is to separate the areas that need movement, make the direction visible, and keep the next steps close enough that you actually act on them.",
+        text: "The point of a rebrand board is to separate the areas that need movement, make the direction visible, and keep the next steps close enough that you actually act on them.",
       },
       {
         type: "callout",
@@ -41,7 +41,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       { type: "subheading", text: "Start with the areas that actually need a reset" },
       {
         type: "paragraph",
-        text: "Do not start by picking random images. Start by naming the categories that are asking for structure. Most people do not need ten boards. They need three strong focus areas and one place for action.",
+        text: "Start by naming the categories that are asking for structure. Most people need three strong focus areas and one place for action.",
       },
       {
         type: "bullets",
@@ -77,8 +77,8 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         items: [
           "A short label for the category.",
           "Three to five images that show the direction.",
-          "One photo from your real life so the board does not feel detached.",
-          "Two or three statements that sound like you, not like filler.",
+          "One photo from your real life.",
+          "Two or three statements that sound like you.",
           "One number if the category needs a target.",
           "One date if the category needs timing.",
           "One proof item that shows movement has already started.",
@@ -87,7 +87,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "paragraph",
-        text: "A rebrand board should not become a dumping ground. If everything goes on the board, the board stops saying anything. Keep the board sharp enough that you can understand it in a few seconds.",
+        text: "Keep the board sharp enough that you can understand it in a few seconds. If everything goes on the board, the board stops saying anything.",
       },
       { type: "subheading", text: "Use the tool this way" },
       {
@@ -96,14 +96,14 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
           "Create one board for each major category.",
           "Use Statements for the words you want to see often.",
           "Use Sticky notes for active next steps.",
-          "Use images for direction, not clutter.",
+          "Use images for direction.",
           "Use the Plan board for anything with a date, cost, or deadline.",
           "Review the boards weekly and remove what no longer fits.",
         ],
       },
       {
         type: "callout",
-        text: "The goal is not to document every dream. The goal is to build a visual system that keeps your new direction in front of you while you move.",
+        text: "Build a visual system that keeps your new direction in front of you while you move.",
       },
     ],
   },
@@ -111,12 +111,12 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
     slug: "moodboarding",
     title: "Moodboarding",
-    tagline: "Build a board that has taste, direction, and a reason for every piece.",
+    tagline: "Taste, direction, and a reason for every piece.",
     readMinutes: 5,
     blocks: [
       {
         type: "paragraph",
-        text: "A moodboard is not just a pile of pretty images. A good moodboard gives a project a visual language. It helps you decide what belongs, what does not, and what the final direction should feel like before you start buying, designing, filming, decorating, or rebuilding.",
+        text: "A good moodboard gives a project a visual language. It helps you decide what belongs and what the final direction should feel like before you start buying, designing, filming, decorating, or rebuilding.",
       },
       {
         type: "paragraph",
@@ -194,7 +194,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "callout",
-        text: "A finished moodboard should make your next choice easier. If it only looks nice, it is not doing enough.",
+        text: "A finished moodboard should make your next choice easier.",
       },
     ],
   },
@@ -202,7 +202,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
     slug: "home-organization",
     title: "Home Organization",
-    tagline: "Use boards to turn a messy home project into zones, decisions, and next steps.",
+    tagline: "Zones, decisions, and next steps at home.",
     readMinutes: 6,
     blocks: [
       {
@@ -215,12 +215,12 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "callout",
-        text: "Do not organize by vibes first. Organize by zones, use, and what keeps breaking down.",
+        text: "Organize by zones, use, and what keeps breaking down.",
       },
       { type: "subheading", text: "Choose the zones" },
       {
         type: "paragraph",
-        text: "Start with the areas that create the most friction. You do not need to organize every drawer to make the home feel better. Fix the zones you touch every day.",
+        text: "Start with the areas that create the most friction — the zones you touch every day.",
       },
       {
         type: "bullets",
@@ -237,7 +237,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       { type: "subheading", text: "Make one board for the reset" },
       {
         type: "paragraph",
-        text: "The board should show what is changing. Add photos of the actual space, not just inspiration photos. A home board works better when it includes the real mess, the desired look, and the decisions needed to close the gap.",
+        text: "The board should show what is changing. Add photos of the actual space alongside inspiration. Include the real mess, the desired look, and the decisions needed to close the gap.",
       },
       {
         type: "checklist",
@@ -273,7 +273,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       {
         type: "bullets",
         items: [
-          "Start with one zone, not the whole room.",
+          "Start with one zone.",
           "Remove what obviously does not belong.",
           "Group similar items together.",
           "Decide what needs a container after you see what is left.",
@@ -291,12 +291,12 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
     slug: "office-optimization",
     title: "Office Optimization",
-    tagline: "Design a workspace that supports better work, cleaner decisions, and less friction.",
+    tagline: "A workspace with less friction.",
     readMinutes: 6,
     blocks: [
       {
         type: "paragraph",
-        text: "An office is not just a desk and a chair. It is the place where your work either gets easier or starts leaking energy. Bad lighting, messy cords, poor storage, an ugly background, uncomfortable seating, and scattered tools all make work feel heavier than it needs to be.",
+        text: "Your office is where your work either gets easier or starts leaking energy. Bad lighting, messy cords, poor storage, an ugly background, uncomfortable seating, and scattered tools all make work feel heavier than it needs to be.",
       },
       {
         type: "paragraph",
@@ -338,7 +338,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "paragraph",
-        text: "The goal is not to make the office look expensive. The goal is to make the room work harder for you. A cleaner desk, better lighting, a real place for supplies, and a background you are not embarrassed by can change the way the space feels immediately.",
+        text: "Make the room work harder for you. A cleaner desk, better lighting, a real place for supplies, and a background you are proud of can change the way the space feels immediately.",
       },
       { type: "subheading", text: "Plan before you buy" },
       {
@@ -372,7 +372,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       },
       {
         type: "callout",
-        text: "Office optimization is not about copying someone else's desk. It is about building a room that makes your work easier to start, easier to continue, and easier to finish.",
+        text: "Build a room that makes your work easier to start, easier to continue, and easier to finish.",
       },
     ],
   },

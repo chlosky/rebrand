@@ -94,5 +94,11 @@ verify_jwt = false
 [functions.delete-account]
 verify_jwt = false
 
+[functions.create-customer-portal]
+verify_jwt = true
+
+[functions.sync-stripe-customer]
+verify_jwt = true
+
 [functions.admin-sign-support-attachments]
 verify_jwt = false

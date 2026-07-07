@@ -69,11 +69,6 @@ type BoardDesktopGridProps = {
 
   onRenameBoard: (boardId: string, title: string) => void | Promise<void>;
 
-  onTitleStyleChange: (
-    boardId: string,
-    patch: { title_color?: string | null; title_font?: string | null },
-  ) => void | Promise<void>;
-
   zoomPreset: BoardZoomPreset;
 
   presentationMode?: "row" | "matrix";
@@ -101,8 +96,6 @@ export function BoardDesktopGrid({
   onAddBoard,
 
   onRenameBoard,
-
-  onTitleStyleChange,
 
   zoomPreset,
 
@@ -514,15 +507,7 @@ export function BoardDesktopGrid({
 
                       headerFill={boardFillForKey(board.color_key)}
 
-                      titleColor={board.title_color}
-
-                      titleFont={board.title_font}
-
                       onRename={onRenameBoard}
-
-                      onStyleChange={onTitleStyleChange}
-
-                      showStyleControls={active}
 
                       className="min-w-0 flex-1 text-[11px] font-semibold"
 

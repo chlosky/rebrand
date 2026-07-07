@@ -31,8 +31,8 @@ All colors MUST be HSL.
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 330 100% 65%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
@@ -44,21 +44,21 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     --gradient-primary: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 20%));
-    --gradient-secondary: linear-gradient(135deg, hsl(330 100% 65%), hsl(330 80% 72%));
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 35%));
     --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     
-    --glow-primary: 0 0 40px hsla(330 100% 65% / 0.15);
-    --glow-secondary: 0 0 30px hsla(330 80% 72% / 0.2);
+    --glow-primary: 0 0 40px hsla(0 0% 9% / 0.08);
+    --glow-secondary: 0 0 30px hsla(0 0% 9% / 0.06);
 
     --slider-track: 0 0% 91%;
-    --slider-range: 330 80% 65%;
-    --slider-range-glow: 330 90% 78%;
+    --slider-range: 0 0% 9%;
+    --slider-range-glow: 0 0% 45%;
     --slider-thumb-border: 0 0% 82%;
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sv-visualizer-top: 330 70% 55%;
-    --sv-visualizer-bottom: 330 60% 72%;
+    --sv-visualizer-top: 0 0% 35%;
+    --sv-visualizer-bottom: 0 0% 55%;
   }
 
   .dark {
@@ -175,11 +175,6 @@ All colors MUST be HSL.
     position: relative;
   }
   
-  /* Marketing site: black safe-area (not app --background white) */
-  :root[data-marketing-site="true"] .safe-area-top::before {
-    background-color: #000000 !important;
-  }
-
   /* Top safe area follows active appearance tokens (light stays white via --background) */
   .safe-area-top:not(.tool-page-shell)::before {
     content: '';
@@ -289,5 +284,16 @@ video.mirror-live-video::-webkit-media-controls-overlay-play-button {
 }
 
 .marketing-site .marketing-site-body .prose :where(a) {
-  color: rgb(251 113 133);
+  color: rgb(255 255 255 / 0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Flat menu/select rows: no highlight fill on hover/focus */
+[role="menuitem"][data-highlighted],
+[role="menuitemradio"][data-highlighted],
+[role="menuitemcheckbox"][data-highlighted],
+[role="option"][data-highlighted] {
+  background-color: transparent !important;
+  color: inherit !important;
 }

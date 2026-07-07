@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { ProgressMilestonesTabs } from "@/components/ProgressMilestonesTabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -71,7 +70,6 @@ const ActivityTracking: React.FC = () => {
                 >
                   {t("activity.title")}
                 </h1>
-                {isMobile && <MobilePWAMenu />}
               </div>
             </div>
           </header>
