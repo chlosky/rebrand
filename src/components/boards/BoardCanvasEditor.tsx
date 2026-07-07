@@ -1127,6 +1127,8 @@ type BoardCanvasEditorProps = {
   colorKey: string;
   boardId: string;
   layoutMode?: BoardLayoutMode;
+  artboardWidth?: number;
+  artboardHeight?: number;
   readOnly?: boolean;
   /** Tighter layout when shown in grid / carousel cells */
   embedded?: boolean;
@@ -1149,6 +1151,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       colorKey,
       boardId,
       layoutMode = "vision",
+      artboardWidth = ARTBOARD_WIDTH,
+      artboardHeight = ARTBOARD_HEIGHT,
       readOnly = false,
       embedded = false,
       cellFit = "contain",
@@ -1364,8 +1368,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       setQuickSelector({
         x: clientX - rect.left,
         y: clientY - rect.top,
-        normX: Math.min(1, Math.max(0, pointer.x / ARTBOARD_WIDTH)),
-        normY: Math.min(1, Math.max(0, pointer.y / ARTBOARD_HEIGHT)),
+        normX: Math.min(1, Math.max(0, pointer.x / artboardWidth)),
+        normY: Math.min(1, Math.max(0, pointer.y / artboardHeight)),
         mode: target ? "object" : "empty",
         textCapable,
         shapeCapable,
@@ -1383,8 +1387,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const pad = embedded ? 0 : 32;
       const maxW = Math.max(container.clientWidth - pad, 1);
       const maxH = Math.max(container.clientHeight - pad, 1);
-      const containScale = Math.min(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT);
-      const coverScale = Math.max(maxW / ARTBOARD_WIDTH, maxH / ARTBOARD_HEIGHT);
+      const containScale = Math.min(maxW / artboardWidth, maxH / artboardHeight);
+      const coverScale = Math.max(maxW / artboardWidth, maxH / artboardHeight);
       const baseScale =
         embedded && cellFit === "cover"
           ? coverScale
@@ -1400,8 +1404,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               ? baseScale
               : 0.5;
       canvas.setZoom(zoom);
-      const scaledW = ARTBOARD_WIDTH * zoom;
-      const scaledH = ARTBOARD_HEIGHT * zoom;
+      const scaledW = artboardWidth * zoom;
+      const scaledH = artboardHeight * zoom;
       canvas.setDimensions({ width: scaledW, height: scaledH });
       const canvasEl = canvas.getElement();
       if (embedded && cellFit === "cover" && wrap) {
@@ -1418,8 +1422,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvasElRef.current) return;
       const bg = boardFillForKey(colorKey);
       const canvas = new Canvas(canvasElRef.current, {
-        width: ARTBOARD_WIDTH,
-        height: ARTBOARD_HEIGHT,
+        width: artboardWidth,
+        height: artboardHeight,
         backgroundColor: bg,
         selection: !readOnly,
       });
@@ -1611,8 +1615,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText(text, {
-        left: ARTBOARD_WIDTH / 2,
-        top: ARTBOARD_HEIGHT * 0.38,
+        left: artboardWidth / 2,
+        top: artboardHeight * 0.38,
         originX: "center",
         originY: "top",
         fontSize: 42,
@@ -1634,8 +1638,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const sticky = createStickyNoteGroup({
-        left: ARTBOARD_WIDTH / 2 - STICKY_DEFAULT_W / 2,
-        top: ARTBOARD_HEIGHT * 0.38 - STICKY_DEFAULT_H / 2,
+        left: artboardWidth / 2 - STICKY_DEFAULT_W / 2,
+        top: artboardHeight * 0.38 - STICKY_DEFAULT_H / 2,
       });
       canvas.add(sticky);
       enterObjectTextEditing(canvas, sticky);
@@ -1646,8 +1650,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText("", {
-        left: normX * ARTBOARD_WIDTH,
-        top: normY * ARTBOARD_HEIGHT,
+        left: normX * artboardWidth,
+        top: normY * artboardHeight,
         fontSize: MARK_TEXT_SIZES.XL,
         fontFamily: "system-ui, sans-serif",
         fill: MARK_TEXT_FILL,
@@ -1669,8 +1673,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const w = STICKY_DEFAULT_W;
       const h = STICKY_DEFAULT_H;
       const sticky = createStickyNoteGroup({
-        left: normX * ARTBOARD_WIDTH - w / 2,
-        top: normY * ARTBOARD_HEIGHT - h / 2,
+        left: normX * artboardWidth - w / 2,
+        top: normY * artboardHeight - h / 2,
       });
       canvas.add(sticky);
       enterObjectTextEditing(canvas, sticky);
@@ -1703,8 +1707,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (shapeType: BoardMarkShapeType, normX: number, normY: number, stroke = MARK_SHAPE_STROKE) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const cx = normX * ARTBOARD_WIDTH;
-        const cy = normY * ARTBOARD_HEIGHT;
+        const cx = normX * artboardWidth;
+        const cy = normY * artboardHeight;
 
         if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
           const group = createTextCapableShapeGroup(shapeType, cx, cy, stroke);
@@ -1903,8 +1907,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const sticker = new FabricText(BOARD_MARK_STICKER_EMOJI[stickerId], {
-          left: normX * ARTBOARD_WIDTH,
-          top: normY * ARTBOARD_HEIGHT,
+          left: normX * artboardWidth,
+          top: normY * artboardHeight,
           fontSize: 72,
           fontFamily: "system-ui, sans-serif",
           originX: "center",
@@ -1946,7 +1950,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           canvas.setActiveObject(group);
           canvas.requestRenderAll();
         } else {
-          addShapeAtPoint(shapeType, center.x / ARTBOARD_WIDTH, center.y / ARTBOARD_HEIGHT, stroke);
+          addShapeAtPoint(shapeType, center.x / artboardWidth, center.y / artboardHeight, stroke);
         }
         recordHistory();
       },
@@ -1976,27 +1980,27 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const iw = img.width || 1;
         const ih = img.height || 1;
         const imgAspect = iw / ih;
-        const boardAspect = ARTBOARD_WIDTH / ARTBOARD_HEIGHT;
+        const boardAspect = artboardWidth / artboardHeight;
         let scale: number;
         if (imgAspect > boardAspect) {
-          scale = ARTBOARD_HEIGHT / ih;
+          scale = artboardHeight / ih;
         } else {
-          scale = ARTBOARD_WIDTH / iw;
+          scale = artboardWidth / iw;
         }
         img.set({
-          left: ARTBOARD_WIDTH / 2,
-          top: ARTBOARD_HEIGHT / 2,
+          left: artboardWidth / 2,
+          top: artboardHeight / 2,
           originX: "center",
           originY: "center",
           scaleX: scale,
           scaleY: scale,
         });
       } else {
-        const maxSide = Math.min(ARTBOARD_WIDTH, ARTBOARD_HEIGHT) * 0.45;
+        const maxSide = Math.min(artboardWidth, artboardHeight) * 0.45;
         const scale = Math.min(maxSide / (img.width || 1), maxSide / (img.height || 1), 1);
         img.set({
-          left: ARTBOARD_WIDTH * 0.25,
-          top: ARTBOARD_HEIGHT * 0.15,
+          left: artboardWidth * 0.25,
+          top: artboardHeight * 0.15,
           scaleX: scale,
           scaleY: scale,
         });
@@ -2064,8 +2068,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const t = new FabricText(text, {
-          left: x * ARTBOARD_WIDTH,
-          top: y * ARTBOARD_HEIGHT,
+          left: x * artboardWidth,
+          top: y * artboardHeight,
           fontSize,
           fontFamily: "system-ui, sans-serif",
           fill,
@@ -2086,8 +2090,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const w = 260;
         const h = 170;
         const sticky = createStickyNoteGroup({
-          left: x * ARTBOARD_WIDTH,
-          top: y * ARTBOARD_HEIGHT,
+          left: x * artboardWidth,
+          top: y * artboardHeight,
           width: w,
           height: h,
           text,
@@ -2231,10 +2235,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
 
-        const left = x * ARTBOARD_WIDTH;
-        const top = y * ARTBOARD_HEIGHT;
-        const width = w * ARTBOARD_WIDTH;
-        const height = h * ARTBOARD_HEIGHT;
+        const left = x * artboardWidth;
+        const top = y * artboardHeight;
+        const width = w * artboardWidth;
+        const height = h * artboardHeight;
 
         const objects: FabricObject[] = [];
 
@@ -2411,8 +2415,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const tempEl = document.createElement("canvas");
       const temp = new StaticCanvas(tempEl, {
-        width: ARTBOARD_WIDTH,
-        height: ARTBOARD_HEIGHT,
+        width: artboardWidth,
+        height: artboardHeight,
       });
       await temp.loadFromJSON(fragment);
       const clones = await Promise.all(temp.getObjects().map((obj) => obj.clone()));
@@ -2468,8 +2472,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const pasteAtPoint = useCallback(
       async (normX: number, normY: number) => {
         if (!boardObjectClipboard?.length) return false;
-        const left = normX * ARTBOARD_WIDTH;
-        const top = normY * ARTBOARD_HEIGHT;
+        const left = normX * artboardWidth;
+        const top = normY * artboardHeight;
         let minLeft = Infinity;
         let minTop = Infinity;
         for (const obj of boardObjectClipboard) {

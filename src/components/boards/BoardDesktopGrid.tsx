@@ -76,6 +76,8 @@ type BoardDesktopGridProps = {
 
   zoomPreset: BoardZoomPreset;
 
+  presentationMode?: "row" | "matrix";
+
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
 
   onReorderBoards?: (fromIndex: number, toIndex: number) => void;
@@ -104,6 +106,8 @@ export function BoardDesktopGrid({
 
   zoomPreset,
 
+  presentationMode = "row",
+
   onHistoryChange,
 
   onReorderBoards,
@@ -126,6 +130,8 @@ export function BoardDesktopGrid({
 
   const [dropBoardId, setDropBoardId] = useState<string | null>(null);
 
+  const isMatrix = presentationMode === "matrix";
+
 
 
   const getSaveHandler = useCallback(
@@ -146,11 +152,17 @@ export function BoardDesktopGrid({
 
     if (!el) return;
 
+    if (isMatrix) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+
     setCanScrollLeft(el.scrollLeft > 4);
 
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
 
-  }, []);
+  }, [isMatrix]);
 
 
 
@@ -170,29 +182,34 @@ export function BoardDesktopGrid({
 
       const availH = grid.clientHeight - GRID_PAD_PX * 2;
 
-      const addReserve = onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0;
+      const addReserve = !isMatrix && onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0;
 
       const boardGaps = GRID_GAP_PX * Math.max(STANDARD_BOARD_COUNT - 1, 0);
 
 
 
-      const maxWFromWidth = (availW - addReserve - boardGaps) / STANDARD_BOARD_COUNT;
+      const maxWFromWidth = isMatrix
+        ? (availW - GRID_GAP_PX) / 2
+        : (availW - addReserve - boardGaps) / STANDARD_BOARD_COUNT;
 
       const canvasAvailH = Math.max(availH - TITLE_BAR_PX, 160);
 
       const multiplier = zoomPreset === "fit" ? 1 : zoomPreset;
+      const firstBoard = boards[0];
+      const boardAspectHeight =
+        firstBoard && firstBoard.artboard_width > 0
+          ? firstBoard.artboard_height / firstBoard.artboard_width
+          : ARTBOARD_HEIGHT / ARTBOARD_WIDTH;
 
 
-
-      // Fixed slot width for four standard boards; fill almost all vertical space.
 
       let cellWidth = maxWFromWidth * multiplier;
 
-      let cellHeight = canvasAvailH * multiplier;
+      let cellHeight = (isMatrix ? Math.max((availH - GRID_GAP_PX) / 2 - TITLE_BAR_PX, 220) : canvasAvailH) * multiplier;
 
 
 
-      if (cellWidth * STANDARD_BOARD_COUNT + boardGaps + addReserve > availW) {
+      if (!isMatrix && cellWidth * STANDARD_BOARD_COUNT + boardGaps + addReserve > availW) {
 
         cellWidth = maxWFromWidth;
 
@@ -204,7 +221,9 @@ export function BoardDesktopGrid({
 
         width: Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth)),
 
-        height: Math.max(Math.round(cellWidth * (ARTBOARD_HEIGHT / ARTBOARD_WIDTH)), Math.round(cellHeight)),
+        height: isMatrix
+          ? Math.round(cellHeight)
+          : Math.max(Math.round(cellWidth * boardAspectHeight), Math.round(cellHeight)),
 
       });
 
@@ -236,7 +255,7 @@ export function BoardDesktopGrid({
 
     };
 
-  }, [onAddBoard, updateScrollHints, zoomPreset]);
+  }, [boards, isMatrix, onAddBoard, updateScrollHints, zoomPreset]);
 
 
 
@@ -338,7 +357,10 @@ export function BoardDesktopGrid({
 
           ref={viewportRef}
 
-          className="board-row-scroll flex h-full flex-col overflow-x-auto overflow-y-hidden scroll-smooth p-2"
+          className={cn(
+            "board-row-scroll flex h-full flex-col scroll-smooth p-2",
+            isMatrix ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-hidden",
+          )}
 
           onScroll={updateScrollHints}
 
@@ -346,7 +368,7 @@ export function BoardDesktopGrid({
 
             const el = viewportRef.current;
 
-            if (!el || el.scrollWidth <= el.clientWidth) return;
+            if (isMatrix || !el || el.scrollWidth <= el.clientWidth) return;
 
             if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
 
@@ -362,9 +384,16 @@ export function BoardDesktopGrid({
 
           <div
 
-            className="flex min-h-full flex-row flex-nowrap items-stretch gap-2.5"
+            className={cn(
+              "min-h-full gap-2.5",
+              isMatrix ? "grid grid-cols-2 content-start items-start" : "flex flex-row flex-nowrap items-stretch",
+            )}
 
-            style={{ width: rowScrollWidth, minHeight: rowHeight, height: rowHeight }}
+            style={
+              isMatrix
+                ? { gridAutoRows: rowHeight, minHeight: rowHeight }
+                : { width: rowScrollWidth, minHeight: rowHeight, height: rowHeight }
+            }
 
           >
 
@@ -434,7 +463,7 @@ export function BoardDesktopGrid({
                       : undefined
                   }
 
-                  style={{ width: cellSize.width, height: rowHeight }}
+                  style={{ width: isMatrix ? "100%" : cellSize.width, height: rowHeight }}
 
                   className={cn(
 
@@ -521,11 +550,13 @@ export function BoardDesktopGrid({
                       colorKey={board.color_key}
                       layoutMode={board.layout_mode ?? "vision"}
                       layoutJson={board.layout_json}
+                      artboardWidth={board.artboard_width}
+                      artboardHeight={board.artboard_height}
                       onSave={getSaveHandler(board.id)}
                       onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
                       isActive={board.id === activeId}
                       embedded
-                      cellFit="cover"
+                      cellFit={isMatrix ? "contain" : "cover"}
                       viewZoom="fit"
                     />
 
@@ -549,7 +580,7 @@ export function BoardDesktopGrid({
 
                 title="Add focus board"
 
-                style={{ width: ADD_BTN_WIDTH_PX, height: rowHeight }}
+                style={{ width: isMatrix ? "100%" : ADD_BTN_WIDTH_PX, height: rowHeight }}
 
                 className="flex shrink-0 flex-col items-center justify-center self-stretch rounded-lg border border-dashed border-neutral-300 bg-white/40 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-white hover:text-neutral-900"
 

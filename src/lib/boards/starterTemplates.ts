@@ -13,6 +13,8 @@ export type StarterBoardDef = {
   color_key: string;
   sort_order: number;
   layout_mode?: BoardLayoutMode;
+  artboard_width?: number;
+  artboard_height?: number;
 };
 
 export type BoardStarterTemplate = {

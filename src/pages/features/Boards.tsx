@@ -45,6 +45,9 @@ export default function Boards() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
+  const [isPortraitViewport, setIsPortraitViewport] = useState(() =>
+    typeof window === "undefined" ? true : window.innerHeight > window.innerWidth,
+  );
 
   const handleHistoryChange = useCallback((state: { canUndo: boolean; canRedo: boolean }) => {
     setUndoRedo((prev) =>
@@ -93,6 +96,11 @@ export default function Boards() {
     () => workspace?.boards.find((b) => b.id === activeBoardId) ?? workspace?.boards[0] ?? null,
     [workspace, activeBoardId],
   );
+  const workspacePresentation = useMemo(() => {
+    const firstBoard = workspace?.boards[0];
+    return firstBoard && firstBoard.artboard_width > firstBoard.artboard_height ? "matrix" : "row";
+  }, [workspace?.boards]);
+  const isLandscapeSet = workspacePresentation === "matrix";
 
   const loadWorkspace = useCallback(async () => {
     if (!user?.id) return;
@@ -128,6 +136,13 @@ export default function Boards() {
 
   useEffect(() => {
     document.title = "Vision | Palette Plotting";
+  }, []);
+
+  useEffect(() => {
+    const update = () => setIsPortraitViewport(window.innerHeight > window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   const handleSaveLayoutFor = useCallback(async (boardId: string, layout: Record<string, unknown>) => {
@@ -222,6 +237,12 @@ export default function Boards() {
         `Focus Board ${focusCount + 1}`,
         "focus",
         n,
+        activeBoard
+          ? {
+              artboard_width: activeBoard.artboard_width,
+              artboard_height: activeBoard.artboard_height,
+            }
+          : undefined,
       );
       setWorkspace({ ...workspace, boards: [...workspace.boards, board] });
       selectBoard(board.id);
@@ -244,6 +265,10 @@ export default function Boards() {
         title,
         "focus",
         workspace.boards.length,
+        {
+          artboard_width: activeBoard.artboard_width,
+          artboard_height: activeBoard.artboard_height,
+        },
       );
       await saveBoardLayout(board.id, layout);
       await updateBoardMeta(board.id, {
@@ -409,6 +434,11 @@ export default function Boards() {
           </div>
         ) : isMobile ? (
           <div className="flex min-h-0 flex-1 flex-col pb-[4.25rem]">
+            {isLandscapeSet && isPortraitViewport ? (
+              <p className="mx-4 mt-2 rounded-full border border-neutral-200 bg-white/80 px-3 py-1 text-center text-[11px] text-neutral-600">
+                Landscape set selected. Rotate your phone for more room.
+              </p>
+            ) : null}
             <BoardMobileCarousel
               boards={boards}
               activeId={activeBoard.id}
@@ -458,6 +488,7 @@ export default function Boards() {
                 onRenameBoard={handleRenameBoard}
                 onTitleStyleChange={handleTitleStyleChange}
                 zoomPreset={boardZoom}
+                presentationMode={workspacePresentation}
                 onHistoryChange={handleHistoryChange}
                 onReorderBoards={boards.length > 1 ? handleReorderBoards : undefined}
               />

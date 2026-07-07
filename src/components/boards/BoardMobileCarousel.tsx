@@ -175,6 +175,8 @@ export function BoardMobileCarousel({
                 colorKey={board.color_key}
                 layoutMode={board.layout_mode ?? "vision"}
                 layoutJson={board.layout_json}
+                artboardWidth={board.artboard_width}
+                artboardHeight={board.artboard_height}
                 onSave={getSaveHandler(board.id)}
                 onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
                 isActive={board.id === activeId}

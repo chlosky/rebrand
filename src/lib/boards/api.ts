@@ -93,6 +93,8 @@ export async function createWorkspaceFromTemplate(
     color_key: b.color_key,
     sort_order: b.sort_order,
     layout_mode: b.layout_mode ?? "vision",
+    artboard_width: b.artboard_width ?? 1080,
+    artboard_height: b.artboard_height ?? 1350,
     layout_json: {},
   }));
 
@@ -124,6 +126,7 @@ export async function addBoard(
   title: string,
   role: Board["role"],
   sortOrder: number,
+  dimensions?: Pick<Board, "artboard_width" | "artboard_height">,
 ): Promise<Board> {
   const { data, error } = await supabase
     .from("boards")
@@ -134,6 +137,8 @@ export async function addBoard(
       role,
       color_key: role === "plan" ? "white_opaque" : "light_pink",
       sort_order: sortOrder,
+      artboard_width: dimensions?.artboard_width ?? 1080,
+      artboard_height: dimensions?.artboard_height ?? 1350,
       layout_json: {},
     })
     .select()

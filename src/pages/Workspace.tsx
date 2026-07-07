@@ -23,13 +23,19 @@ import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { useTheme } from "@/contexts/ThemeContext";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { cn } from "@/lib/utils";
 
 import { useTranslation } from "react-i18next";
 
 import { fetchUserWorkspaces, createWorkspaceFromTemplate } from "@/lib/boards/api";
-import { DEFAULT_FOUR_BOARD_TEMPLATE } from "@/lib/boards/starterTemplates";
+import { DEFAULT_FOUR_BOARD_TEMPLATE, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
 
 import type { BoardWorkspace } from "@/lib/boards/types";
 
@@ -53,8 +59,25 @@ import {
 
 
 type WorkspaceTab = "library" | "images" | "projects";
+type NewSetOrientation = "portrait" | "landscape";
 
 const WORKSPACE_TABS: WorkspaceTab[] = ["library", "images", "projects"];
+const LANDSCAPE_ARTBOARD = { width: 1350, height: 1080 };
+
+function templateWithOrientation(
+  template: BoardStarterTemplate,
+  orientation: NewSetOrientation,
+): BoardStarterTemplate {
+  if (orientation === "portrait") return template;
+  return {
+    ...template,
+    boards: template.boards.map((board) => ({
+      ...board,
+      artboard_width: LANDSCAPE_ARTBOARD.width,
+      artboard_height: LANDSCAPE_ARTBOARD.height,
+    })),
+  };
+}
 
 
 
@@ -342,13 +365,17 @@ export default function Workspace() {
 
   const goUpgrade = () => navigate("/resubscribe");
 
-  const startNewSet = async () => {
+  const startNewSet = async (orientation: NewSetOrientation) => {
     if (!user?.id || creatingSet) return;
     setCreatingSet(true);
     try {
       const setNumber = workspaces.length + 1;
       const name = workspaces.length === 0 ? "My first set" : `Set ${setNumber}`;
-      const created = await createWorkspaceFromTemplate(user.id, DEFAULT_FOUR_BOARD_TEMPLATE, name);
+      const created = await createWorkspaceFromTemplate(
+        user.id,
+        templateWithOrientation(DEFAULT_FOUR_BOARD_TEMPLATE, orientation),
+        name,
+      );
       setWorkspaces((prev) => [created, ...prev]);
       navigate(`/dashboard/boards?workspace=${created.id}`);
     } catch {
@@ -639,27 +666,27 @@ export default function Workspace() {
             </div>
 
             {hasPro ? (
-
-              <Button
-
-                variant="outline"
-
-                size="sm"
-
-                className={cn("rounded-lg", dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200")}
-
-                disabled={creatingSet}
-
-                onClick={() => void startNewSet()}
-
-              >
-
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-
-                {creatingSet ? t("workspace.projects.creating") : t("workspace.projects.startNewSet")}
-
-              </Button>
-
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn("rounded-lg", dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200")}
+                    disabled={creatingSet}
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    {creatingSet ? t("workspace.projects.creating") : t("workspace.projects.startNewSet")}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className={dark ? "border-white bg-black text-white" : undefined}>
+                  <DropdownMenuItem onClick={() => void startNewSet("portrait")}>
+                    Portrait set
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void startNewSet("landscape")}>
+                    Landscape set
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
 
           </div>
