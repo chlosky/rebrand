@@ -142,7 +142,7 @@ export function BoardToolbar({
         {!horizontal && (
           <div className="mt-auto flex items-center gap-1 px-2 pt-4 text-[10px] text-neutral-400">
             <Layers className="h-3 w-3" />
-            Select an item · click brings it forward · Delete removes it
+            Right-click menu · Ctrl+C/V · Delete
           </div>
         )}
 
@@ -198,7 +198,7 @@ export function BoardToolbar({
         )}
         {horizontal && !showZoom && (
           <span className="ml-auto hidden text-[10px] text-neutral-400 sm:inline">
-            Select · drag · Ctrl+C/V between boards · Delete
+            Right-click menu · Ctrl+C/V
           </span>
         )}
       </div>

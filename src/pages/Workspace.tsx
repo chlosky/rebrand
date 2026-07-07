@@ -942,7 +942,7 @@ export default function Workspace() {
 
             <div className="h-[min(52vh,28rem)]">
 
-              <BoardImagePicker embedded userId={user.id} />
+              <BoardImagePicker embedded uploadsOnly userId={user.id} />
 
             </div>
 

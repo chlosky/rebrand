@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from "react";
 
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, GripVertical, Plus } from "lucide-react";
 
 import {
-
   BoardCanvasEditor,
-
   ARTBOARD_HEIGHT,
-
   ARTBOARD_WIDTH,
-
   type BoardCanvasHandle,
-
 } from "@/components/boards/BoardCanvasEditor";
 
 import type { BoardZoomPreset } from "@/components/boards/BoardToolbar";
@@ -83,6 +78,8 @@ type BoardDesktopGridProps = {
 
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
 
+  onReorderBoards?: (fromIndex: number, toIndex: number) => void;
+
 };
 
 
@@ -109,6 +106,8 @@ export function BoardDesktopGrid({
 
   onHistoryChange,
 
+  onReorderBoards,
+
 }: BoardDesktopGridProps) {
 
   const saveHandlers = useRef(new Map<string, (layout: Record<string, unknown>) => void>());
@@ -123,24 +122,20 @@ export function BoardDesktopGrid({
 
   const [canScrollRight, setCanScrollRight] = useState(false);
 
+  const [dragBoardId, setDragBoardId] = useState<string | null>(null);
+
+  const [dropBoardId, setDropBoardId] = useState<string | null>(null);
+
 
 
   const getSaveHandler = useCallback(
-
     (boardId: string) => {
-
       if (!saveHandlers.current.has(boardId)) {
-
         saveHandlers.current.set(boardId, (layout) => onSave(boardId, layout));
-
       }
-
       return saveHandlers.current.get(boardId)!;
-
     },
-
     [onSave],
-
   );
 
 
@@ -373,9 +368,11 @@ export function BoardDesktopGrid({
 
           >
 
-            {boards.map((board) => {
+            {boards.map((board, boardIndex) => {
 
               const active = board.id === activeId;
+              const canReorder = !!onReorderBoards && boards.length > 1;
+              const isDropTarget = dropBoardId === board.id && dragBoardId !== board.id;
 
               return (
 
@@ -403,6 +400,40 @@ export function BoardDesktopGrid({
 
                   }}
 
+                  onDragOver={
+                    canReorder
+                      ? (e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                          setDropBoardId(board.id);
+                        }
+                      : undefined
+                  }
+
+                  onDragLeave={
+                    canReorder
+                      ? () => {
+                          setDropBoardId((prev) => (prev === board.id ? null : prev));
+                        }
+                      : undefined
+                  }
+
+                  onDrop={
+                    canReorder
+                      ? (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const fromId = e.dataTransfer.getData("text/board-id");
+                          const fromIndex = boards.findIndex((b) => b.id === fromId);
+                          if (fromIndex >= 0 && fromIndex !== boardIndex) {
+                            onReorderBoards(fromIndex, boardIndex);
+                          }
+                          setDragBoardId(null);
+                          setDropBoardId(null);
+                        }
+                      : undefined
+                  }
+
                   style={{ width: cellSize.width, height: rowHeight }}
 
                   className={cn(
@@ -411,17 +442,40 @@ export function BoardDesktopGrid({
 
                     active ? "border-neutral-900 ring-2 ring-neutral-900/10" : "border-neutral-200 hover:border-neutral-300",
 
+                    isDropTarget && "border-neutral-500 ring-2 ring-neutral-400/30",
+
                   )}
 
                 >
 
                   <div
 
-                    className="flex h-8 shrink-0 items-center justify-between gap-1 border-b border-neutral-100 px-2.5"
+                    className="flex h-8 shrink-0 items-center justify-between gap-1 border-b border-neutral-100 px-1.5"
 
                     style={{ backgroundColor: boardFillForKey(board.color_key) }}
 
                   >
+
+                    {canReorder ? (
+                      <button
+                        type="button"
+                        draggable
+                        aria-label={`Drag to reorder ${board.title}`}
+                        className="flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded text-neutral-500 hover:bg-black/5 hover:text-neutral-800 active:cursor-grabbing"
+                        onClick={(e) => e.stopPropagation()}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/board-id", board.id);
+                          e.dataTransfer.effectAllowed = "move";
+                          setDragBoardId(board.id);
+                        }}
+                        onDragEnd={() => {
+                          setDragBoardId(null);
+                          setDropBoardId(null);
+                        }}
+                      >
+                        <GripVertical className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
 
                     <BoardEditableTitle
 
@@ -441,7 +495,7 @@ export function BoardDesktopGrid({
 
                       showStyleControls={active}
 
-                      className="text-[11px] font-semibold"
+                      className="min-w-0 flex-1 text-[11px] font-semibold"
 
                       inputClassName="w-full text-[11px] font-semibold"
 
@@ -465,23 +519,14 @@ export function BoardDesktopGrid({
                       boardId={board.id}
                       registerEditor={registerEditor}
                       colorKey={board.color_key}
-
                       layoutMode={board.layout_mode ?? "vision"}
-
                       layoutJson={board.layout_json}
-
                       onSave={getSaveHandler(board.id)}
-
                       onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
-
                       isActive={board.id === activeId}
-
                       embedded
-
                       cellFit="cover"
-
                       viewZoom="fit"
-
                     />
 
                   </div>

@@ -141,6 +141,14 @@ export async function addBoard(
   return data as Board;
 }
 
+export async function reorderBoards(orderedBoardIds: string[]): Promise<void> {
+  const results = await Promise.all(
+    orderedBoardIds.map((id, sort_order) => supabase.from("boards").update({ sort_order }).eq("id", id)),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}
+
 export async function deleteBoard(boardId: string): Promise<void> {
   const { error } = await supabase.from("boards").delete().eq("id", boardId);
   if (error) throw error;

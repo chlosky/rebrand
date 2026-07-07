@@ -4,7 +4,6 @@ import {
   BookImage,
   ChevronLeft,
   ChevronRight,
-  Layers,
   MessageCircleHeart,
   PenLine,
   Shapes,
@@ -14,6 +13,10 @@ import {
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
+import {
+  BOARD_MARK_SHAPE_OPTIONS,
+  BOARD_MARK_STICKER_OPTIONS,
+} from "@/components/boards/BoardMarksQuickSelector";
 import { BoardColorStrip } from "@/components/boards/BoardColorStrip";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { BoardCompanionPanel } from "@/components/boards/BoardCompanionPanel";
@@ -24,20 +27,14 @@ export type PlotDockTab = "companion" | "clippings" | "structures" | "marks";
 export const PLOT_STRUCTURES: {
   type: BoardDiagramType;
   title: string;
-  hint: string;
   items?: string[];
 }[] = [
-  { type: "checklist", title: "Checklist", hint: "Type items · click box to check · Enter or + for new line" },
-  { type: "divider", title: "Divider", hint: "Build your own structure" },
-  { type: "zones", title: "Zones", hint: "Rooms, areas, stations", items: ["Entry", "Kitchen", "Bedrooms"] },
-  {
-    type: "eisenhower",
-    title: "Priority grid",
-    hint: "Item & rank columns · Enter or + for new row",
-    items: ["Do first", "Schedule", "Delegate", "Drop"],
-  },
-  { type: "kanban", title: "Flow columns", hint: "Stages & handoffs" },
-  { type: "timeline", title: "Timeline", hint: "Phases & beats" },
+  { type: "checklist", title: "Checklist" },
+  { type: "divider", title: "Divider" },
+  { type: "zones", title: "Zones", items: ["Entry", "Kitchen", "Bedrooms"] },
+  { type: "eisenhower", title: "Priority grid" },
+  { type: "kanban", title: "Flow columns" },
+  { type: "timeline", title: "Timeline" },
 ];
 
 export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
@@ -83,21 +80,20 @@ export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
             <span className="h-px flex-1 border-b border-dashed border-neutral-400/70" />
           </div>
         ))}
-        <span className="text-[9px] text-neutral-400">+ add line</span>
       </div>
     );
   }
   if (type === "eisenhower") {
     return (
       <div className="mt-2">
-        <div className="relative h-5 border-b border-neutral-900/70">
+        <div className="relative h-4 border-b border-neutral-900/70">
           <span className={`absolute left-[55%] top-0 h-full w-px ${decalInk}`} />
         </div>
         <div className="mt-1 space-y-1">
-          {["x", "y", "z"].map((label) => (
-            <div key={label} className="flex text-[9px] text-neutral-500">
-              <span className="w-[55%]">{label}</span>
-              <span className="flex-1 text-right pr-1">·</span>
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="flex items-center gap-1">
+              <span className="h-px flex-[0.55] border-b border-dashed border-neutral-400/70" />
+              <span className="flex-[0.45] text-right text-[9px] tabular-nums text-neutral-400">{n}</span>
             </div>
           ))}
         </div>
@@ -137,17 +133,18 @@ const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
   { id: "companion", label: "Guide", Icon: MessageCircleHeart },
   { id: "clippings", label: "Images", Icon: BookImage },
   { id: "structures", label: "Layouts", Icon: Shapes },
-  { id: "marks", label: "Text / Notes", Icon: PenLine },
+  { id: "marks", label: "Marks", Icon: PenLine },
 ];
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
   companion: "Tell me the feeling of this board — I'll plot color, words, and structures with you.",
   clippings: "Browse Our Collection or add photos to Your Library.",
   structures: "Drop planning grids onto the board — mix freely on any board.",
-  marks: "Tap empty board space to add · hold items to edit.",
+  marks: "Right-click empty board to add marks · right-click a note to edit.",
 };
 
 type BoardPlottingWorkbenchProps = {
+  workspaceId: string;
   activeBoard: Board;
   activeBoardId: string;
   editorRef: RefObject<BoardCanvasHandle | null>;
@@ -158,6 +155,7 @@ type BoardPlottingWorkbenchProps = {
 };
 
 export function BoardPlottingWorkbench({
+  workspaceId,
   activeBoard,
   activeBoardId,
   editorRef,
@@ -264,17 +262,16 @@ export function BoardPlottingWorkbench({
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {openTab === "companion" && (
               <BoardCompanionPanel
+                workspaceId={workspaceId}
                 activeBoardId={activeBoardId}
                 editorRef={editorRef}
                 onBoardColorChange={onBoardColorChange}
               />
             )}
 
-            {openTab === "clippings" && (
-              <div className="min-h-0 flex-1">
-                <BoardImagePicker embedded userId={userId} onPickImage={onPickImage} onScanPhysical={onScanPhysical} />
-              </div>
-            )}
+            <div className={cn("min-h-0 flex-1", openTab !== "clippings" && "hidden")}>
+              <BoardImagePicker embedded userId={userId} onPickImage={onPickImage} onScanPhysical={onScanPhysical} />
+            </div>
 
             {openTab === "structures" && (
               <div className="flex-1 overflow-y-auto">
@@ -286,10 +283,9 @@ export function BoardPlottingWorkbench({
                         key={s.type}
                         type="button"
                         onClick={() => placeStructure(s.type, s.items)}
-                        className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-2.5 text-left hover:border-stone-500/50 hover:bg-white"
+                        className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-2 text-left hover:border-stone-500/50 hover:bg-white"
                       >
                         <span className="text-xs font-semibold text-stone-900">{s.title}</span>
-                        <span className="mt-0.5 block text-[10px] text-stone-500">{s.hint}</span>
                         <StructureDecalPreview type={s.type} />
                       </button>
                     ))}
@@ -300,18 +296,60 @@ export function BoardPlottingWorkbench({
 
             {openTab === "marks" && (
               <div className="flex-1 space-y-3 overflow-y-auto p-2">
-                <div className="space-y-0.5">
-                  <button type="button" className={markBtn} onClick={() => editorRef.current?.addText()}>
-                    <Type className="h-4 w-4" /> Statement
-                  </button>
-                  <button type="button" className={markBtn} onClick={() => editorRef.current?.addStickyNote()}>
-                    <StickyNote className="h-4 w-4" /> Sticky note
-                  </button>
+                <div className="rounded-lg border border-stone-300/70 bg-white/60 p-2">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Text & notes</p>
+                  <div className="mt-1 space-y-0.5">
+                    <button type="button" className={markBtn} onClick={() => editorRef.current?.addText()}>
+                      <Type className="h-4 w-4" /> Statement
+                    </button>
+                    <button type="button" className={markBtn} onClick={() => editorRef.current?.addStickyNote()}>
+                      <StickyNote className="h-4 w-4" /> Sticky note
+                    </button>
+                    <button
+                      type="button"
+                      className={markBtn}
+                      title="Esc to finish"
+                      onClick={() => editorRef.current?.startDrawMode()}
+                    >
+                      Freehand
+                    </button>
+                  </div>
                 </div>
-                <p className="flex items-center gap-1 px-2 text-[10px] text-stone-500">
-                  <Layers className="h-3 w-3" />
-                  Right-click empty to add · right-click a mark to edit · hold on mobile
-                </p>
+
+                <div className="rounded-lg border border-stone-300/70 bg-white/60 p-2">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Shapes</p>
+                  <div className="mt-1.5 grid grid-cols-4 gap-1">
+                    {BOARD_MARK_SHAPE_OPTIONS.map(({ id, label, Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        title={label}
+                        className="flex flex-col items-center gap-0.5 rounded-md border border-stone-200 bg-[#faf8f5] px-1 py-1.5 text-[9px] font-medium text-stone-700 hover:border-stone-400 hover:bg-white"
+                        onClick={() => editorRef.current?.addShape(id)}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-stone-300/70 bg-white/60 p-2">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Stickers</p>
+                  <div className="mt-1.5 grid grid-cols-6 gap-1">
+                    {BOARD_MARK_STICKER_OPTIONS.map(({ id, label, emoji }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        title={label}
+                        className="flex flex-col items-center gap-0.5 rounded-md border border-stone-200 bg-[#faf8f5] px-1 py-1.5 text-lg hover:border-stone-400 hover:bg-white"
+                        onClick={() => editorRef.current?.addSticker(id)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>

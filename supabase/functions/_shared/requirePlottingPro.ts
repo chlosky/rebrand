@@ -4,16 +4,10 @@ export async function userHasActivePlottingPro(
   admin: SupabaseClient,
   userId: string,
 ): Promise<boolean> {
-  const { data, error } = await admin
-    .from("user_plans")
-    .select("status, current_period_end")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error || !data) return false;
-  if (data.status !== "active" && data.status !== "trialing") return false;
-  if (data.current_period_end && new Date(data.current_period_end) <= new Date()) return false;
-  return true;
+  const { data, error } = await admin.rpc("has_active_plotting_subscription", {
+    check_user_id: userId,
+  });
+  return !error && Boolean(data);
 }
 
 export function createServiceRoleClient(): SupabaseClient {

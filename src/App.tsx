@@ -11,7 +11,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppearancePreferenceSync } from "@/components/AppearancePreferenceSync";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { ProToolRoute } from "@/components/ProToolRoute";
 import Auth from "./pages/Auth";
 import Workspace from "./pages/Workspace";
 import WorkspaceHelp from "./pages/WorkspaceHelp";
@@ -328,13 +327,13 @@ const App = () => {
                 <Route path="settings/routine-reminders" element={<RoutineReminderSettings />} />
                 <Route path="report-issue" element={<ReportAppIssue />} />
                 <Route path="admin/support" element={<AdminSupportInbox />} />
-                <Route path="reminders" element={<ProToolRoute><Reminders /></ProToolRoute>} />
+                <Route path="reminders" element={<Reminders />} />
                 <Route path="your-journey" element={<Navigate to="/dashboard/reminders" replace />} />
-                <Route path="boards" element={<ProToolRoute><Boards /></ProToolRoute>} />
-                <Route path="boards/accountability" element={<ProToolRoute><BoardAccountability /></ProToolRoute>} />
-                <Route path="timeline" element={<ProToolRoute><Chrono /></ProToolRoute>} />
-                <Route path="activity-tracking" element={<ProToolRoute><ActivityTracking /></ProToolRoute>} />
-                <Route path="chrono" element={<ProToolRoute><Chrono /></ProToolRoute>} />
+                <Route path="boards" element={<Boards />} />
+                <Route path="boards/accountability" element={<BoardAccountability />} />
+                <Route path="timeline" element={<Chrono />} />
+                <Route path="activity-tracking" element={<ActivityTracking />} />
+                <Route path="chrono" element={<Chrono />} />
                 <Route path="get-app" element={<GetAppStore />} />
               </Route>
 

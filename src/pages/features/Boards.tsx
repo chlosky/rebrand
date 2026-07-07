@@ -17,6 +17,7 @@ import {
   ensureDefaultWorkspace,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
+  reorderBoards,
   saveBoardLayout,
   updateBoardMeta,
 } from "@/lib/boards/api";
@@ -264,6 +265,39 @@ export default function Boards() {
     }
   };
 
+  const handleReorderBoards = useCallback(
+    async (fromIndex: number, toIndex: number) => {
+      if (!workspace) return;
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+      if (fromIndex >= workspace.boards.length || toIndex >= workspace.boards.length) return;
+
+      const prev = workspace.boards;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      const withOrder = next.map((b, i) => ({ ...b, sort_order: i }));
+
+      setWorkspace({ ...workspace, boards: withOrder });
+      try {
+        await reorderBoards(withOrder.map((b) => b.id));
+      } catch {
+        setWorkspace({ ...workspace, boards: prev });
+        toast.error("Could not reorder boards");
+      }
+    },
+    [workspace],
+  );
+
+  const handleMoveBoard = useCallback(
+    (boardId: string, direction: -1 | 1) => {
+      if (!workspace) return;
+      const fromIndex = workspace.boards.findIndex((b) => b.id === boardId);
+      if (fromIndex < 0) return;
+      void handleReorderBoards(fromIndex, fromIndex + direction);
+    },
+    [handleReorderBoards, workspace],
+  );
+
   const handleRemoveBoard = async () => {
     if (!workspace || !activeBoard) return;
     if (activeBoard.role === "plan") {
@@ -390,8 +424,10 @@ export default function Boards() {
               onHistoryChange={handleHistoryChange}
               onBoardColorChange={handleBoardColorFromAi}
               onRequestImagePick={openQuickImagePicker}
+              onMoveBoard={boards.length > 1 ? handleMoveBoard : undefined}
             />
             <BoardPlotKitTray
+              workspaceId={workspace.id}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
@@ -404,6 +440,7 @@ export default function Boards() {
         ) : (
           <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
             <BoardPlottingWorkbench
+              workspaceId={workspace.id}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
               editorRef={activeEditorRef}
@@ -425,6 +462,7 @@ export default function Boards() {
                 onTitleStyleChange={handleTitleStyleChange}
                 zoomPreset={boardZoom}
                 onHistoryChange={handleHistoryChange}
+                onReorderBoards={boards.length > 1 ? handleReorderBoards : undefined}
               />
             </div>
           </div>

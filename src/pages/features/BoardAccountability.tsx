@@ -16,21 +16,27 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { MobilePWAMenu } from "@/components/MobilePWAMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BoardAccountabilityGrid } from "@/components/boards/BoardAccountabilityGrid";
+import { BoardAccountabilityFlow } from "@/components/boards/BoardAccountabilityFlow";
 import {
   createBoardReminder,
   ensureDefaultWorkspace,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
 } from "@/lib/boards/api";
-import type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
+import {
+  finalizeAccountabilityMap,
+  normalizeAccountabilityMap,
+  reminderToIso,
+  scrubMapTitles,
+  type AccountabilityMap,
+} from "@/lib/boards/accountabilityMap";
 import type { BoardReminder, BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { downloadIcalFile } from "@/lib/boards/ical";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import "@/styles/board-editor.css";
 
-export type { AccountabilityGoal, AccountabilityMap } from "@/lib/boards/accountabilityMap";
+export type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
 
 function storageKey(workspaceId: string) {
   return `board-accountability-map:${workspaceId}`;
@@ -44,8 +50,8 @@ export default function BoardAccountability() {
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState<BoardWorkspaceWithBoards | null>(null);
   const [map, setMap] = useState<AccountabilityMap | null>(null);
-  const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [schedulingEmail, setSchedulingEmail] = useState(false);
   const [schedulingSms, setSchedulingSms] = useState(false);
   const [exportingIcal, setExportingIcal] = useState(false);
@@ -54,6 +60,17 @@ export default function BoardAccountability() {
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
+    [workspace],
+  );
+
+  const persistMap = useCallback(
+    (next: AccountabilityMap) => {
+      const scrubbed = scrubMapTitles(next);
+      setMap(scrubbed);
+      if (workspace) {
+        sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(scrubbed));
+      }
+    },
     [workspace],
   );
 
@@ -71,9 +88,11 @@ export default function BoardAccountability() {
       const cached = sessionStorage.getItem(storageKey(full.id));
       if (cached) {
         try {
-          const parsed = JSON.parse(cached) as AccountabilityMap;
-          setMap(parsed);
-          setActiveGoalId(parsed.goals[0]?.id ?? null);
+          const parsed: unknown = JSON.parse(cached);
+          const normalized = normalizeAccountabilityMap(parsed);
+          if (normalized) {
+            setMap(normalized);
+          }
         } catch {
           /* ignore */
         }
@@ -97,33 +116,67 @@ export default function BoardAccountability() {
     if (!workspace) return;
     setAnalyzing(true);
     try {
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw refreshError;
+
+      const session =
+        refreshData.session ?? (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) {
+        toast.error("Session expired — sign out and sign in again, then retry Analyze.");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("board-accountability-map", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { workspace_id: workspace.id },
       });
       if (error) throw error;
-      const result = data as AccountabilityMap;
-      if (!result?.goals?.length) {
+      const normalized = normalizeAccountabilityMap(data);
+      if (!normalized) {
         toast.message("Add titles and statements on your boards, then analyze again");
         return;
       }
-      setMap(result);
-      setActiveGoalId(result.goals[0]?.id ?? null);
+      persistMap(normalized);
       setEmailOptedIn(false);
       setTextOptedIn(false);
-      sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(result));
-      toast.success("Action plan ready");
-    } catch {
-      toast.error("Could not analyze boards — check Pro access and try again");
+      toast.success("Action suggestions ready — review, edit, or remove what doesn't fit");
+    } catch (error: unknown) {
+      const status =
+        error && typeof error === "object" && "context" in error
+          ? (error as { context?: { status?: number } }).context?.status
+          : undefined;
+      if (status === 401) {
+        toast.error("Session expired — sign out and sign in again, then retry Analyze.");
+      } else if (status === 403) {
+        toast.error("Plotting Pro is required to analyze your boards.");
+      } else {
+        toast.error("Couldn't analyze your boards. Try again in a moment.");
+      }
     } finally {
       setAnalyzing(false);
     }
   };
 
-  const remindersDisabled = !map?.reminders.length;
+  const runFinalize = async () => {
+    if (!map) return;
+    setFinalizing(true);
+    try {
+      const next = finalizeAccountabilityMap(map);
+      persistMap(next);
+      toast.success("Action plan finalized — reminders are ready to schedule");
+    } catch {
+      toast.error("Couldn't finalize your plan");
+    } finally {
+      setFinalizing(false);
+    }
+  };
+
+  const hasActionPlan = Boolean(map?.focuses?.length);
+  const remindersDisabled = !map?.finalized || !map?.reminders.length;
 
   const scheduleReminders = async (channel: "email" | "sms") => {
     if (!map?.reminders.length || !planBoard || !user?.id) {
-      toast.error("Analyze boards first");
+      toast.error(map?.finalized ? "No reminders in this plan" : "Finalize your plan first");
       return false;
     }
     const setBusy = channel === "email" ? setSchedulingEmail : setSchedulingSms;
@@ -131,13 +184,12 @@ export default function BoardAccountability() {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       for (const r of map.reminders.slice(0, 20)) {
-        const ms = Date.now() + Math.max(1, r.days_from_now) * 24 * 60 * 60 * 1000;
         await createBoardReminder({
           board_id: planBoard.id,
           user_id: user.id,
           title: r.title,
           body: r.goal_title ? `Goal: ${r.goal_title} · ${r.cadence}` : r.cadence,
-          remind_at: new Date(ms).toISOString(),
+          remind_at: reminderToIso(r),
           timezone: tz,
           channels: [channel],
           source: "ai_extracted",
@@ -181,7 +233,7 @@ export default function BoardAccountability() {
 
   const runExportIcal = () => {
     if (!map?.reminders.length || !planBoard || !user?.id) {
-      toast.error("Analyze boards first");
+      toast.error(map?.finalized ? "No reminders in this plan" : "Finalize your plan first");
       return;
     }
     setExportingIcal(true);
@@ -189,14 +241,13 @@ export default function BoardAccountability() {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const now = new Date().toISOString();
       const rows: BoardReminder[] = map.reminders.slice(0, 20).map((r, i) => {
-        const ms = Date.now() + Math.max(1, r.days_from_now) * 24 * 60 * 60 * 1000;
         return {
           id: `ical-export-${i}`,
           board_id: planBoard.id,
           user_id: user.id,
           title: r.title,
           body: r.goal_title ? `Goal: ${r.goal_title} · ${r.cadence}` : r.cadence,
-          remind_at: new Date(ms).toISOString(),
+          remind_at: reminderToIso(r),
           timezone: tz,
           channels: ["email"],
           source: "ai_extracted",
@@ -237,6 +288,17 @@ export default function BoardAccountability() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            {hasActionPlan && !map?.finalized ? (
+              <Button
+                size="sm"
+                className="gap-1 bg-stone-900 text-xs"
+                disabled={finalizing}
+                onClick={() => void runFinalize()}
+              >
+                {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                Finalize
+              </Button>
+            ) : null}
             {isMobile && (
               <Button
                 variant="outline"
@@ -271,11 +333,16 @@ export default function BoardAccountability() {
         <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-neutral-200 bg-white px-4 py-2 text-xs">
           {map?.summary ? (
             <p className="min-w-0 flex-1 text-[11px] leading-snug text-neutral-600">{map.summary}</p>
-          ) : (
+          ) : hasActionPlan ? null : (
             <p className="text-[11px] text-neutral-500">
-              Run Analyze to map goals from your boards into a quarterly → monthly → weekly → daily action.
+              Run Analyze to turn your focus boards and The Plan into an action map.
             </p>
           )}
+          {map?.finalized ? (
+            <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+              Finalized
+            </span>
+          ) : null}
         </div>
 
         {isMobile ? (
@@ -324,7 +391,9 @@ export default function BoardAccountability() {
               Text reminders
             </Button>
             {remindersDisabled ? (
-              <p className="text-[11px] text-stone-500">Run Analyze first to set up follow-through.</p>
+              <p className="text-[11px] text-stone-500">
+                {hasActionPlan ? "Finalize your plan to enable reminders." : "Run Analyze first."}
+              </p>
             ) : null}
           </div>
         ) : null}
@@ -336,13 +405,13 @@ export default function BoardAccountability() {
         ) : !workspace ? (
           <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">No workspace found</div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
+          <div className="flex min-h-0 flex-1 overflow-hidden bg-[#ebe8e3]">
             {!isMobile && (
               <aside className="flex w-56 shrink-0 flex-col border-r border-stone-300/80 bg-[#f3f0eb] p-3 text-xs">
                 <Label className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">How it works</Label>
                 <p className="mt-2 leading-relaxed text-stone-700">
-                  AI reads board titles, statements, and image placements — especially The Plan — then maps goals
-                  into quarterly, monthly, weekly, and daily actions.
+                  Analyze reads your focus boards and The Plan, then generates a map: Focuses → Plans → Actions.
+                  Edit nodes, remove what does not fit, add your own, then finalize reminders.
                 </p>
                 <Button
                   className="mt-4 w-full gap-1 bg-stone-900 text-xs"
@@ -353,6 +422,17 @@ export default function BoardAccountability() {
                   {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
                   Analyze
                 </Button>
+                {hasActionPlan && !map?.finalized ? (
+                  <Button
+                    className="mt-2 w-full gap-1 text-xs"
+                    size="sm"
+                    disabled={finalizing}
+                    onClick={() => void runFinalize()}
+                  >
+                    {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                    Finalize plan
+                  </Button>
+                ) : null}
                 <Label className="mt-5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Reminders</Label>
                 <Button
                   variant="outline"
@@ -397,16 +477,17 @@ export default function BoardAccountability() {
                   Text reminders
                 </Button>
                 {remindersDisabled ? (
-                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">Run Analyze first to set up follow-through.</p>
+                  <p className="mt-2 text-[11px] leading-relaxed text-stone-500">
+                    {hasActionPlan ? "Finalize your plan to enable reminders." : "Run Analyze first."}
+                  </p>
                 ) : null}
               </aside>
             )}
 
-            <BoardAccountabilityGrid
-              goals={map?.goals ?? []}
+            <BoardAccountabilityFlow
+              map={map}
               boards={workspace.boards}
-              activeId={activeGoalId}
-              onSelect={setActiveGoalId}
+              onChange={persistMap}
             />
           </div>
         )}

@@ -33,42 +33,54 @@ const COLOR_PALETTE = `Palette Plotting board colors (pick color_key for board b
 - white_opaque (#FFFFFF) — clean plan board, structure
 - black_opaque (#F5F5F5) — contrast, sophistication, editorial`;
 
-const DESIGN_CAPABILITIES = `You are the board design companion for Palette Plotting — clear, practical, and warm without being sentimental. You help users build vision boards, home org boards, moodboards, kanban, and gantt boards.
+const DESIGN_CAPABILITIES = `You are the board Guide inside a visual planning board for Palette Plotting.
+
+Your job is to help the user decide what to put on the board, then apply changes only when the user gives a direct command or confirms a proposal.
 
 You MUST respond with valid JSON only:
 {
-  "reply": "Short message (under 100 words) explaining what you placed and why the colors/layout fit their goal",
-  "actions": [ ...0-12 actions... ]
+  "reply": "Short practical message (under 60 words)",
+  "reply_without_action": "Optional — use when actions is empty and reply should not imply anything was added",
+  "actions": [ ...0-8 actions to apply immediately... ],
+  "proposed_actions": [ ...0-8 actions to suggest but NOT apply until user confirms... ]
 }
 
-Action types (use normalized coords 0-1 for x,y,w,h on a 1080×1350 artboard):
+Action types (normalized coords 0-1 on a 1080×1350 artboard):
 
-1. set_color — change board background vibe
-   { "type": "set_color", "color_key": "sky_blue" }
+1. set_color — change board background
+   { "type": "set_color", "color_key": "orange" }
+   color_key must be one of: rose_gold, light_pink, neon_pink, sky_blue, red, yellow, green, light_green, blue, orange, clear, white_opaque, black_opaque
+   For coral/warm requests use color_key "orange".
 
-2. add_text — headline or label on canvas boards (vision, checklist scaffold, gallery)
-   { "type": "add_text", "text": "Calm mornings", "x": 0.5, "y": 0.1, "font_size": 44, "color": "#171717" }
+2. add_text — Statement (headline or label)
+   { "type": "add_text", "text": "Embrace Joy", "x": 0.12, "y": 0.14, "font_size": 40, "color": "#171717" }
 
-3. add_sticky — sticky note; use hex fill for color accents
-   { "type": "add_sticky", "text": "Sunday reset", "x": 0.12, "y": 0.35, "fill": "#FFF9C4" }
+3. add_sticky — Sticky note
+   { "type": "add_sticky", "text": "Daily Gratitude", "x": 0.14, "y": 0.32, "fill": "#FFF4A8" }
 
-4. add_diagram — overlay diagram scaffold user can rearrange
-   diagram: "eisenhower" | "checklist" | "zones" | "timeline"
-   { "type": "add_diagram", "diagram": "eisenhower", "x": 0.52, "y": 0.52, "w": 0.42, "h": 0.38, "items": ["Do first","Schedule","Delegate","Drop"], "accent": "#2563EB" }
+4. add_diagram — Checklist or Priority grid (internal type only; never say "diagram" in replies)
+   { "type": "add_diagram", "diagram": "eisenhower", "x": 0.52, "y": 0.2, "w": 0.42, "h": 0.44 }
+   diagram: "eisenhower" = Priority grid | "checklist" = Checklist
 
 5. kanban_seed — ONLY when board layout_mode is kanban
-   { "type": "kanban_seed", "columns": [{ "title": "Backlog", "cards": ["Task A"] }, { "title": "Doing", "cards": [] }] }
-
 6. gantt_seed — ONLY when board layout_mode is gantt
-   { "type": "gantt_seed", "tasks": [{ "name": "Phase 1", "start": 5, "width": 35 }] }
 
-Layout rules:
-- When the user shares feelings, goals, or vibe — pick a color_key that matches AND place 2-6 concrete items (text, stickies, or a diagram).
-- Prefer add_diagram for planning, priority, or home-zone requests on vision boards.
-- Use hex accent colors on stickies/diagrams that harmonize with the board color_key fill.
-- Do NOT use kanban_seed/gantt_seed unless layout_mode matches.
-- On mostly empty boards, place a hero text plus diagram or stickies in a balanced composition.
-- If the user only wants to chat without placement, return an empty actions array.
+User-facing names in replies:
+- Statement (not "text")
+- Sticky note
+- Checklist
+- Priority grid (never "Eisenhower diagram")
+
+Behavior rules:
+- Do NOT make board changes for vague or emotional requests. Ask one useful question. Return "actions": [].
+- Vague examples: "I need help", "help me", "make this better", "make it happier", "make this feel productive", "organize this for me", "what should I do with this board".
+- For vague prompts, good reply: "Of course. What do you want this board to help with first — planning tasks, shaping the vibe, or mapping purchases?"
+- Direct commands apply immediately via "actions": e.g. "make this board coral", "add a statement that says Embrace Joy", "add a priority grid".
+- If you want multiple changes from a non-specific prompt, ask first. Put the bundle in "proposed_actions", NOT "actions". Reply: "Want me to apply that?"
+- Never say you added, placed, plotted, changed, or created something unless you return matching "actions" for a direct command.
+- Keep replies short and practical. No design-therapy language. No "fosters clarity", "happiness goals", or similar filler.
+- If the user only wants to chat, return empty actions and proposed_actions.
+- Prefer one change at a time unless the user asked for several explicitly.
 
 ${COLOR_PALETTE}`;
 
@@ -90,13 +102,21 @@ serve(async (req) => {
       });
     }
 
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
     if (userErr || !userData.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -170,9 +190,9 @@ serve(async (req) => {
     if (!openaiKey) {
       return new Response(
         JSON.stringify({
-          reply:
-            "Tell me the vibe you're going for — calm, bold, cozy, focused — and I'll place labels, stickies, and a diagram on your board.",
+          reply: "What would you like to add or change on this board?",
           actions: [],
+          proposed_actions: [],
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -198,7 +218,7 @@ ${layoutHint}`;
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages,
-        temperature: 0.65,
+        temperature: 0.4,
         response_format: { type: "json_object" },
       }),
     });
@@ -209,20 +229,32 @@ ${layoutHint}`;
 
     const aiJson = await aiRes.json();
     const raw = aiJson.choices?.[0]?.message?.content?.trim() ?? "{}";
-    let parsed: { reply?: string; actions?: unknown[] } = {};
+    let parsed: {
+      reply?: string;
+      reply_without_action?: string;
+      actions?: unknown[];
+      proposed_actions?: unknown[];
+    } = {};
     try {
       parsed = JSON.parse(raw);
     } catch {
-      parsed = { reply: raw, actions: [] };
+      parsed = { reply: raw, actions: [], proposed_actions: [] };
     }
 
     const reply =
       typeof parsed.reply === "string" && parsed.reply.trim()
         ? parsed.reply.trim()
-        : "I added a few pieces to your board — tweak them anytime.";
+        : "What would you like to add or change on this board?";
+    const reply_without_action =
+      typeof parsed.reply_without_action === "string" && parsed.reply_without_action.trim()
+        ? parsed.reply_without_action.trim()
+        : undefined;
     const actions = Array.isArray(parsed.actions) ? parsed.actions.slice(0, 14) : [];
+    const proposed_actions = Array.isArray(parsed.proposed_actions)
+      ? parsed.proposed_actions.slice(0, 14)
+      : [];
 
-    return new Response(JSON.stringify({ reply, actions }), {
+    return new Response(JSON.stringify({ reply, reply_without_action, actions, proposed_actions }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -15,6 +15,10 @@ export type BoardImageTheme = (typeof BOARD_IMAGE_THEMES)[number];
 
 let cachedManifest: BoardImageAsset[] | null = null;
 
+export function getCachedBoardImageLibrary(): BoardImageAsset[] | null {
+  return cachedManifest;
+}
+
 export async function loadBoardImageLibrary(): Promise<BoardImageAsset[]> {
   if (cachedManifest) return cachedManifest;
 

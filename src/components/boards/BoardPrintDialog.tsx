@@ -111,8 +111,9 @@ export function BoardPrintDialog({
         }
       }
       onOpenChange(false);
-    } catch {
-      toast.error("Download failed");
+    } catch (err) {
+      console.error("Board download failed:", err);
+      toast.error(err instanceof Error ? err.message : "Download failed");
     } finally {
       setBusy(false);
     }
@@ -147,7 +148,7 @@ export function BoardPrintDialog({
             <p className="text-[11px] leading-snug text-neutral-500">{option.description}</p>
             {printPreset && printPreset.dpi === 300 && printPreset.pageWidthIn >= 18 && (
               <p className="text-[11px] leading-snug text-amber-800">
-                Large exports can take a moment and produce a big file — ideal for professional printing.
+                Large exports can take a moment and produce a big file.
               </p>
             )}
           </div>

@@ -19,6 +19,7 @@ const TAB_LABELS: Record<PlotDockTab, string> = {
 };
 
 type BoardPlotKitTrayProps = {
+  workspaceId: string;
   activeBoard: Board;
   activeBoardId: string;
   editorRef: RefObject<BoardCanvasHandle | null>;
@@ -29,6 +30,7 @@ type BoardPlotKitTrayProps = {
 };
 
 export function BoardPlotKitTray({
+  workspaceId,
   activeBoard,
   activeBoardId,
   editorRef,
@@ -81,9 +83,11 @@ export function BoardPlotKitTray({
           <div className="overflow-y-auto pb-4" style={{ maxHeight: "calc(min(70vh, 520px) - 3.5rem)" }}>
             {sheetTab === "companion" && (
               <BoardCompanionPanel
+                workspaceId={workspaceId}
                 activeBoardId={activeBoardId}
                 editorRef={editorRef}
                 onBoardColorChange={onBoardColorChange}
+                compact
               />
             )}
 
@@ -130,7 +134,6 @@ export function BoardPlotKitTray({
                       className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
                     >
                       <span className="text-sm font-semibold text-stone-900">{s.title}</span>
-                      <span className="mt-0.5 block text-xs text-stone-500">{s.hint}</span>
                       <StructureDecalPreview type={s.type} />
                     </button>
                   ))}

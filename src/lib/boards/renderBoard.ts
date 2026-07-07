@@ -1,7 +1,33 @@
 import { StaticCanvas, FabricImage } from "fabric";
 import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
 import { boardFillForKey } from "@/lib/boards/colors";
-import { fitArtboardInBox, scaleLayoutJson } from "@/lib/boards/layoutScale";
+import { fitArtboardInBox } from "@/lib/boards/layoutScale";
+
+/** Browsers choke on huge PNG data URLs — cap longest side when compositing. */
+const MAX_EXPORT_SIDE_PX = 8192;
+
+function capPagePixels(pageWidthPx: number, pageHeightPx: number) {
+  const longest = Math.max(pageWidthPx, pageHeightPx);
+  if (longest <= MAX_EXPORT_SIDE_PX) {
+    return { width: pageWidthPx, height: pageHeightPx, scale: 1 };
+  }
+  const scale = MAX_EXPORT_SIDE_PX / longest;
+  return {
+    width: Math.round(pageWidthPx * scale),
+    height: Math.round(pageHeightPx * scale),
+    scale,
+  };
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type = "image/png", quality?: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Could not encode image"))),
+      type,
+      quality,
+    );
+  });
+}
 
 export type RenderBoardOptions = {
   layoutJson: Record<string, unknown>;
@@ -13,34 +39,38 @@ export type RenderBoardOptions = {
   contentBox?: { x: number; y: number; width: number; height: number };
 };
 
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, body] = dataUrl.split(",");
-  const mime = header.match(/:(.*?);/)?.[1] ?? "image/png";
-  const binary = atob(body);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
-
 export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise<string> {
-  const { layoutJson, colorKey, pageWidthPx, pageHeightPx, backgroundPageColor = "#ffffff", contentBox: contentBoxOverride } = options;
+  const {
+    layoutJson,
+    colorKey,
+    pageWidthPx,
+    pageHeightPx,
+    backgroundPageColor = "#ffffff",
+    contentBox: contentBoxOverride,
+  } = options;
   const contentBox = contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx);
-  const scaledLayout = scaleLayoutJson(layoutJson, contentBox.width, contentBox.height);
   const bg = boardFillForKey(colorKey);
+  const { width: outW, height: outH, scale: pageScale } = capPagePixels(pageWidthPx, pageHeightPx);
+  const scaledContentBox = {
+    x: contentBox.x * pageScale,
+    y: contentBox.y * pageScale,
+    width: contentBox.width * pageScale,
+    height: contentBox.height * pageScale,
+  };
 
   const contentEl = document.createElement("canvas");
   const contentCanvas = new StaticCanvas(contentEl, {
-    width: contentBox.width,
-    height: contentBox.height,
+    width: ARTBOARD_WIDTH,
+    height: ARTBOARD_HEIGHT,
     backgroundColor: bg,
   });
 
   const hasObjects =
-    Array.isArray((scaledLayout as { objects?: unknown[] }).objects) &&
-    ((scaledLayout as { objects: unknown[] }).objects?.length ?? 0) > 0;
+    Array.isArray((layoutJson as { objects?: unknown[] }).objects) &&
+    ((layoutJson as { objects: unknown[] }).objects?.length ?? 0) > 0;
 
   if (hasObjects) {
-    await contentCanvas.loadFromJSON(scaledLayout);
+    await contentCanvas.loadFromJSON(layoutJson);
   }
   contentCanvas.backgroundColor = bg;
   contentCanvas.renderAll();
@@ -49,20 +79,19 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
 
   const pageEl = document.createElement("canvas");
   const pageCanvas = new StaticCanvas(pageEl, {
-    width: pageWidthPx,
-    height: pageHeightPx,
+    width: outW,
+    height: outH,
     backgroundColor: backgroundPageColor,
   });
 
   if (contentBoxOverride) {
     const { Rect } = await import("fabric");
-    const bg = boardFillForKey(colorKey);
     pageCanvas.add(
       new Rect({
-        left: contentBox.x,
-        top: contentBox.y,
-        width: contentBox.width,
-        height: contentBox.height,
+        left: scaledContentBox.x,
+        top: scaledContentBox.y,
+        width: scaledContentBox.width,
+        height: scaledContentBox.height,
         fill: bg,
         selectable: false,
         evented: false,
@@ -72,10 +101,10 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
 
   const snapshot = await FabricImage.fromURL(contentUrl);
   snapshot.set({
-    left: contentBox.x,
-    top: contentBox.y,
-    scaleX: contentBox.width / (snapshot.width || 1),
-    scaleY: contentBox.height / (snapshot.height || 1),
+    left: scaledContentBox.x,
+    top: scaledContentBox.y,
+    scaleX: scaledContentBox.width / (snapshot.width || 1),
+    scaleY: scaledContentBox.height / (snapshot.height || 1),
     selectable: false,
     evented: false,
   });
@@ -88,7 +117,80 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
 }
 
 export async function renderBoardToBlob(options: RenderBoardOptions): Promise<Blob> {
-  return dataUrlToBlob(await renderBoardToDataUrl(options));
+  const {
+    layoutJson,
+    colorKey,
+    pageWidthPx,
+    pageHeightPx,
+    backgroundPageColor = "#ffffff",
+    contentBox: contentBoxOverride,
+  } = options;
+  const contentBox = contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx);
+  const bg = boardFillForKey(colorKey);
+  const { width: outW, height: outH, scale: pageScale } = capPagePixels(pageWidthPx, pageHeightPx);
+  const scaledContentBox = {
+    x: contentBox.x * pageScale,
+    y: contentBox.y * pageScale,
+    width: contentBox.width * pageScale,
+    height: contentBox.height * pageScale,
+  };
+
+  const contentEl = document.createElement("canvas");
+  const contentCanvas = new StaticCanvas(contentEl, {
+    width: ARTBOARD_WIDTH,
+    height: ARTBOARD_HEIGHT,
+    backgroundColor: bg,
+  });
+
+  const hasObjects =
+    Array.isArray((layoutJson as { objects?: unknown[] }).objects) &&
+    ((layoutJson as { objects: unknown[] }).objects?.length ?? 0) > 0;
+
+  if (hasObjects) {
+    await contentCanvas.loadFromJSON(layoutJson);
+  }
+  contentCanvas.backgroundColor = bg;
+  contentCanvas.renderAll();
+  const contentUrl = contentCanvas.toDataURL({ format: "png", multiplier: 1 });
+  contentCanvas.dispose();
+
+  const pageEl = document.createElement("canvas");
+  const pageCanvas = new StaticCanvas(pageEl, {
+    width: outW,
+    height: outH,
+    backgroundColor: backgroundPageColor,
+  });
+
+  if (contentBoxOverride) {
+    const { Rect } = await import("fabric");
+    pageCanvas.add(
+      new Rect({
+        left: scaledContentBox.x,
+        top: scaledContentBox.y,
+        width: scaledContentBox.width,
+        height: scaledContentBox.height,
+        fill: bg,
+        selectable: false,
+        evented: false,
+      }),
+    );
+  }
+
+  const snapshot = await FabricImage.fromURL(contentUrl);
+  snapshot.set({
+    left: scaledContentBox.x,
+    top: scaledContentBox.y,
+    scaleX: scaledContentBox.width / (snapshot.width || 1),
+    scaleY: scaledContentBox.height / (snapshot.height || 1),
+    selectable: false,
+    evented: false,
+  });
+  pageCanvas.add(snapshot);
+  pageCanvas.renderAll();
+
+  const blob = await canvasToBlob(pageCanvas.getElement());
+  pageCanvas.dispose();
+  return blob;
 }
 
 export function inchesToPixels(inches: number, dpi: number): number {
@@ -111,14 +213,6 @@ export const BOARD_PRINT_PRESETS = [
     description: "Home printer",
     pageWidthIn: 8.5,
     pageHeightIn: 11,
-    dpi: 300,
-  },
-  {
-    id: "tabloid",
-    label: 'Tabloid (11×17")',
-    description: "Large home / office printer",
-    pageWidthIn: 11,
-    pageHeightIn: 17,
     dpi: 300,
   },
   {

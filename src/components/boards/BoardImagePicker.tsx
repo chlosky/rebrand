@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   BOARD_IMAGE_THEMES,
   filterLibraryByTheme,
+  getCachedBoardImageLibrary,
   loadBoardImageLibrary,
   type BoardImageTheme,
 } from "@/lib/boards/imageLibrary";
@@ -16,30 +17,50 @@ type BoardImagePickerProps = {
   onPickImage?: (url: string) => void;
   onScanPhysical?: () => void;
   embedded?: boolean;
+  /** Workspace Image Library: user uploads only (no stock collection). */
+  uploadsOnly?: boolean;
 };
 
 type Tab = "library" | "uploads";
 
-export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded }: BoardImagePickerProps) {
-  const [tab, setTab] = useState<Tab>("library");
+const uploadsCache = new Map<string, { path: string; signedUrl: string }[]>();
+
+export function BoardImagePicker({
+  userId,
+  onPickImage,
+  onScanPhysical,
+  embedded,
+  uploadsOnly = false,
+}: BoardImagePickerProps) {
+  const [tab, setTab] = useState<Tab>(uploadsOnly ? "uploads" : "library");
   const [theme, setTheme] = useState<BoardImageTheme | "all">("all");
-  const [library, setLibrary] = useState<BoardImageAsset[]>([]);
-  const [uploads, setUploads] = useState<{ path: string; signedUrl: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [library, setLibrary] = useState<BoardImageAsset[]>(() =>
+    uploadsOnly ? [] : (getCachedBoardImageLibrary() ?? []),
+  );
+  const [uploads, setUploads] = useState(() => uploadsCache.get(userId) ?? []);
+  const [loading, setLoading] = useState(() => {
+    const hasUploads = uploadsCache.has(userId);
+    const hasLibrary = uploadsOnly || getCachedBoardImageLibrary() !== null;
+    return !hasUploads && !hasLibrary;
+  });
   const [uploading, setUploading] = useState(false);
 
   const refreshUploads = useCallback(async () => {
     const list = await listUserUploads(userId);
+    uploadsCache.set(userId, list);
     setUploads(list);
   }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
+    const hadCache = uploadsCache.has(userId) || (!uploadsOnly && getCachedBoardImageLibrary() !== null);
     (async () => {
-      setLoading(true);
+      if (!hadCache) setLoading(true);
       try {
-        const imgs = await loadBoardImageLibrary();
-        if (!cancelled) setLibrary(imgs);
+        if (!uploadsOnly) {
+          const imgs = await loadBoardImageLibrary();
+          if (!cancelled) setLibrary(imgs);
+        }
         await refreshUploads();
       } finally {
         if (!cancelled) setLoading(false);
@@ -48,7 +69,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
     return () => {
       cancelled = true;
     };
-  }, [refreshUploads]);
+  }, [refreshUploads, uploadsOnly, userId]);
 
   const filtered = theme === "all" ? library : filterLibraryByTheme(library, theme);
 
@@ -69,23 +90,25 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
 
   return (
     <div className={cn("flex h-full flex-col bg-transparent", !embedded && "border-r border-neutral-200 bg-white")}>
-      <div className="flex border-b border-neutral-200">
-        {(["library", "uploads"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={cn(
-              "flex-1 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide",
-              tab === t ? "border-b-2 border-neutral-900 text-neutral-900" : "text-neutral-500",
-            )}
-            onClick={() => setTab(t)}
-          >
-            {t === "library" ? "Our Collection" : "Your Library"}
-          </button>
-        ))}
-      </div>
+      {!uploadsOnly && (
+        <div className="flex border-b border-neutral-200">
+          {(["library", "uploads"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={cn(
+                "flex-1 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide",
+                tab === t ? "border-b-2 border-neutral-900 text-neutral-900" : "text-neutral-500",
+              )}
+              onClick={() => setTab(t)}
+            >
+              {t === "library" ? "Our Collection" : "Your Library"}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {tab === "library" && (
+      {tab === "library" && !uploadsOnly && (
         <div className="border-b border-neutral-100 p-2">
           <select
             className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-xs"
@@ -102,7 +125,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
         </div>
       )}
 
-      {tab === "uploads" && (
+      {(tab === "uploads" || uploadsOnly) && (
         <div className="flex gap-2 border-b border-neutral-100 p-2">
           {onScanPhysical && (
             <Button
@@ -137,7 +160,7 @@ export function BoardImagePicker({ userId, onPickImage, onScanPhysical, embedded
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
-        ) : tab === "library" ? (
+        ) : tab === "library" && !uploadsOnly ? (
           <div className="grid grid-cols-2 gap-2">
             {filtered.map((img) => (
               <button

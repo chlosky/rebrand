@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type ComponentProps } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BoardCanvasEditor, type BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
 import { boardFillForKey } from "@/lib/boards/colors";
@@ -24,6 +24,7 @@ type BoardMobileCarouselProps = {
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
   onBoardColorChange?: (boardId: string, colorKey: string) => void | Promise<void>;
   onRequestImagePick?: () => void;
+  onMoveBoard?: (boardId: string, direction: -1 | 1) => void;
 };
 
 type RegisteredBoardCanvasEditorProps = ComponentProps<typeof BoardCanvasEditor> & {
@@ -56,6 +57,7 @@ export function BoardMobileCarousel({
   onHistoryChange,
   onBoardColorChange,
   onRequestImagePick,
+  onMoveBoard,
 }: BoardMobileCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const saveHandlers = useRef(new Map<string, (layout: Record<string, unknown>) => void>());
@@ -120,9 +122,22 @@ export function BoardMobileCarousel({
             className="flex h-full w-full shrink-0 snap-center flex-col"
           >
             <div
-              className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-100 px-4 py-2"
+              className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-100 px-2 py-2"
               style={{ backgroundColor: boardFillForKey(board.color_key) }}
             >
+              {onMoveBoard && board.id === activeId && boards.length > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Move board left"
+                  disabled={activeIndex === 0}
+                  onClick={() => onMoveBoard(board.id, -1)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-600 disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              ) : (
+                <span className="w-8 shrink-0" />
+              )}
               <BoardEditableTitle
                 boardId={board.id}
                 title={board.title}
@@ -132,13 +147,25 @@ export function BoardMobileCarousel({
                 onRename={onRenameBoard}
                 onStyleChange={onTitleStyleChange}
                 showStyleControls={board.id === activeId}
-                className="text-sm font-semibold"
-                inputClassName="w-full text-sm font-semibold"
+                className="min-w-0 flex-1 text-center text-sm font-semibold"
+                inputClassName="w-full text-center text-sm font-semibold"
               />
-              {board.role === "plan" && (
+              {onMoveBoard && board.id === activeId && boards.length > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Move board right"
+                  disabled={activeIndex === boards.length - 1}
+                  onClick={() => onMoveBoard(board.id, 1)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-600 disabled:opacity-30"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              ) : board.role === "plan" ? (
                 <span className="shrink-0 rounded bg-black/10 px-2 py-0.5 text-[10px] font-bold uppercase">
                   Plan
                 </span>
+              ) : (
+                <span className="w-8 shrink-0" />
               )}
             </div>
             <div className="relative min-h-0 flex-1 overflow-hidden px-1 pb-1">
