@@ -104,7 +104,7 @@ export default function Boards() {
     if (handle) editorMapRef.current.set(boardId, handle);
     else editorMapRef.current.delete(boardId);
     if (boardId === activeBoardIdRef.current) {
-      activeEditorRef.current = handle ?? editorMapRef.current.get(boardId) ?? null;
+      activeEditorRef.current = editorMapRef.current.get(boardId) ?? null;
     }
   }, []);
 
@@ -125,6 +125,14 @@ export default function Boards() {
   }, [workspace?.boards]);
   const isLandscapeSet = workspacePresentation === "matrix";
   const activeWorkspaceId = workspaceParam ?? workspace?.id ?? null;
+
+  const handleUndo = useCallback(() => {
+    getActiveBoardEditor()?.undo();
+  }, [getActiveBoardEditor]);
+
+  const handleRedo = useCallback(() => {
+    getActiveBoardEditor()?.redo();
+  }, [getActiveBoardEditor]);
 
   const loadWorkspace = useCallback(async () => {
     if (!user?.id || proLoading) return;
@@ -458,6 +466,8 @@ export default function Boards() {
         {!loading && workspace && activeBoard && (
           <BoardToolbar
             editorRef={activeEditorRef}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
             onResetBoard={() => {
               const id = activeBoard.id;
               editorMapRef.current.get(id)?.resetBoard();

@@ -2277,6 +2277,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         ((layoutJson as { objects: unknown[] }).objects?.length ?? 0) > 0;
 
       if (hasObjects) {
+        suppressHistoryRef.current = true;
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
           restoreAllGroupsAfterLoad(canvas);
@@ -2289,6 +2290,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           }
           canvas.requestRenderAll();
           resetHistory(canvas);
+          suppressHistoryRef.current = false;
           rebindStructureHandlersRef.current(canvas);
         });
       } else {
@@ -2329,8 +2331,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           t.selectAll();
         });
       }
+      commitHistorySnapshot();
       scheduleSave();
-    }, [fabricSelectionControls, readOnly, scheduleSave]);
+    }, [commitHistorySnapshot, fabricSelectionControls, readOnly, scheduleSave]);
 
     const addStickyNote = useCallback(() => {
       const canvas = fabricRef.current;
@@ -2348,8 +2351,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         enterObjectTextEditing(canvas, sticky, true);
       });
 
+      commitHistorySnapshot();
       scheduleSave();
-    }, [readOnly, scheduleSave]);
+    }, [commitHistorySnapshot, readOnly, scheduleSave]);
 
     const addTextAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;

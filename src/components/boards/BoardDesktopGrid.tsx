@@ -43,9 +43,14 @@ function RegisteredBoardCanvasEditor({
   ...rest
 }: RegisteredBoardCanvasEditorProps) {
   const setRef = useCallback(
-    (handle: BoardCanvasHandle | null) => registerEditor(boardId, handle),
+    (handle: BoardCanvasHandle | null) => {
+      if (handle) registerEditor(boardId, handle);
+    },
     [boardId, registerEditor],
   );
+
+  useEffect(() => () => registerEditor(boardId, null), [boardId, registerEditor]);
+
   return <BoardCanvasEditor ref={setRef} {...rest} />;
 }
 

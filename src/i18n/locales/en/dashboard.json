@@ -85,7 +85,7 @@
     },
     "projects": {
       "title": "Your vision",
-      "subtitle": "Jump back into a set you've already started.",
+      "subtitle": "Jump back into a set you've already started or start a new one.",
       "startNewSet": "Start a new set",
       "creating": "Starting…",
       "empty": "No sets yet — start your first set above."

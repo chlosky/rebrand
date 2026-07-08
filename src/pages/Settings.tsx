@@ -17,10 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
+import { MobileBottomInlet } from "@/components/MobileBottomInlet";
+import { WorkspaceHeader, workspaceShellClass } from "@/components/workspace/WorkspaceHeader";
 import { validatePassword, validatePasswordMatch } from "@/lib/password-validation";
 import { Capacitor } from "@capacitor/core";
 import { Browser } from "@capacitor/browser";
@@ -30,6 +31,14 @@ import { SITE_ORIGIN } from "@/lib/siteBrand";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { endStripeTrialEarly } from "@/lib/endStripeTrialEarly";
 
+const darkFieldClass =
+  "border-white/12 bg-transparent text-white placeholder:text-white/35 focus-visible:ring-white/20";
+const helpTabsListClass = "h-auto w-full p-1";
+const helpTabsTriggerClass = "h-8 rounded-md border border-transparent px-2";
+const darkTabsListClass = "border border-white/12 bg-transparent";
+const darkTabsTriggerClass =
+  "text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white/80 data-[state=active]:!border-white/12 data-[state=active]:!bg-white/[0.06] data-[state=active]:!text-white data-[state=active]:shadow-none";
+
 const Settings = () => {
   const { t, i18n } = useTranslation("settings");
   const localeKey = resolveAppLocale(i18n.resolvedLanguage || i18n.language);
@@ -38,9 +47,9 @@ const Settings = () => {
     return t(`passwordValidation.${error}`);
   };
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const shellDark = theme === "dark";
   const { onTrial, refreshPlan } = usePlottingPro();
   const [endingTrial, setEndingTrial] = useState(false);
 
@@ -571,70 +580,35 @@ const Settings = () => {
   // This useEffect is no longer needed as it's handled in fetchUserData
 
   return (
-    <div
-      className={cn(cn("tool-page-shell relative overflow-x-hidden", theme === "dark" ? "text-white bg-[#0f0d14]" : "text-foreground bg-background"), theme === "dark" ? "min-h-screen" : "min-h-screen bg-background", "pb-20 md:pb-0")}
-      style={{ backgroundColor: theme === "dark" ? "#0f0d14" : "#ffffff" }}
-    >
-      <div className="min-h-screen">
-        {isMobile && (
-          <div
-            className={cn(
-              "fixed left-0 right-0 top-0 z-[45] pointer-events-none h-[var(--app-safe-area-top)]",
-              theme === "dark" ? "bg-[#0f0d14]" : "bg-white",
-            )}
-            aria-hidden
-          />
-        )}
-
-        <div className="relative z-10">
-        <header
-          className={cn(cn("md:h-16 flex items-center md:py-0 z-50 border-b", theme === "dark" ? "py-2.5 border-white/10" : "py-3 border-primary/10", theme === "dark" ? "border-b border-white/10 bg-[#0f0d14]" : "bg-background"), isMobile ? "sticky z-50 left-0 right-0 w-full max-md:mt-[var(--app-safe-area-top)] max-md:top-[var(--app-safe-area-top)]" : "fixed top-0 left-0 right-0")}
-          style={isMobile ? (theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }) : { ...(theme === "dark" ? { backgroundColor: "#0f0d14" } : { backgroundColor: "#ffffff" }), top: "var(--app-safe-area-top)", right: "0" }}
-        >
-        <div className={cn("px-4 sm:px-6 w-full", !isMobile ? "" : "container mx-auto")}>
-          <div className="flex items-center justify-between">
-          <div>
-            <h1
-              className={theme === "dark" ? "text-lg font-bold text-white cursor-pointer hover:opacity-80 transition-opacity" : "text-lg font-bold text-foreground cursor-pointer hover:opacity-80 transition-opacity"}
-              onClick={() => navigate("/workspace")}
-            >
-              {t("header")}
-            </h1>
-            {isMobile && <p className="text-xs text-muted-foreground">{userEmail}</p>}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main
-        className={cn(
-          "px-4 sm:px-6 max-w-4xl relative z-10",
-          isMobile ? "pb-4" : "pb-20",
-          !isMobile ? "pt-16" : "",
-          !isMobile ? "" : "container mx-auto",
-          isMobile && "flex-1 min-h-0 overflow-y-auto overflow-x-hidden",
-        )}
+    <>
+      <MobileBottomInlet />
+      <div
+        className={cn(workspaceShellClass(shellDark), "min-h-screen pb-20 md:pb-0")}
+        style={{ backgroundColor: shellDark ? "#000000" : "#faf8f5" }}
       >
-        <div className="py-2 sm:py-3">
+        <div className="min-h-screen">
+          <div className="relative z-10">
+            <WorkspaceHeader />
+
+            <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className={cn(theme === "dark" ? "grid w-full gap-1 p-1 rounded-lg border border-white/12 bg-transparent text-white mb-4" : "grid w-full mb-4", !isMobile ? "grid-cols-4" : "grid-cols-4")}>
-            <TabsTrigger value="profile" className={theme === "dark" ? cn("rounded-md border border-transparent text-white/55 transition-colors", "hover:bg-white/[0.06] hover:text-white/80", "data-[state=active]:!border-white/12 data-[state=active]:!bg-white/[0.06] data-[state=active]:!text-white data-[state=active]:shadow-none") : ""}>{t("tabs.profile")}</TabsTrigger>
-            <TabsTrigger value="settings" className={theme === "dark" ? cn("rounded-md border border-transparent text-white/55 transition-colors", "hover:bg-white/[0.06] hover:text-white/80", "data-[state=active]:!border-white/12 data-[state=active]:!bg-white/[0.06] data-[state=active]:!text-white data-[state=active]:shadow-none") : ""}>{t("tabs.settings")}</TabsTrigger>
-            <TabsTrigger value="billing" className={theme === "dark" ? cn("rounded-md border border-transparent text-white/55 transition-colors", "hover:bg-white/[0.06] hover:text-white/80", "data-[state=active]:!border-white/12 data-[state=active]:!bg-white/[0.06] data-[state=active]:!text-white data-[state=active]:shadow-none") : ""}>{t("tabs.billing")}</TabsTrigger>
-            <TabsTrigger value="legal" className={theme === "dark" ? cn("rounded-md border border-transparent text-white/55 transition-colors", "hover:bg-white/[0.06] hover:text-white/80", "data-[state=active]:!border-white/12 data-[state=active]:!bg-white/[0.06] data-[state=active]:!text-white data-[state=active]:shadow-none") : ""}>{t("tabs.legal")}</TabsTrigger>
+          <TabsList className={cn(helpTabsListClass, "grid grid-cols-4", shellDark && darkTabsListClass)}>
+            <TabsTrigger value="profile" className={cn(helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.profile")}</TabsTrigger>
+            <TabsTrigger value="settings" className={cn(helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.settings")}</TabsTrigger>
+            <TabsTrigger value="billing" className={cn(helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.billing")}</TabsTrigger>
+            <TabsTrigger value="legal" className={cn(helpTabsTriggerClass, shellDark && darkTabsTriggerClass)}>{t("tabs.legal")}</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
-          <TabsContent key={`profile-${localeKey}`} value="profile" className="space-y-2">
-            <Card className={cn(theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-3 sm:p-4 space-y-2") : "p-3 sm:p-4 space-y-2", theme === "dark" && "!bg-transparent")}>
+          <TabsContent key={`profile-${localeKey}`} value="profile" className="mt-4 space-y-4">
+            <Card className={cn(shellDark ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-4") : "p-4 sm:p-6 space-y-4", shellDark && "!bg-transparent")}>
               <div className="space-y-1">
                 <Label htmlFor="firstName" className="text-sm">{t("profile.nameLabel")}</Label>
                 <Input
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className={cn("h-11 py-2.5 leading-6", theme === "dark" ? cn("!bg-transparent !border-white/12 !text-white placeholder:!text-white/40") : "")}
+                  className={cn("h-11 py-2.5 leading-6", shellDark && darkFieldClass)}
                   placeholder={t("profile.namePlaceholder")}
                 />
               </div>
@@ -645,7 +619,7 @@ const Settings = () => {
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className={cn("h-11 py-2.5 leading-6", theme === "dark" ? cn("!bg-transparent !border-white/12 !text-white placeholder:!text-white/40") : "")}
+                  className={cn("h-11 py-2.5 leading-6", shellDark && darkFieldClass)}
                   placeholder={t("profile.usernamePlaceholder")}
                 />
               </div>
@@ -659,7 +633,7 @@ const Settings = () => {
                   value={userEmail}
                   readOnly
                   aria-readonly="true"
-                  className={cn("h-11 py-2.5 leading-6", theme === "dark" ? cn("!bg-transparent !border-white/12 !text-white placeholder:!text-white/40", "!opacity-100 cursor-default") : "bg-muted opacity-100 cursor-default")}
+                  className={cn("h-11 py-2.5 leading-6 cursor-default", shellDark ? cn(darkFieldClass, "!opacity-100") : "bg-muted opacity-100")}
                 />
                 <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
                   {t("profile.emailCannotChange")}
@@ -752,7 +726,7 @@ const Settings = () => {
               )}
             </Card>
 
-            <Card className={cn(theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-3 sm:p-4 space-y-2") : "p-3 sm:p-4 space-y-2", theme === "dark" && "!bg-transparent")}>
+            <Card className={cn(shellDark ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-4") : "p-4 sm:p-6 space-y-4", shellDark && "!bg-transparent")}>
               <h3 className="font-semibold flex items-center gap-2 text-sm">
                 <KeyRound className="h-4 w-4" />
                 {t("profile.changePasswordHeading")}
@@ -766,11 +740,11 @@ const Settings = () => {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder={t("profile.currentPasswordPlaceholder")}
-                  className={cn("h-9", theme === "dark" ? cn("!bg-transparent !border-white/12 !text-white placeholder:!text-white/40") : "")}
+                  className={cn("h-11", shellDark && darkFieldClass)}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label htmlFor="new-password" className="text-sm">{t("profile.newPasswordLabel")}</Label>
                   <Input
@@ -779,7 +753,7 @@ const Settings = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder={t("profile.newPasswordPlaceholder")}
-                    className={cn("h-9", theme === "dark" ? cn("!bg-transparent !border-white/12 !text-white placeholder:!text-white/40") : "", passwordError && "border-destructive")}
+                    className={cn("h-11", shellDark && darkFieldClass, passwordError && "border-destructive")}
                   />
                   {isValidatingPassword && (
                     <p className="text-xs text-muted-foreground">{t("profile.validatingPassword")}</p>
@@ -797,7 +771,7 @@ const Settings = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder={t("profile.confirmPasswordPlaceholder")}
-                    className={cn("h-9", theme === "dark" ? cn("!bg-transparent !border-white/12 !text-white placeholder:!text-white/40") : "", confirmPasswordError && "border-destructive")}
+                    className={cn("h-11", shellDark && darkFieldClass, confirmPasswordError && "border-destructive")}
                   />
                   {confirmPasswordError && (
                     <p className="text-xs text-destructive">{translatePasswordError(confirmPasswordError)}</p>
@@ -808,8 +782,6 @@ const Settings = () => {
               <Button
                 type="button"
                 onClick={handleChangePassword}
-                variant="ghost"
-                className={cn("w-full h-9", theme === "dark" ? "bg-transparent border border-white/12 text-white shadow-none hover:bg-white/[0.06] hover:text-white active:bg-transparent disabled:opacity-50" : cn("bg-card text-card-foreground border border-border/50", "hover:bg-card/90 hover:text-card-foreground active:text-card-foreground", "focus-visible:text-card-foreground"))}
                 disabled={!canChangePassword}
               >
                 {t("profile.changePasswordButton")}
@@ -818,7 +790,7 @@ const Settings = () => {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent key={`settings-${localeKey}`} value="settings" className="space-y-3">
+          <TabsContent key={`settings-${localeKey}`} value="settings" className="mt-4 space-y-4">
             <Card
               className={cn(
                 theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3",
@@ -990,7 +962,7 @@ const Settings = () => {
           </TabsContent>
 
           {/* Billing Tab */}
-          <TabsContent key={`billing-${localeKey}`} value="billing" className="space-y-3">
+          <TabsContent key={`billing-${localeKey}`} value="billing" className="mt-4 space-y-4">
             <Card
               className={cn(
                 theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3",
@@ -1081,7 +1053,7 @@ const Settings = () => {
           </TabsContent>
 
           {/* Legal Tab */}
-          <TabsContent key={`legal-${localeKey}`} value="legal" className="space-y-3">
+          <TabsContent key={`legal-${localeKey}`} value="legal" className="mt-4 space-y-4">
             <Card className={theme === "dark" ? cn("!rounded-xl !border-white/12 !bg-transparent !text-white backdrop-blur-sm !shadow-sm", "p-4 sm:p-6 space-y-3") : "p-4 sm:p-6 space-y-3"}>
               <h3 className="font-semibold text-sm sm:text-base mb-4">
                 {t("legal.heading")}
@@ -1146,11 +1118,11 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
-        </div>
-      </main>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

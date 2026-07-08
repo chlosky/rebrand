@@ -34,6 +34,8 @@ export type BoardZoomPreset = "fit" | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5;
 
 type BoardToolbarProps = {
   editorRef: React.RefObject<BoardCanvasHandle | null>;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onResetBoard?: () => void;
   className?: string;
   orientation?: "vertical" | "horizontal";
@@ -52,6 +54,8 @@ const toolBtn =
 
 export function BoardToolbar({
   editorRef,
+  onUndo,
+  onRedo,
   onResetBoard,
   className,
   orientation = "vertical",
@@ -112,7 +116,7 @@ export function BoardToolbar({
           variant="ghost"
           className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full")}
           disabled={!canUndo}
-          onClick={() => editorRef.current?.undo()}
+          onClick={() => (onUndo ?? (() => editorRef.current?.undo()))()}
           title="Undo (Ctrl+Z)"
         >
           <Undo2 className="h-4 w-4" />
@@ -122,7 +126,7 @@ export function BoardToolbar({
           variant="ghost"
           className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full")}
           disabled={!canRedo}
-          onClick={() => editorRef.current?.redo()}
+          onClick={() => (onRedo ?? (() => editorRef.current?.redo()))()}
           title="Redo (Ctrl+Shift+Z)"
         >
           <Redo2 className="h-4 w-4" />
