@@ -36,6 +36,7 @@ import { useTranslation } from "react-i18next";
 
 import { MobileBottomInlet } from "@/components/MobileBottomInlet";
 
+import { supabase } from "@/integrations/supabase/client";
 import { fetchUserWorkspaces, createWorkspaceFromTemplate } from "@/lib/boards/api";
 import { DEFAULT_FOUR_BOARD_TEMPLATE, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
 
@@ -60,10 +61,21 @@ import {
 
 
 
-type WorkspaceTab = "library" | "images" | "projects";
+type WorkspaceTab = "library" | "images" | "projects" | "orders";
 type NewSetOrientation = "portrait" | "landscape";
 
-const WORKSPACE_TABS: WorkspaceTab[] = ["library", "images", "projects"];
+const WORKSPACE_TABS: WorkspaceTab[] = ["library", "images", "projects", "orders"];
+
+type BoardOrderLine = { title: string; quantity: number; unit_amount: number };
+type BoardOrderRow = {
+  id: string;
+  status: string;
+  currency: string;
+  amount_total: number | null;
+  amount_subtotal: number;
+  lines: BoardOrderLine[];
+  created_at: string;
+};
 const LANDSCAPE_ARTBOARD = { width: 1350, height: 1080 };
 
 function templateWithOrientation(
@@ -261,6 +273,8 @@ export default function Workspace() {
 
   const [workspaces, setWorkspaces] = useState<BoardWorkspace[]>([]);
   const [creatingSet, setCreatingSet] = useState(false);
+  const [orders, setOrders] = useState<BoardOrderRow[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
 
 
@@ -365,6 +379,30 @@ export default function Workspace() {
 
 
 
+  useEffect(() => {
+    if (!user?.id) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setOrdersLoading(true);
+    void (async () => {
+      // RLS restricts rows to the signed-in user's checkout email.
+      const { data, error } = await supabase
+        .from("board_orders")
+        .select("id,status,currency,amount_total,amount_subtotal,lines,created_at")
+        .in("status", ["paid", "fulfilled"])
+        .order("created_at", { ascending: false });
+      if (cancelled) return;
+      setOrders(error || !data ? [] : (data as BoardOrderRow[]));
+      setOrdersLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const goUpgrade = () => navigate("/resubscribe");
 
   const startNewSet = async (orientation: NewSetOrientation) => {
@@ -446,6 +484,20 @@ export default function Workspace() {
         label={t("workspace.tabs.projects")}
 
         onClick={() => setTab("projects")}
+
+        dark={dark}
+
+      />
+
+      <TabButton
+
+        active={tab === "orders"}
+
+        locked={false}
+
+        label={t("workspace.tabs.orders")}
+
+        onClick={() => setTab("orders")}
 
         dark={dark}
 
@@ -803,6 +855,102 @@ export default function Workspace() {
 
 
 
+  if (tab === "orders") {
+    const formatOrderMoney = (cents: number) =>
+      new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+    const formatOrderDate = (iso: string) =>
+      new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
+    panel = (
+      <div
+        className={cn(
+          "min-h-[22rem] rounded-2xl border p-5 shadow-sm",
+          dark ? "border-white bg-black" : "border-zinc-200/80 bg-white",
+        )}
+      >
+        <div className="mb-4">
+          <h2 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
+            {t("workspace.orders.title")}
+          </h2>
+          <p className={cn("mt-1 text-sm", dark ? "text-white" : "text-zinc-500")}>
+            {t("workspace.orders.subtitle")}
+          </p>
+        </div>
+
+        {ordersLoading ? (
+          <p className={cn("text-sm", dark ? "text-white" : "text-zinc-500")}>
+            {t("workspace.orders.loading")}
+          </p>
+        ) : orders.length === 0 ? (
+          <div
+            className={cn(
+              "rounded-xl border border-dashed px-4 py-8 text-center text-sm",
+              dark ? "border-white text-white" : "border-zinc-200 bg-[#faf8f5] text-zinc-500",
+            )}
+          >
+            <p>{t("workspace.orders.empty")}</p>
+            <a
+              href="/dry-erase-boards"
+              className={cn(
+                "mt-3 inline-flex min-h-[40px] items-center justify-center rounded-lg px-4 text-sm font-medium",
+                dark ? "border border-white text-white" : "bg-zinc-900 text-white hover:bg-zinc-800",
+              )}
+            >
+              {t("workspace.orders.shopBoards")}
+            </a>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {orders.map((order) => (
+              <li
+                key={order.id}
+                className={cn(
+                  "rounded-xl border px-4 py-3",
+                  dark ? "border-white bg-black" : "border-zinc-200/80 bg-[#faf8f5]",
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className={cn("text-xs", dark ? "text-white" : "text-zinc-400")}>
+                    {formatOrderDate(order.created_at)}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                      dark ? "border border-white text-white" : "bg-zinc-900 text-white",
+                    )}
+                  >
+                    {t(`workspace.orders.status.${order.status}`, { defaultValue: order.status })}
+                  </span>
+                </div>
+                <ul className={cn("mt-2 space-y-1 text-sm", dark ? "text-white" : "text-zinc-700")}>
+                  {(Array.isArray(order.lines) ? order.lines : []).map((line, i) => (
+                    <li key={i} className="flex items-start justify-between gap-3">
+                      <span className="min-w-0">{line.title} × {line.quantity}</span>
+                      <span className="shrink-0 tabular-nums">
+                        {formatOrderMoney(line.unit_amount * line.quantity)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div
+                  className={cn(
+                    "mt-2 flex items-center justify-between border-t pt-2 text-sm font-medium",
+                    dark ? "border-white text-white" : "border-zinc-200 text-zinc-900",
+                  )}
+                >
+                  <span>{t("workspace.orders.totalLabel")}</span>
+                  <span className="tabular-nums">
+                    {formatOrderMoney(order.amount_total ?? order.amount_subtotal)}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={workspaceShellClass(dark)}>
       <MobileBottomInlet />
@@ -823,7 +971,7 @@ export default function Workspace() {
           </h1>
         ) : null}
 
-        {loading && tab !== "library" && tab !== "images" ? (
+        {loading && tab !== "library" && tab !== "images" && tab !== "orders" ? (
 
           <div
 

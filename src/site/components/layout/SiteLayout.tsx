@@ -6,9 +6,6 @@ import { SiteFooter } from "@/site/components/layout/SiteFooter";
 import { UrgencyTicker } from "@/site/components/layout/UrgencyTicker";
 import { GUIDE_CATALOG } from "@/site/lib/guidePublicManifest";
 import { SITE_CONTAINER, SITE_NAME } from "@/site/lib/siteBrand";
-import {
-  SHOPIFY_ACCOUNT_LOGIN_URL,
-} from "@/site/lib/shopifyVariants";
 import { cn } from "@/site/lib/utils";
 
 const navItemClass =
@@ -51,9 +48,9 @@ export function SiteLayout({ children }: SiteLayoutProps) {
             <NavLink to="/about" className={navLinkClass}>
               About
             </NavLink>
-            <a href={SHOPIFY_ACCOUNT_LOGIN_URL} className={navItemClass}>
+            <Link to="/login" className={navItemClass}>
               Sign in
-            </a>
+            </Link>
             <CartNavLink />
           </nav>
         </div>

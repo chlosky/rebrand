@@ -27,7 +27,7 @@
     },
     "startingSystem": {
       "title": "What are you setting up?",
-      "subtitle": "Pick one. We'll set up the right boards for it.",
+      "subtitle": "Let us know what you need the most help with right now. You'll be able to make boards for all of these areas in the tool.",
       "options": {
         "life_rebranding": {
           "title": "Vision boards & life plotting",

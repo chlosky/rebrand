@@ -38,6 +38,13 @@ export type RenderBoardOptions = {
   backgroundPageColor?: string;
   /** Override letterbox placement (phone wallpaper, etc.). */
   contentBox?: { x: number; y: number; width: number; height: number };
+  /**
+   * Print exports must preserve exact pixel dimensions.
+   * Preview/mobile exports may cap pixels to protect browser memory.
+   */
+  preservePixelDimensions?: boolean;
+  imageFormat?: "png" | "jpeg";
+  imageQuality?: number;
 };
 
 export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise<string> {
@@ -48,10 +55,16 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
     pageHeightPx,
     backgroundPageColor = "#ffffff",
     contentBox: contentBoxOverride,
+    preservePixelDimensions = false,
+    imageFormat = "png",
+    imageQuality,
   } = options;
   const contentBox = contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx);
   const bg = boardFillForKey(colorKey);
-  const { width: outW, height: outH, scale: pageScale } = capPagePixels(pageWidthPx, pageHeightPx);
+  const pixelBox = preservePixelDimensions
+    ? { width: pageWidthPx, height: pageHeightPx, scale: 1 }
+    : capPagePixels(pageWidthPx, pageHeightPx);
+  const { width: outW, height: outH, scale: pageScale } = pixelBox;
   const scaledContentBox = {
     x: contentBox.x * pageScale,
     y: contentBox.y * pageScale,
@@ -112,7 +125,11 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
   pageCanvas.add(snapshot);
   pageCanvas.renderAll();
 
-  const dataUrl = pageCanvas.toDataURL({ format: "png", multiplier: 1 });
+  const dataUrl = pageCanvas.toDataURL({
+    format: imageFormat,
+    quality: imageFormat === "jpeg" ? imageQuality ?? 0.92 : undefined,
+    multiplier: 1,
+  });
   pageCanvas.dispose();
   return dataUrl;
 }
@@ -125,10 +142,16 @@ export async function renderBoardToBlob(options: RenderBoardOptions): Promise<Bl
     pageHeightPx,
     backgroundPageColor = "#ffffff",
     contentBox: contentBoxOverride,
+    preservePixelDimensions = false,
+    imageFormat = "png",
+    imageQuality,
   } = options;
   const contentBox = contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx);
   const bg = boardFillForKey(colorKey);
-  const { width: outW, height: outH, scale: pageScale } = capPagePixels(pageWidthPx, pageHeightPx);
+  const pixelBox = preservePixelDimensions
+    ? { width: pageWidthPx, height: pageHeightPx, scale: 1 }
+    : capPagePixels(pageWidthPx, pageHeightPx);
+  const { width: outW, height: outH, scale: pageScale } = pixelBox;
   const scaledContentBox = {
     x: contentBox.x * pageScale,
     y: contentBox.y * pageScale,
@@ -189,7 +212,11 @@ export async function renderBoardToBlob(options: RenderBoardOptions): Promise<Bl
   pageCanvas.add(snapshot);
   pageCanvas.renderAll();
 
-  const blob = await canvasToBlob(pageCanvas.getElement());
+  const blob = await canvasToBlob(
+    pageCanvas.getElement(),
+    imageFormat === "jpeg" ? "image/jpeg" : "image/png",
+    imageFormat === "jpeg" ? imageQuality ?? 0.92 : undefined,
+  );
   pageCanvas.dispose();
   return blob;
 }
@@ -233,7 +260,7 @@ export const BOARD_PRINT_PRESETS = [
     dpi: 300,
   },
   {
-    id: "acrylic",
+    id: "24x36",
     label: '24×36" poster',
     description: "Large format print",
     pageWidthIn: 24,
@@ -244,10 +271,31 @@ export const BOARD_PRINT_PRESETS = [
 
 export type BoardPrintPreset = (typeof BOARD_PRINT_PRESETS)[number];
 
-function presetPixels(preset: BoardPrintPreset) {
+function inchesToPoints(inches: number): number {
+  return inches * 72;
+}
+
+export function getPrintPresetOutputSpec(preset: BoardPrintPreset) {
+  const pageWidthPx = inchesToPixels(preset.pageWidthIn, preset.dpi);
+  const pageHeightPx = inchesToPixels(preset.pageHeightIn, preset.dpi);
+
   return {
-    pageW: inchesToPixels(preset.pageWidthIn, preset.dpi),
-    pageH: inchesToPixels(preset.pageHeightIn, preset.dpi),
+    pageWidthIn: preset.pageWidthIn,
+    pageHeightIn: preset.pageHeightIn,
+    dpi: preset.dpi,
+    pageWidthPx,
+    pageHeightPx,
+    pageWidthPt: inchesToPoints(preset.pageWidthIn),
+    pageHeightPt: inchesToPoints(preset.pageHeightIn),
+    label: `${preset.pageWidthIn}×${preset.pageHeightIn} in · ${pageWidthPx}×${pageHeightPx} px · ${preset.dpi} DPI`,
+  };
+}
+
+function presetPixels(preset: BoardPrintPreset) {
+  const spec = getPrintPresetOutputSpec(preset);
+  return {
+    pageW: spec.pageWidthPx,
+    pageH: spec.pageHeightPx,
   };
 }
 
@@ -292,27 +340,38 @@ export async function downloadBoardsPrintPdf(
   if (boards.length === 0) return;
 
   const { jsPDF } = await import("jspdf");
-  const { pageW, pageH } = presetPixels(preset);
-  const format: [number, number] = [preset.pageWidthIn, preset.pageHeightIn];
+  const spec = getPrintPresetOutputSpec(preset);
+  const pageW = spec.pageWidthPx;
+  const pageH = spec.pageHeightPx;
+  const pageWidthPt = spec.pageWidthPt;
+  const pageHeightPt = spec.pageHeightPt;
+  const format: [number, number] = [pageWidthPt, pageHeightPt];
   const landscape = preset.pageWidthIn > preset.pageHeightIn;
 
   const pdf = new jsPDF({
     orientation: landscape ? "landscape" : "portrait",
-    unit: "in",
+    unit: "pt",
     format,
+    compress: true,
   });
 
   for (let i = 0; i < boards.length; i++) {
     const board = boards[i];
     if (i > 0) pdf.addPage(format, landscape ? "landscape" : "portrait");
 
+    const pageBackgroundColor = boardFillForKey(board.colorKey);
+
     const dataUrl = await renderBoardToDataUrl({
       layoutJson: board.layoutJson,
       colorKey: board.colorKey,
       pageWidthPx: pageW,
       pageHeightPx: pageH,
+      backgroundPageColor: pageBackgroundColor,
+      preservePixelDimensions: true,
+      imageFormat: "jpeg",
+      imageQuality: 0.92,
     });
-    pdf.addImage(dataUrl, "PNG", 0, 0, preset.pageWidthIn, preset.pageHeightIn);
+    pdf.addImage(dataUrl, "JPEG", 0, 0, pageWidthPt, pageHeightPt, undefined, "FAST");
   }
 
   const slug =

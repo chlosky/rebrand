@@ -89,7 +89,8 @@
       "tips": "Tips",
       "yourJourney": "Reminders",
       "imageLibrary": "Your Images",
-      "projects": "Projects"
+      "projects": "Projects",
+      "orders": "Orders"
     },
     "journey": {
       "journalTitle": "Journal",
@@ -187,6 +188,21 @@
     "imageLibrary": {
       "title": "Your Images",
       "subtitle": "Upload clippings and photos here. They stay in your account and show up when you add images on boards."
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "Your board orders and their status.",
+      "empty": "No orders yet. Boards you buy will show up here.",
+      "loading": "Loading your orders…",
+      "shopBoards": "Shop boards",
+      "itemsLabel": "Items",
+      "totalLabel": "Total",
+      "status": {
+        "pending": "Payment pending",
+        "paid": "Paid",
+        "fulfilled": "Shipped",
+        "canceled": "Canceled"
+      }
     },
     "locked": {
       "createTitle": "Create is for members",

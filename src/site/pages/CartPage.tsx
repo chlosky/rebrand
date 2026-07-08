@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { SiteLayout } from "@/site/components/layout/SiteLayout";
 import { SITE_CONTAINER } from "@/site/lib/siteBrand";
 import { Button } from "@/site/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   flushAnalyticsBeforeCheckout,
   trackGABeginCheckout,
@@ -34,11 +35,50 @@ export default function CartPage() {
     path: "/cart",
   });
 
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [lines, setLines] = useState<BoardCartLine[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [checkoutPending, setCheckoutPending] = useState(false);
   const orderStatus = searchParams.get("order");
+
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupPending, setSignupPending] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
+  const [signupNeedsConfirm, setSignupNeedsConfirm] = useState(false);
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (signupPending) return;
+    setSignupPending(true);
+    setSignupError(null);
+    try {
+      const email = signupEmail.trim();
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: signupPassword,
+      });
+      if (signUpError) throw signUpError;
+
+      // Email confirmation may be required by project settings — no session returned.
+      if (!data.session) {
+        const { data: signIn } = await supabase.auth.signInWithPassword({
+          email,
+          password: signupPassword,
+        });
+        if (!signIn.session) {
+          setSignupNeedsConfirm(true);
+          return;
+        }
+      }
+      navigate("/workspace");
+    } catch (err) {
+      setSignupError(err instanceof Error ? err.message : "Could not create your account.");
+    } finally {
+      setSignupPending(false);
+    }
+  };
 
   const refresh = useCallback(() => setLines(readBoardCart()), []);
 
@@ -95,20 +135,103 @@ export default function CartPage() {
   if (orderStatus === "success") {
     return (
       <SiteLayout>
-        <div className={`${SITE_CONTAINER} py-16 text-center`}>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">
-            Order placed
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm text-neutral-600">
-            Thank you — your payment went through and your order is confirmed. You&apos;ll get a
-            receipt by email, and we&apos;ll be in touch as it ships (1–3 business days processing).
-          </p>
-          <Link
-            to={DEFAULT_PRODUCT_PATH}
-            className="mt-8 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-semibold text-white hover:bg-neutral-800"
-          >
-            Continue shopping
-          </Link>
+        <div className={`${SITE_CONTAINER} py-16`}>
+          <div className="mx-auto max-w-md text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">
+              Order placed
+            </h1>
+            <p className="mx-auto mt-3 text-sm text-neutral-600">
+              Thank you — your payment went through and your order is confirmed. You&apos;ll get a
+              receipt by email, and we&apos;ll be in touch as it ships (1–3 business days
+              processing).
+            </p>
+          </div>
+
+          {signupNeedsConfirm ? (
+            <div className="mx-auto mt-8 max-w-md rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-center">
+              <h2 className="text-lg font-semibold text-neutral-900">Almost there</h2>
+              <p className="mt-2 text-sm text-neutral-600">
+                We&apos;ve created your account. Check your inbox to confirm your email, then sign in
+                to see your orders and Library.
+              </p>
+              <Link
+                to="/login"
+                className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-semibold text-white hover:bg-neutral-800"
+              >
+                Go to sign in
+              </Link>
+            </div>
+          ) : (
+            <div className="mx-auto mt-8 max-w-md rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
+              <h2 className="text-lg font-semibold text-neutral-900">Create your account</h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                Set up a free account to track this order and access your Library. Use the{" "}
+                <span className="font-medium text-neutral-900">same email you checked out with</span>{" "}
+                so your order links automatically.
+              </p>
+              <form onSubmit={(e) => void handleCreateAccount(e)} className="mt-5 space-y-4 text-left">
+                <div className="space-y-1.5">
+                  <label htmlFor="signup-email" className="text-sm font-medium text-neutral-800">
+                    Email
+                  </label>
+                  <input
+                    id="signup-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 outline-none focus:border-neutral-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="signup-password" className="text-sm font-medium text-neutral-800">
+                    Password
+                  </label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 outline-none focus:border-neutral-500"
+                  />
+                </div>
+                {signupError ? (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    {signupError}
+                  </p>
+                ) : null}
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full rounded-xl"
+                  disabled={signupPending}
+                >
+                  {signupPending ? "Creating account…" : "Create account & continue"}
+                </Button>
+              </form>
+              <p className="mt-4 text-center text-sm text-neutral-500">
+                Already have an account?{" "}
+                <Link to="/login" className="font-medium text-neutral-900 hover:underline">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          )}
+
+          <div className="mt-8 text-center">
+            <Link
+              to={DEFAULT_PRODUCT_PATH}
+              className="text-sm text-neutral-600 hover:text-neutral-900"
+            >
+              Continue shopping
+            </Link>
+          </div>
         </div>
       </SiteLayout>
     );

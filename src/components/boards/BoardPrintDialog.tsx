@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   BOARD_PRINT_PRESETS,
   downloadBoardsPrintPdf,
+  getPrintPresetOutputSpec,
   type BoardPrintPreset,
 } from "@/lib/boards/renderBoard";
 import { downloadPhoneWallpaper } from "@/lib/boards/phoneWallpaper";
@@ -57,6 +58,7 @@ export function BoardPrintDialog({
 
   const isPhoneWallpaper = optionId === "phone-wallpaper";
   const printPreset = BOARD_PRINT_PRESETS.find((p) => p.id === optionId);
+  const printSpec = printPreset ? getPrintPresetOutputSpec(printPreset) : null;
   const option = DOWNLOAD_OPTIONS.find((o) => o.id === optionId) ?? DOWNLOAD_OPTIONS[1];
 
   useEffect(() => {
@@ -121,7 +123,14 @@ export function BoardPrintDialog({
       onOpenChange(false);
     } catch (err) {
       console.error("Board download failed:", err);
-      toast.error(err instanceof Error ? err.message : "Download failed");
+      const isLargePrint = !isPhoneWallpaper && !!printPreset && printPreset.dpi === 300 && printPreset.pageWidthIn >= 18;
+      toast.error(
+        isLargePrint
+          ? "Large export failed. Try 18×24 or Digital preview."
+          : err instanceof Error
+            ? err.message
+            : "Download failed",
+      );
     } finally {
       setBusy(false);
     }
@@ -166,6 +175,11 @@ export function BoardPrintDialog({
               ))}
             </select>
             <p className="text-[11px] leading-snug text-neutral-500">{option.description}</p>
+            {printSpec ? (
+              <p className="text-[11px] leading-snug text-neutral-500">
+                Output: {printSpec.pageWidthIn}×{printSpec.pageHeightIn} in · {printSpec.pageWidthPx}×{printSpec.pageHeightPx} px
+              </p>
+            ) : null}
             {printPreset && printPreset.dpi === 300 && printPreset.pageWidthIn >= 18 && (
               <p className="text-[11px] leading-snug text-amber-800">
                 Large exports can take a moment and produce a big file.
