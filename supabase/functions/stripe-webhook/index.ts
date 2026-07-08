@@ -841,6 +841,113 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
     return;
   }
 
+  // Physical board order paid through Stripe Checkout.
+  if (session.metadata?.product === 'board-order') {
+    if (session.payment_status !== 'paid') {
+      console.log('Skipping board order - payment not completed:', session.payment_status);
+      return;
+    }
+    const orderId = session.metadata?.order_id || session.client_reference_id;
+    if (!orderId) {
+      console.error('Board order checkout completed but no order_id on session', session.id);
+      return;
+    }
+
+    const boardEmail = session.customer_details?.email || session.customer_email || null;
+    const shipping = session.shipping_details || session.customer_details || null;
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id || null;
+
+    const { data: order, error: orderErr } = await supabase
+      .from('board_orders')
+      .update({
+        status: 'paid',
+        email: boardEmail,
+        amount_total: typeof session.amount_total === 'number' ? session.amount_total : null,
+        shipping_name: shipping?.name || null,
+        shipping_address: shipping?.address || null,
+        stripe_payment_intent_id: paymentIntentId,
+        paid_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', String(orderId))
+      .select('id,email,amount_total,currency,lines,shipping_name,shipping_address,guide_granted')
+      .single();
+
+    if (orderErr) {
+      console.error('BOARD_ORDER_UPDATE_FAILED', { orderId, error: JSON.stringify(orderErr, null, 2) });
+      return;
+    }
+    console.log('BOARD_ORDER_PAID', { orderId });
+
+    // Board purchase includes the digital guide — grant a lifetime entitlement.
+    if (boardEmail && !order?.guide_granted) {
+      try {
+        await grantGuideEntitlement(supabase, {
+          email: boardEmail,
+          checkoutSessionId: session.id,
+          paymentIntentId,
+        });
+        await supabase
+          .from('board_orders')
+          .update({ guide_granted: true, updated_at: new Date().toISOString() })
+          .eq('id', String(orderId));
+      } catch (grantErr) {
+        console.warn('Board order guide grant failed (non-fatal):', grantErr);
+      }
+    }
+
+    // Notify fulfillment by email (best-effort).
+    try {
+      const POSTMARK_SERVER_TOKEN = Deno.env.get('POSTMARK_SERVER_TOKEN');
+      const POSTMARK_FROM_EMAIL = Deno.env.get('POSTMARK_FROM_EMAIL');
+      const notifyTo = Deno.env.get('ORDER_NOTIFY_EMAIL') || POSTMARK_FROM_EMAIL;
+      if (POSTMARK_SERVER_TOKEN && POSTMARK_FROM_EMAIL && notifyTo) {
+        const lines = Array.isArray(order?.lines) ? order.lines : [];
+        const itemsText = lines
+          .map((l: any) => `- ${l.title} × ${l.quantity} ($${((l.unit_amount * l.quantity) / 100).toFixed(2)})`)
+          .join('\n');
+        const addr = order?.shipping_address || {};
+        const shipText = [
+          order?.shipping_name || '',
+          addr.line1 || '',
+          addr.line2 || '',
+          [addr.city, addr.state, addr.postal_code].filter(Boolean).join(', '),
+          addr.country || '',
+        ].filter(Boolean).join('\n');
+        const total = typeof order?.amount_total === 'number' ? `$${(order.amount_total / 100).toFixed(2)}` : 'n/a';
+
+        const emailRes = await fetch('https://api.postmarkapp.com/email', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-Postmark-Server-Token': POSTMARK_SERVER_TOKEN,
+          },
+          body: JSON.stringify({
+            From: POSTMARK_FROM_EMAIL,
+            To: notifyTo,
+            Subject: `New board order — ${total} (${orderId})`,
+            TextBody:
+              `New paid board order.\n\nOrder: ${orderId}\nEmail: ${boardEmail}\nTotal: ${total}\n\nItems:\n${itemsText}\n\nShip to:\n${shipText}\n`,
+            MessageStream: 'outbound',
+            Tag: 'board-order',
+          }),
+        });
+        if (!emailRes.ok) {
+          console.error('Board order notify email failed:', await emailRes.text());
+        }
+      } else {
+        console.warn('Postmark not fully configured, skipping board order notify email');
+      }
+    } catch (emailErr) {
+      console.warn('Board order notify email exception (non-fatal):', emailErr);
+    }
+
+    return;
+  }
+
   const userId = session.metadata?.user_id;
   if (!userId) {
     // New flow: payment-first onboarding (no auth user yet).

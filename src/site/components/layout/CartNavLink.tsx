@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
-import {
-  CART_UPDATED_EVENT,
-  getCachedCartQuantity,
-} from "@/site/lib/shopifyStorefront";
+import { CART_UPDATED_EVENT, boardCartQuantity } from "@/site/lib/boardCart";
 import { cn } from "@/site/lib/utils";
 
 const navItemClass =
   "text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-600";
 
 export function CartNavLink() {
-  const [quantity, setQuantity] = useState(() => getCachedCartQuantity());
+  const [quantity, setQuantity] = useState(() => boardCartQuantity());
 
   useEffect(() => {
     const onCartUpdated = (event: Event) => {
       const detail = (event as CustomEvent<{ totalQuantity: number }>).detail;
       if (detail) setQuantity(detail.totalQuantity);
+      else setQuantity(boardCartQuantity());
     };
 
     window.addEventListener(CART_UPDATED_EVENT, onCartUpdated);

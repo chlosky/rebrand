@@ -57,7 +57,7 @@ import {
   type BoardSizeId,
   type StandoffId,
 } from "@/site/lib/shopifyVariants";
-import { addVariantToCart } from "@/site/lib/shopifyStorefront";
+import { addBoardToCart } from "@/site/lib/boardCart";
 
 function galleryImageUsesContain(src: string): boolean {
   return src.includes("color-options") || src.includes("standoffs");
@@ -444,17 +444,13 @@ export default function BoardProduct() {
     setCartPending(true);
     setCartError(null);
     try {
-      const variantId = shopifyVariantId(size, standoff, color);
-      if (!variantId) {
-        throw new Error("This size isn't available for checkout yet. Choose another size.");
-      }
       const item = {
-        contentId: variantId,
+        contentId: shopifyVariantId(size, standoff, color) ?? `${size}-${standoff}-${color}`,
         contentName: productDisplayTitle(color),
         price: selectedPriceUsd,
         quantity,
       };
-      await addVariantToCart(variantId, quantity);
+      addBoardToCart({ size, standoff, color, quantity });
       trackTikTokAddToCart(item);
       trackMetaAddToCart(item);
       trackGAAddToCart(item);
