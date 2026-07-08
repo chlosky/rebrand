@@ -78,11 +78,16 @@ export default function SetupStartingSystemGated() {
                     type="button"
                     onClick={() => selectStartingSystem(id)}
                     className={cn(
-                      "flex w-full items-start text-left",
+                      "relative flex w-full items-start overflow-hidden text-left",
                       setupChoiceTileWithGlowClass(active),
                     )}
                     style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
                   >
+                    {id === "life_rebranding" ? (
+                      <span className="absolute right-0 top-0 rounded-bl-md bg-zinc-900 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-white">
+                        ★ Recommended
+                      </span>
+                    ) : null}
                     <div className="min-w-0 flex-1 py-0.5">
                       <p className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
                         {t(`setup.startingSystem.options.${id}.title`)}

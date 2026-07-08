@@ -8,8 +8,8 @@
   "workspaceFree": {
     "intro": "Feature requests and your inbox are open on the free plan.",
     "introPro": "Support, feedback, and your inbox.",
-    "createLockedTitle": "Help Me Create is for Pro",
-    "createLockedBody": "Personalized help with boards, routines, and plotting support unlocks with Palette Plotting Pro.",
+    "createLockedTitle": "Help Me Create is for Premium",
+    "createLockedBody": "Personalized help with boards, routines, and plotting support unlocks with Palette Plotting Premium.",
     "upgrade": "Unlock plotting tools"
   },
   "create": {

@@ -31,8 +31,8 @@ export function getStripePriceIds(): StripePriceConfig {
       annual: Deno.env.get('STRIPE_PRICE_PLUS_ANNUAL') || '',
     },
     premium: {
-      monthly: Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY') || '',
-      annual: Deno.env.get('STRIPE_PRICE_PREMIUM_ANNUAL') || '',
+      monthly: Deno.env.get('P_STRIPE_PRICE_PREMIUM_MONTHLY') || '',
+      annual: Deno.env.get('P_STRIPE_PRICE_PREMIUM_ANNUAL') || '',
       weekly: Deno.env.get('STRIPE_PRICE_PREMIUM_WEEKLY') || '',
     },
   };

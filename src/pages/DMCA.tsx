@@ -11,7 +11,7 @@ const DMCA = () => {
             <h1 className="text-4xl font-bold mb-6">DMCA Notice & Takedown Policy</h1>
             <p className="text-sm text-muted-foreground mb-8">
               Effective Date: Jan 13, 2025<br />
-              Company: Palette Plotting LLC ("Palette Plotting," "we," "our," "us")
+              Company: Palette Plotting ("Palette Plotting," "we," "our," "us")
             </p>
 
             <div className="space-y-6 prose prose-sm max-w-none">

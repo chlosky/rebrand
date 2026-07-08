@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SETUP_GLASS_PANEL_CLASS, SETUP_CHOICE_LABEL_CLASS } from "@/lib/onboardingSetupTheme";
+import { readSetupDraft } from "@/lib/setupDraft";
 import { useTranslation } from "react-i18next";
 
 export default function SetupPlotSynthesis() {
@@ -12,11 +13,9 @@ export default function SetupPlotSynthesis() {
   const navigate = useNavigate();
   const setupBase = "/onboarding/setup";
   const items = useMemo((): string[] => {
-    return [
-      t("setup.plotSynthesis.items.workspace"),
-      t("setup.plotSynthesis.items.boards"),
-      t("setup.plotSynthesis.items.tracking"),
-    ];
+    const variant =
+      readSetupDraft().startingSystem === "moodboarding" ? "moodboard" : "general";
+    return t(`setup.plotSynthesis.${variant}`, { returnObjects: true }) as string[];
   }, [t]);
 
   return (

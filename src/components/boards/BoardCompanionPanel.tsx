@@ -129,7 +129,7 @@ async function companionErrorMessage(error: unknown): Promise<string> {
 
       if (body?.error === "Plotting Pro subscription required") {
 
-        return "Guide needs an active Palette Plotting Pro plan.";
+        return "Guide needs an active Palette Plotting Premium plan.";
 
       }
 

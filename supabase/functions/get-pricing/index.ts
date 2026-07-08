@@ -19,8 +19,8 @@ serve(async (req) => {
 
     // Get Price IDs: premium only (Basic and Plus columns removed)
     const priceIds = {
-      monthly: Deno.env.get("STRIPE_PRICE_PREMIUM_MONTHLY") || "price_1T7iz4JIPqOk4csD742fcYv3",
-      annual: Deno.env.get("STRIPE_PRICE_PREMIUM_ANNUAL") || "price_1T7izIJIPqOk4csDOtzyaEBW",
+      monthly: Deno.env.get("P_STRIPE_PRICE_PREMIUM_MONTHLY") || "price_1T7iz4JIPqOk4csD742fcYv3",
+      annual: Deno.env.get("P_STRIPE_PRICE_PREMIUM_ANNUAL") || "price_1T7izIJIPqOk4csDOtzyaEBW",
       weekly: Deno.env.get("STRIPE_PRICE_PREMIUM_WEEKLY") || "",
     };
 

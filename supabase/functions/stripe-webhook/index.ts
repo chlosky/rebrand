@@ -102,25 +102,66 @@ serve(async (req) => {
     // Get the signature from the request headers
     const signature = req.headers.get('stripe-signature');
     
-    // Verify webhook signature if secret is configured
-    if (webhookSecret && signature) {
-      // Import Stripe webhook verification (using crypto for HMAC)
-      const encoder = new TextEncoder();
-      const key = await crypto.subtle.importKey(
-        'raw',
-        encoder.encode(webhookSecret),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
-      
-      // For now, we'll log but not strictly enforce signature verification
-      // In production, you should verify the signature properly using Stripe's SDK
-      // This is a simplified version - consider using @stripe/stripe-js for proper verification
-      console.log('Webhook signature present, verification recommended');
-    } else if (webhookSecret && !signature) {
-      console.warn('STRIPE_WEBHOOK_SECRET configured but no signature in request');
-    } else if (!webhookSecret) {
+    // Verify webhook signature when the secret is configured (Stripe's t=/v1= scheme).
+    if (webhookSecret) {
+      if (!signature) {
+        console.warn('STRIPE_WEBHOOK_SECRET configured but no signature in request');
+        return new Response(JSON.stringify({ error: 'Missing signature' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      let sigTimestamp = '';
+      const sigCandidates: string[] = [];
+      for (const part of signature.split(',')) {
+        const [k, v] = part.trim().split('=');
+        if (k === 't') sigTimestamp = v;
+        else if (k === 'v1' && v) sigCandidates.push(v);
+      }
+
+      const ts = Number(sigTimestamp);
+      // Reject stale events (>5 min) to prevent replay.
+      const withinTolerance =
+        Number.isFinite(ts) && Math.abs(Math.floor(Date.now() / 1000) - ts) <= 300;
+
+      let signatureValid = false;
+      if (sigTimestamp && sigCandidates.length > 0 && withinTolerance) {
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          'raw',
+          encoder.encode(webhookSecret),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign'],
+        );
+        const sigBytes = await crypto.subtle.sign(
+          'HMAC',
+          key,
+          encoder.encode(`${sigTimestamp}.${body}`),
+        );
+        const expected = Array.from(new Uint8Array(sigBytes))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        // Constant-time compare against each provided v1 signature.
+        signatureValid = sigCandidates.some((candidate) => {
+          if (candidate.length !== expected.length) return false;
+          let mismatch = 0;
+          for (let i = 0; i < expected.length; i++) {
+            mismatch |= candidate.charCodeAt(i) ^ expected.charCodeAt(i);
+          }
+          return mismatch === 0;
+        });
+      }
+
+      if (!signatureValid) {
+        console.warn('Stripe webhook signature verification failed');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
       console.warn('STRIPE_WEBHOOK_SECRET not configured, skipping signature verification (not recommended for production)');
     }
 
@@ -235,8 +276,8 @@ function getTierFromPriceId(priceId: string): 'basic' | 'plus' | 'premium' | nul
       annual: Deno.env.get('STRIPE_PRICE_PLUS_ANNUAL') || '',
     },
     premium: {
-      monthly: Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY') || '',
-      annual: Deno.env.get('STRIPE_PRICE_PREMIUM_ANNUAL') || '',
+      monthly: Deno.env.get('P_STRIPE_PRICE_PREMIUM_MONTHLY') || '',
+      annual: Deno.env.get('P_STRIPE_PRICE_PREMIUM_ANNUAL') || '',
       weekly: Deno.env.get('STRIPE_PRICE_PREMIUM_WEEKLY') || '',
     },
   };

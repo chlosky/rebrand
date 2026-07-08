@@ -166,7 +166,7 @@ iOS/Android edge functions are unchanged. Web does not use `VITE_REVENUECAT_*` k
 
 Web checkout uses **`create-onboarding-checkout-session`** with:
 
-- `mode=subscription` and `STRIPE_PRICE_PREMIUM_MONTHLY` (or selected tier price)
+- `mode=subscription` and `P_STRIPE_PRICE_PREMIUM_MONTHLY` (or selected tier price)
 - `subscription_data[trial_period_days]=3` (override with Edge secret `STRIPE_TRIAL_DAYS`)
 - `payment_method_collection=always` so a card is saved before the trial ends and Stripe can auto-renew
 - `subscription_data[trial_settings][end_behavior][missing_payment_method]=cancel`

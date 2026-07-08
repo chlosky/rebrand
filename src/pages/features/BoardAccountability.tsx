@@ -242,7 +242,7 @@ export default function BoardAccountability() {
       if (status === 401) {
         toast.error("Session expired — sign out and sign in again, then retry Analyze.");
       } else if (status === 403) {
-        toast.error("Plotting Pro is required to analyze your boards.");
+        toast.error("Palette Plotting Premium is required to analyze your boards.");
       } else {
         toast.error("Couldn't analyze your boards. Try again in a moment.");
       }

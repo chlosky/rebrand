@@ -53,26 +53,6 @@ export default function PolicyPage() {
             </section>
           ))}
         </div>
-        <nav
-          className="mt-12 flex flex-wrap gap-x-4 gap-y-2 border-t border-neutral-200 pt-6 text-sm"
-          aria-label="Other policies"
-        >
-          <Link to="/policies/shipping" className="text-neutral-600 hover:text-neutral-900">
-            Shipping
-          </Link>
-          <Link to="/policies/refunds" className="text-neutral-600 hover:text-neutral-900">
-            Refunds
-          </Link>
-          <Link to="/policies/privacy" className="text-neutral-600 hover:text-neutral-900">
-            Privacy
-          </Link>
-          <Link to="/policies/terms" className="text-neutral-600 hover:text-neutral-900">
-            Terms
-          </Link>
-          <Link to="/contact" className="text-neutral-600 hover:text-neutral-900">
-            Contact
-          </Link>
-        </nav>
       </article>
     </SiteLayout>
   );

@@ -41,7 +41,22 @@ export default function SetupAttribution() {
   return (
     <SetupPage
       canContinue={selected != null}
-      onBack={() => navigate(`${setupBase}/begin-journey`)}
+      onBack={() => {
+        const startingSystem = readSetupDraft().startingSystem;
+        if (startingSystem === "office_work") {
+          navigate(`${setupBase}/office-planning-system`);
+          return;
+        }
+        if (startingSystem === "home_organization") {
+          navigate(`${setupBase}/home-focus`);
+          return;
+        }
+        if (startingSystem === "moodboarding") {
+          navigate(`${setupBase}/moodboard-focus`);
+          return;
+        }
+        navigate(`${setupBase}/focus-categories`);
+      }}
       onContinue={() => {
         if (!selected) return;
         void writeSetupDraft({ attributionSource: selected });

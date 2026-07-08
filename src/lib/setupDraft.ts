@@ -47,6 +47,8 @@ export type SetupDraft = {
   startingSystem?: StartingSystem;
   homeFocusKey?: string;
   officePlanningSystem?: string;
+  /** Free-text response when the office workflow "other" card is selected. */
+  officePlanningOther?: string;
   moodboardFocusKey?: string;
   /** UI locale (`en` | `es-419`) — set on welcome switcher or auto-detect. */
   locale?: "en" | "es-419";

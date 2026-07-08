@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import {
   CircleHelp,
+  Loader2,
   LogOut,
   Settings,
 } from "lucide-react";
@@ -15,9 +16,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 
@@ -40,10 +54,26 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { hasPro, onTrial, hadTrial, loading: planLoading, refreshPlan } = usePlottingPro();
   const dark = theme === "dark";
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [endingTrial, setEndingTrial] = useState(false);
   const userEmail = user?.email ?? "";
+
+  const handleEndTrial = async () => {
+    setEndingTrial(true);
+    try {
+      const { error } = await supabase.functions.invoke("end-stripe-trial");
+      if (error) throw error;
+      toast.success(t("trial.success"));
+      refreshPlan();
+      window.location.reload();
+    } catch {
+      toast.error(t("trial.error"));
+      setEndingTrial(false);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -73,6 +103,68 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
         </button>
 
         <div className="flex items-center gap-1">
+          {onTrial ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "mr-1 h-8 rounded-full px-3 text-xs font-semibold",
+                    dark
+                      ? "border border-white text-white hover:bg-white hover:text-black"
+                      : "border border-zinc-300 text-zinc-800 hover:bg-zinc-100",
+                  )}
+                >
+                  {t("trial.endEarly")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className={dark ? "border border-white bg-black text-white" : undefined}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("trial.confirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription className={dark ? "text-white" : undefined}>
+                    {t("trial.confirmBody")}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={endingTrial}>{t("trial.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void handleEndTrial();
+                    }}
+                    disabled={endingTrial}
+                  >
+                    {endingTrial ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t("trial.ending")}
+                      </span>
+                    ) : (
+                      t("trial.confirmCta")
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : !planLoading && !hasPro ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/onboarding/web-paywall")}
+              className={cn(
+                "mr-1 h-8 rounded-full px-3 text-xs font-semibold",
+                dark
+                  ? "border border-white text-white hover:bg-white hover:text-black"
+                  : "border border-zinc-300 text-zinc-800 hover:bg-zinc-100",
+              )}
+            >
+              {hadTrial ? t("trial.getPremium") : t("trial.start")}
+            </Button>
+          ) : null}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="ghost" className={cn(iconBtn, "w-auto px-1")}>

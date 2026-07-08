@@ -116,8 +116,8 @@ function getPriceIdForTier(tier: 'basic' | 'plus' | 'premium', billing: 'monthly
       weekly: '',
     },
     premium: {
-      monthly: Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY') || '',
-      annual: Deno.env.get('STRIPE_PRICE_PREMIUM_ANNUAL') || '',
+      monthly: Deno.env.get('P_STRIPE_PRICE_PREMIUM_MONTHLY') || '',
+      annual: Deno.env.get('P_STRIPE_PRICE_PREMIUM_ANNUAL') || '',
       weekly: Deno.env.get('STRIPE_PRICE_PREMIUM_WEEKLY') || '',
     },
   };

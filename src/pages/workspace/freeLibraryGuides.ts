@@ -5,374 +5,370 @@ export type LibraryBlock =
   | { type: "divider" }
   | { type: "bullets"; items: string[] }
   | { type: "checklist"; items: string[] }
-  | { type: "boardEntry"; label: string; text: string };
+  | { type: "boardEntry"; label: string; text: string }
+  | { type: "textLink"; label: string; href: string };
+
+export type LibrarySection = {
+  slug: string;
+  title: string;
+  blocks: LibraryBlock[];
+};
 
 export type FreeLibraryGuide = {
   slug: string;
   title: string;
-  tagline: string;
-  readMinutes: number;
-  blocks: LibraryBlock[];
-  heroImage?: {
-    src: string;
-    alt: string;
-  };
+  subtitle: string;
+  sections: LibrarySection[];
 };
+
+const FULL_GUIDE_HREF = "/palette-plotting-guide";
 
 export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
   {
     slug: "life-rebrand",
-    title: "Life Rebrand",
-    tagline: "Turn a reset into boards you can use.",
-    readMinutes: 6,
-    blocks: [
+    title: "Rebrand Your Life",
+    subtitle: "A short starter reader for vision boards, life plotting and The Plan.",
+    sections: [
       {
-        type: "paragraph",
-        text: "A life rebrand gets messy when everything lives in your head at once: the new routines, the new look, the money goals, the room reset, the social shift, the career move, the body goals, the screenshots, the shopping list, and the version of yourself you are trying to step into.",
-      },
-      {
-        type: "paragraph",
-        text: "The point of a rebrand board is to separate the areas that need movement, make the direction visible, and keep the next steps close enough that you actually act on them.",
-      },
-      {
-        type: "callout",
-        text: "A good life rebrand board system answers three questions: What am I becoming? What needs to change around me? What do I need to do next?",
-      },
-      { type: "subheading", text: "Start with the areas that actually need a reset" },
-      {
-        type: "paragraph",
-        text: "Start by naming the categories that are asking for structure. Most people need three strong focus areas and one place for action.",
-      },
-      {
-        type: "bullets",
-        items: [
-          "Self & Direction: style, body, beauty, routines, standards, confidence, visibility.",
-          "Money and work: income, career, business, offers, clients, savings, sales, systems.",
-          "Home and environment: bedroom, office, kitchen, closet, storage, daily flow.",
-          "Relationships and lifestyle: dating, friendships, family, social life, travel, rest.",
-          "Plan: dates, tasks, purchases, appointments, deadlines, numbers, next steps.",
-        ],
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Give every board a job" },
-      {
-        type: "boardEntry",
-        label: "Focus board",
-        text: "Use this for the direction. Add images, statements, proof, references, and reminders that show where the category is going.",
-      },
-      {
-        type: "boardEntry",
-        label: "Plan board",
-        text: "Use this for movement. Add dates, purchases, calls, appointments, deadlines, numbers, and tasks that need action.",
-      },
-      {
-        type: "boardEntry",
-        label: "Reset board",
-        text: "Use this when you are rebuilding a room, routine, or season and need to compare what is staying, leaving, or changing.",
-      },
-      { type: "divider" },
-      { type: "subheading", text: "What to put on the board" },
-      {
-        type: "checklist",
-        items: [
-          "A short label for the category.",
-          "Three to five images that show the direction.",
-          "One photo from your real life.",
-          "Two or three statements that sound like you.",
-          "One number if the category needs a target.",
-          "One date if the category needs timing.",
-          "One proof item that shows movement has already started.",
-          "One sticky note for the next step.",
+        slug: "start-here",
+        title: "Start Here",
+        blocks: [
+          { type: "paragraph", text: "A life rebrand gets easier when the pieces have a place to go. Images, notes, dates, goals, habits, screenshots and reminders should not all fight for attention in one crowded space." },
+          { type: "paragraph", text: "Palette Plotting starts with a simple split: focus areas hold the direction. The Plan holds the action." },
+          { type: "paragraph", text: "Use this reader to set up your first life plotting workspace, choose your focus areas, add visuals and move the active pieces into The Plan." },
+          { type: "bullets", items: [
+            "Choose up to three focus areas.",
+            "Give each area a clear visual role.",
+            "Use The Plan for dates, goals, next steps and reminders.",
+            "Reset the workspace weekly so it stays current.",
+          ] },
         ],
       },
       {
-        type: "paragraph",
-        text: "Keep the board sharp enough that you can understand it in a few seconds. If everything goes on the board, the board stops saying anything.",
-      },
-      { type: "subheading", text: "Use the tool this way" },
-      {
-        type: "bullets",
-        items: [
-          "Create one board for each major category.",
-          "Use Statements for the words you want to see often.",
-          "Use Sticky notes for active next steps.",
-          "Use images for direction.",
-          "Use the Plan board for anything with a date, cost, or deadline.",
-          "Review the boards weekly and remove what no longer fits.",
+        slug: "choose-focus-areas",
+        title: "Choose Your Focus Areas",
+        blocks: [
+          { type: "paragraph", text: "Start with the areas that need the most visibility. Three is enough for a strong setup. One is enough for a focused start." },
+          { type: "boardEntry", label: "Self & Direction", text: "Use this for confidence, standards, style, faith, discipline, routines, beauty, wellness and personal direction." },
+          { type: "boardEntry", label: "Career & Money", text: "Use this for income goals, work plans, business ideas, content, launches, clients, promotions and savings." },
+          { type: "boardEntry", label: "Love & Relationships", text: "Use this for dating, romance, relationships, family, friendship, standards and connection." },
+          { type: "boardEntry", label: "Home & Space", text: "Use this for apartments, rooms, organization, furniture, routines, cleaning, moves and home upgrades." },
+          { type: "boardEntry", label: "Beauty & Wellness", text: "Use this for hair, skincare, outfits, body care, rest, appointments, shopping lists and visual style." },
+          { type: "boardEntry", label: "Organization & Plan", text: "Use this for calendars, checklists, recurring tasks, deadlines, weekly plans and life admin." },
         ],
       },
       {
-        type: "callout",
-        text: "Build a visual system that keeps your new direction in front of you while you move.",
-      },
-    ],
-  },
-
-  {
-    slug: "moodboarding",
-    title: "Moodboarding",
-    tagline: "Taste, direction, and a reason for every piece.",
-    readMinutes: 5,
-    blocks: [
-      {
-        type: "paragraph",
-        text: "A good moodboard gives a project a visual language. It helps you decide what belongs and what the final direction should feel like before you start buying, designing, filming, decorating, or rebuilding.",
-      },
-      {
-        type: "paragraph",
-        text: "The mistake most people make is collecting images with no filter. They save anything attractive, then wonder why the board feels scattered. A strong moodboard needs a point of view.",
-      },
-      {
-        type: "callout",
-        text: "Before you add images, decide what the moodboard is supposed to help you choose.",
-      },
-      { type: "subheading", text: "Pick the decision the board is making" },
-      {
-        type: "bullets",
-        items: [
-          "A room direction.",
-          "A brand direction.",
-          "A content style.",
-          "An office setup.",
-          "A closet or beauty direction.",
-          "A product launch mood.",
-          "A life season or personal style shift.",
+        slug: "set-the-visual-direction",
+        title: "Set the Visual Direction",
+        blocks: [
+          { type: "paragraph", text: "Each focus area should be easy to read at a glance. Keep the label short, choose a color role and add visuals that match the category." },
+          { type: "subheading", text: "What to add" },
+          { type: "bullets", items: [
+            "A short label at the top of the board.",
+            "Images that show the category quickly.",
+            "Photos from your own life when the board is personal.",
+            "Short statements that feel direct and usable.",
+            "Numbers for savings, dates, deadlines, orders, content or targets.",
+            "Proof pieces like screenshots, invoices, photos, calendar blocks or completed steps.",
+          ] },
+          { type: "paragraph", text: "The strongest boards mix direction and evidence. Add the look, then add the real pieces that show movement." },
         ],
       },
       {
-        type: "paragraph",
-        text: "Once you know the decision, every image has to earn its place. If it looks good but does not help the decision, leave it out.",
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Use a simple image mix" },
-      {
-        type: "checklist",
-        items: [
-          "One anchor image that sets the main feeling.",
-          "Two texture or material references.",
-          "Two room, outfit, desk, product, or lifestyle references.",
-          "One detail image for color, lighting, or finish.",
-          "One real-life photo if the board is connected to your actual space or style.",
-          "One statement that names the direction in plain language.",
+        slug: "build-the-plan",
+        title: "Build The Plan",
+        blocks: [
+          { type: "paragraph", text: "The Plan is where the active pieces go. A focus area can hold the direction, but the next step needs a place with dates, reminders and action notes." },
+          { type: "checklist", items: [
+            "Add one next step for each focus area.",
+            "Add the date or deadline if one exists.",
+            "Add the number if the goal has a target.",
+            "Mark anything that needs a reminder.",
+            "Move finished items out of the active plan.",
+          ] },
+          { type: "paragraph", text: "Keep The Plan simple enough to check quickly. The goal is a workspace that helps you see what matters next." },
         ],
       },
       {
-        type: "paragraph",
-        text: "The anchor image matters. It keeps the rest of the board from drifting. If the board starts to look confused, go back to the anchor and remove anything that fights it.",
-      },
-      { type: "subheading", text: "What to avoid" },
-      {
-        type: "bullets",
-        items: [
-          "Too many unrelated aesthetics on one board.",
-          "Images that are pretty but do not fit the actual goal.",
-          "Overloading the board with quotes.",
-          "Using colors that fight the room, brand, or product.",
-          "Making the board so full that you cannot tell what matters.",
+        slug: "weekly-reset",
+        title: "The Weekly Reset",
+        blocks: [
+          { type: "paragraph", text: "Set one short reset each week. Ten to twenty minutes is enough." },
+          { type: "checklist", items: [
+            "Remove stale notes.",
+            "Add one new piece of proof.",
+            "Move active tasks into The Plan.",
+            "Update dates, numbers and reminders.",
+            "Keep each focus area easy to scan.",
+          ] },
+          { type: "paragraph", text: "The full guide goes deeper into color roles, board layouts, weekly resets, monthly resets and the complete four-board method." },
+          { type: "textLink", label: "Get the full Palette Plotting Guide", href: FULL_GUIDE_HREF },
         ],
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Use the board as a filter" },
-      {
-        type: "paragraph",
-        text: "Once your moodboard is built, use it to make choices. If you are buying furniture, picking outfits, styling content, planning a launch, or setting up an office, the board should help you say yes or no faster.",
-      },
-      {
-        type: "boardEntry",
-        label: "Images",
-        text: "Use them for direction, examples, texture, lighting, and references.",
-      },
-      {
-        type: "boardEntry",
-        label: "Statements",
-        text: "Use them to name the mood in your own words.",
-      },
-      {
-        type: "boardEntry",
-        label: "Sticky notes",
-        text: "Use them for decisions: buy, remove, test, film, order, compare, save.",
-      },
-      {
-        type: "callout",
-        text: "A finished moodboard should make your next choice easier.",
-      },
-    ],
-  },
-
-  {
-    slug: "home-organization",
-    title: "Home Organization",
-    tagline: "Zones, decisions, and next steps at home.",
-    readMinutes: 6,
-    blocks: [
-      {
-        type: "paragraph",
-        text: "Home organization gets overwhelming when you try to fix the whole house at once. The closet, kitchen, desk, entryway, bathroom, laundry, storage bins, labels, purchases, and donation piles all start competing for attention.",
-      },
-      {
-        type: "paragraph",
-        text: "A board helps because it separates the project into zones. Instead of carrying the whole reset in your head, you can see the rooms, decisions, purchases, and next steps in one place.",
-      },
-      {
-        type: "callout",
-        text: "Organize by zones, use, and what keeps breaking down.",
-      },
-      { type: "subheading", text: "Choose the zones" },
-      {
-        type: "paragraph",
-        text: "Start with the areas that create the most friction — the zones you touch every day.",
-      },
-      {
-        type: "bullets",
-        items: [
-          "Entryway: keys, shoes, bags, mail, packages.",
-          "Kitchen: pantry, counters, dishes, meal prep, cleaning supplies.",
-          "Closet: daily clothes, laundry flow, shoes, bags, seasonal storage.",
-          "Bathroom: skincare, hair tools, towels, backups, cleaning products.",
-          "Bedroom: nightstand, bedding, clothes, surfaces, reset routine.",
-          "Office or desk: cords, papers, tech, tools, notebooks, work setup.",
-        ],
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Make one board for the reset" },
-      {
-        type: "paragraph",
-        text: "The board should show what is changing. Add photos of the actual space alongside inspiration. Include the real mess, the desired look, and the decisions needed to close the gap.",
-      },
-      {
-        type: "checklist",
-        items: [
-          "Photo of the current space.",
-          "Reference photo for the direction.",
-          "List of zones inside the room.",
-          "Items to remove, donate, sell, or store.",
-          "Items to buy.",
-          "Measurements if storage or furniture is involved.",
-          "One sticky note for the next action.",
-          "One date for when the zone should be finished.",
-        ],
-      },
-      { type: "subheading", text: "Separate inspiration from action" },
-      {
-        type: "boardEntry",
-        label: "Inspiration",
-        text: "Use images for the look: shelves, bins, labels, closet systems, kitchen counters, room references, or storage ideas.",
-      },
-      {
-        type: "boardEntry",
-        label: "Action",
-        text: "Use sticky notes for the work: measure shelf, order bins, clear drawer, donate clothes, label pantry, move cords, book pickup.",
-      },
-      {
-        type: "boardEntry",
-        label: "Proof",
-        text: "Add before and after photos as the room changes. This keeps the board useful instead of theoretical.",
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Use the board during the reset" },
-      {
-        type: "bullets",
-        items: [
-          "Start with one zone.",
-          "Remove what obviously does not belong.",
-          "Group similar items together.",
-          "Decide what needs a container after you see what is left.",
-          "Add purchases to the board before buying.",
-          "Move finished tasks off the board so it stays current.",
-        ],
-      },
-      {
-        type: "callout",
-        text: "The board should keep you from buying random organizing products before you know what the space actually needs.",
       },
     ],
   },
 
   {
     slug: "office-optimization",
-    title: "Office Optimization",
-    tagline: "A workspace with less friction.",
-    readMinutes: 6,
-    blocks: [
+    title: "Optimize Your Workstreams in New Ways",
+    subtitle: "A short reader for project boards, planning structures and work that needs a better visual system.",
+    sections: [
       {
-        type: "paragraph",
-        text: "Your office is where your work either gets easier or starts leaking energy. Bad lighting, messy cords, poor storage, an ugly background, uncomfortable seating, and scattered tools all make work feel heavier than it needs to be.",
-      },
-      {
-        type: "paragraph",
-        text: "Office optimization is about making the space support the work you actually do. The board helps you plan the setup before you start buying things or rearranging the room for the fifth time.",
-      },
-      {
-        type: "callout",
-        text: "A strong office board should answer: What work happens here, what gets in the way, and what needs to change first?",
-      },
-      { type: "subheading", text: "Start with the work zones" },
-      {
-        type: "paragraph",
-        text: "Most offices need more than one zone, even if they are in one room. Name the zones before you start styling the space.",
-      },
-      {
-        type: "bullets",
-        items: [
-          "Deep work zone: desk, monitor, chair, keyboard, lighting.",
-          "Admin zone: papers, bills, forms, printer, filing, mail.",
-          "Creative zone: camera, product shots, samples, props, sketching, planning.",
-          "Storage zone: cables, supplies, inventory, notebooks, packaging, tools.",
-          "Background zone: what appears on camera, behind the desk, or in photos.",
-        ],
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Build the office board" },
-      {
-        type: "checklist",
-        items: [
-          "Photo of your current desk or office.",
-          "Reference image for the setup you want.",
-          "List of problems the room needs to solve.",
-          "Measurements for desk, wall, shelves, monitor, rug, or storage.",
-          "Shopping list with prices.",
-          "Cable and tech list.",
-          "Lighting plan.",
-          "One next-step sticky note.",
+        slug: "start-here",
+        title: "Start Here",
+        blocks: [
+          { type: "paragraph", text: "Work gets easier to manage when the moving pieces are visible. A visual workspace helps you see what is active, blocked, waiting, due or ready to close." },
+          { type: "paragraph", text: "Use this reader to choose a project structure, map the workstream and move the next steps into The Plan." },
+          { type: "bullets", items: [
+            "Use Kanban for task flow.",
+            "Use a timeline for dates and phases.",
+            "Use a priority grid for decisions.",
+            "Use OKRs for goals and measurable results.",
+            "Use 5S for a workspace, process or file reset.",
+          ] },
         ],
       },
       {
-        type: "paragraph",
-        text: "Make the room work harder for you. A cleaner desk, better lighting, a real place for supplies, and a background you are proud of can change the way the space feels immediately.",
-      },
-      { type: "subheading", text: "Plan before you buy" },
-      {
-        type: "boardEntry",
-        label: "Need",
-        text: "The thing that solves an actual problem: chair, lamp, cord tray, storage, monitor arm, shelf, whiteboard, planner, file box.",
-      },
-      {
-        type: "boardEntry",
-        label: "Nice",
-        text: "The thing that improves the space but should not outrank function: decor, art, tray, candle, plant, book stack, color accent.",
-      },
-      {
-        type: "boardEntry",
-        label: "Later",
-        text: "The thing that can wait until the main setup works: larger furniture, custom storage, upgraded tech, full room redesign.",
-      },
-      { type: "divider" },
-      { type: "subheading", text: "Use the board to optimize the room" },
-      {
-        type: "bullets",
-        items: [
-          "Put the current office photo on the board first.",
-          "Mark the biggest source of friction.",
-          "Add the reference setup you actually want to work inside.",
-          "List the first three changes that would improve the room fastest.",
-          "Add purchases only after measuring.",
-          "Move active tasks to the Plan board.",
-          "Review the setup after one week of actual use.",
+        slug: "choose-a-structure",
+        title: "Choose a Structure",
+        blocks: [
+          { type: "paragraph", text: "Start with the structure that matches the work. The structure gives the board a job before you add tasks, notes or files." },
+          { type: "boardEntry", label: "Kanban", text: "Best for moving tasks from To Do to Done. Use it for content calendars, client work, product tasks, admin, schoolwork or team projects." },
+          { type: "boardEntry", label: "Timeline", text: "Best for dates, phases and deadlines. Use it for launches, campaigns, hiring, events, deliverables or multi-step projects." },
+          { type: "boardEntry", label: "Priority grid", text: "Best for sorting decisions. Use it when too many tasks feel equally important." },
+          { type: "boardEntry", label: "OKRs", text: "Best for tying goals to measurable results. Use it for quarterly work, business goals, team priorities or personal performance goals." },
+          { type: "boardEntry", label: "5S reset", text: "Best for organizing a workspace, file system, process, desk, studio, storage area or operations flow." },
         ],
       },
       {
-        type: "callout",
-        text: "Build a room that makes your work easier to start, easier to continue, and easier to finish.",
+        slug: "map-the-workstream",
+        title: "Map the Workstream",
+        blocks: [
+          { type: "paragraph", text: "A workstream board should show how work enters, moves and finishes. Keep the categories simple so the board reads quickly." },
+          { type: "subheading", text: "Useful labels" },
+          { type: "bullets", items: [
+            "Intake",
+            "To Do",
+            "In Progress",
+            "Waiting",
+            "Blocked",
+            "Review",
+            "Done",
+            "Decisions",
+            "Risks",
+            "Next meeting",
+          ] },
+          { type: "paragraph", text: "Add owners, due dates and decisions where needed. Move active work into The Plan when it needs a reminder or a calendar date." },
+        ],
+      },
+      {
+        slug: "build-the-plan",
+        title: "Build The Plan",
+        blocks: [
+          { type: "paragraph", text: "Use The Plan as the action layer. The board can show the whole project. The Plan should show what needs movement now." },
+          { type: "checklist", items: [
+            "Add the next three actions.",
+            "Add deadlines and meeting dates.",
+            "Mark blockers that need a decision.",
+            "Add reminders for follow-ups.",
+            "Update status after each work session.",
+          ] },
+          { type: "paragraph", text: "A good workstream setup reduces the time spent remembering and re-sorting. The board should make the status obvious." },
+        ],
+      },
+      {
+        slug: "weekly-workstream-reset",
+        title: "Weekly Workstream Reset",
+        blocks: [
+          { type: "paragraph", text: "Use a weekly reset to keep the system current before the work piles up." },
+          { type: "checklist", items: [
+            "Archive finished tasks.",
+            "Move stale tasks out of active status.",
+            "Add new deadlines.",
+            "Update blocked items.",
+            "Choose the first action for the next work session.",
+            "Check The Plan for reminders and follow-ups.",
+          ] },
+          { type: "paragraph", text: "Keep the structure light. The point is not more management. The point is a better view of the work." },
+        ],
+      },
+    ],
+  },
+
+  {
+    slug: "home-organization",
+    title: "Build an Organized Home, While Juggling Everything",
+    subtitle: "A short reader for home routines, chores, meals, family planning and seasonal resets.",
+    sections: [
+      {
+        slug: "start-here",
+        title: "Start Here",
+        blocks: [
+          { type: "paragraph", text: "A home system works best when the plan is visible. Routines, chores, meals, shopping, family schedules and reset projects all need a place to land." },
+          { type: "paragraph", text: "Use this reader to choose a home focus, map the pieces and set up a workspace that supports the week." },
+          { type: "bullets", items: [
+            "Choose the home area with the most moving parts.",
+            "Add the recurring tasks.",
+            "Add the dates, supplies and reminders.",
+            "Use The Plan for the pieces that need action.",
+          ] },
+        ],
+      },
+      {
+        slug: "choose-your-home-focus",
+        title: "Choose Your Home Focus",
+        blocks: [
+          { type: "boardEntry", label: "Home plan & routines", text: "Use this for morning routines, evening routines, household rhythm, weekly reset days and repeat tasks." },
+          { type: "boardEntry", label: "Chores & cleaning", text: "Use this for zones, cleaning lists, supplies, chore assignments and room-by-room resets." },
+          { type: "boardEntry", label: "Meal planning", text: "Use this for menus, grocery lists, meal prep, pantry notes and kitchen rhythm." },
+          { type: "boardEntry", label: "Family & kids", text: "Use this for schedules, school dates, activities, appointments, reminders and household coordination." },
+          { type: "boardEntry", label: "Seasonal reset", text: "Use this for decluttering, holiday planning, decorating, storage, moves, guests or room updates." },
+        ],
+      },
+      {
+        slug: "build-the-home-map",
+        title: "Build the Home Map",
+        blocks: [
+          { type: "paragraph", text: "Start with zones. A zone can be a room, a routine, a chore category or a family need." },
+          { type: "subheading", text: "Useful home labels" },
+          { type: "bullets", items: [
+            "Kitchen",
+            "Laundry",
+            "Entryway",
+            "Bathrooms",
+            "Bedrooms",
+            "Kids",
+            "Meals",
+            "Groceries",
+            "This week",
+            "Reset day",
+            "Supplies",
+            "Appointments",
+          ] },
+          { type: "paragraph", text: "Use images for rooms, inspiration and storage ideas. Use notes for supplies, dates, tasks and recurring needs." },
+        ],
+      },
+      {
+        slug: "make-it-work-during-the-week",
+        title: "Make It Work During the Week",
+        blocks: [
+          { type: "paragraph", text: "A home plan should make the next step easy to find. Keep the active list short and move real tasks into The Plan." },
+          { type: "checklist", items: [
+            "Add the meals for the next few days.",
+            "Add groceries or supplies before they run out.",
+            "Add appointments and school dates.",
+            "Assign chores or zones if other people are involved.",
+            "Add reminders for anything time-sensitive.",
+          ] },
+          { type: "paragraph", text: "The visual space can hold the bigger picture. The Plan should hold the actions that keep the household moving." },
+        ],
+      },
+      {
+        slug: "weekly-home-reset",
+        title: "Weekly Home Reset",
+        blocks: [
+          { type: "paragraph", text: "Pick one day for a quick home reset. The goal is a usable system for the week ahead." },
+          { type: "checklist", items: [
+            "Clear finished tasks.",
+            "Update meals and groceries.",
+            "Check the calendar.",
+            "Choose the top home priority.",
+            "Add supplies, appointments and errands.",
+            "Move active tasks into The Plan.",
+          ] },
+          { type: "paragraph", text: "The home workspace should help the week feel less scattered. Keep it simple enough to update often." },
+        ],
+      },
+    ],
+  },
+
+  {
+    slug: "moodboarding",
+    title: "How to Start Moodboarding for a Living or at Least for Fun",
+    subtitle: "A short reader for moodboards, references, creative direction and visual briefs.",
+    sections: [
+      {
+        slug: "start-here",
+        title: "Start Here",
+        blocks: [
+          { type: "paragraph", text: "A moodboard is more than a group of pretty images. A strong moodboard gives a visual idea enough structure to explain itself." },
+          { type: "paragraph", text: "Use this reader to build a moodboard with a purpose, choose references, organize the direction and present the final board clearly." },
+          { type: "bullets", items: [
+            "Choose the purpose of the board.",
+            "Collect images with a clear role.",
+            "Add notes for color, texture, styling, layout or mood.",
+            "Use The Plan for sourcing, shopping, production or next steps.",
+          ] },
+        ],
+      },
+      {
+        slug: "choose-the-brief",
+        title: "Choose the Brief",
+        blocks: [
+          { type: "paragraph", text: "Start with the use case. The board should answer a specific visual question." },
+          { type: "boardEntry", label: "Aesthetics & style", text: "Use this for outfits, beauty, hair, nails, personal style, shopping, silhouettes and color direction." },
+          { type: "boardEntry", label: "Interiors & space", text: "Use this for rooms, furniture, materials, lighting, layouts, decor and renovation references." },
+          { type: "boardEntry", label: "Travel", text: "Use this for hotels, restaurants, outfits, locations, activities, packing and trip tone." },
+          { type: "boardEntry", label: "Events", text: "Use this for weddings, birthdays, dinners, launches, parties, sets, florals, tablescapes and guest experience." },
+          { type: "boardEntry", label: "Brand & creative", text: "Use this for logos, typography, campaign direction, colors, packaging, photography and social content." },
+        ],
+      },
+      {
+        slug: "build-the-board",
+        title: "Build the Board",
+        blocks: [
+          { type: "paragraph", text: "Build the board in layers. Give each image a reason to be there." },
+          { type: "subheading", text: "Useful moodboard layers" },
+          { type: "bullets", items: [
+            "Hero image",
+            "Color palette",
+            "Texture or material references",
+            "Styling references",
+            "Layout references",
+            "Product or sourcing notes",
+            "Words that define the direction",
+            "Images to avoid, stored separately if useful",
+          ] },
+          { type: "paragraph", text: "A good board should make the direction feel obvious without a long explanation." },
+        ],
+      },
+      {
+        slug: "for-fun-or-for-work",
+        title: "For Fun or for Work",
+        blocks: [
+          { type: "paragraph", text: "Moodboarding can stay personal, or it can become a service. The difference is the brief, the edit and the final presentation." },
+          { type: "subheading", text: "For fun" },
+          { type: "bullets", items: [
+            "Create style boards for outfits, rooms, trips or events.",
+            "Use boards before shopping or booking.",
+            "Save references in one place instead of scattered screenshots.",
+            "Update the board when the taste or plan changes.",
+          ] },
+          { type: "subheading", text: "For work" },
+          { type: "bullets", items: [
+            "Create sample boards for a portfolio.",
+            "Pick one niche: interiors, events, brand, travel, fashion or content.",
+            "Show before-and-after direction when possible.",
+            "Turn the board into a PDF, client link or presentation.",
+            "Use The Plan for sourcing, deadlines, deliverables and follow-ups.",
+          ] },
+        ],
+      },
+      {
+        slug: "present-the-board",
+        title: "Present the Board",
+        blocks: [
+          { type: "paragraph", text: "A finished moodboard should have a clear title, a short purpose and a clean visual order." },
+          { type: "checklist", items: [
+            "Name the board.",
+            "Add one sentence about the purpose.",
+            "Keep the strongest images largest.",
+            "Group similar references together.",
+            "Add notes only where they help.",
+            "Export or share the board in a format that fits the use case.",
+          ] },
+          { type: "paragraph", text: "For client work, keep the board easy to review. For personal use, keep it easy to update." },
+        ],
       },
     ],
   },

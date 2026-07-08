@@ -261,13 +261,10 @@ export default function SetupEmail() {
         if (signUpError) throw signUpError;
 
         if (!signUpData.session) {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
+          await supabase.auth.signInWithPassword({
             email: normalizedEmail,
             password,
           });
-          if (signInError) {
-            throw new Error(t("paywall:emailCollection.verifyEmailBlocked"));
-          }
         }
 
         const {
@@ -321,7 +318,7 @@ export default function SetupEmail() {
 
   return (
     <OnboardingLayout
-      currentPage={12}
+      currentPage={11}
       nativeFormPage
       onContinue={footerContinue}
       canContinue={footerCanContinue}
@@ -419,7 +416,7 @@ export default function SetupEmail() {
               id="setup-terms"
               checked={acceptedTerms}
               onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-              className="mt-[3px] shrink-0 border-white/30 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-zinc-900"
+              className="mt-[3px] shrink-0 border-zinc-300 data-[state=checked]:border-zinc-900 data-[state=checked]:bg-zinc-900 data-[state=checked]:text-white"
             />
             <Label
               htmlFor="setup-terms"
@@ -450,7 +447,7 @@ export default function SetupEmail() {
               id="setup-email-marketing"
               checked={emailMarketingConsent}
               onCheckedChange={(checked) => setEmailMarketingConsent(checked === true)}
-              className="mt-[3px] shrink-0 border-white/30 data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-zinc-900"
+              className="mt-[3px] shrink-0 border-zinc-300 data-[state=checked]:border-zinc-900 data-[state=checked]:bg-zinc-900 data-[state=checked]:text-white"
             />
             <Label
               htmlFor="setup-email-marketing"

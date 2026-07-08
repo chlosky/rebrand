@@ -41,19 +41,19 @@ const WELCOME_WEB_CTA_CLASS = cn(
 
 function WelcomePitch() {
   const { t } = useTranslation("onboarding");
-  const pillars = t("welcome.pillars", { returnObjects: true }) as string[];
+  const descriptionLines = t("welcome.descriptionLines", { returnObjects: true }) as string[];
   return (
     <div className="flex w-full max-w-[21rem] flex-col items-center gap-4 px-1 md:max-w-[32rem]">
       <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
         {t("welcome.tagline")}
       </p>
-      <ul className="flex w-full flex-col gap-2.5 text-center">
-        {pillars.map((line) => (
-          <li key={line} className="font-sans text-[13px] leading-[1.5] text-zinc-600">
+      <div className="flex w-full flex-col gap-1 text-center">
+        {descriptionLines.map((line) => (
+          <p key={line} className="font-sans text-[14px] leading-[1.55] text-zinc-600 md:text-[15px]">
             {line}
-          </li>
+          </p>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -65,6 +65,10 @@ function WelcomeTitle({ showFreeTrialLine }: { showFreeTrialLine?: boolean }) {
     <div className="flex flex-col items-center gap-2">
       <h1 className="font-welcome-serif mt-0 max-w-[20rem] text-center text-[30px] font-normal leading-[1.12] tracking-[-0.02em] text-zinc-900 sm:max-w-[28rem] sm:text-[34px] md:max-w-[36rem] md:text-[40px]">
         {t("welcome.nativeTitle")}
+        <br />
+        <span className="text-[20px] sm:text-[23px] md:text-[27px]" style={{ color: WELCOME_ACCENT }}>
+          {t("welcome.nativeTitleTwo")}
+        </span>
       </h1>
       {showFreeTrialLine ? (
         <p className="font-sans text-[17px] font-medium tracking-[-0.02em] text-zinc-500" style={{ color: WELCOME_ACCENT }}>
@@ -83,7 +87,6 @@ function WelcomeBodyNative() {
   return (
     <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-[calc(var(--app-safe-area-top)+1.25rem)] -translate-y-[0.32in]">
       <WelcomeTitle showFreeTrialLine={!isIosNative && !isAndroidNative} />
-      <p className="max-w-[21rem] text-center text-[14px] leading-[1.55] text-zinc-600">{t("welcome.nativeDescription")}</p>
       <WelcomePitch />
     </div>
   );
@@ -93,16 +96,10 @@ function WelcomeBodyWeb() {
   const { t } = useTranslation("onboarding");
   return (
     <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-1 md:max-w-xl md:gap-6 md:pt-1.5 lg:max-w-2xl">
-      <img
-        src="/logo.png"
-        alt="Palette Plotting"
-        className="mb-1 h-16 w-auto object-contain md:h-20"
-        decoding="async"
-      />
+      <span className="mb-1 font-sans text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
+        Palette Plotting
+      </span>
       <WelcomeTitle />
-      <p className="max-w-[21rem] text-center text-[14px] leading-[1.55] text-zinc-600 md:max-w-[32rem] md:text-[15px]">
-        {t("welcome.nativeDescription")}
-      </p>
       <WelcomePitch />
     </div>
   );

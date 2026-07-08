@@ -4,51 +4,52 @@
     "enterStudio": "Get started",
     "ctaSubtext": "About 3 minutes to set up",
     "freeTrialLine": "Start free",
-    "nativeTitle": "Turn your goals into a plan that moves",
-    "nativeDescription": "Set your focus areas. Get boards built around them, plus a plan with dates, actions, and reminders.",
+    "nativeTitle": "Put your visions into motion",
+    "nativeTitleTwo": "Start your 4-Vision Board Rebrand",
     "tagline": "Vision · Plan · Accountability",
-    "pillars": [
-      "Pick 3 areas to focus on",
-      "Get boards and a plan built around them",
-      "Stay on track with reminders"
+    "descriptionLines": [
+      "Set your focus areas.",
+      "Build boards around them,",
+      "and actually act",
+      "with a clear plan & reminders."
     ]
   },
   "setup": {
     "name": {
-      "title": "First things first — what should we call you?",
+      "title": "What should we call you?",
       "firstNameLabel": "First name",
       "firstNamePlaceholder": "Your first name",
       "saveError": "Could not save your name. Check your connection and try again."
     },
     "focusCategories": {
-      "title": "Choose 3 areas to focus on",
-      "subtitle": "We'll build your boards around these, plus one board for your plan."
+      "title": "Where do you need the biggest rebrand?",
+      "subtitle": "Tell us the areas you want to prioritize."
     },
     "startingSystem": {
       "title": "What are you setting up?",
       "subtitle": "Pick one. We'll set up the right boards for it.",
       "options": {
         "life_rebranding": {
-          "title": "Life plotting & vision boards",
-          "description": "Pick three focus areas and turn them into three starter boards plus The Plan."
+          "title": "Vision boards & life plotting",
+          "description": "Plan a life rebrand with our 4-vision board set up."
         },
         "home_organization": {
           "title": "Home organization",
-          "description": "Build household boards for routines, zones, chores, meals, and resets."
+          "description": "Organize your household's routines, zones, chores and meals."
         },
         "office_work": {
           "title": "Office & projects",
-          "description": "Build project boards with Kanban, timelines, priorities, OKRs, and next steps."
+          "description": "Optimize with Kanban, timelines, priorities and other boards."
         },
         "moodboarding": {
           "title": "Moodboarding",
-          "description": "Build image-forward boards for interiors, style, travel, events, or brand direction."
+          "description": "Build aesthetic boards for interiors, style, travel, or brand direction."
         }
       }
     },
     "homeFocus": {
       "title": "What is your home focus?",
-      "subtitle": "Pick the area you want your starter boards built around.",
+      "subtitle": "Tell us the areas you want to prioritize.",
       "options": {
         "home_plan_routines": "Home plan & routines",
         "home_chores_cleaning": "Chores & cleaning",
@@ -58,36 +59,37 @@
       }
     },
     "officePlanning": {
-      "title": "Choose your starting structure",
-      "subtitle": "Pick the structure you want on your first board. You can add more later.",
+      "title": "How do you like to optimize workflows?",
+      "subtitle": "Tell us the areas you want to prioritize.",
       "systems": {
         "kanban": {
           "title": "Kanban",
           "description": "Move tasks from To Do to Done."
         },
         "gantt": {
-          "title": "Gantt timeline",
+          "title": "Timeline",
           "description": "Map tasks across a timeline."
         },
         "eisenhower": {
           "title": "Priority grid",
-          "description": "Sort what matters now, next, later, or not at all."
+          "description": "Determine what matters now, next, later, or not at all."
         },
         "okrs": {
           "title": "OKRs",
-          "description": "Set the goal and the results that show it is moving."
+          "description": "Set goals and metrics to track progress."
         },
-        "five_s": {
-          "title": "5S reset",
-          "description": "Reset a space or workflow step by step."
+        "other": {
+          "title": "Something else",
+          "description": "Tell us how you like to work.",
+          "placeholder": "Describe how you like to optimize workflows…"
         }
       }
     },
     "moodboardFocus": {
-      "title": "What is your moodboard for?",
-      "subtitle": "We will start you with boards that match that direction.",
+      "title": "What do you typically moodboards?",
+      "subtitle": "Tell us the areas you want to prioritize.",
       "options": {
-        "mood_aesthetic_style": "Aesthetic & style",
+        "mood_aesthetic_style": "Aesthetics & style",
         "mood_interiors_space": "Interiors & space",
         "mood_travel_inspo": "Travel inspo",
         "mood_events_weddings": "Events & weddings",
@@ -109,7 +111,7 @@
     },
     "email": {
       "title": "Create your account",
-      "subtitle": "Everything saves to this email. Pick up where you left off, on any device.",
+      "subtitle": "Set your login details & save progress.",
       "emailLabel": "Email",
       "passwordLabel": "Password",
       "emailPlaceholder": "you@email.com",
@@ -137,11 +139,20 @@
     "plotSynthesis": {
       "title": "Your workspace is ready.",
       "subtitle": "Your boards, your plan, and your reminders are set up.",
-      "items": {
-        "workspace": "Open your boards.",
-        "boards": "Use the plan for dates, goals, and next steps.",
-        "tracking": "Pull text and dates from a board or photo."
-      }
+      "general": [
+        "Workspace for all your home, office & life.",
+        "Organize your visions & plans beautifully.",
+        "Print out your boards as full-sized posters.",
+        "Save your boards as phone wallpapers.",
+        "Create an action plan that brings plans to life, leveraging a guide where needed.",
+        "Set daily, weekly, and monthly reminders that keep you accountable.",
+        "Reset boards and set new visions."
+      ],
+      "moodboard": [
+        "Studio for all your moodboarding desires.",
+        "Organize your visuals beautifully.",
+        "Print out your moodboards."
+      ]
     },
     "plotLoading": {
       "title": "Building your workspace…",

@@ -531,7 +531,7 @@ export default function Workspace() {
 
                 <span className={cn("mt-1 block text-xs leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
 
-                  {guide.tagline} · {guide.readMinutes} min
+                  {guide.subtitle}
 
                 </span>
 

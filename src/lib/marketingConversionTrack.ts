@@ -245,6 +245,9 @@ function fireTtq(action: MarketingConversionAction, detail?: EventDetail) {
 }
 
 function fireTikTokEventsApi(action: MarketingConversionAction, detail?: EventDetail) {
+  // Temporarily disabled: server-side TikTok Events API (tiktok-events function) is off for now.
+  return;
+
   const serverEvent = tikTokServerEventForAction(action);
   if (!serverEvent) return;
 

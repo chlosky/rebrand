@@ -8,11 +8,12 @@ import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
   SETUP_CHOICE_DESC_CLASS,
   SETUP_CHOICE_TITLE_CLASS,
+  SETUP_TEXTAREA_CLASS,
   setupChoiceTileWithGlowClass,
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
 
-const SYSTEMS = ["kanban", "gantt", "eisenhower", "okrs", "five_s"] as const;
+const SYSTEMS = ["eisenhower", "kanban", "gantt", "okrs", "other"] as const;
 
 export default function SetupOfficePlanningSystem() {
   const { t } = useTranslation("onboarding");
@@ -23,22 +24,26 @@ export default function SetupOfficePlanningSystem() {
     const k = readSetupDraft().officePlanningSystem;
     return k && SYSTEMS.includes(k as (typeof SYSTEMS)[number]) ? k : null;
   });
+  const [otherText, setOtherText] = useState<string>(() => readSetupDraft().officePlanningOther ?? "");
 
   const select = useCallback((key: string) => {
     setSelected((prev) => (prev === key ? null : key));
   }, []);
 
+  const canContinue = selected != null && (selected !== "other" || otherText.trim().length > 0);
+
   return (
     <SetupPage
-      canContinue={selected != null}
+      canContinue={canContinue}
       disableNativeScrollViewport
       onBack={() => navigate(`${setupBase}/starting-system`)}
       onContinue={() => {
-        if (!selected) return;
+        if (!canContinue || !selected) return;
         writeSetupDraft({
           officePlanningSystem: selected,
+          officePlanningOther: selected === "other" ? otherText.trim() : undefined,
         });
-        navigate(`${setupBase}/begin-journey`);
+        navigate(`${setupBase}/attribution`);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
@@ -52,25 +57,35 @@ export default function SetupOfficePlanningSystem() {
             {SYSTEMS.map((key) => {
               const active = selected === key;
               return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => select(key)}
-                  className={cn(
-                    "flex w-full items-start text-left",
-                    setupChoiceTileWithGlowClass(active),
+                <div key={key} className="flex flex-col gap-2.5 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => select(key)}
+                    className={cn(
+                      "flex w-full items-start text-left",
+                      setupChoiceTileWithGlowClass(active),
+                    )}
+                    style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
+                  >
+                    <div className="min-w-0 flex-1 py-0.5">
+                      <p className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
+                        {t(`setup.officePlanning.systems.${key}.title`)}
+                      </p>
+                      <p className={cn(SETUP_CHOICE_DESC_CLASS, "mt-1")}>
+                        {t(`setup.officePlanning.systems.${key}.description`)}
+                      </p>
+                    </div>
+                  </button>
+                  {key === "other" && active && (
+                    <textarea
+                      autoFocus
+                      value={otherText}
+                      onChange={(e) => setOtherText(e.target.value)}
+                      placeholder={t("setup.officePlanning.systems.other.placeholder")}
+                      className={SETUP_TEXTAREA_CLASS}
+                    />
                   )}
-                  style={active ? { boxShadow: SETUP_CHOICE_TILE_SELECTED_GLOW } : undefined}
-                >
-                  <div className="min-w-0 flex-1 py-0.5">
-                    <p className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
-                      {t(`setup.officePlanning.systems.${key}.title`)}
-                    </p>
-                    <p className={cn(SETUP_CHOICE_DESC_CLASS, "mt-1")}>
-                      {t(`setup.officePlanning.systems.${key}.description`)}
-                    </p>
-                  </div>
-                </button>
+                </div>
               );
             })}
           </div>

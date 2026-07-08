@@ -51,7 +51,7 @@
     "nothingToRestore": "Nothing to restore."
   },
   "legacyAndroid": {
-    "title": "Unlock Palette Plotting Pro Today.",
+    "title": "Unlock Palette Plotting Premium Today.",
     "subtitle": "Tap Continue to confirm your plan.",
     "opening": "Opening…",
     "tryAgain": "Try again",
@@ -149,12 +149,10 @@
     "openingCheckout": "Opening…",
     "secondaryCta": "Not now",
     "features": [
-      "Three focus boards plus The Plan",
+      "Boards for life visions, home organization, office optimization and moodboarding",
       "Clippings, color, text, notes, and Structures",
-      "Extract text and action items from boards and uploaded images",
-      "AI-suggested reminders from dates, goals, and next steps",
-      "Email reminders and iCal export",
-      "Push notification framework for the mobile app"
+      "Guidance from AI on board creation and reminder setting",
+      "Text, email and calendar reminders"
     ]
   }
 }

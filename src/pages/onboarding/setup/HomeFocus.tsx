@@ -43,7 +43,7 @@ export default function SetupHomeFocus() {
         writeSetupDraft({
           homeFocusKey: selected,
         });
-        navigate(`${setupBase}/begin-journey`);
+        navigate(`${setupBase}/attribution`);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">

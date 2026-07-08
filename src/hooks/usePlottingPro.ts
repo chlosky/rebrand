@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type PlottingPlanSnapshot = {
   hasPro: boolean;
   onTrial: boolean;
+  hadTrial: boolean;
 };
 
 /** One fetch per signed-in user per session — dashboard lock state only. */
@@ -20,12 +21,13 @@ type UserPlanRow = {
   tier: string | null;
   status: string | null;
   on_trial: boolean | null;
+  had_trial: boolean | null;
   current_period_end: string | null;
 };
 
 function snapshotFromPlan(row: UserPlanRow | null): PlottingPlanSnapshot {
   if (!row?.tier) {
-    return { hasPro: false, onTrial: false };
+    return { hasPro: false, onTrial: false, hadTrial: false };
   }
 
   const status = row.status ?? "";
@@ -33,20 +35,21 @@ function snapshotFromPlan(row: UserPlanRow | null): PlottingPlanSnapshot {
     !row.current_period_end || new Date(row.current_period_end).getTime() > Date.now();
   const hasPro = (status === "active" || status === "trialing") && periodOk;
   const onTrial = hasPro && (row.on_trial === true || status === "trialing");
+  const hadTrial = row.had_trial === true || status === "trialing";
 
-  return { hasPro, onTrial };
+  return { hasPro, onTrial, hadTrial };
 }
 
 async function fetchPlottingPlan(userId: string): Promise<PlottingPlanSnapshot> {
   const { data, error } = await supabase
     .from("user_plans")
-    .select("tier, status, on_trial, current_period_end")
+    .select("tier, status, on_trial, had_trial, current_period_end")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (error) {
     console.warn("[usePlottingPro] user_plans lookup failed:", error.message);
-    return { hasPro: false, onTrial: false };
+    return { hasPro: false, onTrial: false, hadTrial: false };
   }
 
   const snapshot = snapshotFromPlan(data as UserPlanRow | null);
@@ -59,6 +62,7 @@ export function usePlottingPro() {
   const cached = user?.id ? planCache.get(user.id) : undefined;
   const [hasPro, setHasPro] = useState(cached?.hasPro ?? false);
   const [onTrial, setOnTrial] = useState(cached?.onTrial ?? false);
+  const [hadTrial, setHadTrial] = useState(cached?.hadTrial ?? false);
   const [loading, setLoading] = useState(cached === undefined && !authLoading);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -75,6 +79,7 @@ export function usePlottingPro() {
     if (!user?.id) {
       setHasPro(false);
       setOnTrial(false);
+      setHadTrial(false);
       setLoading(false);
       return;
     }
@@ -83,6 +88,7 @@ export function usePlottingPro() {
     if (hit !== undefined) {
       setHasPro(hit.hasPro);
       setOnTrial(hit.onTrial);
+      setHadTrial(hit.hadTrial);
       setLoading(false);
       return;
     }
@@ -99,12 +105,14 @@ export function usePlottingPro() {
         if (!cancelled) {
           setHasPro(snapshot.hasPro);
           setOnTrial(snapshot.onTrial);
+          setHadTrial(snapshot.hadTrial);
         }
       } catch {
         if (!cancelled) {
-          planCache.set(user.id, { hasPro: false, onTrial: false });
+          planCache.set(user.id, { hasPro: false, onTrial: false, hadTrial: false });
           setHasPro(false);
           setOnTrial(false);
+          setHadTrial(false);
         }
       } finally {
         planInFlight.delete(user.id);
@@ -117,5 +125,5 @@ export function usePlottingPro() {
     };
   }, [user?.id, authLoading, refreshToken]);
 
-  return { hasPro, onTrial, loading: authLoading || loading, refreshPlan };
+  return { hasPro, onTrial, hadTrial, loading: authLoading || loading, refreshPlan };
 }

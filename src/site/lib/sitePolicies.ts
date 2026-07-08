@@ -362,62 +362,544 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
   },
   "app-terms": {
     slug: "app-terms",
-    title: "Terms of Use",
+    title: "Terms of Service",
     metaDescription:
-      "Terms of use for the Palette Plotting software — Vision boards, Action planning, workspace, and related subscription features.",
-    lastUpdated: "July 7, 2026",
+      "Terms of Service for Palette Plotting — a web-based visual planning workspace with boards, notes, AI assistance, reminders, and Stripe subscription billing.",
+    lastUpdated: "July 8, 2026",
     sections: [
       {
         paragraphs: [
-          'These Terms of Use ("Terms") govern your access to and use of the Palette Plotting software and related services (the "Service"), operated by Palette Plotting LLC ("Palette Plotting," "we," "us," or "our"). By creating an account or using the Service, you agree to these Terms.',
-          "You must be at least 18 years old to use the Service.",
+          "Effective Date: July 8, 2026",
+          "Last Updated: July 8, 2026",
+          "These Terms of Service (“Terms”) govern your access to and use of Palette Plotting, including our website, web app, desktop-browser experience, mobile-browser experience, account features, visual workspace tools, planning tools, AI-assisted tools, extraction tools, reminder features, paid subscriptions and related services (collectively, the “Service”).",
+          "These Terms are a legal agreement between you and [Legal Company Name] (“Palette Plotting,” “we,” “us,” or “our”). By accessing or using the Service, creating an account, starting a trial, purchasing a subscription, or clicking to accept these Terms, you agree to be bound by these Terms.",
+          "If you do not agree to these Terms, do not use the Service.",
         ],
       },
       {
-        heading: "The Service",
+        heading: "1. Who May Use the Service",
         paragraphs: [
-          "Palette Plotting is a digital planning and vision-board platform. Depending on your plan, the Service may include Vision boards, Action planning and reminders, a workspace (library, image library, and projects), AI-assisted guidance, and related account features.",
-          "Palette Plotting is not medical, psychological, legal, or financial advice. Automated or AI-assisted responses are supplemental tools only.",
+          "You may use the Service only if you are legally able to enter into a binding contract with us and are not barred from using the Service under applicable law.",
+          "You must be at least 18 years old to create an account, purchase a subscription, or use paid features. If you are under 18, you may not use the Service unless we separately permit it in writing and your parent or legal guardian accepts responsibility for your use.",
+          "You are responsible for making sure your use of the Service complies with all laws, rules and regulations that apply to you.",
         ],
       },
       {
-        heading: "Accounts and acceptable use",
+        heading: "2. What Palette Plotting Provides",
         paragraphs: [
-          "You are responsible for your account credentials and for activity under your account. You agree to provide accurate information and to use the Service lawfully and in line with our Acceptable Use Policy.",
-          "We may suspend or terminate access if you violate these Terms or misuse the Service.",
+          "Palette Plotting is a web-based visual planning workspace. The Service may allow users to create, edit, organize and save visual workspaces, boards, images, notes, text, digital structures, checklists, calendars, plans, dates, goals, actions, reminders and related content.",
+          "The Service may include features such as:",
+        ],
+        list: [
+          "Visual boards and board sets",
+          "A planning area called The Plan",
+          "Images, clippings, notes, text, sticky notes, shapes and visual structures",
+          "AI-assisted layout, planning, editing, extraction, summarization or organization tools",
+          "Tools that extract text, dates, action items or other information from content you upload or create",
+          "Reminders, exports, calendar-related features, email reminders, text reminders or similar follow-through tools where available",
+          "Account storage, workspace saving and subscription access",
         ],
       },
       {
-        heading: "Subscriptions and billing",
         paragraphs: [
-          "Paid features may require an active subscription. Pricing, renewal, and cancellation terms are described at checkout and in our Billing & Refunds policy.",
-          "Mobile purchases may be billed through Apple or Google; web purchases may be billed through our checkout provider. Platform billing terms may also apply.",
+          "We may add, remove, modify, suspend or discontinue any part of the Service at any time.",
         ],
       },
       {
-        heading: "Your content",
+        heading: "3. Web-Based Service Only",
         paragraphs: [
-          "You retain ownership of content you upload or create in the Service. You grant Palette Plotting a limited license to host, process, and display that content as needed to operate the Service, including backups and support.",
-          "You are responsible for ensuring you have rights to any images or materials you upload.",
+          "Palette Plotting is currently offered as a web-based service accessible through desktop and mobile web browsers.",
+          "Unless we expressly state otherwise:",
+        ],
+        list: [
+          "The Service is not currently sold through Apple App Store billing",
+          "The Service is not currently sold through Google Play billing",
+          "Subscriptions and paid access are handled through Stripe",
+          "Mobile use means use through a mobile web browser, not a native mobile app subscription system",
         ],
       },
       {
-        heading: "Intellectual property",
         paragraphs: [
-          "Palette Plotting, its branding, software, templates, and library materials are owned by Palette Plotting or its licensors and may not be copied or reused except as allowed by the Service.",
+          "We may later release native apps, app-store billing, additional platforms, integrations, or other versions of the Service. If we do, additional terms may apply.",
         ],
       },
       {
-        heading: "Disclaimer and limitation of liability",
+        heading: "4. Account Registration",
         paragraphs: [
-          'The Service is provided "as is" to the fullest extent permitted by law. Palette Plotting is not liable for indirect or consequential damages. Our total liability for any claim relating to the Service is limited to the amount you paid us for the Service in the twelve months before the claim, or one hundred US dollars if you have not paid us.',
+          "To access certain features, you may need to create an account. You agree to provide accurate, current and complete information and to keep your account information updated.",
+          "You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. You must notify us promptly if you believe your account has been compromised or used without permission.",
+          "We may refuse, suspend or terminate accounts that violate these Terms, create risk for the Service or other users, or appear to involve fraud, abuse, unauthorized access or illegal activity.",
         ],
       },
       {
-        heading: "Changes and contact",
+        heading: "5. Your Content",
         paragraphs: [
-          "We may update these Terms by posting a revised version. Continued use after changes constitutes acceptance.",
-          `Questions: ${CONTACT_INFO.email}`,
+          "“User Content” means any content, materials, files, images, text, notes, boards, plans, dates, tasks, reminders, uploads, prompts, inputs, outputs, workspace content, or other materials you submit to, upload to, create in, or store through the Service.",
+          "You retain ownership of your User Content, subject to the rights and licenses you grant us in these Terms.",
+          "You are responsible for your User Content. You represent and warrant that:",
+        ],
+        list: [
+          "You own your User Content or have the rights needed to use it in the Service",
+          "Your User Content does not violate anyone else’s rights",
+          "Your User Content does not violate these Terms or applicable law",
+          "Your User Content does not include unlawful, infringing, abusive, exploitative, harmful, fraudulent, or malicious material",
+        ],
+      },
+      {
+        paragraphs: ["We do not claim ownership of your User Content."],
+      },
+      {
+        heading: "6. License You Grant Us",
+        paragraphs: [
+          "To operate, maintain, improve and provide the Service, you grant us a limited, worldwide, non-exclusive, royalty-free, sublicensable and transferable license to host, store, reproduce, process, transmit, display, format, modify and otherwise use your User Content solely as necessary to:",
+        ],
+        list: [
+          "Provide the Service to you",
+          "Save and display your workspace",
+          "Process uploads, images, boards, notes, plans and reminders",
+          "Operate AI-assisted, extraction, search, organization and planning features",
+          "Provide customer support",
+          "Maintain security, backups and system integrity",
+          "Comply with law and enforce these Terms",
+        ],
+      },
+      {
+        paragraphs: [
+          "This license does not give us the right to sell your User Content as standalone content.",
+        ],
+      },
+      {
+        heading: "7. AI-Assisted Features",
+        paragraphs: [
+          "The Service may include AI-assisted features that help generate, summarize, extract, organize, classify, format or suggest content based on your inputs or workspace.",
+          "AI-assisted outputs may be inaccurate, incomplete, outdated, biased, duplicative, or unsuitable for your specific situation. You are responsible for reviewing and deciding whether to use any AI-generated or AI-assisted output.",
+          "AI features are provided for planning, organization, brainstorming and convenience. They are not a substitute for professional advice, including legal, financial, medical, mental health, tax, design, construction, safety, employment, academic or business advice.",
+          "You agree not to rely on AI-assisted outputs as the sole basis for important decisions.",
+        ],
+      },
+      {
+        heading: "8. Extraction and Uploaded Materials",
+        paragraphs: [
+          "The Service may allow you to upload or process images, boards, screenshots, notes, documents or other content so the Service can extract text, dates, action items, reminders or other information.",
+          "Extraction tools may misread, omit, misclassify or incorrectly interpret content. You are responsible for reviewing extracted information before relying on it, adding it to The Plan, exporting it, or creating reminders from it.",
+          "You must not upload content that you do not have the right to use.",
+        ],
+      },
+      {
+        heading: "9. Reminders, Dates, Calendar and Follow-Through Features",
+        paragraphs: [
+          "The Service may allow you to create actions, dates, goals, calendar exports, email reminders, text reminders, or other follow-through tools.",
+          "Reminders are provided for convenience only. We do not guarantee that reminders, notifications, emails, calendar files, text messages, exports, integrations, or other time-based features will be delivered, received, opened, accurate, timely, uninterrupted, or error-free.",
+          "You remain responsible for your own deadlines, obligations, appointments, tasks, payments, filings, travel, work, school, health, household, business, legal and personal responsibilities.",
+          "Do not rely on the Service as your only reminder system for critical matters.",
+        ],
+      },
+      {
+        heading: "10. Subscriptions, Trials and Billing",
+        paragraphs: [
+          "Certain features of the Service may require a paid subscription. Subscription plans, billing intervals, trial availability, prices, features and limits will be shown at checkout, on the pricing page, or in the Service.",
+          "By starting a paid subscription, starting a free trial that converts to a paid subscription, or otherwise purchasing paid access, you authorize us and our payment processor to charge your payment method for the applicable fees, taxes and charges.",
+        ],
+      },
+      {
+        heading: "10.1 Stripe Billing",
+        paragraphs: [
+          "Palette Plotting currently uses Stripe to process payments, manage web checkout, and support web-based subscription billing.",
+          "When you make a purchase, you may be redirected to a Stripe-hosted checkout, billing, customer portal, or payment page. Your payment information is processed by Stripe, not directly by Palette Plotting.",
+          "Your payment may also be subject to Stripe’s own terms, policies and privacy practices.",
+        ],
+      },
+      {
+        heading: "10.2 Automatic Renewal",
+        paragraphs: [
+          "Subscriptions automatically renew at the end of each billing period unless canceled before renewal. By purchasing a subscription, you authorize recurring charges to your payment method until you cancel.",
+          "Your billing period may be weekly, monthly, annual, or another interval shown at checkout.",
+        ],
+      },
+      {
+        heading: "10.3 Free Trials",
+        paragraphs: [
+          "We may offer free trials or promotional access. Trial terms will be shown at signup or checkout.",
+          "Unless we state otherwise, if you start a trial that requires payment information, your subscription may automatically begin and your payment method may be charged when the trial ends unless you cancel before the trial period expires.",
+          "We may modify, limit, revoke or end trial offers at any time.",
+        ],
+      },
+      {
+        heading: "10.4 Price Changes",
+        paragraphs: [
+          "We may change subscription prices or plan features from time to time. If required by law, we will provide notice before price changes take effect.",
+          "Price changes will apply on your next billing cycle unless otherwise stated.",
+        ],
+      },
+      {
+        heading: "10.5 Taxes",
+        paragraphs: [
+          "Fees may be exclusive of taxes, levies, duties or similar governmental assessments. Where applicable, taxes may be calculated and charged at checkout or as otherwise required by law.",
+          "You are responsible for any taxes associated with your purchase, except taxes based on our income.",
+        ],
+      },
+      {
+        heading: "11. Cancellation",
+        paragraphs: [
+          "You may cancel your subscription through the account settings, billing portal, customer portal, cancellation link, or other cancellation method we make available.",
+          "Unless otherwise stated at cancellation, cancellation takes effect at the end of the current paid billing period. You may continue to access paid features until the end of that billing period, unless your account is terminated for violation of these Terms.",
+          "Deleting your account, stopping use of the Service, removing a bookmark, leaving the website, or uninstalling a browser shortcut does not automatically cancel your subscription.",
+          "You are responsible for canceling through the available billing method before renewal.",
+        ],
+      },
+      {
+        heading: "12. Refunds",
+        paragraphs: [
+          "Except where required by law, subscription fees are non-refundable and we do not provide refunds or credits for:",
+        ],
+        list: [
+          "Partial billing periods",
+          "Unused time",
+          "Forgotten cancellations",
+          "Accidental purchases",
+          "Changes in use",
+          "Failure to use the Service",
+          "Dissatisfaction after continued access",
+          "Loss of access caused by your violation of these Terms",
+        ],
+      },
+      {
+        paragraphs: [
+          "We may choose to provide a refund or credit at our sole discretion. Providing a refund or credit in one situation does not require us to provide one in the future.",
+          "If you believe you were charged in error, contact us at [support email].",
+        ],
+      },
+      {
+        heading: "13. Chargebacks and Payment Disputes",
+        paragraphs: [
+          "If you initiate a chargeback, payment dispute, reversal, or similar process, we may suspend your account or paid access while the dispute is pending.",
+          "We reserve the right to contest chargebacks and provide relevant information to Stripe, banks, card networks, payment processors, or other parties involved in the dispute.",
+          "Repeated chargebacks, fraudulent payment activity, or payment abuse may result in account termination.",
+        ],
+      },
+      {
+        heading: "14. Acceptable Use",
+        paragraphs: ["You agree not to use the Service to:"],
+        list: [
+          "Violate any law, regulation, contract, or third-party right",
+          "Upload, create, store, share or process content that infringes intellectual property, privacy, publicity, confidentiality, or other rights",
+          "Upload malware, viruses, harmful code, spyware, tracking tools, or malicious files",
+          "Attempt to gain unauthorized access to the Service or another user’s account",
+          "Interfere with, disrupt, overload, scrape, crawl, reverse engineer, probe, scan, or attack the Service",
+          "Bypass usage limits, subscription restrictions, authentication, billing, security, or access controls",
+          "Use the Service to create, organize, promote, or facilitate unlawful activity",
+          "Impersonate any person or entity",
+          "Misrepresent your affiliation with any person or entity",
+          "Use automated systems to create accounts or abuse the Service",
+          "Resell, sublicense, rent, lease, or commercially exploit the Service without our permission",
+          "Use the Service to process highly sensitive information unless we expressly permit it",
+          "Use the Service to generate or store content that is abusive, harassing, exploitative, hateful, sexually exploitative, violent, fraudulent, deceptive, or otherwise harmful",
+        ],
+      },
+      {
+        paragraphs: [
+          "We may investigate and take action against any suspected violation, including removing content, limiting access, suspending accounts, terminating accounts, or reporting activity to appropriate authorities.",
+        ],
+      },
+      {
+        heading: "15. Sensitive Information",
+        paragraphs: [
+          "The Service is not designed for storing highly sensitive information.",
+          "You should not upload or store:",
+        ],
+        list: [
+          "Social Security numbers",
+          "Government ID numbers",
+          "Full financial account numbers",
+          "Payment card numbers outside Stripe checkout",
+          "Medical records",
+          "Protected health information",
+          "Legal case files requiring special handling",
+          "Tax files requiring special handling",
+          "Passwords or security credentials",
+          "Confidential third-party information you are not authorized to use",
+          "Content subject to heightened regulatory requirements",
+        ],
+      },
+      {
+        paragraphs: [
+          "We are not responsible for consequences arising from your decision to upload sensitive information to the Service.",
+        ],
+      },
+      {
+        heading: "16. Intellectual Property",
+        paragraphs: [
+          "The Service, including its software, design, interface, code, features, templates, layouts, graphics, branding, text, marks, logos, workflows, systems and other materials, is owned by us or our licensors and is protected by intellectual property and other laws.",
+          "Subject to these Terms, we grant you a limited, revocable, non-exclusive, non-transferable, non-sublicensable license to access and use the Service for your personal or internal business purposes.",
+          "You may not copy, modify, distribute, sell, lease, reverse engineer, decompile, attempt to extract source code, create derivative works from, or exploit the Service except as allowed by these Terms or applicable law.",
+        ],
+      },
+      {
+        heading: "17. Templates, Structures and Built-In Materials",
+        paragraphs: [
+          "The Service may include templates, layouts, board structures, planning structures, prompts, examples, sample copy, sample content, visual elements, calendars, checklists, stickers, decals, icons or other built-in materials.",
+          "Unless otherwise stated, we own or license these materials. You may use them within the Service for your own personal or internal business planning purposes.",
+          "You may not resell, redistribute, package, publish, or offer our built-in materials as standalone products, templates, files, downloads, design assets, software components, or competing services.",
+        ],
+      },
+      {
+        heading: "18. Feedback",
+        paragraphs: [
+          "If you submit feedback, suggestions, ideas, comments, feature requests, bug reports, or other input about the Service, you grant us the right to use, copy, modify, publish, distribute and commercialize that feedback without compensation or obligation to you.",
+        ],
+      },
+      {
+        heading: "19. Third-Party Services",
+        paragraphs: [
+          "The Service may rely on or link to third-party services, including payment processors, hosting providers, analytics providers, AI providers, email providers, SMS providers, calendar tools, image services, authentication providers or other tools.",
+          "We are not responsible for third-party services, websites, products, policies, outages, security incidents, errors, fees, content, or practices.",
+          "Your use of third-party services may be subject to separate terms and privacy policies.",
+        ],
+      },
+      {
+        heading: "20. Availability and Changes to the Service",
+        paragraphs: [
+          "We aim to provide a useful and reliable Service, but we do not guarantee that the Service will be available, uninterrupted, secure, error-free, or compatible with every device, browser, operating system, screen size, network, plugin, extension, or accessibility setting.",
+          "We may modify, suspend, limit, discontinue or remove any feature at any time, including free features, paid features, AI features, extraction features, templates, reminders, exports, storage limits, usage limits, or integrations.",
+          "We may also perform maintenance, updates, security changes, or emergency fixes that affect availability.",
+        ],
+      },
+      {
+        heading: "21. Beta Features",
+        paragraphs: [
+          "Some features may be labeled beta, experimental, preview, early access, test, or similar. Beta features may be less reliable, less complete, more likely to change, or discontinued without notice.",
+          "You use beta features at your own risk.",
+        ],
+      },
+      {
+        heading: "22. Data Loss and Backups",
+        paragraphs: [
+          "We use reasonable efforts to maintain the Service, but we do not guarantee that User Content will always be available, recoverable, backed up, preserved, or free from loss.",
+          "You are responsible for maintaining your own copies of important materials, exports, deadlines, plans, images and documents.",
+          "We are not liable for loss of User Content, workspace data, plans, reminders, account history, or other information except to the extent required by law.",
+        ],
+      },
+      {
+        heading: "23. Account Suspension and Termination",
+        paragraphs: ["We may suspend or terminate your account or access to the Service if:"],
+        list: [
+          "You violate these Terms",
+          "Your payment fails or your subscription ends",
+          "Your use creates risk for us, other users, the Service, or third parties",
+          "We suspect fraud, abuse, unauthorized access, chargeback abuse, security risk, or illegal activity",
+          "We are required to do so by law",
+          "We discontinue the Service",
+        ],
+      },
+      {
+        paragraphs: [
+          "You may stop using the Service at any time. You may request account deletion by contacting us at [support email] or through any account deletion method we make available.",
+          "Termination does not relieve you of payment obligations incurred before termination.",
+        ],
+      },
+      {
+        heading: "24. Effect of Termination",
+        paragraphs: [
+          "When your account or subscription ends, you may lose access to paid features, saved workspaces, exports, reminders, AI features, extraction tools, or other parts of the Service.",
+          "We may retain certain information as needed for legitimate business purposes, legal compliance, dispute resolution, security, fraud prevention, tax, accounting, backup, or enforcement purposes, as described in our Privacy Policy.",
+          "Sections that by their nature should survive termination will survive, including ownership, licenses, payment obligations, disclaimers, limitations of liability, indemnity, dispute terms and general provisions.",
+        ],
+      },
+      {
+        heading: "25. Privacy",
+        paragraphs: [
+          "Your use of the Service is also governed by our Privacy Policy, which explains how we collect, use and share information.",
+          "Please review our Privacy Policy at: [Privacy Policy URL].",
+          "By using the Service, you acknowledge that we may collect and process information as described in the Privacy Policy.",
+        ],
+      },
+      {
+        heading: "26. Communications",
+        paragraphs: [
+          "By creating an account or using the Service, you agree that we may send you transactional, administrative and service-related communications, including account notices, billing notices, subscription updates, security notices, password emails, reminder emails, product notices and support messages.",
+          "If you opt in to marketing communications, we may send you promotional emails or updates. You can unsubscribe from marketing emails using the unsubscribe link or other method provided.",
+          "Transactional and service-related messages are not marketing messages, and you may continue to receive them as long as you maintain an account or active relationship with us.",
+        ],
+      },
+      {
+        heading: "27. No Professional Advice",
+        paragraphs: [
+          "The Service is provided for visual planning, organization, brainstorming, productivity and personal or business planning support.",
+          "The Service does not provide legal, financial, tax, medical, mental health, therapy, academic, real estate, construction, safety, employment, investment, business, or other professional advice.",
+          "You should consult qualified professionals before making decisions that require professional advice.",
+        ],
+      },
+      {
+        heading: "28. Disclaimers",
+        paragraphs: [
+          "THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE.”",
+          "TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, AVAILABILITY, RELIABILITY, SECURITY, QUIET ENJOYMENT AND ERROR-FREE OPERATION.",
+          "WE DO NOT WARRANT THAT:",
+        ],
+        list: [
+          "THE SERVICE WILL MEET YOUR REQUIREMENTS",
+          "THE SERVICE WILL BE UNINTERRUPTED, SECURE, TIMELY, ERROR-FREE OR AVAILABLE",
+          "WORKSPACES, REMINDERS, EXPORTS, EXTRACTIONS OR AI OUTPUTS WILL BE ACCURATE, COMPLETE OR RELIABLE",
+          "DEFECTS WILL BE CORRECTED",
+          "USER CONTENT WILL NEVER BE LOST",
+          "THE SERVICE WILL BE FREE OF VIRUSES, MALWARE OR HARMFUL COMPONENTS",
+          "ANY PARTICULAR RESULT, PLAN, OUTCOME, GOAL, PROJECT, DEADLINE, FOLLOW-THROUGH, PRODUCTIVITY IMPROVEMENT, BUSINESS RESULT OR PERSONAL RESULT WILL OCCUR",
+        ],
+      },
+      {
+        paragraphs: [
+          "Some jurisdictions do not allow certain disclaimers, so some of the above may not apply to you.",
+        ],
+      },
+      {
+        heading: "29. Limitation of Liability",
+        paragraphs: [
+          "TO THE MAXIMUM EXTENT PERMITTED BY LAW, PALETTE PLOTTING AND ITS OWNERS, OFFICERS, DIRECTORS, EMPLOYEES, CONTRACTORS, AGENTS, AFFILIATES, LICENSORS, SERVICE PROVIDERS AND SUPPLIERS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, GOODWILL, DATA, CONTENT, BUSINESS, OPPORTUNITY, USE, OR OTHER INTANGIBLE LOSSES, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.",
+          "TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR TOTAL LIABILITY FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THE SERVICE OR THESE TERMS WILL NOT EXCEED THE GREATER OF:",
+        ],
+        list: [
+          "The amount you paid to us for the Service in the three months before the event giving rise to the claim; or",
+          "$100.",
+        ],
+      },
+      {
+        paragraphs: [
+          "Some jurisdictions do not allow certain limitations of liability, so some of the above may not apply to you.",
+        ],
+      },
+      {
+        heading: "30. Indemnification",
+        paragraphs: [
+          "You agree to defend, indemnify and hold harmless Palette Plotting and its owners, officers, directors, employees, contractors, agents, affiliates, licensors, service providers and suppliers from and against any claims, damages, losses, liabilities, costs and expenses, including reasonable attorneys’ fees, arising out of or relating to:",
+        ],
+        list: [
+          "Your use of the Service",
+          "Your User Content",
+          "Your violation of these Terms",
+          "Your violation of applicable law",
+          "Your violation of another person’s rights",
+          "Your misuse of AI, extraction, reminder, export, or planning features",
+          "Your fraud, misconduct, negligence, or unauthorized activity",
+        ],
+      },
+      {
+        paragraphs: [
+          "We reserve the right to control the defense of any matter subject to indemnification. You agree to cooperate with our defense.",
+        ],
+      },
+      {
+        heading: "31. Copyright Complaints",
+        paragraphs: [
+          "If you believe content on the Service infringes your copyright, you may send a notice to:",
+          "Copyright Agent: [Name or Legal Department]",
+          "Email: [copyright email]",
+          "Address: [mailing address]",
+          "Your notice should include:",
+        ],
+        list: [
+          "Your physical or electronic signature",
+          "Identification of the copyrighted work you claim was infringed",
+          "Identification of the allegedly infringing material and where it is located",
+          "Your contact information",
+          "A statement that you have a good-faith belief that the use is not authorized",
+          "A statement that the information in your notice is accurate and, under penalty of perjury, that you are authorized to act on behalf of the copyright owner",
+        ],
+      },
+      {
+        paragraphs: [
+          "We may remove or disable access to allegedly infringing material and may terminate repeat infringers where appropriate.",
+        ],
+      },
+      {
+        heading: "32. Governing Law",
+        paragraphs: [
+          "These Terms are governed by the laws of the State of [State], without regard to conflict-of-law principles.",
+          "The governing law and venue provisions may not deprive you of mandatory consumer protections that apply under the law of your place of residence.",
+        ],
+      },
+      {
+        heading: "33. Dispute Resolution",
+        paragraphs: [
+          "Before filing a claim, you agree to first contact us at [support email] and attempt to resolve the dispute informally. You must include your name, account email, a description of the dispute and the relief you seek.",
+          "If we cannot resolve the dispute informally within 30 days, either party may proceed as allowed under these Terms.",
+        ],
+      },
+      {
+        heading: "34. Arbitration Agreement",
+        paragraphs: [
+          "Note: Have counsel review this section before publishing.",
+          "To the maximum extent permitted by law, you and Palette Plotting agree that any dispute, claim, or controversy arising out of or relating to these Terms or the Service will be resolved by binding individual arbitration, rather than in court, except that either party may bring qualifying claims in small claims court.",
+          "The arbitration will be conducted by [AAA/JAMS/Other Provider] under its applicable consumer or commercial arbitration rules.",
+          "The arbitration will take place in [County, State], unless the arbitrator allows remote proceedings or applicable law requires otherwise.",
+          "The arbitrator may award the same damages and relief as a court on an individual basis, subject to these Terms.",
+        ],
+      },
+      {
+        heading: "35. Class Action Waiver",
+        paragraphs: [
+          "To the maximum extent permitted by law, you and Palette Plotting agree that each may bring claims against the other only in an individual capacity, and not as a plaintiff or class member in any class, collective, consolidated, private attorney general, or representative proceeding.",
+          "The arbitrator may not consolidate claims or preside over any class or representative proceeding unless both parties agree in writing.",
+        ],
+      },
+      {
+        heading: "36. Exceptions to Arbitration",
+        paragraphs: ["Nothing in these Terms prevents either party from seeking:"],
+        list: [
+          "Relief in small claims court where available",
+          "Temporary or preliminary injunctive relief in court to protect intellectual property, confidential information, security, or unauthorized access",
+          "Relief that cannot be waived or limited under applicable law",
+        ],
+      },
+      {
+        heading: "37. Changes to These Terms",
+        paragraphs: [
+          "We may update these Terms from time to time.",
+          "If we make material changes, we may notify you by email, in-app notice, website notice, or other reasonable method. The updated Terms will be effective as of the date stated at the top unless otherwise stated.",
+          "Your continued use of the Service after updated Terms become effective means you accept the updated Terms.",
+          "If you do not agree to the updated Terms, you must stop using the Service and cancel any subscription before the next renewal.",
+        ],
+      },
+      {
+        heading: "38. Changes to Pricing or Paid Features",
+        paragraphs: [
+          "We may change pricing, subscription plans, trial offers, feature availability, usage limits, storage limits, AI usage limits, reminder limits, or plan benefits from time to time.",
+          "Where required by law, we will provide notice before material pricing changes take effect.",
+          "Continued use of paid features after changes take effect means you accept those changes.",
+        ],
+      },
+      {
+        heading: "39. Assignment",
+        paragraphs: [
+          "You may not assign or transfer these Terms, your account, or your rights under these Terms without our prior written consent.",
+          "We may assign or transfer these Terms in connection with a merger, acquisition, financing, sale of assets, corporate reorganization, change of control, or by operation of law.",
+        ],
+      },
+      {
+        heading: "40. Severability",
+        paragraphs: [
+          "If any provision of these Terms is found invalid, unlawful, or unenforceable, that provision will be enforced to the maximum extent permitted, and the remaining provisions will remain in full force and effect.",
+        ],
+      },
+      {
+        heading: "41. No Waiver",
+        paragraphs: [
+          "Our failure to enforce any provision of these Terms does not waive our right to enforce that provision later.",
+        ],
+      },
+      {
+        heading: "42. Entire Agreement",
+        paragraphs: [
+          "These Terms, together with our Privacy Policy and any additional terms presented to you for specific features or purchases, are the entire agreement between you and Palette Plotting regarding the Service.",
+          "They supersede any prior or contemporaneous agreements, communications, or understandings regarding the Service.",
+        ],
+      },
+      {
+        heading: "43. Contact",
+        paragraphs: [
+          "Questions about these Terms may be sent to:",
+          "[Legal Company Name]",
+          "Email: [support/legal email]",
+          "Mailing Address: [Business mailing address]",
         ],
       },
     ],
@@ -431,7 +913,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     sections: [
       {
         paragraphs: [
-          'This Privacy Policy describes how Palette Plotting LLC ("Palette Plotting," "we," "us," or "our") handles personal information when you use the Palette Plotting software, create an account, subscribe, or contact support.',
+          'This Privacy Policy describes how Palette Plotting ("Palette Plotting," "we," "us," or "our") handles personal information when you use the Palette Plotting software, create an account, subscribe, or contact support.',
         ],
       },
       {

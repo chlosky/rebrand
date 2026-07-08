@@ -1,17 +1,11 @@
-import { ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FreeLibraryGuide, LibraryBlock } from "@/pages/workspace/freeLibraryGuides";
 import { cn } from "@/lib/utils";
 
-function swatchBackground(swatch: string, fill?: string) {
-  if (swatch.startsWith("linear-gradient")) return { background: swatch };
-  if (fill) return { background: `linear-gradient(145deg, ${fill} 0%, ${swatch}99 100%)` };
-  return { backgroundColor: swatch };
-}
-
 function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
-  const muted = dark ? "text-white" : "text-zinc-600";
   const body = dark ? "text-white" : "text-zinc-700";
-  const card = dark ? "border-white bg-black" : "border-zinc-200 bg-white";
   const border = dark ? "border-white" : "border-zinc-200";
 
   if (block.type === "paragraph") {
@@ -20,9 +14,9 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
 
   if (block.type === "subheading") {
     return (
-      <h2 className={cn("font-welcome-serif pt-2 text-xl leading-snug", dark ? "text-white" : "text-zinc-900")}>
+      <h3 className={cn("font-welcome-serif pt-1 text-lg leading-snug", dark ? "text-white" : "text-zinc-900")}>
         {block.text}
-      </h2>
+      </h3>
     );
   }
 
@@ -31,9 +25,7 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
       <blockquote
         className={cn(
           "rounded-xl border px-4 py-3.5 text-[15px] leading-relaxed",
-          dark
-            ? "border-white bg-black text-white"
-            : "border-zinc-300 bg-[#f3f0eb] text-zinc-800",
+          dark ? "border-white bg-black text-white" : "border-zinc-300 bg-[#f3f0eb] text-zinc-800",
         )}
       >
         {block.text}
@@ -42,14 +34,14 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
   }
 
   if (block.type === "divider") {
-    return <hr className={cn("my-2 border-0 border-t", border)} />;
+    return <hr className={cn("my-1 border-0 border-t", border)} />;
   }
 
   if (block.type === "boardEntry") {
     return (
       <p className={cn("text-[15px] leading-[1.7]", body)}>
         <strong className={dark ? "text-white" : "text-zinc-900"}>{block.label}</strong>
-        <span className={muted}> — </span>
+        <span className={dark ? "text-white" : "text-zinc-500"}> — </span>
         {block.text}
       </p>
     );
@@ -86,157 +78,19 @@ function Block({ block, dark }: { block: LibraryBlock; dark: boolean }) {
     );
   }
 
-  if (block.type === "image") {
-    const aspect =
-      block.aspect === "wide"
-        ? "aspect-[16/10]"
-        : block.aspect === "tall"
-          ? "aspect-[3/4]"
-          : "aspect-square";
+  if (block.type === "textLink") {
     return (
-      <figure className="overflow-hidden">
-        <div className={cn("overflow-hidden rounded-xl border", border, aspect)}>
-          <img src={block.src} alt={block.alt} className="h-full w-full object-cover" loading="lazy" decoding="async" />
-        </div>
-        {block.caption ? (
-          <figcaption className={cn("mt-2 text-xs leading-relaxed", muted)}>{block.caption}</figcaption>
-        ) : null}
-      </figure>
-    );
-  }
-
-  if (block.type === "imageGrid") {
-    const cols = block.columns === 3 ? "grid-cols-3" : "grid-cols-2";
-    return (
-      <div className={cn("grid gap-2", cols)}>
-        {block.images.map((img) => (
-          <figure key={img.src} className="overflow-hidden">
-            <div className={cn("relative aspect-square overflow-hidden rounded-lg border", border)}>
-              <img src={img.src} alt={img.alt} className="h-full w-full object-cover" loading="lazy" decoding="async" />
-              {img.label ? (
-                <span
-                  className={cn(
-                    "absolute inset-x-0 bottom-0 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm",
-                    dark ? "border-t border-white bg-black text-white" : "bg-white/85 text-zinc-800",
-                  )}
-                >
-                  {img.label}
-                </span>
-              ) : null}
-            </div>
-          </figure>
-        ))}
-      </div>
-    );
-  }
-
-  if (block.type === "colorCards") {
-    return (
-      <div className="grid gap-3">
-        {block.colors.map((color) => (
-          <article key={color.name} className={cn("rounded-xl border p-4", card)}>
-            <div className="flex gap-3">
-              <span
-                className={cn("mt-0.5 h-9 w-9 shrink-0 rounded-full border shadow-sm", border)}
-                style={swatchBackground(color.swatch, color.fill)}
-                aria-hidden
-              />
-              <div className="min-w-0">
-                <h3 className={cn("text-base font-semibold", dark ? "text-white" : "text-zinc-900")}>{color.name}</h3>
-                <p className={cn("mt-1 text-sm leading-snug", muted)}>
-                  <span className={cn("font-semibold", dark ? "text-white" : "text-zinc-800")}>Best for: </span>
-                  {color.bestFor}
-                </p>
-              </div>
-            </div>
-            <p className={cn("mt-3 text-sm leading-relaxed", muted)}>{color.description}</p>
-          </article>
-        ))}
-      </div>
-    );
-  }
-
-  if (block.type === "swatchStrip") {
-    return (
-      <figure>
-        <div
+      <p className="pt-2">
+        <Link
+          to={block.href}
           className={cn(
-            "flex items-end justify-center gap-2 rounded-xl border px-4 py-5",
-            dark ? "border-white bg-black" : "border-zinc-200 bg-[#f8f6f2]",
+            "text-[15px] font-semibold underline underline-offset-4",
+            dark ? "text-white hover:text-zinc-300" : "text-zinc-900 hover:text-zinc-500",
           )}
         >
-          {block.colors.map((c, i) => (
-            <div
-              key={c.label}
-              className="flex flex-col items-center gap-1.5"
-              style={{ transform: `rotate(${(i - (block.colors.length - 1) / 2) * 6}deg)` }}
-            >
-              <span
-                className={cn(
-                  "block rounded-md border shadow-md",
-                  border,
-                  i === Math.floor(block.colors.length / 2) ? "h-16 w-12" : "h-12 w-9",
-                )}
-                style={swatchBackground(c.swatch, c.fill)}
-                aria-hidden
-              />
-              <span className={cn("text-[9px] font-medium uppercase tracking-wide", muted)}>{c.label}</span>
-            </div>
-          ))}
-        </div>
-        {block.caption ? (
-          <figcaption className={cn("mt-2 text-center text-xs leading-relaxed", muted)}>{block.caption}</figcaption>
-        ) : null}
-      </figure>
-    );
-  }
-
-  if (block.type === "zoneMap") {
-    return (
-      <div className={cn("rounded-xl border p-4", card)}>
-        <p className={cn("mb-3 text-xs font-semibold uppercase tracking-wider", muted)}>Zone sketch</p>
-        <div className="grid grid-cols-2 gap-2">
-          {block.zones.map((zone) => (
-            <div
-              key={zone.id}
-              className={cn(
-                "flex min-h-[4.5rem] flex-col justify-end rounded-lg border px-3 py-2",
-                border,
-              )}
-              style={{ backgroundColor: dark ? zone.color : `${zone.color}18` }}
-            >
-              <span className={cn("text-xs font-semibold uppercase tracking-wide", dark ? "text-white" : "text-zinc-800")}>
-                {zone.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (block.type === "kanbanPreview") {
-    return (
-      <div className="grid grid-cols-3 gap-2">
-        {block.columns.map((col) => (
-          <div key={col.title} className={cn("rounded-lg border p-2.5", card)}>
-            <p className={cn("mb-2 text-[10px] font-bold uppercase tracking-wider", muted)}>{col.title}</p>
-            <ul className="space-y-1.5">
-              {col.items.map((item) => (
-                <li
-                  key={item}
-                  className={cn(
-                    "rounded-md border px-2 py-1.5 text-[11px] leading-snug",
-                    dark ? "border-white bg-black text-white" : "border-zinc-200 bg-zinc-50 text-zinc-700",
-                  )}
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+          {block.label}
+        </Link>
+      </p>
     );
   }
 
@@ -252,6 +106,38 @@ export function LibraryReader({
   dark: boolean;
   onBack: () => void;
 }) {
+  const [activeSlug, setActiveSlug] = useState(guide.sections[0]?.slug ?? "");
+
+  useEffect(() => {
+    setActiveSlug(guide.sections[0]?.slug ?? "");
+  }, [guide.slug, guide.sections]);
+
+  const activeIndex = useMemo(() => {
+    const i = guide.sections.findIndex((s) => s.slug === activeSlug);
+    return i === -1 ? 0 : i;
+  }, [guide.sections, activeSlug]);
+
+  const activeSection = guide.sections[activeIndex];
+  const prev = activeIndex > 0 ? guide.sections[activeIndex - 1] : null;
+  const next = activeIndex < guide.sections.length - 1 ? guide.sections[activeIndex + 1] : null;
+
+  const goTo = (slug: string) => {
+    setActiveSlug(slug);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const tocLink = (isActive: boolean) =>
+    cn(
+      "block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
+      isActive
+        ? dark
+          ? "bg-white font-semibold text-black"
+          : "bg-zinc-900 font-semibold text-white"
+        : dark
+          ? "text-white hover:bg-white/10"
+          : "text-zinc-600 hover:bg-zinc-100",
+    );
+
   return (
     <article className="animate-fade-in">
       <button
@@ -266,42 +152,77 @@ export function LibraryReader({
         Library
       </button>
 
-      {guide.heroImage ? (
-        <div
-          className={cn(
-            "mb-6 overflow-hidden rounded-2xl border",
-            dark ? "border-white" : "border-zinc-200",
-          )}
-        >
-          <img
-            src={guide.heroImage.src}
-            alt={guide.heroImage.alt}
-            className="aspect-[16/10] w-full object-cover"
-            loading="eager"
-            decoding="async"
-          />
-        </div>
-      ) : null}
-
-      <header
-        className={cn("mb-8 border-b pb-6", dark ? "border-white" : "border-zinc-200")}
-      >
-        <p className={cn("text-[11px] font-semibold uppercase tracking-[0.14em]", dark ? "text-white" : "text-zinc-400")}>
-          {guide.readMinutes} min read
-        </p>
-        <h1 className={cn("font-welcome-serif mt-2 text-3xl leading-tight", dark ? "text-white" : "text-zinc-900")}>
+      <header className={cn("mb-6 border-b pb-5", dark ? "border-white" : "border-zinc-200")}>
+        <h1 className={cn("font-welcome-serif text-2xl leading-tight sm:text-3xl", dark ? "text-white" : "text-zinc-900")}>
           {guide.title}
         </h1>
-        <p className={cn("mt-2 text-sm font-medium", dark ? "text-white" : "text-zinc-500")}>{guide.tagline}</p>
+        <p className={cn("mt-2 text-sm", dark ? "text-white" : "text-zinc-500")}>{guide.subtitle}</p>
       </header>
 
-      <div className="space-y-5">
-        {guide.blocks.map((block, i) => (
-          <Block key={i} block={block} dark={dark} />
-        ))}
-      </div>
+      <div className="gap-8 md:grid md:grid-cols-[13rem_1fr]">
+        <nav aria-label="Sections" className="mb-6 md:mb-0">
+          <p className={cn("mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider", dark ? "text-white" : "text-zinc-400")}>
+            Sections
+          </p>
+          <ol className="space-y-1 md:sticky md:top-4">
+            {guide.sections.map((section, i) => (
+              <li key={section.slug}>
+                <button type="button" onClick={() => goTo(section.slug)} className={tocLink(section.slug === activeSlug)}>
+                  <span className={cn("mr-2", section.slug === activeSlug ? "opacity-70" : "opacity-40")}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {section.title}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
 
-      {/* No footer teaser on readers. */}
+        <div className="min-w-0">
+          <h2 className={cn("font-welcome-serif mb-4 text-xl leading-snug", dark ? "text-white" : "text-zinc-900")}>
+            {activeSection?.title}
+          </h2>
+
+          <div className="space-y-5">
+            {activeSection?.blocks.map((block, i) => (
+              <Block key={i} block={block} dark={dark} />
+            ))}
+          </div>
+
+          <div className={cn("mt-10 flex items-center justify-between gap-3 border-t pt-5", dark ? "border-white" : "border-zinc-200")}>
+            {prev ? (
+              <button
+                type="button"
+                onClick={() => goTo(prev.slug)}
+                className={cn(
+                  "inline-flex min-w-0 items-center gap-1.5 text-sm font-medium transition-colors",
+                  dark ? "text-white hover:underline" : "text-zinc-600 hover:text-zinc-900",
+                )}
+              >
+                <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="truncate">{prev.title}</span>
+              </button>
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <button
+                type="button"
+                onClick={() => goTo(next.slug)}
+                className={cn(
+                  "inline-flex min-w-0 items-center gap-1.5 text-right text-sm font-medium transition-colors",
+                  dark ? "text-white hover:underline" : "text-zinc-600 hover:text-zinc-900",
+                )}
+              >
+                <span className="truncate">{next.title}</span>
+                <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
+        </div>
+      </div>
     </article>
   );
 }

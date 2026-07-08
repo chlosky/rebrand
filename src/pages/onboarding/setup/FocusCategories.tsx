@@ -5,10 +5,7 @@ import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import { FOCUS_CATEGORIES } from "@/lib/focusCategories";
-import {
-  SETUP_CHOICE_TILE_SELECTED_GLOW,
-  setupChoiceTileWithGlowClass,
-} from "@/lib/onboardingSetupTheme";
+import { setupChoiceTileWithGlowClass } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
 
 const MAX_SELECTIONS = 3;
@@ -81,7 +78,7 @@ export default function SetupFocusCategories() {
           desireCategory: primary,
           desireCategories: selected,
         });
-        navigate(`${setupBase}/begin-journey`);
+        navigate(`${setupBase}/attribution`);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
@@ -95,7 +92,7 @@ export default function SetupFocusCategories() {
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden w-full">
           <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-0.5 py-1 pb-2 [-webkit-overflow-scrolling:touch]">
             <div className="grid grid-cols-2 content-start gap-2.5 pt-0.5 sm:gap-3">
-              {FOCUS_CATEGORIES.map(({ name, color }) => {
+              {FOCUS_CATEGORIES.map(({ name }) => {
                 const active = selected.includes(name);
                 const atLimit = !active && selected.length >= MAX_SELECTIONS;
                 const tileLabel = tTools(`focusCategoryTiles.${name}`, {
@@ -110,16 +107,9 @@ export default function SetupFocusCategories() {
                     className={cn(
                       "flex min-w-0 items-center text-left",
                       setupChoiceTileWithGlowClass(active),
+                      active && "border-zinc-400",
                       atLimit && "opacity-40",
                     )}
-                    style={
-                      active
-                        ? {
-                            borderColor: `${color}cc`,
-                            boxShadow: `0 0 16px ${color}70, 0 0 32px ${color}35, ${SETUP_CHOICE_TILE_SELECTED_GLOW}`,
-                          }
-                        : undefined
-                    }
                   >
                     <span className="min-w-0 flex-1 font-sans text-xs font-semibold leading-snug text-zinc-900 sm:text-sm">
                       {tileLabel}

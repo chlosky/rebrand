@@ -43,6 +43,18 @@
     "signingOut": "Signing out…",
     "signOutError": "Error signing out"
   },
+  "trial": {
+    "start": "Start free trial",
+    "getPremium": "Get Premium",
+    "endEarly": "Unlock Premium now",
+    "ending": "Starting…",
+    "confirmTitle": "Start Premium now?",
+    "confirmBody": "This ends your free trial and starts your paid Premium subscription immediately, charging your payment method today. You'll keep full access, including exports.",
+    "confirmCta": "Start Premium & pay now",
+    "cancel": "Cancel",
+    "success": "Trial ended — your subscription is now active.",
+    "error": "Could not end your trial. Please try again."
+  },
   "tools": {
     "boards": {
       "title": "Vision",
@@ -178,15 +190,15 @@
     },
     "locked": {
       "createTitle": "Create is for members",
-      "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Pro.",
+      "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Premium.",
       "journeyTitle": "Reminders are for members",
-      "journeyBody": "Plan reminders, progress tracking, and journal unlock with Palette Plotting Pro.",
+      "journeyBody": "Plan reminders, progress tracking, and journal unlock with Palette Plotting Premium.",
       "newBoardTitle": "Vision is for members",
-      "newBoardBody": "Start a new board on the plotting desk once you are on Pro — Library stays free.",
+      "newBoardBody": "Start a new board on the plotting desk once you are on Premium — Library stays free.",
       "imageLibraryTitle": "Your Images is for members",
-      "imageLibraryBody": "Upload and organize clippings here once you are on Pro — then drop them onto boards from the radial menu.",
+      "imageLibraryBody": "Upload and organize clippings here once you are on Premium.",
       "projectsTitle": "Projects are for members",
-      "projectsBody": "Your saved boards live here once you're on Pro — Library stays free.",
+      "projectsBody": "Your saved boards live here once you're on Premium — Library stays free.",
       "upgrade": "Unlock plotting tools"
     },
     "proDashboardLink": "Open full tool dashboard"
