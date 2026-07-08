@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { SetupDraft } from "@/lib/setupDraft";
-import { normalizeFocusDetailFromUnknown } from "@/lib/focusDetailStorage";
 import { mapOnboardingEmbodyKeysToAppSlugs } from "@/lib/embodyPracticesCatalog";
 import { buildOnboardingAttributionPatch } from "@/lib/attribution";
 
@@ -95,26 +94,17 @@ export function draftToSetupPathPayload(draft: SetupDraft): Record<string, unkno
     why_it_matters: null,
     current_friction: typeof draft.currentFriction === "string" ? draft.currentFriction : null,
     desired_identity: typeof draft.desiredIdentity === "string" ? draft.desiredIdentity.trim().slice(0, 200) || null : null,
-    tool_preferences: Array.isArray(draft.toolPreferences)
-      ? draft.toolPreferences.filter((t): t is string => typeof t === "string")
-      : [],
-    conditional_specificity: normalizeFocusDetailFromUnknown(
-      draft.conditionalSpecificity,
-      draft.desireCategory,
-    ),
+    tool_preferences: ["boards_workspace", "daily_wins_progress"],
+    conditional_specificity: null,
     shell_appearance:
       typeof draft.appearance === "string" && SHELL_APPEARANCES.has(draft.appearance) ? draft.appearance : null,
     embody_active_practices: embodySlugs ?? null,
-    board_starter_template_slug:
-      typeof draft.boardStarterTemplateSlug === "string" && draft.boardStarterTemplateSlug.trim()
-        ? draft.boardStarterTemplateSlug.trim().slice(0, 64)
-        : null,
-    primary_intent:
-      draft.primaryIntent === "life_rebranding" ||
-      draft.primaryIntent === "home_organization" ||
-      draft.primaryIntent === "office_work" ||
-      draft.primaryIntent === "moodboarding"
-        ? draft.primaryIntent
+    starting_system:
+      draft.startingSystem === "life_rebranding" ||
+      draft.startingSystem === "home_organization" ||
+      draft.startingSystem === "office_work" ||
+      draft.startingSystem === "moodboarding"
+        ? draft.startingSystem
         : null,
     home_focus_key:
       typeof draft.homeFocusKey === "string" && draft.homeFocusKey.trim()

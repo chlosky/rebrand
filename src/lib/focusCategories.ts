@@ -10,7 +10,6 @@ export interface FocusCategoryDef {
 // Board focus categories (10 total). Order = 2-col grid on the setup focus screen.
 // `name` === `label` — no separate internal taxonomy. Keep in sync with the board image library themes.
 export const FOCUS_CATEGORIES: FocusCategoryDef[] = [
-  { name: "Identity", label: "Identity", color: "#E8B4B8" },
   { name: "Career & Money", label: "Career & Money", color: "#3CB371" },
   { name: "Love & Relationships", label: "Love & Relationships", color: "#FF4DA6" },
   { name: "Home & Space", label: "Home & Space", color: "#87CEEB" },
@@ -20,6 +19,7 @@ export const FOCUS_CATEGORIES: FocusCategoryDef[] = [
   { name: "Aesthetic & Mood", label: "Aesthetic & Mood", color: "#FFD93D" },
   { name: "College & School", label: "College & School", color: "#98FB98" },
   { name: "Health & Fitness", label: "Health & Fitness", color: "#E63946" },
+  { name: "Self & Direction", label: "Self & Direction", color: "#E8B4B8" },
 ];
 
 export function getFocusCategoryLabel(category: string | null | undefined): string {

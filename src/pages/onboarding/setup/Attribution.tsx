@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { useTranslation } from "react-i18next";
@@ -27,10 +26,7 @@ const OPTION_KEYS = [
 export default function SetupAttribution() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
 
   const initial = useMemo(() => readSetupDraft().attributionSource ?? null, []);
   const [selected, setSelected] = useState<string | null>(initial);
@@ -53,7 +49,7 @@ export default function SetupAttribution() {
           source: "onboarding_attribution",
           attribution_source: selected,
         });
-        navigate(`${setupBase}/reminder-channels`);
+        navigate(`${setupBase}/plot-loading`);
       }}
     >
       <SetupHeadingBlock

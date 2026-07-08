@@ -13,7 +13,7 @@ DECLARE
   v_setup_path jsonb := jsonb_build_object(
     'first_name', 'Support',
     'email', v_email,
-    'desire_category', 'Identity',
+    'desire_category', 'Self & Direction',
     'desire_text', null,
     'why_it_matters', null,
     'current_friction', 'I keep restarting instead of finishing one board system.',
@@ -21,7 +21,7 @@ DECLARE
     'tool_preferences', jsonb_build_array('daily_wins_progress'),
     'conditional_specificity', jsonb_build_object(
       'schema_version', 1,
-      'category', 'Identity',
+      'category', 'Self & Direction',
       'branch', 'step7_options',
       'step7', jsonb_build_object(
         'selection', 'Confidence',
@@ -33,7 +33,7 @@ DECLARE
       'glam-up', 'work', 'self-care', 'drink-water', 'rest'
     ),
     'board_starter_template_slug', 'four-board-rebrand',
-    'primary_intent', 'life_rebranding',
+    'starting_system', 'life_rebranding',
     'home_focus_key', null,
     'office_planning_system', null,
     'moodboard_focus_key', null
@@ -43,8 +43,8 @@ DECLARE
     'setup_journey_v1', jsonb_build_object(
       'schema_version', 1,
       'updated_at', now(),
-      'desire_category', 'Identity',
-      'desire_categories', jsonb_build_array('Identity', 'Career & Money', 'Home & Space'),
+      'desire_category', 'Self & Direction',
+      'desire_categories', jsonb_build_array('Self & Direction', 'Career & Money', 'Home & Space'),
       'first_name', 'Support',
       'email', v_email,
       'current_friction', 'I keep restarting instead of finishing one board system.',
@@ -61,7 +61,7 @@ DECLARE
       ),
       'routine_notification_times', jsonb_build_array('09:00', '20:00'),
       'notification_permission_status', 'granted',
-      'primary_intent', 'life_rebranding',
+      'starting_system', 'life_rebranding',
       'board_starter_template_slug', 'four-board-rebrand',
       'attribution_source', 'instagram'
     )
@@ -140,7 +140,6 @@ BEGIN
     username,
     first_name,
     preferred_locale,
-    preset_theme,
     routine_intensity,
     routine_items,
     routine_notification_times,
@@ -154,7 +153,6 @@ BEGIN
     v_email,
     'Support',
     'en',
-    'light',
     'consistent',
     v_onboarding_answers->'setup_journey_v1'->'routine_items',
     to_jsonb(array['09:00', '20:00']::text[]),
@@ -168,7 +166,6 @@ BEGIN
     username = excluded.username,
     first_name = excluded.first_name,
     preferred_locale = excluded.preferred_locale,
-    preset_theme = 'light',
     routine_intensity = excluded.routine_intensity,
     routine_items = excluded.routine_items,
     routine_notification_times = excluded.routine_notification_times,
@@ -230,7 +227,7 @@ BEGIN
     v_user_id,
     'Support',
     v_email,
-    'Identity',
+    'Self & Direction',
     'I keep restarting instead of finishing one board system.',
     array['daily_wins_progress']::text[],
     v_setup_path->'conditional_specificity',

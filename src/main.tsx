@@ -3,13 +3,6 @@ import { Capacitor } from "@capacitor/core";
 import { Keyboard, KeyboardResize } from "@capacitor/keyboard";
 import "./index.css";
 
-if (typeof window !== "undefined") {
-  const path = window.location.pathname.replace(/\/$/, "");
-  if (path.startsWith("/onboarding/subliminal")) {
-    window.location.replace(`/${window.location.search}${window.location.hash}`);
-  }
-}
-
 import "./i18n";
 import App from "./App.tsx";
 import { applyNativeSafeAreaRootVars } from "@/lib/nativeSafeArea";

@@ -195,9 +195,33 @@ export async function deletePendingActionRemindersForChannel(params: {
 }
 
 export async function uploadBoardImage(userId: string, file: File): Promise<string> {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  let uploadFile = file;
+  if (file.type.startsWith("image/") && file.type !== "image/svg+xml" && file.type !== "image/gif") {
+    const bitmap = await createImageBitmap(file);
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(bitmap, 0, 0);
+        const outType = file.type === "image/png" ? "image/png" : "image/jpeg";
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, outType, outType === "image/jpeg" ? 0.92 : undefined);
+        });
+        if (blob) {
+          const ext = outType === "image/png" ? "png" : "jpg";
+          const base = file.name.replace(/\.[^.]+$/, "") || "upload";
+          uploadFile = new File([blob], `${base}.${ext}`, { type: outType });
+        }
+      }
+    } finally {
+      bitmap.close();
+    }
+  }
+  const ext = uploadFile.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("board-uploads").upload(path, file, {
+  const { error } = await supabase.storage.from("board-uploads").upload(path, uploadFile, {
     cacheControl: "3600",
     upsert: false,
   });
@@ -221,14 +245,16 @@ export async function listUserUploads(userId: string): Promise<{ path: string; s
     .map((f) => `${userId}/${f.name}`);
   if (paths.length === 0) return [];
 
-  const signed = await Promise.all(
-    paths.map(async (path) => {
-      const { data: signedData, error: signErr } = await supabase.storage
-        .from("board-uploads")
-        .createSignedUrl(path, 60 * 60);
-      if (signErr || !signedData?.signedUrl) return null;
-      return { path, signedUrl: signedData.signedUrl };
-    }),
-  );
-  return signed.filter((item): item is { path: string; signedUrl: string } => item !== null);
+  const { data: signedRows, error: signErr } = await supabase.storage
+    .from("board-uploads")
+    .createSignedUrls(paths, 60 * 60);
+  if (signErr) throw signErr;
+
+  return paths
+    .map((path, index) => {
+      const row = signedRows?.[index];
+      if (!row?.signedUrl || row.error) return null;
+      return { path, signedUrl: row.signedUrl };
+    })
+    .filter((item): item is { path: string; signedUrl: string } => item !== null);
 }

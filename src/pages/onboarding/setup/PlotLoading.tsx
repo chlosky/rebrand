@@ -1,8 +1,7 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
 import {
   SETUP_PROGRESS_FILL_CLASS,
   SETUP_PROGRESS_TRACK_CLASS,
@@ -12,10 +11,7 @@ import { useTranslation } from "react-i18next";
 export default function SetupPlotLoading() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
@@ -37,6 +33,7 @@ export default function SetupPlotLoading() {
       canContinue={false}
       continueText={t("setup.plotLoading.loading")}
       disableNativeScrollViewport
+      onBack={() => navigate(`${setupBase}/attribution`)}
       onContinue={undefined}
     >
       <div className="relative z-[1] flex min-h-0 flex-1 flex-col gap-2">

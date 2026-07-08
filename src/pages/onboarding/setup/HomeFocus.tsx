@@ -1,11 +1,9 @@
 import { useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
-import { HOME_FOCUS_TO_TEMPLATE } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
   SETUP_CHOICE_TITLE_CLASS,
@@ -24,10 +22,7 @@ const OPTIONS = [
 export default function SetupHomeFocus() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
 
   const [selected, setSelected] = useState<string | null>(() => {
     const k = readSetupDraft().homeFocusKey;
@@ -42,15 +37,13 @@ export default function SetupHomeFocus() {
     <SetupPage
       canContinue={selected != null}
       disableNativeScrollViewport
-      onBack={() => navigate(`${setupBase}/primary-intent`)}
+      onBack={() => navigate(`${setupBase}/starting-system`)}
       onContinue={() => {
         if (!selected) return;
-        const slug = HOME_FOCUS_TO_TEMPLATE[selected];
         writeSetupDraft({
           homeFocusKey: selected,
-          boardStarterTemplateSlug: slug,
         });
-        navigate(`${setupBase}/tool-preference`);
+        navigate(`${setupBase}/begin-journey`);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">

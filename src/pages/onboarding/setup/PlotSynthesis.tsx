@@ -1,40 +1,22 @@
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
-import { readSetupDraft } from "@/lib/setupDraft";
 import { useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SETUP_GLASS_PANEL_CLASS, SETUP_CHOICE_LABEL_CLASS } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
 
-const TOOL_SYNTHESIS: Record<string, string> = {
-  boards_workspace: "boards",
-  daily_wins_progress: "tracking",
-};
-
 export default function SetupPlotSynthesis() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
   const items = useMemo((): string[] => {
-    const draft = readSetupDraft();
-
-    const stack: string[] = [t("setup.plotSynthesis.items.workspace")];
-
-    const prefs = Array.isArray(draft.toolPreferences) ? draft.toolPreferences : [];
-    for (const pref of prefs) {
-      const key = TOOL_SYNTHESIS[pref];
-      if (key) {
-        stack.push(t(`setup.plotSynthesis.items.${key}`));
-      }
-    }
-
-    return stack;
+    return [
+      t("setup.plotSynthesis.items.workspace"),
+      t("setup.plotSynthesis.items.boards"),
+      t("setup.plotSynthesis.items.tracking"),
+    ];
   }, [t]);
 
   return (
@@ -42,9 +24,7 @@ export default function SetupPlotSynthesis() {
       canContinue={true}
       continueText="Continue"
       onBack={() => navigate(`${setupBase}/plot-loading`)}
-      onContinue={() =>
-        navigate(isSuiteFunnel ? `${setupBase}/email` : `${setupBase}/name`)
-      }
+      onContinue={() => navigate(`${setupBase}/email`)}
     >
       <div className="space-y-4">
         <SetupHeadingBlock

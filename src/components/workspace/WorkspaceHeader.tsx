@@ -20,12 +20,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
-
-const WORKSPACE_DARK_BG = "#000000";
-const WORKSPACE_DOCUMENT_LIGHT_BG = "#ffffff";
-const WORKSPACE_MOBILE_SHELL_BG = "#f3f0eb";
-const WORKSPACE_DESKTOP_SHELL_BG = "#faf8f5";
 
 export function workspaceShellClass(dark: boolean) {
   return cn(
@@ -47,7 +41,6 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const dark = theme === "dark";
-  const isMobile = useIsMobile();
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const userEmail = user?.email ?? "";
@@ -60,24 +53,6 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
       if (data?.avatar_url) setAvatarUrl(data.avatar_url);
     })();
   }, [user?.id]);
-
-  useEffect(() => {
-    const docBg = dark ? WORKSPACE_DARK_BG : WORKSPACE_DOCUMENT_LIGHT_BG;
-    const rootBg = dark
-      ? WORKSPACE_DARK_BG
-      : isMobile
-        ? WORKSPACE_MOBILE_SHELL_BG
-        : WORKSPACE_DESKTOP_SHELL_BG;
-    document.documentElement.style.setProperty("background-color", docBg, "important");
-    document.body.style.setProperty("background-color", docBg, "important");
-    const root = document.getElementById("root");
-    if (root) root.style.setProperty("background-color", rootBg, "important");
-    return () => {
-      document.documentElement.style.removeProperty("background-color");
-      document.body.style.removeProperty("background-color");
-      if (root) root.style.removeProperty("background-color");
-    };
-  }, [dark, isMobile]);
 
   const iconBtn = cn(
     "h-9 w-9 border-0 bg-transparent p-0 shadow-none",

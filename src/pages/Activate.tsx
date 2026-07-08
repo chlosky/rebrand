@@ -6,20 +6,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { isIosPaywallContext } from "@/lib/isIosPaywallContext";
-import { isAndroidPaywallContext } from "@/lib/isAndroidPaywallContext";
-
-/**
- * Platform-aware paywall fallback so a non-iOS web user doesn't get stranded on
- * `/onboarding/ios-paywall`, which would toast "Subscriptions are only available
- * in the iOS app." and offer no path forward.
- */
-function paywallRouteForCurrentPlatform(): string {
-  if (isIosPaywallContext()) return "/onboarding/ios-paywall";
-  if (isAndroidPaywallContext()) return "/onboarding/android-paywall";
-  return "/onboarding/web-paywall";
-}
-
 type RemoteOnboardingSession = {
   id: string;
   status: string;
@@ -196,7 +182,7 @@ export default function Activate() {
         ) : !isPaid ? (
           <div className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">{t("activate.paymentNotConfirmed")}</p>
-            <Button onClick={() => navigate(paywallRouteForCurrentPlatform())}>{t("activate.goToSubscriptions")}</Button>
+            <Button onClick={() => navigate("/onboarding/web-paywall")}>{t("activate.goToSubscriptions")}</Button>
           </div>
         ) : accountCreated || remoteSession?.user_id || user ? (
           <div className="text-center space-y-4">

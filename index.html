@@ -5,14 +5,6 @@
 <script>
 (function () {
   var path = location.pathname.replace(/\/$/, "");
-  if (path.indexOf("/onboarding/subliminal") === 0) {
-    location.replace("/" + location.search + location.hash);
-  }
-})();
-</script>
-<script>
-(function () {
-  var path = location.pathname.replace(/\/$/, "");
   var assets;
   if (path === "/onboarding/welcome") {
     assets = [
@@ -292,7 +284,7 @@ var path = pathname === '/' ? '/' : pathname.replace(/\/$/, '') || '/';
 if (path === '/login') return false;
 if (path.indexOf('/dashboard') === 0) return false;
 if (path.indexOf('/onboarding') === 0) return false;
-var exact = ['/', '/mobilelanding', '/mobilelandingBR', '/mobilelandingmimi', '/mobilelandingjonni', '/faq', '/what-is-palette-plotting', '/terms', '/privacy', '/acceptable-use', '/contact', '/community', '/billing', '/pricingplans', '/dmca', '/quiz/life-rebrand'];
+var exact = ['/', '/faq', '/what-is-palette-plotting', '/terms', '/privacy', '/acceptable-use', '/contact', '/community', '/billing', '/pricingplans', '/dmca', '/quiz/life-rebrand'];
 if (exact.indexOf(path) !== -1) return true;
 if (path.indexOf('/blog') === 0) return true;
 return false;

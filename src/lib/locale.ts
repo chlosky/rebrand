@@ -5,7 +5,7 @@ export type AppLocale = "en";
 
 export const APP_LOCALES: readonly AppLocale[] = ["en"] as const;
 
-export const PREFERRED_LOCALE_STORAGE_KEY = "sv_preferred_locale";
+export const PREFERRED_LOCALE_STORAGE_KEY = "pp_preferred_locale";
 
 export function isAppLocale(value: string): value is AppLocale {
   return value === "en";
@@ -37,14 +37,6 @@ export function resolveLocaleForApi(_draftLocale?: string | null): AppLocale {
 /** date-fns locale for formatting month/day labels. */
 export function dateFnsLocaleForApp(_locale: AppLocale): Locale {
   return enUS;
-}
-
-/**
- * RevenueCat paywall locale ID — must match keys in the RC Paywall Localization tab.
- * @see https://www.revenuecat.com/docs/tools/paywalls/creating-paywalls/localization
- */
-export function revenueCatUILocaleForApp(_locale: AppLocale): string {
-  return "en_US";
 }
 
 /** OneSignal subscription language (2-letter) for push template selection. */

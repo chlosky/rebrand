@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BoardAccountabilityFlow } from "@/components/boards/BoardAccountabilityFlow";
 import { BoardActionKitTray } from "@/components/boards/BoardActionKitTray";
+import { TrialExportUnlockDialog } from "@/components/boards/TrialExportUnlockDialog";
 import { BoardGuideChatPanel } from "@/components/boards/BoardCompanionPanel";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import {
@@ -84,7 +85,7 @@ function actionErrorMessage(error: unknown, fallback: string): string {
 
 export default function BoardAccountability() {
   const { user } = useAuth();
-  const { hasPro, loading: proLoading } = usePlottingPro();
+  const { hasPro, onTrial, loading: proLoading, refreshPlan } = usePlottingPro();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const workspaceParam = searchParams.get("workspace");
@@ -105,7 +106,8 @@ export default function BoardAccountability() {
   const [showSmsConsentDialog, setShowSmsConsentDialog] = useState(false);
   const [smsConsentChecked, setSmsConsentChecked] = useState(false);
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
-  const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
+  const [showTrialUnlock, setShowTrialUnlock] = useState(false);
+  const trialBlocksExports = hasPro && onTrial;
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -460,7 +462,7 @@ export default function BoardAccountability() {
     return true;
   };
 
-  const runExportIcal = () => {
+  const doExportIcal = () => {
     if (!map?.finalized || !map.reminders.length) {
       toast.error(map?.finalized ? "No calendar reminders in this plan" : "Finalize your plan first");
       return;
@@ -481,6 +483,15 @@ export default function BoardAccountability() {
     } finally {
       setExportingIcal(false);
     }
+  };
+
+  const runExportIcal = () => {
+    if (trialBlocksExports) {
+      setShowTrialUnlock(true);
+      return;
+    }
+
+    doExportIcal();
   };
 
   const smsReady = hasPro && smsRemindersEnabled && smsPhoneConfigured && smsConsentOk;
@@ -744,6 +755,13 @@ export default function BoardAccountability() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TrialExportUnlockDialog
+        open={showTrialUnlock}
+        onOpenChange={setShowTrialUnlock}
+        refreshPlan={refreshPlan}
+        onUnlocked={doExportIcal}
+      />
     </div>
   );
 }

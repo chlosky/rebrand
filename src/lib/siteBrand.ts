@@ -9,7 +9,6 @@ export const BUSINESS_NAME = "Palette Plotting";
 export const APP_ID = "com.paletteplotting.app";
 export const APP_URL_SCHEME = "paletteplotting";
 export const JSON_LD_SCRIPT_ID = "palette-plotting-json-ld";
-export const REVENUECAT_ENTITLEMENT_ID = "Palette Plotting Pro";
 
 /** Matches vel / palette plot content grid. */
 export const SITE_CONTAINER = "mx-auto w-full max-w-5xl px-4 sm:px-6";

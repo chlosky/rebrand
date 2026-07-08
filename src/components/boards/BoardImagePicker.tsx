@@ -37,8 +37,8 @@ export function BoardImagePicker({
   );
   const [uploads, setUploads] = useState(() => uploadsCache.get(userId) ?? []);
   const [loading, setLoading] = useState(() => {
+    if (uploadsOnly) return false;
     const hasUploads = uploadsCache.has(userId);
-    if (uploadsOnly) return !hasUploads;
     const hasLibrary = getCachedBoardImageLibrary() !== null;
     return !hasUploads && !hasLibrary;
   });
@@ -52,6 +52,12 @@ export function BoardImagePicker({
 
   useEffect(() => {
     let cancelled = false;
+
+    if (uploadsOnly) {
+      void refreshUploads();
+      return;
+    }
+
     const hadUploads = uploadsCache.has(userId);
     const hadLibrary = !uploadsOnly && getCachedBoardImageLibrary() !== null;
     const tasks: Promise<void>[] = [];

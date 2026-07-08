@@ -165,7 +165,7 @@ function ensureEventId(detail?: EventDetail): EventDetail {
   if (detail?.event_id != null && String(detail.event_id).trim()) {
     return detail;
   }
-  return { ...(detail ?? {}), event_id: `sv_${crypto.randomUUID()}` };
+  return { ...(detail ?? {}), event_id: `pp_${crypto.randomUUID()}` };
 }
 
 function resolveContentId(detail?: EventDetail): string {

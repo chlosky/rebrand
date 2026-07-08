@@ -9,30 +9,6 @@ const STOREFRONT_API_VERSION = "2026-04";
 const CART_ID_STORAGE_KEY = "palette_plot_cart_id";
 const CHECKOUT_URL_STORAGE_KEY = "palette_plot_checkout_url";
 const CART_QTY_STORAGE_KEY = "palette_plot_cart_qty";
-const LEGACY_CART_ID_STORAGE_KEY = "veligrid_cart_id";
-const LEGACY_CHECKOUT_URL_STORAGE_KEY = "veligrid_checkout_url";
-const LEGACY_CART_QTY_STORAGE_KEY = "veligrid_cart_qty";
-
-function migrateLegacyStorageKeys(): void {
-  const pairs: Array<[string, string]> = [
-    [LEGACY_CART_ID_STORAGE_KEY, CART_ID_STORAGE_KEY],
-    [LEGACY_CHECKOUT_URL_STORAGE_KEY, CHECKOUT_URL_STORAGE_KEY],
-    [LEGACY_CART_QTY_STORAGE_KEY, CART_QTY_STORAGE_KEY],
-  ];
-
-  for (const [legacyKey, nextKey] of pairs) {
-    try {
-      const legacyValue = localStorage.getItem(legacyKey) ?? sessionStorage.getItem(legacyKey);
-      if (legacyValue && !readStorage(nextKey)) {
-        writeStorage(nextKey, legacyValue);
-      }
-      localStorage.removeItem(legacyKey);
-      sessionStorage.removeItem(legacyKey);
-    } catch {
-      // Ignore storage failures.
-    }
-  }
-}
 
 function readStorage(key: string): string | null {
   try {
@@ -59,8 +35,6 @@ function removeStorage(key: string): void {
     // Ignore.
   }
 }
-
-migrateLegacyStorageKeys();
 
 export type CartResult = {
   checkoutUrl: string;

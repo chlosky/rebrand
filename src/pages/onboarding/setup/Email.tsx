@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { OnboardingLayout } from "@/components/onboarding/OnboardingLayout";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { Input } from "@/components/ui/input";
@@ -12,32 +12,22 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
-import { Capacitor } from "@capacitor/core";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboardingSession } from "@/hooks/useOnboardingSession";
-import { runIosPaywallFlowAfterSignup } from "@/lib/runIosPaywallFlow";
-import { runAndroidPaywallFlowAfterSignup } from "@/lib/runAndroidPaywallFlow";
-import { shouldUseRevenueCatPaywallUi } from "@/lib/iosRevenueCatUiGate";
-import { isAndroidPaywallContext } from "@/lib/isAndroidPaywallContext";
 import { toast } from "sonner";
 import { runWebPaywallFlowAfterSignup } from "@/lib/runWebPaywallFlow";
 import { trackMarketingConversion } from "@/lib/marketingConversionTrack";
 import { linkWebOnboardingSessionToUser } from "@/lib/webOnboardingSessionInsert";
 import { useTranslation } from "react-i18next";
 
-/** Matches native Welcome.tsx free-trial accent. */
-const NATIVE_WELCOME_PINK = "#e8b8cc";
 /** Delay wrong-email sign-out hint so it does not flash during paywall presentation. */
 const SIGN_OUT_HINT_DELAY_MS = 3000;
 
 export default function SetupEmail() {
   const { t } = useTranslation(["onboarding", "common", "paywall"]);
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const setupBase = pathname.includes("/onboarding/suite")
-    ? "/onboarding/suite/setup"
-    : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
   const { ensureSession, updateSession } = useOnboardingSession();
   const initial = useMemo(() => readSetupDraft(), []);
   const [email, setEmail] = useState(initial.email ?? "");
@@ -51,7 +41,7 @@ export default function SetupEmail() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  /** RevenueCat paywall failed after signup — same retry pattern as legacy `EmailCollection`. */
+  /** Stripe checkout failed after signup — show retry on this screen. */
   const [paywallNeedsRetry, setPaywallNeedsRetry] = useState(false);
   const [isRetryingPaywall, setIsRetryingPaywall] = useState(false);
   /** Set when user already has a session — email is locked until sign out. */
@@ -155,9 +145,7 @@ export default function SetupEmail() {
 
   const handleSignOutForDifferentEmail = async () => {
     setIsSigningOut(true);
-    const welcomePath = pathname.includes("/onboarding/suite")
-      ? "/onboarding/suite/welcome"
-      : "/onboarding/welcome";
+    const welcomePath = "/onboarding/welcome";
     try {
       await supabase.auth.signOut();
       navigate(welcomePath, { replace: true });
@@ -175,30 +163,12 @@ export default function SetupEmail() {
     setShowSignOutHint(false);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      if (isAndroidPaywallContext()) {
-        const outcome = await runAndroidPaywallFlowAfterSignup({
-          userId: userData.user?.id ?? null,
-          navigate,
-        });
-        if (outcome === "success") {
-          setPaywallNeedsRetry(false);
-          return;
-        }
-        setPaywallNeedsRetry(true);
-        setSuppressSignOutHint(false);
-        return;
-      }
-      const outcome = await runIosPaywallFlowAfterSignup({
+      const outcome = await runWebPaywallFlowAfterSignup({
         userId: userData.user?.id ?? null,
         navigate,
       });
       if (outcome === "success") {
         setPaywallNeedsRetry(false);
-        return;
-      }
-      if (outcome === "skipped") {
-        setSuppressSignOutHint(false);
-        navigate("/onboarding/ios-paywall", { replace: true });
         return;
       }
       setPaywallNeedsRetry(true);
@@ -314,47 +284,6 @@ export default function SetupEmail() {
         setSessionAccountEmail(normalizedEmail);
       }
       const releaseSignOutHintAfterPaywall = () => setSuppressSignOutHint(false);
-      const isNativeIos = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
-
-      if (isNativeIos) {
-        ensureSession()
-          .then(() => updateSession(sessionPatch))
-          .then(() =>
-            writeSetupDraft({
-              email: normalizedEmail,
-              emailMarketingConsent,
-            }),
-          )
-          .catch(() => {});
-
-        let useRcUi = true;
-        try {
-          useRcUi = await shouldUseRevenueCatPaywallUi();
-        } catch {
-          useRcUi = false;
-        }
-
-        if (!useRcUi) {
-          setPaywallNeedsRetry(false);
-          releaseSignOutHintAfterPaywall();
-          navigate("/onboarding/ios-paywall", { replace: true });
-          return;
-        }
-
-        setPaywallNeedsRetry(false);
-        const outcome = await runIosPaywallFlowAfterSignup({ userId: uid, navigate });
-        if (outcome === "success") {
-          return;
-        }
-        if (outcome === "skipped") {
-          releaseSignOutHintAfterPaywall();
-          navigate("/onboarding/ios-paywall", { replace: true });
-          return;
-        }
-        setPaywallNeedsRetry(true);
-        releaseSignOutHintAfterPaywall();
-        return;
-      }
 
       await ensureSession();
       await updateSession(sessionPatch);
@@ -364,25 +293,6 @@ export default function SetupEmail() {
         emailMarketingConsent,
       });
 
-      if (isAndroidPaywallContext()) {
-        setPaywallNeedsRetry(false);
-        trackMarketingConversion("web_onboarding_signup_complete", {
-          source: "setup_email_android",
-          target_path: "/onboarding/android-paywall",
-        });
-        const outcome = await runAndroidPaywallFlowAfterSignup({ userId: uid, navigate });
-        if (outcome === "success") {
-          return;
-        }
-        setPaywallNeedsRetry(true);
-        releaseSignOutHintAfterPaywall();
-        return;
-      }
-      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
-        releaseSignOutHintAfterPaywall();
-        navigate("/onboarding/ios-paywall", { replace: true });
-        return;
-      }
       trackMarketingConversion("web_onboarding_signup_complete", {
         source: "setup_email",
         target_path: "/onboarding/web-paywall",
@@ -408,13 +318,11 @@ export default function SetupEmail() {
   const footerContinueText = paywallNeedsRetry
     ? t("onboarding:setup.email.tryAgain")
     : t("common:continue");
-  const isNativeIos = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
   return (
     <OnboardingLayout
       currentPage={12}
       nativeFormPage
-      setupCosmicPage
       onContinue={footerContinue}
       canContinue={footerCanContinue}
       continueText={footerContinueText}
@@ -422,18 +330,7 @@ export default function SetupEmail() {
       <div className="relative z-[1] mx-auto w-full max-w-md space-y-6 text-zinc-900">
         <SetupHeadingBlock
           centered
-          title={
-            isNativeIos ? (
-              <>
-                <span className="block">{t("onboarding:setup.email.titleLine1")}</span>
-                <span className="block" style={{ color: NATIVE_WELCOME_PINK }}>
-                  {t("onboarding:setup.email.titleLine2")}
-                </span>
-              </>
-            ) : (
-              t("onboarding:setup.email.title")
-            )
-          }
+          title={t("onboarding:setup.email.title")}
           subtitle={t("onboarding:setup.email.subtitle")}
         />
 

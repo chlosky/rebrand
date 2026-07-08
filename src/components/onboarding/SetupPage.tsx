@@ -1,11 +1,7 @@
 import { ReactNode, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useIsNativeApp } from "@/hooks/use-native-app";
-import {
-  ONBOARDING_SETUP_PROGRESS_ROUTES,
-  SUITE_WEB_SETUP_PROGRESS_ROUTES,
-  WEB_FAST_SETUP_PROGRESS_ROUTES,
-} from "@/lib/onboardingFlow";
+import { getSetupProgressPercent } from "@/lib/onboardingFlow";
 import { useOnboardingSession } from "@/hooks/useOnboardingSession";
 import {
   MOBILE_SETUP_FOOTER_STYLE,
@@ -109,19 +105,8 @@ export function SetupPage({
 
   const setupProgressFillPct = useMemo(() => {
     if (hideProgress) return null;
-    const path = pathname.replace(/\/$/, "") || "/";
-    const isSuitePath = path.includes("/onboarding/suite");
-    const isSuiteFunnel = isNative || isSuitePath;
-    const routes = isSuitePath
-      ? SUITE_WEB_SETUP_PROGRESS_ROUTES
-      : isSuiteFunnel
-        ? ONBOARDING_SETUP_PROGRESS_ROUTES
-        : WEB_FAST_SETUP_PROGRESS_ROUTES;
-    const idx = (routes as readonly string[]).indexOf(path);
-    if (idx < 0) return null;
-    const n = routes.length;
-    return ((idx + 1) / n) * 100;
-  }, [hideProgress, pathname, isNative]);
+    return getSetupProgressPercent(pathname);
+  }, [hideProgress, pathname]);
 
   const mobileScrollBottomClass = "scroll-pb-28";
 

@@ -4,7 +4,6 @@ import path from "path";
 const root = path.join(process.cwd(), "public", "boardimagelibrary");
 const staging = path.join(root, "_staging");
 const themes = [
-  ["identity", "Identity"],
   ["career-money", "Career & Money"],
   ["love-relationships", "Love & Relationships"],
   ["home-space", "Home & Space"],
@@ -12,12 +11,13 @@ const themes = [
   ["travel-adventure", "Travel & Adventure"],
   ["organization-plan", "Organization & Plan"],
   ["aesthetic-mood", "Aesthetic & Mood"],
+  ["identity", "Self & Direction"],
 ];
 
 const rules = [
   [/travel|suitcase|airplane|trail-sign|campfire|eiffel|passport|footprints|camper-van|hiking-backpack|luggage-tag|snorkel|sahara|snowy-pine|fjord|hot-air|train-track|tropical-beach|castle|car-dashboard|alpine-trail|packed-suitcase|norwegian|scottish|desert-highway|boat-deck|beach-sand|airplane-wing|signpost|sand-dunes|wing-sunset|luggage-tags|snorkel-mask|postcards|van-desert|backpack-valley|footprints-beach|passport-stamps|hot-air-balloon|train-tracks|tropical-palm|milky-way-starry-mountains/i, "travel-adventure"],
   [/love|heart-stones|heart-sand|wedding|swans|hand|roses|picnic|padlock|chocolate|bouquet|umbrella|moon-reflection|adirondack|letter-wax|two-chairs|two-mugs|two-coffee|interlaced|sealed-love|twin-candle|bridge.*sunset|ceramic-heart/i, "love-relationships"],
-  [/career|money|coins|briefcase|skyscraper|piggy|calculator|blueprint|trophy|necktie|hourglass|wallet|warehouse|stock-market|conference-room|bar-graph|espresso-leather|corner-office|office-chair|contract|minimalist-desk|laptop-notebook/i, "career-money"],
+  [/career|money|coins|briefcase|skyscraper|piggy|calculator|blueprint|trophy|wallet|stock-market|conference-room|bar-graph|espresso-leather|corner-office|office-chair|contract|minimalist-desk|laptop-notebook/i, "career-money"],
   [/home|living-room|fireplace|kitchen-herb|made-bed|reading-nook|spa-bathroom|front-door|patio|laundry|bookshelf|dining-table|houseplants|scandinavian|throw-pillow|garage-tool|nursery|home-office|porch|thermostat|window-seat|blanket|entryway|cozy-living|folded-laundry|organized-bookshelf|organized-garage|keys-entryway|keys-hanging/i, "home-space"],
   [/beauty|wellness|spa-|yoga|essential-oil|skincare|smoothie|bath-salt|running-shoes|meditation|soap|eucalyptus|pilates|sunscreen|herbal-tea|crystal|nail-polish|hairbrush|dumbbell|salad|sleep-mask|zen-garden|beauty-wellness/i, "beauty-wellness"],
   [/organization|plan|bullet-journal|wall-calendar|file-folder|kanban|planner|analog-clock|label-maker|filing-cabinet|clipboard|timeline|pomodoro|desk-organizer|meal-prep|goal-worksheet|index-card|tablet-calendar|mason-jar|garage-bin|morning-routine|project-roadmap|kanban-board/i, "organization-plan"],

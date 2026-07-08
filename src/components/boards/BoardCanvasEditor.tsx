@@ -106,6 +106,26 @@ const FABRIC_CONTROL_STYLE = {
   hasBorders: true,
 };
 
+const STICKY_FABRIC_CONTROLS = FABRIC_CONTROL_STYLE;
+
+function applyStickyFabricControls(group: Group) {
+  group.set({
+    ...STICKY_FABRIC_CONTROLS,
+    selectable: true,
+    evented: true,
+    hasControls: true,
+    hasBorders: true,
+    lockUniScaling: false,
+    objectCaching: false,
+    markKind: "sticky",
+  });
+
+  group.setCoords();
+  group.canvas?.requestRenderAll();
+
+  return group;
+}
+
 const TEXT_CAPABLE_SHAPES = new Set<BoardMarkShapeType>([
   "rect",
   "circle",
@@ -170,72 +190,133 @@ function stickyGroupFromTarget(obj: FabricObject): Group | null {
   return null;
 }
 
-function enterObjectTextEditing(
-  canvas: Canvas,
-  obj: FabricObject,
-  controlStyle: typeof STICKY_CONTROL_STYLE = STICKY_CONTROL_STYLE,
-  syncFocus = false,
-): boolean {
-  const stickyGroup = stickyGroupFromTarget(obj);
-  let textObj: Textbox | IText | null = null;
-
-  if (stickyGroup) {
-    textObj = stickyParts(stickyGroup).text ?? findEditableTextInGroup(stickyGroup);
-  } else {
-    let root: FabricObject = obj;
-    while (root.group) root = root.group as FabricObject;
-    if (root instanceof Textbox || root instanceof IText) {
-      textObj = root;
-    } else if (root instanceof Group) {
-      textObj = findEditableTextInGroup(root);
-    }
-  }
-
-  if (!textObj) return false;
-
-  if (stickyGroup) {
-    updateStickyLayout(stickyGroup);
-    canvas.setActiveObject(stickyGroup);
-    stickyGroup.set({ hasControls: false, hasBorders: false });
-  } else {
-    canvas.setActiveObject(textObj);
-  }
-  canvas.requestRenderAll();
-
-  const restoreStickyControls = () => {
-    if (!stickyGroup) return;
-    stickyGroup.set(controlStyle);
-    stickyGroup.setCoords();
-    if (!textObj.isEditing) {
-      canvas.setActiveObject(stickyGroup);
-      canvas.requestRenderAll();
-    }
+function stickyLocalBox(width: number, height: number) {
+  return {
+    rectLeft: -width / 2,
+    rectTop: -height / 2,
+    textLeft: -width / 2 + STICKY_PADDING,
+    textTop: -height / 2 + STICKY_PADDING,
+    textWidth: Math.max(40, width - STICKY_PADDING * 2),
   };
+}
 
-  textObj.off("editing:exited", restoreStickyControls);
-  textObj.on("editing:exited", restoreStickyControls);
+function stickyParts(group: Group) {
+  const rect = group
+    .getObjects()
+    .find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
 
-  const beginEditing = () => {
-    textObj.enterEditing();
-    if (textObj instanceof IText) {
-      textObj.selectAll();
-    } else if (textObj instanceof Textbox) {
-      const len = textObj.text?.length ?? 0;
-      textObj.selectionStart = len;
-      textObj.selectionEnd = len;
-    }
-    const hiddenTextarea = (textObj as Textbox & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
-    if (hiddenTextarea) {
-      hiddenTextarea.focus({ preventScroll: true });
-      if (syncFocus) hiddenTextarea.click();
-    }
-    canvas.requestRenderAll();
+  const text = group
+    .getObjects()
+    .find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
+
+  return { rect, text };
+}
+
+function getStickyStoredSize(group: Group) {
+  const storedW = Number(group.get("stickyWidth"));
+  const storedH = Number(group.get("stickyHeight"));
+
+  return {
+    width:
+      Number.isFinite(storedW) && storedW > 0
+        ? storedW
+        : Math.max(STICKY_MIN_W, group.width ?? STICKY_DEFAULT_W),
+    height:
+      Number.isFinite(storedH) && storedH > 0
+        ? storedH
+        : Math.max(STICKY_MIN_H, group.height ?? STICKY_DEFAULT_H),
   };
+}
 
-  if (syncFocus) beginEditing();
-  else requestAnimationFrame(beginEditing);
+function updateStickyLayout(group: Group, width?: number, height?: number) {
+  const { rect, text } = stickyParts(group);
+  if (!rect || !text) return group;
 
-  return true;
+  const stored = getStickyStoredSize(group);
+  const nextW = Math.max(STICKY_MIN_W, width ?? stored.width);
+  const nextH = Math.max(STICKY_MIN_H, height ?? stored.height);
+  const box = stickyLocalBox(nextW, nextH);
+
+  rect.set({
+    left: box.rectLeft,
+    top: box.rectTop,
+    width: nextW,
+    height: nextH,
+    originX: "left",
+    originY: "top",
+    scaleX: 1,
+    scaleY: 1,
+    selectable: false,
+    evented: true,
+    markKind: "sticky-bg",
+  });
+
+  text.set({
+    left: box.textLeft,
+    top: box.textTop,
+    width: box.textWidth,
+    originX: "left",
+    originY: "top",
+    scaleX: 1,
+    scaleY: 1,
+    selectable: false,
+    evented: true,
+    editable: true,
+    markKind: "sticky-text",
+  });
+
+  group.set({
+    width: nextW,
+    height: nextH,
+    originX: "center",
+    originY: "center",
+    scaleX: 1,
+    scaleY: 1,
+    stickyWidth: nextW,
+    stickyHeight: nextH,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    selectable: true,
+    evented: true,
+    markKind: "sticky",
+  });
+
+  rect.setCoords();
+  text.setCoords();
+  group.setCoords();
+
+  return group;
+}
+
+function normalizeStickyResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  const stored = getStickyStoredSize(group);
+
+  const nextW = Math.max(STICKY_MIN_W, stored.width * sx);
+  const nextH = Math.max(STICKY_MIN_H, stored.height * sy);
+
+  updateStickyLayout(group, nextW, nextH);
+  applyStickyFabricControls(group);
+
+  return group;
+}
+
+function normalizeStickyTextEdit(group: Group) {
+  const stored = getStickyStoredSize(group);
+  updateStickyLayout(group, stored.width, stored.height);
+  applyStickyFabricControls(group);
+  return group;
+}
+
+function restoreStickyAfterLoad(group: Group) {
+  const stored = getStickyStoredSize(group);
+
+  updateStickyLayout(group, stored.width, stored.height);
+  applyStickyFabricControls(group);
+
+  return group;
 }
 
 function createStickyNoteGroup(params: {
@@ -246,14 +327,15 @@ function createStickyNoteGroup(params: {
   text?: string;
   fill?: string;
 }): Group {
-  const w = params.width ?? STICKY_DEFAULT_W;
-  const h = params.height ?? STICKY_DEFAULT_H;
+  const w = Math.max(STICKY_MIN_W, params.width ?? STICKY_DEFAULT_W);
+  const h = Math.max(STICKY_MIN_H, params.height ?? STICKY_DEFAULT_H);
   const fill = params.fill ?? "#FFF9C4";
   const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
+  const box = stickyLocalBox(w, h);
 
   const rect = new Rect({
-    left: 0,
-    top: 0,
+    left: box.rectLeft,
+    top: box.rectTop,
     width: w,
     height: h,
     fill,
@@ -265,13 +347,15 @@ function createStickyNoteGroup(params: {
     originY: "top",
     selectable: false,
     evented: true,
+    scaleX: 1,
+    scaleY: 1,
     markKind: "sticky-bg",
   });
 
   const note = new Textbox(params.text ?? "", {
-    left: STICKY_PADDING,
-    top: STICKY_PADDING,
-    width: w - STICKY_PADDING * 2,
+    left: box.textLeft,
+    top: box.textTop,
+    width: box.textWidth,
     fontSize: 22,
     fontFamily: "system-ui, sans-serif",
     fill: "#171717",
@@ -282,123 +366,113 @@ function createStickyNoteGroup(params: {
     editable: true,
     evented: true,
     selectable: false,
+    scaleX: 1,
+    scaleY: 1,
     markKind: "sticky-text",
   });
 
   const group = new Group([rect, note], {
-    left: params.left,
-    top: params.top,
-    originX: "left",
-    originY: "top",
+    left: params.left + w / 2,
+    top: params.top + h / 2,
+    width: w,
+    height: h,
+    originX: "center",
+    originY: "center",
     subTargetCheck: true,
     interactive: true,
     objectCaching: false,
-    ...STICKY_CONTROL_STYLE,
+    selectable: true,
+    evented: true,
     markKind: "sticky",
     stickyWidth: w,
     stickyHeight: h,
   });
+
   updateStickyLayout(group, w, h);
+  applyStickyFabricControls(group);
+
   return group;
 }
 
-function stickyParts(group: Group) {
-  const rect = group.getObjects().find((o) => o.get("markKind") === "sticky-bg") as Rect | undefined;
-  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
-  return { rect, text };
-}
+function enterObjectTextEditing(
+  canvas: Canvas,
+  obj: FabricObject,
+  syncFocus = false,
+): boolean {
+  const stickyGroup = stickyGroupFromTarget(obj);
+  let textObj: Textbox | IText | null = null;
 
-function updateStickyLayout(group: Group, width?: number, height?: number) {
-  const currentW =
-    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
-  const currentH =
-    typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
-  const nextW = Math.max(STICKY_MIN_W, width ?? currentW);
-  const { rect, text } = stickyParts(group);
-  if (!rect || !text) return;
+  if (stickyGroup) {
+    textObj = stickyParts(stickyGroup).text ?? findEditableTextInGroup(stickyGroup);
+  } else {
+    let root: FabricObject = obj;
+    while (root.group) root = root.group as FabricObject;
 
-  text.set({
-    left: STICKY_PADDING,
-    top: STICKY_PADDING,
-    width: Math.max(40, nextW - STICKY_PADDING * 2),
-    textAlign: "left",
-    originX: "left",
-    originY: "top",
-    splitByGrapheme: true,
-    scaleX: 1,
-    scaleY: 1,
-  });
-  (text as Textbox & { initDimensions?: () => void }).initDimensions?.();
-
-  const minHeightFromText = (text.height ?? 0) + STICKY_PADDING * 2;
-  const nextH = Math.max(STICKY_MIN_H, height ?? currentH, minHeightFromText);
-
-  rect.set({
-    left: 0,
-    top: 0,
-    width: nextW,
-    height: nextH,
-    scaleX: 1,
-    scaleY: 1,
-    originX: "left",
-    originY: "top",
-  });
-
-  group.set({
-    scaleX: 1,
-    scaleY: 1,
-    originX: "left",
-    originY: "top",
-    stickyWidth: nextW,
-    stickyHeight: nextH,
-    subTargetCheck: true,
-    interactive: true,
-    objectCaching: false,
-    markKind: "sticky",
-  });
-  rect.setCoords();
-  text.setCoords();
-  group.setCoords();
-  group.canvas?.requestRenderAll();
-}
-
-function normalizeStickyResize(group: Group) {
-  const sx = group.scaleX ?? 1;
-  const sy = group.scaleY ?? 1;
-  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return group;
-
-  const currentW =
-    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
-  const currentH =
-    typeof group.get("stickyHeight") === "number" ? Number(group.get("stickyHeight")) : group.height ?? STICKY_DEFAULT_H;
-
-  updateStickyLayout(group, currentW * sx, currentH * sy);
-  return group;
-}
-
-function normalizeStickyTextEdit(group: Group) {
-  const currentW =
-    typeof group.get("stickyWidth") === "number" ? Number(group.get("stickyWidth")) : group.width ?? STICKY_DEFAULT_W;
-  updateStickyLayout(group, currentW);
-}
-
-function restoreStickyAfterLoad(group: Group) {
-  group.set({
-    subTargetCheck: true,
-    interactive: true,
-    objectCaching: false,
-    markKind: "sticky",
-    originX: "left",
-    originY: "top",
-    ...STICKY_CONTROL_STYLE,
-  });
-  const w = (group.get("stickyWidth") as number) ?? STICKY_DEFAULT_W;
-  const h = (group.get("stickyHeight") as number) ?? STICKY_DEFAULT_H;
-  const text = group.getObjects().find((o) => o.get("markKind") === "sticky-text") as Textbox | undefined;
-  if (text) {
-    text.set({ editable: true, evented: true, selectable: false, markKind: "sticky-text" });
+    if (root instanceof Textbox || root instanceof IText) {
+      textObj = root;
+    } else if (root instanceof Group) {
+      textObj = findEditableTextInGroup(root);
+    }
   }
-  updateStickyLayout(group, w, h);
+
+  if (!textObj) return false;
+
+  if (stickyGroup) {
+    updateStickyLayout(stickyGroup);
+    applyStickyFabricControls(stickyGroup);
+
+    canvas.discardActiveObject();
+    canvas.setActiveObject(stickyGroup);
+
+    stickyGroup.set({
+      hasControls: false,
+      hasBorders: false,
+    });
+
+    stickyGroup.setCoords();
+  } else {
+    canvas.setActiveObject(textObj);
+  }
+
+  canvas.requestRenderAll();
+
+  const restoreStickyControls = () => {
+    if (!stickyGroup) return;
+
+    normalizeStickyTextEdit(stickyGroup);
+    canvas.discardActiveObject();
+    canvas.setActiveObject(stickyGroup);
+    applyStickyFabricControls(stickyGroup);
+    canvas.requestRenderAll();
+  };
+
+  textObj.off("editing:exited", restoreStickyControls);
+  textObj.on("editing:exited", restoreStickyControls);
+
+  const beginEditing = () => {
+    textObj.enterEditing();
+
+    if (textObj instanceof IText) {
+      textObj.selectAll();
+    } else if (textObj instanceof Textbox) {
+      const len = textObj.text?.length ?? 0;
+      textObj.selectionStart = len;
+      textObj.selectionEnd = len;
+    }
+
+    const hiddenTextarea = (textObj as Textbox & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
+    if (hiddenTextarea) {
+      hiddenTextarea.focus({ preventScroll: true });
+      if (syncFocus) hiddenTextarea.click();
+    }
+
+    canvas.requestRenderAll();
+  };
+
+  if (syncFocus) beginEditing();
+  else requestAnimationFrame(beginEditing);
+
+  return true;
 }
 
 function normalizeTextCapableShapeResize(group: Group) {
@@ -1147,7 +1221,7 @@ function enterStructureTextEditing(canvas: Canvas, target: FabricObject, syncFoc
   const role = structureProp(target, "structureRole");
   if (role !== "label" && role !== "priority-left" && role !== "priority-right") return false;
   if (!(target instanceof IText) && !(target instanceof Textbox)) return false;
-  return enterObjectTextEditing(canvas, target, STICKY_CONTROL_STYLE, syncFocus);
+  return enterObjectTextEditing(canvas, target, syncFocus);
 }
 
 function walkStructureObjects(canvas: Canvas, visit: (obj: FabricObjectType) => void) {
@@ -2005,21 +2079,27 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.on("object:removed", onHistoryImmediate);
         const onStickyTextChanged = (event: { target?: FabricObject }) => {
           const target = event.target;
+
           if (
             (target instanceof Textbox || target instanceof IText) &&
             target.get("markKind") === "sticky-text" &&
-            target.group instanceof Group
+            target.group instanceof Group &&
+            target.group.get("markKind") === "sticky"
           ) {
             const stickyGroup = target.group;
-            normalizeStickyTextEdit(stickyGroup);
-            if (!target.isEditing) {
-              stickyGroup.set(markControlStyleRef.current);
+
+            if (target.isEditing) {
+              const stored = getStickyStoredSize(stickyGroup);
+              updateStickyLayout(stickyGroup, stored.width, stored.height);
+            } else {
+              normalizeStickyTextEdit(stickyGroup);
               canvas.discardActiveObject();
               canvas.setActiveObject(stickyGroup);
-              stickyGroup.setCoords();
+              applyStickyFabricControls(stickyGroup);
               canvas.requestRenderAll();
             }
           }
+
           onHistoryDebounced();
         };
         canvas.on("text:changed", onStickyTextChanged);
@@ -2030,11 +2110,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             const stickyGroup = stickyGroupFromTarget(obj);
             if (stickyGroup) {
               updateStickyLayout(stickyGroup);
-              stickyGroup.set(markControlStyleRef.current);
-              stickyGroup.setCoords();
+              applyStickyFabricControls(stickyGroup);
+
               if (canvas.getActiveObject() !== stickyGroup) {
+                canvas.discardActiveObject();
                 canvas.setActiveObject(stickyGroup);
               }
+
+              stickyGroup.setCoords();
               canvas.requestRenderAll();
             } else if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
               obj.set(markControlStyleRef.current);
@@ -2058,7 +2141,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.on("mouse:dblclick", (opt) => {
           const target = opt.target;
           if (!target) return;
-          if (enterObjectTextEditing(canvas, target as FabricObject, markControlStyleRef.current)) {
+          if (enterObjectTextEditing(canvas, target as FabricObject)) {
             opt.e.preventDefault?.();
             opt.e.stopPropagation?.();
           }
@@ -2102,7 +2185,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               root.get("markKind") !== "sticky-text" &&
               !structureProp(root, "structureRole")
             ) {
-              if (enterObjectTextEditing(canvas, root, markControlStyleRef.current, true)) {
+              if (enterObjectTextEditing(canvas, root, true)) {
                 opt.e.preventDefault?.();
                 opt.e.stopPropagation?.();
                 return;
@@ -2199,10 +2282,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           restoreAllGroupsAfterLoad(canvas);
           if (fabricSelectionControls) {
             for (const obj of canvas.getObjects()) {
-              if (
-                obj.get("markKind") === "sticky" ||
-                (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable"))
-              ) {
+              if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
                 obj.set(FABRIC_CONTROL_STYLE);
               }
             }
@@ -2260,10 +2340,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         top: artboardHeight * 0.38 - STICKY_DEFAULT_H / 2,
       });
       canvas.add(sticky);
-      if (fabricSelectionControls) sticky.set(FABRIC_CONTROL_STYLE);
-      enterObjectTextEditing(canvas, sticky, markControlStyleRef.current, fabricSelectionControls);
+      canvas.setActiveObject(sticky);
+      applyStickyFabricControls(sticky);
+      canvas.requestRenderAll();
+
+      requestAnimationFrame(() => {
+        enterObjectTextEditing(canvas, sticky, true);
+      });
+
       scheduleSave();
-    }, [fabricSelectionControls, readOnly, scheduleSave]);
+    }, [readOnly, scheduleSave]);
 
     const addTextAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
@@ -2299,17 +2385,26 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
+
       const w = STICKY_DEFAULT_W;
       const h = STICKY_DEFAULT_H;
+
       const sticky = createStickyNoteGroup({
         left: normX * artboardWidth - w / 2,
         top: normY * artboardHeight - h / 2,
       });
+
       canvas.add(sticky);
-      if (fabricSelectionControls) sticky.set(FABRIC_CONTROL_STYLE);
-      enterObjectTextEditing(canvas, sticky, markControlStyleRef.current, fabricSelectionControls);
+      canvas.setActiveObject(sticky);
+      applyStickyFabricControls(sticky);
+      canvas.requestRenderAll();
+
+      requestAnimationFrame(() => {
+        enterObjectTextEditing(canvas, sticky, true);
+      });
+
       scheduleSave();
-    }, [fabricSelectionControls, readOnly, scheduleSave]);
+    }, [readOnly, scheduleSave, artboardWidth, artboardHeight]);
 
     const exitDrawMode = useCallback(() => {
       const canvas = fabricRef.current;
@@ -2344,7 +2439,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           const group = createTextCapableShapeGroup(shapeType, cx, cy, stroke);
           if (fabricSelectionControls) group.set(FABRIC_CONTROL_STYLE);
           canvas.add(group);
-          enterObjectTextEditing(canvas, group, markControlStyleRef.current, fabricSelectionControls);
+          enterObjectTextEditing(canvas, group, fabricSelectionControls);
           scheduleSave();
           return;
         }
@@ -2729,6 +2824,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           fill,
         });
         canvas.add(sticky);
+        canvas.setActiveObject(sticky);
+        applyStickyFabricControls(sticky);
         canvas.requestRenderAll();
       },
       [readOnly],
@@ -3238,7 +3335,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas || readOnly) return;
       const active = deleteTargetRef.current ?? canvas.getActiveObject();
       if (!active) return;
-      enterObjectTextEditing(canvas, active, markControlStyleRef.current, fabricSelectionControls);
+      enterObjectTextEditing(canvas, active, fabricSelectionControls);
     }, [fabricSelectionControls, readOnly]);
 
     const applyMarkFontSize = useCallback(
@@ -3610,7 +3707,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           enterObjectTextEditing(
             activeCanvas,
             statementRoot(target!),
-            markControlStyleRef.current,
             true,
           );
           lastTapRef.time = 0;
@@ -3627,7 +3723,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         const now = Date.now();
         if (lastTapRef.target === editTarget && now - lastTapRef.time < 400) {
-          enterObjectTextEditing(activeCanvas, editTarget, markControlStyleRef.current, true);
+          enterObjectTextEditing(activeCanvas, editTarget, true);
           lastTapRef.time = 0;
           lastTapRef.target = null;
           return;

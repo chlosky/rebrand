@@ -1,11 +1,10 @@
 import { useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
-import type { PrimarySetupIntent } from "@/lib/boards/starterTemplates";
+import type { StartingSystem } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
   SETUP_CHOICE_DESC_CLASS,
@@ -14,15 +13,15 @@ import {
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
 
-const INTENTS: PrimarySetupIntent[] = [
+const STARTING_SYSTEMS: StartingSystem[] = [
   "life_rebranding",
   "home_organization",
   "office_work",
   "moodboarding",
 ];
 
-function nextRouteForIntent(intent: PrimarySetupIntent, setupBase: string): string {
-  switch (intent) {
+function nextRouteForStartingSystem(startingSystem: StartingSystem, setupBase: string): string {
+  switch (startingSystem) {
     case "life_rebranding":
       return `${setupBase}/focus-categories`;
     case "home_organization":
@@ -34,21 +33,18 @@ function nextRouteForIntent(intent: PrimarySetupIntent, setupBase: string): stri
   }
 }
 
-export default function SetupPrimaryIntent() {
+/** Starting system step. */
+export default function SetupStartingSystemGated() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
-  const welcomePath = isSuiteFunnel ? "/onboarding/suite/welcome" : "/onboarding/welcome";
+  const setupBase = "/onboarding/setup";
 
-  const [selected, setSelected] = useState<PrimarySetupIntent | null>(() => {
-    const id = readSetupDraft().primaryIntent;
-    return id && INTENTS.includes(id) ? id : null;
+  const [selected, setSelected] = useState<StartingSystem | null>(() => {
+    const id = readSetupDraft().startingSystem;
+    return id && STARTING_SYSTEMS.includes(id) ? id : null;
   });
 
-  const selectIntent = useCallback((id: PrimarySetupIntent) => {
+  const selectStartingSystem = useCallback((id: StartingSystem) => {
     setSelected((prev) => (prev === id ? null : id));
   }, []);
 
@@ -56,31 +52,31 @@ export default function SetupPrimaryIntent() {
     <SetupPage
       canContinue={selected != null}
       disableNativeScrollViewport
-      onBack={() => navigate(welcomePath)}
+      onBack={() => navigate(`${setupBase}/name`)}
       onContinue={() => {
         if (!selected) return;
-        writeSetupDraft({ primaryIntent: selected });
-        navigate(nextRouteForIntent(selected, setupBase));
+        writeSetupDraft({ startingSystem: selected });
+        navigate(nextRouteForStartingSystem(selected, setupBase));
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
         <SetupHeadingBlock
           centered
           className="shrink-0 [&_h1]:text-3xl [&_h1]:leading-[1.08] sm:[&_h1]:text-4xl sm:[&_h1]:leading-[1.05]"
-          title={t("setup.primaryIntent.title")}
-          subtitle={t("setup.primaryIntent.subtitle")}
+          title={t("setup.startingSystem.title")}
+          subtitle={t("setup.startingSystem.subtitle")}
         />
 
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden w-full">
           <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-0.5 py-1 pb-2 [-webkit-overflow-scrolling:touch]">
             <div className="flex flex-col gap-2.5 pt-0.5 sm:gap-3">
-              {INTENTS.map((id) => {
+              {STARTING_SYSTEMS.map((id) => {
                 const active = selected === id;
                 return (
                   <button
                     key={id}
                     type="button"
-                    onClick={() => selectIntent(id)}
+                    onClick={() => selectStartingSystem(id)}
                     className={cn(
                       "flex w-full items-start text-left",
                       setupChoiceTileWithGlowClass(active),
@@ -89,10 +85,10 @@ export default function SetupPrimaryIntent() {
                   >
                     <div className="min-w-0 flex-1 py-0.5">
                       <p className={cn(SETUP_CHOICE_TITLE_CLASS, "text-sm sm:text-base")}>
-                        {t(`setup.primaryIntent.options.${id}.title`)}
+                        {t(`setup.startingSystem.options.${id}.title`)}
                       </p>
                       <p className={cn(SETUP_CHOICE_DESC_CLASS, "mt-1")}>
-                        {t(`setup.primaryIntent.options.${id}.description`)}
+                        {t(`setup.startingSystem.options.${id}.description`)}
                       </p>
                     </div>
                   </button>

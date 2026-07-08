@@ -992,7 +992,7 @@ CREATE TABLE public.weekly_goals (
   UNIQUE (user_id, week_start_date, goal_text),
   CONSTRAINT weekly_goals_category_check
     CHECK (category IS NULL OR category IN (
-      'Identity',
+      'Self & Direction',
       'Career & Money',
       'Love & Relationships',
       'Home & Space',

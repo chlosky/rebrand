@@ -1,11 +1,9 @@
 import { useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
-import { FOUR_BOARD_FOCUS_CATEGORIES_SLUG } from "@/lib/boards/starterTemplates";
 import { FOCUS_CATEGORIES } from "@/lib/focusCategories";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
@@ -23,10 +21,10 @@ const LEGACY_KEY_TO_CANONICAL: Record<string, string> = {
   Career: "Career & Money",
   career_success: "Career & Money",
   Business: "Career & Money",
-  self_concept: "Identity",
-  Confidence: "Identity",
-  peace_detachment: "Identity",
-  Discipline: "Identity",
+  self_concept: "Self & Direction",
+  Confidence: "Self & Direction",
+  peace_detachment: "Self & Direction",
+  Discipline: "Self & Direction",
   beauty_self_image: "Beauty & Wellness",
   "Self-Love": "Beauty & Wellness",
   Nutrition: "Health & Fitness",
@@ -59,10 +57,7 @@ export default function SetupFocusCategories() {
   const { t } = useTranslation("onboarding");
   const { t: tTools } = useTranslation("tools");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
   const [selected, setSelected] = useState<string[]>(() => normalizeInitialSelection());
 
   const canContinue = selected.length > 0;
@@ -79,18 +74,14 @@ export default function SetupFocusCategories() {
     <SetupPage
       canContinue={canContinue}
       disableNativeScrollViewport
-      onBack={() => navigate(isSuiteFunnel ? `${setupBase}/name` : `${setupBase}/primary-intent`)}
+      onBack={() => navigate(`${setupBase}/starting-system`)}
       onContinue={() => {
         const primary = selected[0]!;
         writeSetupDraft({
           desireCategory: primary,
           desireCategories: selected,
-          conditionalSpecificity: {},
-          boardStarterTemplateSlug: FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
         });
-        navigate(
-          isSuiteFunnel ? `${setupBase}/current-friction` : `${setupBase}/tool-preference`,
-        );
+        navigate(`${setupBase}/begin-journey`);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">

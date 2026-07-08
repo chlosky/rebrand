@@ -1,78 +1,59 @@
-/** Native + default path list (full suite funnel). */
+/** Active onboarding route registry. */
+
 export const ONBOARDING_ROUTES = [
   "/onboarding/welcome",
   "/onboarding/setup/name",
-  "/onboarding/setup/primary-intent",
+  "/onboarding/setup/starting-system",
   "/onboarding/setup/focus-categories",
   "/onboarding/setup/home-focus",
   "/onboarding/setup/office-planning-system",
   "/onboarding/setup/moodboard-focus",
-  "/onboarding/setup/current-friction",
   "/onboarding/setup/begin-journey",
   "/onboarding/setup/attribution",
-  "/onboarding/setup/intensity",
-  "/onboarding/setup/notifications",
-  "/onboarding/setup/workspace-template",
   "/onboarding/setup/plot-loading",
   "/onboarding/setup/plot-synthesis",
   "/onboarding/setup/email",
 ] as const;
 
-/** Preserved suite web funnel for comprehensive-app ad work (`/onboarding/suite/...`). */
-export const SUITE_WEB_ONBOARDING_ROUTES = [
-  "/onboarding/suite/welcome",
-  "/onboarding/suite/setup/name",
-  "/onboarding/suite/setup/primary-intent",
-  "/onboarding/suite/setup/focus-categories",
-  "/onboarding/suite/setup/home-focus",
-  "/onboarding/suite/setup/office-planning-system",
-  "/onboarding/suite/setup/moodboard-focus",
-  "/onboarding/suite/setup/current-friction",
-  "/onboarding/suite/setup/begin-journey",
-  "/onboarding/suite/setup/attribution",
-  "/onboarding/suite/setup/intensity",
-  "/onboarding/suite/setup/notifications",
-  "/onboarding/suite/setup/workspace-template",
-  "/onboarding/suite/setup/plot-loading",
-  "/onboarding/suite/setup/plot-synthesis",
-  "/onboarding/suite/setup/email",
+/** Logical setup steps for progress bar (branch screens share one step). */
+
+export const SETUP_PROGRESS_STEP_GROUPS = [
+  ["name"],
+  ["starting-system"],
+  ["focus-categories", "home-focus", "office-planning-system", "moodboard-focus"],
+  ["begin-journey"],
+  ["attribution"],
+  ["plot-loading"],
+  ["plot-synthesis"],
+  ["email"],
 ] as const;
 
-/** Web default onboarding path (shorter path, name before account). */
-export const WEB_FAST_ONBOARDING_ROUTES = [
-  "/onboarding/welcome",
-  "/onboarding/setup/primary-intent",
-  "/onboarding/setup/focus-categories",
-  "/onboarding/setup/home-focus",
-  "/onboarding/setup/office-planning-system",
-  "/onboarding/setup/moodboard-focus",
-  "/onboarding/setup/workspace-template",
-  "/onboarding/setup/begin-journey",
-  "/onboarding/setup/attribution",
-  "/onboarding/setup/intensity",
-  "/onboarding/setup/plot-loading",
-  "/onboarding/setup/plot-synthesis",
-  "/onboarding/setup/name",
-  "/onboarding/setup/email",
-] as const;
+export function getSetupProgressPercent(pathname: string): number | null {
+  const normalized = pathname.replace(/\/$/, "");
 
-/** Setup steps only (after Welcome, before pricing): used for top progress bar. */
-export const ONBOARDING_SETUP_PROGRESS_ROUTES = ONBOARDING_ROUTES.slice(1, -1);
+  const setupPrefix = normalized.includes("/onboarding/setup/")
+    ? "/onboarding/setup/"
+    : null;
 
-export const SUITE_WEB_SETUP_PROGRESS_ROUTES = SUITE_WEB_ONBOARDING_ROUTES.slice(1, -1);
+  if (!setupPrefix) return null;
 
-export const WEB_FAST_SETUP_PROGRESS_ROUTES = WEB_FAST_ONBOARDING_ROUTES.slice(1, -1);
+  const step = normalized.slice(setupPrefix.length);
+  const index = SETUP_PROGRESS_STEP_GROUPS.findIndex((group) =>
+    (group as readonly string[]).includes(step),
+  );
+
+  if (index < 0) return null;
+
+  return ((index + 1) / SETUP_PROGRESS_STEP_GROUPS.length) * 100;
+}
 
 export const ONBOARDING_STEP_LABELS = [
   "Welcome",
   "Your Name",
-  "Intent",
+  "Starting system",
   "Focus boards",
-  "Friction",
-  "Your studio",
+  "Begin journey",
   "Found us",
-  "Rhythm",
-  "Permissions",
   "Building room",
   "Your plot",
   "Account",

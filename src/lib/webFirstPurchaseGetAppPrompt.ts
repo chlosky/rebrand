@@ -1,9 +1,9 @@
 import { Capacitor } from "@capacitor/core";
 
-const PENDING_KEY = "sv_web_get_app_prompt_pending_v1";
-const SHOWN_KEY = "sv_web_get_app_prompt_shown_v1";
+const PENDING_KEY = "pp_web_get_app_prompt_pending_v1";
+const SHOWN_KEY = "pp_web_get_app_prompt_shown_v1";
 /** Dev preview without keeping `?preview=` in the URL — set via console, clear when done. */
-export const PREVIEW_STORAGE_KEY = "sv_web_get_app_preview_v1";
+export const PREVIEW_STORAGE_KEY = "pp_web_get_app_preview_v1";
 
 /** Routes where the get-app popup must never appear (paywall, onboarding, payment wait). */
 export function isBlockedPathForWebGetAppPrompt(pathname: string): boolean {
@@ -29,7 +29,7 @@ export function isWebGetAppPromptPending(): boolean {
   }
 }
 
-/** Call when a browser user completes their first RevenueCat web checkout. */
+/** Call when a browser user completes their first Stripe checkout. */
 export function armWebGetAppPromptPending(): void {
   if (Capacitor.isNativePlatform()) return;
   if (hasWebGetAppPromptBeenShown()) return;

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { OnboardingTypewriter } from "@/components/onboarding/OnboardingTypewriter";
 import { SETUP_HEADING_SUBTITLE_CLASS, SETUP_HEADING_TITLE_CLASS } from "@/lib/onboardingSetupTheme";
@@ -14,26 +13,27 @@ const SUBTITLE_DELAY_MS = 320;
 export default function SetupBeginJourney() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
   const [showSubtitle, setShowSubtitle] = useState(false);
 
   return (
     <SetupPage
       canContinue
       onBack={() => {
-        if (isSuiteFunnel) {
-          navigate(`${setupBase}/current-friction`);
-          return;
-        }
-        const intent = readSetupDraft().primaryIntent;
-        if (intent === "office_work") {
+        const startingSystem = readSetupDraft().startingSystem;
+        if (startingSystem === "office_work") {
           navigate(`${setupBase}/office-planning-system`);
           return;
         }
-        navigate(`${setupBase}/workspace-template`);
+        if (startingSystem === "home_organization") {
+          navigate(`${setupBase}/home-focus`);
+          return;
+        }
+        if (startingSystem === "moodboarding") {
+          navigate(`${setupBase}/moodboard-focus`);
+          return;
+        }
+        navigate(`${setupBase}/focus-categories`);
       }}
       onContinue={() => navigate(`${setupBase}/attribution`)}
     >

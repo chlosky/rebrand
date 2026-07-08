@@ -4,8 +4,8 @@ import { ensureOnboardingSessionCreds } from "@/lib/setupDraftBackendSync";
 import { readMarketingAttribution } from "@/lib/useMarketingAttribution";
 import { buildOnboardingAttributionPatch } from "@/lib/attribution";
 
-const RECORDED_KEY = "sv_web_onboarding_session_recorded_v1";
-const CLIENT_VISIT_KEY = "sv_web_onboarding_client_visit_v1";
+const RECORDED_KEY = "pp_web_onboarding_session_recorded_v1";
+const CLIENT_VISIT_KEY = "pp_web_onboarding_client_visit_v1";
 
 let recordStartPromise: Promise<void> | null = null;
 

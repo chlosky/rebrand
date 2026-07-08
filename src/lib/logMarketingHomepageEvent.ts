@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { detectInAppBrowser } from "@/lib/inAppBrowserDetection";
 import { readMarketingAttribution } from "@/lib/useMarketingAttribution";
 
-const VISIT_ID_KEY = "sv_marketing_homepage_visit_v1";
+const VISIT_ID_KEY = "pp_marketing_homepage_visit_v1";
 
 export type MarketingHomepageEventType = "page_view" | "store_click";
 
@@ -19,12 +19,7 @@ function resolveMarketingHomepagePagePath(): string {
 }
 
 function shouldLogMarketingHomepageEvent(pagePath: string): boolean {
-  return (
-    pagePath === "/" ||
-    pagePath === "/mobilelanding" ||
-    pagePath === "/mobilelandingmimi" ||
-    pagePath === "/mobilelandingjonni"
-  );
+  return pagePath === "/";
 }
 
 function readDeviceOs(): string {

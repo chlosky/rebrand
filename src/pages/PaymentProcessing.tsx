@@ -4,21 +4,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { isIosPaywallContext } from "@/lib/isIosPaywallContext";
-import { isAndroidPaywallContext } from "@/lib/isAndroidPaywallContext";
-import { armIapPostPurchaseEntitlementLatch } from "@/lib/iosPostPurchaseEntitlementGate";
+import { armIapPostPurchaseEntitlementLatch } from "@/lib/postPurchaseEntitlementGate";
 import { armWebGetAppPromptPending } from "@/lib/webFirstPurchaseGetAppPrompt";
-
-/**
- * Platform-aware paywall fallback so a non-iOS web user doesn't get stranded on
- * `/onboarding/ios-paywall`, which toasts "Subscriptions are only available in
- * the iOS app." and offers no path forward.
- */
-function paywallRouteForCurrentPlatform(): string {
-  if (isIosPaywallContext()) return "/onboarding/ios-paywall";
-  if (isAndroidPaywallContext()) return "/onboarding/android-paywall";
-  return "/onboarding/web-paywall";
-}
 
 export default function PaymentProcessing() {
   const { t } = useTranslation("paywall");
@@ -42,7 +29,7 @@ export default function PaymentProcessing() {
     if (!sid || !token) {
       toast.error(t("paymentProcessing.missingInfo"));
       const timeoutId = window.setTimeout(
-        () => navigate(paywallRouteForCurrentPlatform()),
+        () => navigate("/onboarding/web-paywall"),
         2000,
       );
       return () => window.clearTimeout(timeoutId);
@@ -61,7 +48,7 @@ export default function PaymentProcessing() {
         interval = null;
       }
       finishTimer = window.setTimeout(
-        () => navigate(paywallRouteForCurrentPlatform()),
+        () => navigate("/onboarding/web-paywall"),
         3000,
       );
     };

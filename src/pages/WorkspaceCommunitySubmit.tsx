@@ -154,11 +154,39 @@ export default function WorkspaceCommunitySubmit() {
     const uploaded: string[] = [];
     try {
       for (const item of pendingFiles) {
-        const safe = item.file.name.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 80);
+        let uploadFile = item.file;
+        if (
+          item.file.type.startsWith("image/") &&
+          item.file.type !== "image/svg+xml" &&
+          item.file.type !== "image/gif"
+        ) {
+          const bitmap = await createImageBitmap(item.file);
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(bitmap, 0, 0);
+              const outType = item.file.type === "image/png" ? "image/png" : "image/jpeg";
+              const blob = await new Promise<Blob | null>((resolve) => {
+                canvas.toBlob(resolve, outType, outType === "image/jpeg" ? 0.92 : undefined);
+              });
+              if (blob) {
+                const ext = outType === "image/png" ? "png" : "jpg";
+                const base = item.file.name.replace(/\.[^.]+$/, "") || "upload";
+                uploadFile = new File([blob], `${base}.${ext}`, { type: outType });
+              }
+            }
+          } finally {
+            bitmap.close();
+          }
+        }
+        const safe = uploadFile.name.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 80);
         const path = `${user.id}/submissions/${crypto.randomUUID()}_${safe}`;
         const { error } = await supabase.storage
           .from("community-posts")
-          .upload(path, item.file, { contentType: item.file.type || "image/jpeg" });
+          .upload(path, uploadFile, { contentType: uploadFile.type || "image/jpeg" });
         if (error) throw error;
         uploaded.push(path);
       }

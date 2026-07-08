@@ -1,7 +1,7 @@
 import { FOCUS_CATEGORIES } from "@/lib/focusCategories";
 import type { BoardLayoutMode, BoardRole } from "@/lib/boards/types";
 
-export type PrimarySetupIntent =
+export type StartingSystem =
   | "life_rebranding"
   | "home_organization"
   | "office_work"
@@ -21,7 +21,7 @@ export type BoardStarterTemplate = {
   slug: string;
   name: string;
   description: string;
-  intent: PrimarySetupIntent;
+  startingSystem: StartingSystem;
   boards: StarterBoardDef[];
 };
 
@@ -37,7 +37,7 @@ const FOCUS_BOARD_DEFAULT_COLORS = ["rose_gold", "blue", "light_pink"] as const;
 const FOCUS_BOARD_FALLBACK_TITLES = ["Focus Board 1", "Focus Board 2", "Focus Board 3"] as const;
 
 const FOCUS_CATEGORY_COLOR_KEY: Record<string, string> = {
-  Identity: "rose_gold",
+  "Self & Direction": "rose_gold",
   "Career & Money": "green",
   "Love & Relationships": "neon_pink",
   "Home & Space": "sky_blue",
@@ -52,7 +52,7 @@ const FOCUS_CATEGORY_COLOR_KEY: Record<string, string> = {
 /** Classic four-board plot — life rebranding default. */
 export const DEFAULT_FOUR_BOARD_TEMPLATE: BoardStarterTemplate = {
   slug: "four-board-rebrand",
-  intent: "life_rebranding",
+  startingSystem: "life_rebranding",
   name: "Three Focus Boards and The Plan",
   description: "Three focus boards and one plan board — the signature four-board plot.",
   boards: [
@@ -67,7 +67,7 @@ const LIFE_TEMPLATES: BoardStarterTemplate[] = [
   DEFAULT_FOUR_BOARD_TEMPLATE,
   {
     slug: "soft-life-reset",
-    intent: "life_rebranding",
+    startingSystem: "life_rebranding",
     name: "Glow, Home & Peace",
     description: "Three vision boards for beauty, space, and calm — plus your plan.",
     boards: [
@@ -79,7 +79,7 @@ const LIFE_TEMPLATES: BoardStarterTemplate[] = [
   },
   {
     slug: "career-girl",
-    intent: "life_rebranding",
+    startingSystem: "life_rebranding",
     name: "Ambition & Wealth",
     description: "Career, money, and confidence vision boards with a weekly plan.",
     boards: [
@@ -91,7 +91,7 @@ const LIFE_TEMPLATES: BoardStarterTemplate[] = [
   },
   {
     slug: "minimal-plan",
-    intent: "life_rebranding",
+    startingSystem: "life_rebranding",
     name: "One Vision + Plan",
     description: "One hero vision board and a dedicated plan board.",
     boards: [
@@ -107,7 +107,7 @@ function homeTemplate(
   description: string,
   boards: StarterBoardDef[],
 ): BoardStarterTemplate {
-  return { slug, name, description, intent: "home_organization", boards };
+  return { slug, name, description, startingSystem: "home_organization", boards };
 }
 
 const HOME_TEMPLATES: BoardStarterTemplate[] = [
@@ -154,7 +154,7 @@ function officeTemplate(
     slug,
     name,
     description,
-    intent: "office_work",
+    startingSystem: "office_work",
     boards: [
       { title: primaryTitle, role: "focus", color_key: "blue", sort_order: 0, layout_mode: mode },
       { title: "The Plan", role: "plan", color_key: "white_opaque", sort_order: 1, layout_mode: "vision" },
@@ -206,7 +206,7 @@ function moodTemplate(
   description: string,
   boards: StarterBoardDef[],
 ): BoardStarterTemplate {
-  return { slug, name, description, intent: "moodboarding", boards };
+  return { slug, name, description, startingSystem: "moodboarding", boards };
 }
 
 const MOODBOARD_TEMPLATES: BoardStarterTemplate[] = [
@@ -249,12 +249,12 @@ export const BOARD_STARTER_TEMPLATES: BoardStarterTemplate[] = [
   ...MOODBOARD_TEMPLATES,
 ];
 
-/** @deprecated use BOARD_STARTER_TEMPLATES filtered by intent */
+/** @deprecated use BOARD_STARTER_TEMPLATES filtered by starting system */
 export const LIFE_REBRANDING_TEMPLATES = LIFE_TEMPLATES;
 
-export function templatesForIntent(intent: PrimarySetupIntent | undefined): BoardStarterTemplate[] {
-  if (!intent) return LIFE_TEMPLATES;
-  return BOARD_STARTER_TEMPLATES.filter((t) => t.intent === intent);
+export function templatesForStartingSystem(startingSystem: StartingSystem | undefined): BoardStarterTemplate[] {
+  if (!startingSystem) return LIFE_TEMPLATES;
+  return BOARD_STARTER_TEMPLATES.filter((t) => t.startingSystem === startingSystem);
 }
 
 export function mapFocusCategoryToColorKey(categoryName: string, index: number): string {
@@ -288,7 +288,7 @@ export function buildTemplateFromFocusCategories(categories: string[]): BoardSta
   });
   return {
     slug: FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
-    intent: "life_rebranding",
+    startingSystem: "life_rebranding",
     name: "Three Focus Boards and The Plan",
     description: "Three focus boards from your selected areas plus The Plan.",
     boards,

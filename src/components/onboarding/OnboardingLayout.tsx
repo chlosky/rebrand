@@ -28,10 +28,7 @@ interface OnboardingLayoutProps {
   expandNativeContentColumn?: boolean;
   /** Max width for main stack + native mobile footer (default max-w-md). Welcome uses max-w-lg for feature pills. */
   contentMaxWidthClass?: string;
-  /**
-   * Native app only (non-stacked): replaces the fixed Back + Continue row, e.g. StoreKit monthly/annual
-   * on older iOS where RevenueCat paywall UI is not used.
-   */
+  /** Native app only (non-stacked): replaces the fixed Back + Continue row. */
   nativeFooterSlot?: ReactNode;
   /** Welcome only: merged onto stacked native primary/secondary buttons (visual only; keep layout in layout). */
   stackedNativePrimaryButtonClassName?: string;
@@ -40,8 +37,6 @@ interface OnboardingLayoutProps {
   welcomeSoloContinueButtonClassName?: string;
   /** Welcome route: full-bleed hero + mobile web footer layout (independent of button class overrides). */
   welcomePage?: boolean;
-  /** Account step: same cosmic shell as welcome/setup (e.g. setup/email). */
-  setupCosmicPage?: boolean;
   /** Shown under primary CTA on welcome (e.g. setup time / no card). */
   welcomeCtaSubtext?: string;
   /** Welcome native: text link for sign-in instead of a full secondary button. */
@@ -73,7 +68,6 @@ export const OnboardingLayout = ({
   stackedNativeSecondaryButtonClassName,
   welcomeSoloContinueButtonClassName,
   welcomePage = false,
-  setupCosmicPage = false,
   welcomeCtaSubtext,
   welcomeSignInAsTextLink = false,
   progressFillPctOverride,
@@ -87,13 +81,10 @@ export const OnboardingLayout = ({
   const { pathname } = useLocation();
   const isStandaloneMobile = useIsStandaloneMobile();
   const isNative = useIsNativeApp();
-  const nativeFormScrollLayout = isNative && nativeFormPage;
   const isWelcome =
     welcomePage || Boolean(welcomeSoloContinueButtonClassName) || stackedNativeButtons;
-  const isCosmicShell = false;
   const isWelcomeMobileWeb = !isNative && isWelcome;
-  const isSetupCosmicMobileWeb = !isNative && setupCosmicPage;
-  const setupMobileWebScrollLayout = isSetupCosmicMobileWeb && nativeFormPage;
+  const isFormPageWeb = !isNative && nativeFormPage && !isWelcome;
 
   useEffect(() => {
     document.title = "Onboarding | Palette Plotting";
@@ -114,9 +105,8 @@ export const OnboardingLayout = ({
   }, [pathname]);
 
   const handlePrevious = () => {
-    if (currentPage > 1) {
-      navigate(ONBOARDING_ROUTES[currentPage - 2]);
-    }
+    if (currentPage <= 1) return;
+    navigate(ONBOARDING_ROUTES[currentPage - 2]);
   };
 
   const handleNext = () => {
@@ -165,9 +155,9 @@ export const OnboardingLayout = ({
     <div
       className={cn(
         "relative overflow-x-hidden bg-white text-zinc-900 antialiased",
-        nativeFormScrollLayout || (isNative && isCosmicShell)
+        isNative && nativeFormPage
           ? "h-[100dvh] max-h-[100dvh]"
-          : isSetupCosmicMobileWeb
+          : isFormPageWeb
             ? "max-md:h-[100dvh] max-md:max-h-[100dvh] md:min-h-screen"
             : "min-h-screen",
         isWelcomeMobileWeb && "max-md:min-h-[100dvh]",
@@ -186,19 +176,11 @@ export const OnboardingLayout = ({
         >
           <div
             className={cn(
-              "h-1 w-[70%] max-w-[min(19.6rem,calc(100vw-4rem))] shrink-0 overflow-hidden rounded-full",
-              isCosmicShell ? "bg-white/20" : "bg-zinc-400/70",
+              "h-1 w-[70%] max-w-[min(19.6rem,calc(100vw-4rem))] shrink-0 overflow-hidden rounded-full bg-zinc-400/70",
             )}
           >
             <div
-              className={cn(
-                "h-full rounded-full transition-[width] duration-300 ease-out",
-                isWelcome && typeof progressFillPctOverride !== "number"
-                  ? "bg-black"
-                  : isCosmicShell
-                    ? "bg-white/90"
-                    : "bg-black",
-              )}
+              className="h-full rounded-full bg-black transition-[width] duration-300 ease-out"
               style={{ width: `${progressFillPct}%` }}
             />
           </div>
@@ -230,21 +212,10 @@ export const OnboardingLayout = ({
         {currentPage > 1 && (
           <button
             onClick={handlePrevious}
-            className={cn(
-              setupCosmicPage
-                ? cn(SETUP_DESKTOP_CHEVRON_CLASS, "left-8 top-1/2 -translate-y-1/2 group")
-                : "fixed left-8 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full transition-all duration-200 group bg-muted/50 hover:bg-muted",
-            )}
+            className={cn(SETUP_DESKTOP_CHEVRON_CLASS, "left-8 top-1/2 -translate-y-1/2 group")}
             aria-label="Previous step"
           >
-            <ChevronLeft
-              className={cn(
-                "w-8 h-8 transition-colors",
-                setupCosmicPage
-                  ? "text-zinc-600 group-hover:text-zinc-900"
-                  : "text-muted-foreground group-hover:text-foreground",
-              )}
-            />
+            <ChevronLeft className="w-8 h-8 text-zinc-600 transition-colors group-hover:text-zinc-900" />
           </button>
         )}
 
@@ -253,10 +224,8 @@ export const OnboardingLayout = ({
             onClick={handleNext}
             disabled={!canContinue}
             className={cn(
-              "fixed right-8 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
-              setupCosmicPage
-                ? cn(SETUP_DESKTOP_CHEVRON_CLASS)
-                : "bg-black hover:bg-black/90",
+              SETUP_DESKTOP_CHEVRON_CLASS,
+              "right-8 top-1/2 -translate-y-1/2 disabled:opacity-50 disabled:cursor-not-allowed",
             )}
             aria-label="Next step"
           >
@@ -270,15 +239,13 @@ export const OnboardingLayout = ({
       <div
         className={cn(
           "flex flex-col items-center animate-fade-in w-full",
-          nativeFormScrollLayout
+          isNative && nativeFormPage
             ? "h-full min-h-0 px-8 pb-40"
             : isNative
-              ? isCosmicShell
-                ? "h-full min-h-0 justify-start px-8 pb-40"
-                : "min-h-screen justify-start pb-32 px-8"
+              ? "min-h-screen justify-start pb-32 px-8"
               : isWelcomeMobileWeb
                 ? "max-md:min-h-[100dvh] max-md:justify-start max-md:px-8 max-md:pt-[calc(env(safe-area-inset-top,0px)+1.25rem)] max-md:pb-40 md:min-h-screen md:justify-center md:gap-6 md:p-8 md:pt-24 md:pb-12 md:bg-transparent"
-                : isSetupCosmicMobileWeb
+                : isFormPageWeb
                   ? "max-md:h-full max-md:min-h-0 max-md:justify-start max-md:px-8 max-md:pb-40 max-md:pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] md:justify-start md:p-8 md:pt-24"
                   : "min-h-screen justify-between pt-12 p-8 md:pt-24",
           hasProgressSpacing &&
@@ -286,24 +253,24 @@ export const OnboardingLayout = ({
         )}
         style={isNative ? { paddingTop: "calc(var(--app-safe-area-top) + 2.5rem)" } : undefined}
       >
-        {nativeFormScrollLayout || setupMobileWebScrollLayout ? (
+        {nativeFormPage ? (
           <div
             className={cn(
               "relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-hidden",
               contentMaxWidthClass,
-              setupMobileWebScrollLayout && "max-md:flex md:contents",
+              isFormPageWeb && "max-md:flex md:contents",
             )}
           >
             <div
               className={cn(
                 "relative z-[1] isolate flex min-h-0 w-full flex-1 flex-col overflow-hidden",
-                setupMobileWebScrollLayout && "max-md:flex md:contents",
+                isFormPageWeb && "max-md:flex md:contents",
               )}
             >
               <div
                 className={cn(
                   "relative z-[1] min-h-0 flex-1 scroll-pb-28 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]",
-                  setupMobileWebScrollLayout && "max-md:block md:overflow-visible md:flex-none",
+                  isFormPageWeb && "max-md:block md:overflow-visible md:flex-none",
                 )}
               >
                 <div className="space-y-6 pb-3">{children}</div>
@@ -316,7 +283,7 @@ export const OnboardingLayout = ({
               "w-full",
               contentMaxWidthClass,
               isNative && expandNativeContentColumn && "flex min-h-0 flex-1 flex-col",
-              (isWelcomeMobileWeb || isSetupCosmicMobileWeb) && "relative z-10",
+              (isWelcomeMobileWeb || isFormPageWeb) && "relative z-10",
             )}
           >
             {children}
@@ -334,14 +301,14 @@ export const OnboardingLayout = ({
                 : isWelcome
                   ? "relative z-50 shrink-0 space-y-2 pt-3"
                   : "md:hidden",
-            !isWelcome && !isSetupCosmicMobileWeb && "space-y-6",
+            !isWelcome && !isFormPageWeb && "space-y-6",
             !(isNative && !isWelcome) && !nativeWelcomeSideBySide && contentMaxWidthClass,
             isNative && !isWelcome && "fixed inset-x-0 bottom-0 z-50 md:hidden",
-            isSetupCosmicMobileWeb &&
+            isFormPageWeb &&
               !isWelcome &&
               "max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-50 max-md:mx-auto max-md:max-w-md max-md:px-8 max-md:pb-[calc(2rem+env(safe-area-inset-bottom,0px))]",
             isWelcome && !isNative && "md:mx-auto md:max-w-xl md:pb-0 md:pt-0 lg:max-w-2xl",
-            isStandaloneMobile && !isNative && !isWelcome && !isSetupCosmicMobileWeb && "mb-12",
+            isStandaloneMobile && !isNative && !isWelcome && !isFormPageWeb && "mb-12",
           )}
           style={
             nativeWelcomeSideBySide
@@ -356,7 +323,7 @@ export const OnboardingLayout = ({
                   }
                 : isWelcomeMobileWeb
                   ? MOBILE_SETUP_FOOTER_STYLE
-                  : isSetupCosmicMobileWeb && !isWelcome
+                  : isFormPageWeb && !isWelcome
                     ? { backgroundColor: WELCOME_LIGHT_BASE }
                     : undefined
           }
@@ -430,12 +397,8 @@ export const OnboardingLayout = ({
                 <Button
                   variant="outline"
                   onClick={handlePrevious}
-                  className={cn(
-                    isCosmicShell
-                      ? SETUP_NATIVE_BACK_BTN_CLASS
-                      : "flex-1 h-14 rounded-full text-base font-medium border-border bg-background text-foreground hover:!bg-background hover:!text-foreground active:!bg-background active:!text-foreground focus:!bg-background focus:!text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 outline-none transition-none select-none",
-                  )}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  className={SETUP_NATIVE_BACK_BTN_CLASS}
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   {t("back")}
                 </Button>
@@ -443,12 +406,8 @@ export const OnboardingLayout = ({
                 <Button
                   variant="outline"
                   onClick={() => navigate("/login")}
-                  className={cn(
-                    isCosmicShell
-                      ? SETUP_NATIVE_BACK_BTN_CLASS
-                      : "flex-1 h-14 rounded-full text-base font-medium border-border bg-background text-foreground hover:!bg-background hover:!text-foreground active:!bg-background active:!text-foreground focus:!bg-background focus:!text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 outline-none transition-none select-none",
-                  )}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  className={SETUP_NATIVE_BACK_BTN_CLASS}
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   {t("signIn")}
                 </Button>
@@ -456,12 +415,8 @@ export const OnboardingLayout = ({
               <Button
                 onClick={() => canContinue && onContinue()}
                 disabled={!canContinue}
-                className={cn(
-                  isCosmicShell
-                    ? SETUP_NATIVE_CONTINUE_BTN_CLASS
-                    : "flex-1 bg-black text-white hover:bg-black active:bg-black focus:bg-black h-14 rounded-full text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:ring-offset-0 outline-none transition-none select-none",
-                )}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                className={SETUP_NATIVE_CONTINUE_BTN_CLASS}
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 {resolvedContinueText}
               </Button>
@@ -503,7 +458,7 @@ export const OnboardingLayout = ({
                   onClick={() => canContinue && onContinue()}
                   disabled={!canContinue}
                   className={cn(
-                    setupCosmicPage
+                    nativeFormPage
                       ? cn("w-full", SETUP_NATIVE_CONTINUE_BTN_CLASS, "flex-none")
                       : "w-full rounded-full bg-black text-white hover:bg-black active:bg-black focus:bg-black h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 outline-none transition-none",
                     welcomeSoloContinueButtonClassName,

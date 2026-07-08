@@ -1,20 +1,20 @@
 {
   "version": 2,
   "themes": [
-    "Identity",
     "Career & Money",
     "Love & Relationships",
     "Home & Space",
     "Beauty & Wellness",
     "Travel & Adventure",
     "Organization & Plan",
-    "Aesthetic & Mood"
+    "Aesthetic & Mood",
+    "Self & Direction"
   ],
   "images": [
     {
       "id": "identity-01-journal-desk",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/01-journal-desk.png",
       "description": "Journal desk",
       "tags": [
@@ -23,18 +23,19 @@
     },
     {
       "id": "identity-02-vintage-compass-map",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/02-vintage-compass-map.png",
       "description": "Vintage compass map",
       "tags": [
-        "identity"
+        "identity",
+        "travel-adventure"
       ]
     },
     {
       "id": "identity-03-hiking-boot-trail",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/03-hiking-boot-trail.png",
       "description": "Hiking boot trail",
       "tags": [
@@ -43,8 +44,8 @@
     },
     {
       "id": "identity-04-origami-cranes-linen",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/04-origami-cranes-linen.png",
       "description": "Origami cranes linen",
       "tags": [
@@ -53,8 +54,8 @@
     },
     {
       "id": "identity-05-graduation-cap-books",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/05-graduation-cap-books.png",
       "description": "Graduation cap books",
       "tags": [
@@ -63,8 +64,8 @@
     },
     {
       "id": "identity-06-mirror-sunlit-room",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/06-mirror-sunlit-room.png",
       "description": "Mirror sunlit room",
       "tags": [
@@ -73,8 +74,8 @@
     },
     {
       "id": "identity-07-phoenix-feather-quill-inkwell",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/07-phoenix-feather-quill-inkwell.png",
       "description": "Phoenix feather quill inkwell",
       "tags": [
@@ -83,18 +84,19 @@
     },
     {
       "id": "identity-08-compass-map-keys",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/08-compass-map-keys.png",
       "description": "Compass map keys",
       "tags": [
-        "identity"
+        "identity",
+        "travel-adventure"
       ]
     },
     {
       "id": "identity-09-open-door-sunlight",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/09-open-door-sunlight.png",
       "description": "Open door sunlight",
       "tags": [
@@ -103,8 +105,8 @@
     },
     {
       "id": "identity-10-butterfly-garden",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/10-butterfly-garden.png",
       "description": "Butterfly garden",
       "tags": [
@@ -113,8 +115,8 @@
     },
     {
       "id": "identity-11-artist-palette-brushes",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/11-artist-palette-brushes.png",
       "description": "Artist palette brushes",
       "tags": [
@@ -123,8 +125,8 @@
     },
     {
       "id": "identity-12-mountain-summit-sunrise",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/12-mountain-summit-sunrise.png",
       "description": "Mountain summit sunrise",
       "tags": [
@@ -133,8 +135,8 @@
     },
     {
       "id": "identity-13-seedling-soil-pot",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/13-seedling-soil-pot.png",
       "description": "Seedling soil pot",
       "tags": [
@@ -143,8 +145,8 @@
     },
     {
       "id": "identity-14-lighthouse-coast",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/14-lighthouse-coast.png",
       "description": "Lighthouse coast",
       "tags": [
@@ -153,8 +155,8 @@
     },
     {
       "id": "identity-15-chess-board-strategy",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/15-chess-board-strategy.png",
       "description": "Chess board strategy",
       "tags": [
@@ -163,8 +165,8 @@
     },
     {
       "id": "identity-16-pottery-wheel-clay",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/16-pottery-wheel-clay.png",
       "description": "Pottery wheel clay",
       "tags": [
@@ -173,8 +175,8 @@
     },
     {
       "id": "identity-17-name-badge-cork-board",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/17-name-badge-cork-board.png",
       "description": "Name badge cork board",
       "tags": [
@@ -183,8 +185,8 @@
     },
     {
       "id": "identity-18-constellation-night-sky",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/18-constellation-night-sky.png",
       "description": "Constellation night sky",
       "tags": [
@@ -193,8 +195,8 @@
     },
     {
       "id": "identity-19-path-splitting-forest",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/19-path-splitting-forest.png",
       "description": "Path splitting forest",
       "tags": [
@@ -203,8 +205,8 @@
     },
     {
       "id": "identity-20-chameleon-leaf",
-      "theme": "Identity",
-      "category": "Identity",
+      "theme": "Self & Direction",
+      "category": "Self & Direction",
       "url": "/boardimagelibrary/identity/20-chameleon-leaf.png",
       "description": "Chameleon leaf",
       "tags": [
@@ -262,16 +264,6 @@
       ]
     },
     {
-      "id": "career-money-06-calculator-coffee-cup-receipts-flat-lay",
-      "theme": "Career & Money",
-      "category": "Career & Money",
-      "url": "/boardimagelibrary/career-money/06-calculator-coffee-cup-receipts-flat-lay.png",
-      "description": "Calculator coffee cup receipts flat lay",
-      "tags": [
-        "career-money"
-      ]
-    },
-    {
       "id": "career-money-07-blueprint-rolls-hard-hat-table",
       "theme": "Career & Money",
       "category": "Career & Money",
@@ -292,51 +284,11 @@
       ]
     },
     {
-      "id": "career-money-09-necktie-draped-empty-office-chair",
-      "theme": "Career & Money",
-      "category": "Career & Money",
-      "url": "/boardimagelibrary/career-money/09-necktie-draped-empty-office-chair.png",
-      "description": "Necktie draped empty office chair",
-      "tags": [
-        "career-money"
-      ]
-    },
-    {
-      "id": "career-money-10-hourglass-desk-bokeh-office-lights",
-      "theme": "Career & Money",
-      "category": "Career & Money",
-      "url": "/boardimagelibrary/career-money/10-hourglass-desk-bokeh-office-lights.png",
-      "description": "Hourglass desk bokeh office lights",
-      "tags": [
-        "career-money"
-      ]
-    },
-    {
-      "id": "career-money-11-wallet-credit-cards-fanned",
-      "theme": "Career & Money",
-      "category": "Career & Money",
-      "url": "/boardimagelibrary/career-money/11-wallet-credit-cards-fanned.png",
-      "description": "Wallet credit cards fanned",
-      "tags": [
-        "career-money"
-      ]
-    },
-    {
-      "id": "career-money-12-warehouse-aisle-organized-shelves",
+      "id": "career-money-12-paper-money-stack-side",
       "theme": "Career & Money",
       "category": "Career & Money",
       "url": "/boardimagelibrary/career-money/12-warehouse-aisle-organized-shelves.png",
-      "description": "Warehouse aisle organized shelves",
-      "tags": [
-        "career-money"
-      ]
-    },
-    {
-      "id": "career-money-13-hourglass-sand-desk",
-      "theme": "Career & Money",
-      "category": "Career & Money",
-      "url": "/boardimagelibrary/career-money/13-hourglass-sand-desk.png",
-      "description": "Hourglass sand desk",
+      "description": "Paper money stack side view",
       "tags": [
         "career-money"
       ]
@@ -356,7 +308,7 @@
       "theme": "Career & Money",
       "category": "Career & Money",
       "url": "/boardimagelibrary/career-money/15-leather-wallet-keys.png",
-      "description": "Leather wallet keys",
+      "description": "Leather wallet and keys unbranded",
       "tags": [
         "career-money"
       ]
@@ -382,11 +334,11 @@
       ]
     },
     {
-      "id": "career-money-18-warehouse-aisle",
+      "id": "career-money-18-paper-money-desk-side",
       "theme": "Career & Money",
       "category": "Career & Money",
       "url": "/boardimagelibrary/career-money/18-warehouse-aisle.png",
-      "description": "Warehouse aisle",
+      "description": "Neutral play money on desk side view",
       "tags": [
         "career-money"
       ]
@@ -477,16 +429,6 @@
       "category": "Love & Relationships",
       "url": "/boardimagelibrary/love-relationships/07-heart-sand-beach.png",
       "description": "Heart sand beach",
-      "tags": [
-        "love-relationships"
-      ]
-    },
-    {
-      "id": "love-relationships-08-padlock-heart-engraving",
-      "theme": "Love & Relationships",
-      "category": "Love & Relationships",
-      "url": "/boardimagelibrary/love-relationships/08-padlock-heart-engraving.png",
-      "description": "Padlock heart engraving",
       "tags": [
         "love-relationships"
       ]
@@ -732,16 +674,6 @@
       ]
     },
     {
-      "id": "home-space-13-keys-entryway-hook",
-      "theme": "Home & Space",
-      "category": "Home & Space",
-      "url": "/boardimagelibrary/home-space/13-keys-entryway-hook.png",
-      "description": "Keys entryway hook",
-      "tags": [
-        "home-space"
-      ]
-    },
-    {
       "id": "home-space-14-throw-pillows-linen-sofa",
       "theme": "Home & Space",
       "category": "Home & Space",
@@ -777,26 +709,6 @@
       "category": "Home & Space",
       "url": "/boardimagelibrary/home-space/17-home-office-desk-lamp.png",
       "description": "Home office desk lamp",
-      "tags": [
-        "home-space"
-      ]
-    },
-    {
-      "id": "home-space-18-keys-hanging-entryway",
-      "theme": "Home & Space",
-      "category": "Home & Space",
-      "url": "/boardimagelibrary/home-space/18-keys-hanging-entryway.png",
-      "description": "Keys hanging entryway",
-      "tags": [
-        "home-space"
-      ]
-    },
-    {
-      "id": "home-space-19-smart-thermostat-wall",
-      "theme": "Home & Space",
-      "category": "Home & Space",
-      "url": "/boardimagelibrary/home-space/19-smart-thermostat-wall.png",
-      "description": "Smart thermostat wall",
       "tags": [
         "home-space"
       ]
@@ -867,16 +779,6 @@
       "category": "Beauty & Wellness",
       "url": "/boardimagelibrary/beauty-wellness/06-beauty-wellness-03.png",
       "description": "Beauty wellness 03",
-      "tags": [
-        "beauty-wellness"
-      ]
-    },
-    {
-      "id": "beauty-wellness-07-beauty-wellness-04",
-      "theme": "Beauty & Wellness",
-      "category": "Beauty & Wellness",
-      "url": "/boardimagelibrary/beauty-wellness/07-beauty-wellness-04.png",
-      "description": "Beauty wellness 04",
       "tags": [
         "beauty-wellness"
       ]
@@ -972,16 +874,6 @@
       ]
     },
     {
-      "id": "beauty-wellness-17-beauty-wellness-14",
-      "theme": "Beauty & Wellness",
-      "category": "Beauty & Wellness",
-      "url": "/boardimagelibrary/beauty-wellness/17-beauty-wellness-14.png",
-      "description": "Beauty wellness 14",
-      "tags": [
-        "beauty-wellness"
-      ]
-    },
-    {
       "id": "beauty-wellness-18-beauty-wellness-15",
       "theme": "Beauty & Wellness",
       "category": "Beauty & Wellness",
@@ -1009,6 +901,50 @@
       "description": "Beauty wellness 17",
       "tags": [
         "beauty-wellness"
+      ]
+    },
+    {
+      "id": "beauty-wellness-21-meal-prep",
+      "theme": "Beauty & Wellness",
+      "category": "Beauty & Wellness",
+      "url": "/boardimagelibrary/organization-plan/17-meal-prep.png",
+      "description": "Meal prep",
+      "tags": [
+        "beauty-wellness",
+        "organization-plan"
+      ]
+    },
+    {
+      "id": "beauty-wellness-22-meal-prep-containers",
+      "theme": "Beauty & Wellness",
+      "category": "Beauty & Wellness",
+      "url": "/boardimagelibrary/organization-plan/19-meal-prep-containers.png",
+      "description": "Meal prep containers",
+      "tags": [
+        "beauty-wellness",
+        "organization-plan"
+      ]
+    },
+    {
+      "id": "travel-adventure-vintage-compass-map",
+      "theme": "Travel & Adventure",
+      "category": "Travel & Adventure",
+      "url": "/boardimagelibrary/identity/02-vintage-compass-map.png",
+      "description": "Vintage compass map",
+      "tags": [
+        "travel-adventure",
+        "identity"
+      ]
+    },
+    {
+      "id": "travel-adventure-compass-map-keys",
+      "theme": "Travel & Adventure",
+      "category": "Travel & Adventure",
+      "url": "/boardimagelibrary/identity/08-compass-map-keys.png",
+      "description": "Compass map keys",
+      "tags": [
+        "travel-adventure",
+        "identity"
       ]
     },
     {
@@ -1052,31 +988,11 @@
       ]
     },
     {
-      "id": "travel-adventure-05-trail-sign-forest",
-      "theme": "Travel & Adventure",
-      "category": "Travel & Adventure",
-      "url": "/boardimagelibrary/travel-adventure/05-trail-sign-forest.png",
-      "description": "Trail sign forest",
-      "tags": [
-        "travel-adventure"
-      ]
-    },
-    {
       "id": "travel-adventure-06-campfire-night-stars",
       "theme": "Travel & Adventure",
       "category": "Travel & Adventure",
       "url": "/boardimagelibrary/travel-adventure/06-campfire-night-stars.png",
       "description": "Campfire night stars",
-      "tags": [
-        "travel-adventure"
-      ]
-    },
-    {
-      "id": "travel-adventure-07-eiffel-tower-dawn",
-      "theme": "Travel & Adventure",
-      "category": "Travel & Adventure",
-      "url": "/boardimagelibrary/travel-adventure/07-eiffel-tower-dawn.png",
-      "description": "Eiffel tower dawn",
       "tags": [
         "travel-adventure"
       ]
@@ -1222,31 +1138,11 @@
       ]
     },
     {
-      "id": "organization-plan-02-wall-calendar",
-      "theme": "Organization & Plan",
-      "category": "Organization & Plan",
-      "url": "/boardimagelibrary/organization-plan/02-wall-calendar.png",
-      "description": "Wall calendar",
-      "tags": [
-        "organization-plan"
-      ]
-    },
-    {
       "id": "organization-plan-03-file-folders",
       "theme": "Organization & Plan",
       "category": "Organization & Plan",
       "url": "/boardimagelibrary/organization-plan/03-file-folders.png",
       "description": "File folders",
-      "tags": [
-        "organization-plan"
-      ]
-    },
-    {
-      "id": "organization-plan-04-kanban-board",
-      "theme": "Organization & Plan",
-      "category": "Organization & Plan",
-      "url": "/boardimagelibrary/organization-plan/04-kanban-board.png",
-      "description": "Kanban board",
       "tags": [
         "organization-plan"
       ]
@@ -1272,31 +1168,11 @@
       ]
     },
     {
-      "id": "organization-plan-07-label-maker",
-      "theme": "Organization & Plan",
-      "category": "Organization & Plan",
-      "url": "/boardimagelibrary/organization-plan/07-label-maker.png",
-      "description": "Label maker",
-      "tags": [
-        "organization-plan"
-      ]
-    },
-    {
       "id": "organization-plan-08-filing-cabinet",
       "theme": "Organization & Plan",
       "category": "Organization & Plan",
       "url": "/boardimagelibrary/organization-plan/08-filing-cabinet.png",
       "description": "Filing cabinet",
-      "tags": [
-        "organization-plan"
-      ]
-    },
-    {
-      "id": "organization-plan-09-label-maker-desk",
-      "theme": "Organization & Plan",
-      "category": "Organization & Plan",
-      "url": "/boardimagelibrary/organization-plan/09-label-maker-desk.png",
-      "description": "Label maker desk",
       "tags": [
         "organization-plan"
       ]
@@ -1378,17 +1254,8 @@
       "url": "/boardimagelibrary/organization-plan/17-meal-prep.png",
       "description": "Meal prep",
       "tags": [
-        "organization-plan"
-      ]
-    },
-    {
-      "id": "organization-plan-18-goal-worksheet",
-      "theme": "Organization & Plan",
-      "category": "Organization & Plan",
-      "url": "/boardimagelibrary/organization-plan/18-goal-worksheet.png",
-      "description": "Goal worksheet",
-      "tags": [
-        "organization-plan"
+        "organization-plan",
+        "beauty-wellness"
       ]
     },
     {
@@ -1398,17 +1265,8 @@
       "url": "/boardimagelibrary/organization-plan/19-meal-prep-containers.png",
       "description": "Meal prep containers",
       "tags": [
-        "organization-plan"
-      ]
-    },
-    {
-      "id": "organization-plan-20-goal-worksheet-pencil",
-      "theme": "Organization & Plan",
-      "category": "Organization & Plan",
-      "url": "/boardimagelibrary/organization-plan/20-goal-worksheet-pencil.png",
-      "description": "Goal worksheet pencil",
-      "tags": [
-        "organization-plan"
+        "organization-plan",
+        "beauty-wellness"
       ]
     },
     {

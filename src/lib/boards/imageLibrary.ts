@@ -1,7 +1,6 @@
 import type { BoardImageAsset } from "@/lib/boards/types";
 
 export const BOARD_IMAGE_THEMES = [
-  "Identity",
   "Career & Money",
   "Love & Relationships",
   "Home & Space",
@@ -9,6 +8,7 @@ export const BOARD_IMAGE_THEMES = [
   "Travel & Adventure",
   "Organization & Plan",
   "Aesthetic & Mood",
+  "Self & Direction",
 ] as const;
 
 export type BoardImageTheme = (typeof BOARD_IMAGE_THEMES)[number];

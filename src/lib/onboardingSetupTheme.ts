@@ -99,7 +99,5 @@ export const SETUP_PROGRESS_TRACK_CLASS = "h-2.5 rounded-full bg-zinc-200 overfl
 export const SETUP_PROGRESS_FILL_CLASS =
   "h-full rounded-full bg-zinc-900 transition-all duration-300 ease-out";
 
-export const SETUP_TESTIMONIAL_STAR_CLASS = "h-3 w-3 shrink-0 fill-amber-400 text-amber-500";
-
 export const SETUP_DESKTOP_CHEVRON_CLASS =
   "fixed z-50 p-3 rounded-full bg-white border border-zinc-200 shadow-sm hover:bg-zinc-50 transition-all duration-200";

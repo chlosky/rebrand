@@ -9,13 +9,6 @@ import {
   syncRoutineOneSignalTags,
   syncOneSignalUserLanguage,
 } from "@/services/oneSignal";
-import {
-  bootstrapRevenueCat,
-  hasRevenueCatEntitlement,
-  refreshAppleRevenueCatPlanOnServer,
-} from "@/services/revenueCat";
-import { bootstrapRevenueCatWeb, isRevenueCatWebConfigured } from "@/services/revenueCatWeb";
-import { isWebRevenueCatBillingEnabled } from "@/lib/webBillingConfig";
 import { Capacitor } from "@capacitor/core";
 import {
   detectInitialAppLocale,
@@ -25,7 +18,6 @@ import {
   type AppLocale,
 } from "@/lib/locale";
 import { setAppLocale } from "@/i18n";
-import { syncRevenueCatUILocale } from "@/services/revenueCat";
 import { TikTokEvents } from "@/plugins/tikTokEvents";
 import { setAppsFlyerCustomerUserId } from "@/lib/appsFlyer";
 
@@ -53,11 +45,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-/** (6) Stagger native IAP work after first paint (ms). */
-const NATIVE_RC_BOOTSTRAP_MS = 450;
-const NATIVE_RC_ENTITLEMENT_MS = 600;
-/** Apple/RevenueCat–billed users: refresh user_plans from RC API (web + native). */
-const APPLE_RC_SERVER_SYNC_MS = 750;
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -204,7 +191,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             { onConflict: "id" },
           ),
         ]);
-        await syncRevenueCatUILocale();
         return;
       }
 
@@ -217,7 +203,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (fromPrefs && isAppLocale(fromPrefs)) {
         writeStoredPreferredLocale(fromPrefs);
         await setAppLocale(fromPrefs);
-        await syncRevenueCatUILocale();
         return;
       }
 
@@ -230,7 +215,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (fromProfile && isAppLocale(fromProfile)) {
         writeStoredPreferredLocale(fromProfile);
         await setAppLocale(fromProfile);
-        await syncRevenueCatUILocale();
       }
     })();
   }, [user?.id]);
@@ -328,73 +312,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
     }
   }, [user, isLoading]);
-
-  // (6) RevenueCat: native Capacitor SDK; web purchases-js (same app user id = Supabase UUID).
-  useEffect(() => {
-    if (isLoading) return;
-
-    const id = window.setTimeout(() => {
-      const appUserId = user?.id && user.id !== "[Not provided]" ? user.id : null;
-      if (!appUserId) {
-        if (Capacitor.isNativePlatform()) {
-          void bootstrapRevenueCat(null);
-        }
-        return;
-      }
-      if (Capacitor.isNativePlatform()) {
-        void bootstrapRevenueCat(appUserId);
-      } else if (isWebRevenueCatBillingEnabled() && isRevenueCatWebConfigured()) {
-        void bootstrapRevenueCatWeb(appUserId);
-      }
-    }, NATIVE_RC_BOOTSTRAP_MS);
-    return () => clearTimeout(id);
-  }, [user?.id, isLoading]);
-
-  useEffect(() => {
-    if (!user || isLoading) return;
-    if (!Capacitor.isNativePlatform()) return;
-
-    let cancelled = false;
-    const id = window.setTimeout(() => {
-      const checkEntitlement = async () => {
-        const hasPro = await hasRevenueCatEntitlement("Palette Plotting Pro");
-        if (cancelled) return;
-        if (hasPro) {
-          console.info("[RevenueCat] Active entitlement found: Palette Plotting Pro");
-        }
-      };
-      void checkEntitlement();
-    }, NATIVE_RC_ENTITLEMENT_MS);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(id);
-    };
-  }, [user?.id, isLoading]);
-
-  // Apple / RevenueCat–billed accounts: keep user_plans (e.g. current_period_end) in sync via RC REST API.
-  // Runs on web/PWA and native; gates on user_plans inside the helper (not Capacitor).
-  useEffect(() => {
-    if (!user || isLoading) return;
-
-    const id = window.setTimeout(() => {
-      void refreshAppleRevenueCatPlanOnServer("session_start");
-    }, APPLE_RC_SERVER_SYNC_MS);
-
-    return () => clearTimeout(id);
-  }, [user?.id, isLoading]);
-
-  useEffect(() => {
-    if (!user || isLoading) return;
-
-    const onVisibility = () => {
-      if (document.visibilityState !== "visible") return;
-      void refreshAppleRevenueCatPlanOnServer("background");
-    };
-
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [user?.id, isLoading]);
 
   return (
     <AuthContext.Provider value={{ user, session, isLoading }}>

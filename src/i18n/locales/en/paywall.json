@@ -12,8 +12,7 @@
       "Adding your starter boards and plan layout…",
       "Opening your workspace — almost there."
     ],
-    "toastActivateFailedIos": "Purchase completed, but we could not activate your plan yet. Try again from subscriptions.",
-    "toastActivateFailedAndroid": "Purchase completed, but we could not activate your plan yet. Please try again.",
+    "toastActivateFailed": "Payment completed, but we could not activate your plan yet. Please try again.",
     "toastSetupSnag": "We hit a snag finishing setup. Taking you to your workspace…"
   },
   "legacyIos": {
@@ -142,11 +141,12 @@
     "verificationFailed": "Unable to verify payment. Please contact support."
   },
   "webStripe": {
-    "headline": "Start your board workspace",
-    "subtitle": "Create boards for life plotting, home organization, moodboards, and project planning.",
-    "priceLine": "3 days free, then $9.99/month.",
+    "headline": "Your workspace is ready",
+    "subtitle": "Boards for your focus areas, a plan to act on them, and reminders to keep you moving.",
+    "priceLine": "Free for 3 days, then $9.99/month.",
     "cancelLine": "Cancel anytime.",
     "cta": "Start 3-Day Trial",
+    "openingCheckout": "Opening…",
     "secondaryCta": "Not now",
     "features": [
       "Three focus boards plus The Plan",

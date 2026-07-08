@@ -1,6 +1,6 @@
 import { LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_FOUR_BOARD_TEMPLATE, templatesForIntent, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
+import { DEFAULT_FOUR_BOARD_TEMPLATE, templatesForStartingSystem, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
 import { boardFillForKey } from "@/lib/boards/colors";
 
 type BoardTemplatePickerProps = {
@@ -20,7 +20,7 @@ export function BoardTemplatePicker({ onSelect, loading }: BoardTemplatePickerPr
       </div>
 
       <div className="mt-8 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
-        {templatesForIntent("life_rebranding").map((template) => (
+        {templatesForStartingSystem("life_rebranding").map((template) => (
           <button
             key={template.slug}
             type="button"
@@ -50,7 +50,7 @@ export function BoardTemplatePicker({ onSelect, loading }: BoardTemplatePickerPr
         size="sm"
         className="mt-6 text-xs text-neutral-500"
         disabled={loading}
-        onClick={() => onSelect(templatesForIntent("life_rebranding")[0] ?? DEFAULT_FOUR_BOARD_TEMPLATE)}
+        onClick={() => onSelect(templatesForStartingSystem("life_rebranding")[0] ?? DEFAULT_FOUR_BOARD_TEMPLATE)}
       >
         Skip — use default layout
       </Button>

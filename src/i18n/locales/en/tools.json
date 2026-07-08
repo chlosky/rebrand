@@ -1,6 +1,6 @@
 {
   "focusCategories": {
-    "Identity": "Identity",
+    "Self & Direction": "Self & Direction",
     "Career & Money": "Career & Money",
     "Love & Relationships": "Love & Relationships",
     "Home & Space": "Home & Space",
@@ -12,7 +12,7 @@
     "Health & Fitness": "Health & Fitness"
   },
   "focusCategoryTiles": {
-    "Identity": "Identity",
+    "Self & Direction": "Self & Direction",
     "Career & Money": "Career & Money",
     "Love & Relationships": "Love & Relationships",
     "Home & Space": "Home & Space",
@@ -26,7 +26,16 @@
   "boards": {
     "pageTitle": "Vision | Palette Plotting",
     "loading": "Loading your board system…",
-    "saveFailed": "Could not save board layout"
+    "saveFailed": "Could not save board layout",
+    "trial": {
+      "lockTitle": "Available after your trial",
+      "lockDescription": "Board downloads and calendar export unlock when your paid subscription starts. You can keep your free trial, or start billing now to unlock them immediately.",
+      "startSubscriptionNow": "Start subscription now",
+      "startingSubscription": "Starting subscription…",
+      "keepTrial": "Keep free trial",
+      "unlockedNow": "Subscription started — downloads and calendar export are unlocked.",
+      "unlockedAlready": "Your subscription is active — exports are unlocked."
+    }
   },
   "activity": {
     "title": "Progress Milestones",

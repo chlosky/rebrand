@@ -162,11 +162,25 @@ iOS/Android edge functions are unchanged. Web does not use `VITE_REVENUECAT_*` k
 4. Subscription period set to 1 year
 5. No automatic renewal (user must manually renew)
 
+### Monthly subscription with 3-day trial (web onboarding)
+
+Web checkout uses **`create-onboarding-checkout-session`** with:
+
+- `mode=subscription` and `STRIPE_PRICE_PREMIUM_MONTHLY` (or selected tier price)
+- `subscription_data[trial_period_days]=3` (override with Edge secret `STRIPE_TRIAL_DAYS`)
+- `payment_method_collection=always` so a card is saved before the trial ends and Stripe can auto-renew
+- `subscription_data[trial_settings][end_behavior][missing_payment_method]=cancel`
+
+During trial, `user_plans.status` is `trialing` and `on_trial` is true. The app locks **board downloads** and **calendar (.ics) export** until the user starts paid billing (Settings → **Start subscription now**, or the same option when tapping a locked export).
+
+Deploy **`end-stripe-trial`** to end a trial immediately via Stripe (`trial_end=now`).
+
+**Stripe Dashboard:** Your monthly Price should be a recurring subscription price. The trial is applied at Checkout — you do not need a separate trial Price in Stripe.
+
 ## Next Steps (Optional Enhancements)
 
 1. **Subscription Management UI**: Add interface for users to manage/cancel subscriptions
-2. **Trial Periods**: Add support for free trial periods
-3. **Coupon Codes**: Integrate with existing referral_codes table
+2. **Coupon Codes**: Integrate with existing referral_codes table
 4. **Email Notifications**: Send emails on subscription events
 5. **Subscription Upgrade/Downgrade**: Allow users to change plans
 

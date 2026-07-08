@@ -4,62 +4,14 @@
     "enterStudio": "Get started",
     "ctaSubtext": "About 3 minutes to set up",
     "freeTrialLine": "Start free",
-    "nativeTitle": "Turn your vision into real follow-through",
-    "nativeTitleLead": "Turn your vision into ",
-    "nativeTitleAccent": "real follow-through",
-    "nativeDescription": "Plot the life you are reshaping — choose your focus areas, build The Plan around your dates and goals, and let reminders keep you accountable.",
+    "nativeTitle": "Turn your goals into a plan that moves",
+    "nativeDescription": "Set your focus areas. Get boards built around them, plus a plan with dates, actions, and reminders.",
     "tagline": "Vision · Plan · Accountability",
     "pillars": [
-      "Choose the areas of your life you are transforming",
-      "Turn dates, goals, and next steps into The Plan",
-      "Reminders that help you follow through"
-    ],
-    "awardLine1": "Plot what you want",
-    "awardLine2": "Plan what matters",
-    "awardLine3": "Stay accountable",
-    "webHeadline1": "Turn your vision into",
-    "webHeadlineAccent": "real follow-through",
-    "toolRows": {
-      "row1": [
-        "Your focus areas",
-        "The Plan"
-      ],
-      "row2": [
-        "Images & structure",
-        "Dates & goals"
-      ],
-      "row3": [
-        "Email reminders",
-        "Accountability",
-        "Progress"
-      ]
-    },
-    "webSteps": {
-      "desire": {
-        "title": "Choose what you are transforming",
-        "subtitle": "Pick the focus areas you want to reshape first"
-      },
-      "makeYours": {
-        "title": "Plot your vision",
-        "subtitle": "Add images, notes, and structure that match where you are headed"
-      },
-      "listen": {
-        "title": "Follow through",
-        "subtitle": "Use The Plan and reminders to stay accountable to your goals"
-      }
-    },
-    "webToolbar": {
-      "boards": "Vision",
-      "clippings": "Clippings",
-      "structures": "Structures",
-      "marks": "Text & Notes"
-    },
-    "communityProof": "",
-    "mockupScreenAlt": "Palette Plotting workspace preview",
-    "mockupPreviewAria": "Palette Plotting app preview"
-  },
-  "plottingScene": {
-    "whispers": {}
+      "Pick 3 areas to focus on",
+      "Get boards and a plan built around them",
+      "Stay on track with reminders"
+    ]
   },
   "setup": {
     "name": {
@@ -69,12 +21,12 @@
       "saveError": "Could not save your name. Check your connection and try again."
     },
     "focusCategories": {
-      "title": "Choose your three focus boards",
-      "subtitle": "Pick up to three. These become your starter focus boards alongside The Plan."
+      "title": "Choose 3 areas to focus on",
+      "subtitle": "We'll build your boards around these, plus one board for your plan."
     },
-    "primaryIntent": {
+    "startingSystem": {
       "title": "What are you setting up?",
-      "subtitle": "Choose your starting system. You can add other boards later.",
+      "subtitle": "Pick one. We'll set up the right boards for it.",
       "options": {
         "life_rebranding": {
           "title": "Life plotting & vision boards",
@@ -142,253 +94,6 @@
         "mood_brand_creative": "Brand & creative"
       }
     },
-    "focusDetails": {
-      "subtitle": "We will shape your starter boards around this.",
-      "fallbackHeadline": "A quick detail",
-      "fallbackMessage": "Go back and pick a focus area to unlock this step.",
-      "customLabel": "Describe your focus",
-      "customPlaceholder": "e.g., soft life reset, new career chapter, apartment setup",
-      "categories": {
-        "Identity": {
-          "headline": "What identity shift are you plotting?",
-          "options": {
-            "confidence": "Confidence",
-            "discipline": "Discipline",
-            "newChapter": "A new chapter",
-            "selfTrust": "Self-trust",
-            "freshStart": "Fresh start"
-          }
-        },
-        "Career & Money": {
-          "headline": "What career or money move matters most?",
-          "options": {
-            "newJob": "New job",
-            "promotion": "Promotion",
-            "higherIncome": "Higher income",
-            "debtFreedom": "Debt freedom",
-            "startBusiness": "Start a business"
-          }
-        },
-        "Love & Relationships": {
-          "headline": "What are you building in your relationships?",
-          "options": {
-            "dating": "Dating",
-            "deeperConnection": "Deeper connection",
-            "selfLove": "Self-love",
-            "betterBoundaries": "Better boundaries",
-            "quality": "Quality time"
-          }
-        },
-        "Home & Space": {
-          "headline": "What's your home focus?",
-          "options": {
-            "redecorate": "Redecorate",
-            "declutter": "Declutter & reset",
-            "newPlace": "A new place",
-            "cozyUpgrade": "Cozy upgrade",
-            "systems": "Organized systems"
-          }
-        },
-        "Beauty & Wellness": {
-          "headline": "What glow-up are you after?",
-          "options": {
-            "skinBeauty": "Skin & beauty",
-            "selfCare": "Self-care routine",
-            "betterRest": "Better rest",
-            "confidence": "Confidence",
-            "overallWellness": "Overall wellness"
-          }
-        },
-        "Travel & Adventure": {
-          "headline": "What adventure are you plotting?",
-          "options": {
-            "dreamTrip": "Dream trip",
-            "moveAbroad": "Move abroad",
-            "weekendEscapes": "Weekend escapes",
-            "bucketList": "Bucket list",
-            "nomadLife": "Digital nomad life"
-          }
-        },
-        "Organization & Plan": {
-          "headline": "What are you getting organized?",
-          "options": {
-            "mySchedule": "My schedule",
-            "mySpace": "My space",
-            "myRoutines": "My routines",
-            "myPriorities": "My priorities",
-            "myWholeLife": "My whole life"
-          }
-        },
-        "Aesthetic & Mood": {
-          "headline": "What vibe are you curating?",
-          "options": {
-            "personalStyle": "Personal style",
-            "interiors": "Interiors",
-            "colorPalette": "Color palette",
-            "creativeDirection": "Creative direction",
-            "overallAesthetic": "Overall aesthetic"
-          }
-        },
-        "College & School": {
-          "headline": "What are you working toward in school?",
-          "options": {
-            "betterGrades": "Better grades",
-            "examSuccess": "Exam success",
-            "collegeAcceptance": "College acceptance",
-            "scholarship": "Scholarship",
-            "studyHabits": "Focus & study habits"
-          }
-        },
-        "Health & Fitness": {
-          "headline": "What health shift are you plotting?",
-          "options": {
-            "strength": "Strength",
-            "shapeTone": "Shape & tone",
-            "energy": "Energy",
-            "consistentWorkouts": "Consistent workouts",
-            "nutrition": "Nutrition"
-          }
-        }
-      }
-    },
-    "currentFriction": {
-      "title": "What's slowing the rebrand down?",
-      "subtitle": "Name it once so we can build your boards around it.",
-      "placeholder": "The thing you keep working around…"
-    },
-    "toolPreference": {
-      "title": "How do you want to use your boards first?",
-      "subtitle": "Choose the tool you are most likely to open again."
-    },
-    "toolPreferenceOptions": {
-      "boards_workspace": "Board review & planning",
-      "daily_wins_progress": "Habit & progress tracking"
-    },
-    "workspaceTemplate": {
-      "title": "Choose your first board setup",
-      "subtitle": "Pick a starting layout. You can rearrange everything later.",
-      "summary": {
-        "title": "Your starter boards",
-        "subtitle": "We'll create one focus board for each area you selected, plus The Plan.",
-        "planTitle": "The Plan",
-        "planDescription": "Dates, goals, reminders, and next steps.",
-        "continue": "Build my boards"
-      },
-      "titleByIntent": {
-        "life_rebranding": "Choose your vision board setup",
-        "home_organization": "Choose your home board setup",
-        "office_work": "Choose your project board setup",
-        "moodboarding": "Choose your moodboard setup"
-      },
-      "subtitleByIntent": {
-        "life_rebranding": "Start with vision boards and The Plan.",
-        "home_organization": "Start with household boards, zones, and checklists.",
-        "office_work": "Start with project boards and planning structures.",
-        "moodboarding": "Start with image-forward boards for visual direction."
-      },
-      "options": {
-        "four-board-rebrand": {
-          "name": "Three Focus Boards and The Plan",
-          "description": "Three focus boards and one plan board — the signature four-board plot."
-        },
-        "soft-life-reset": {
-          "name": "Glow, Home & Peace",
-          "description": "Beauty, environment, and calm rituals with a plan board."
-        },
-        "career-girl": {
-          "name": "Ambition & Wealth",
-          "description": "Career vision, money goals, and confidence with a plan board."
-        },
-        "minimal-plan": {
-          "name": "One Vision + Plan",
-          "description": "One hero vision board and a dedicated plan board."
-        },
-        "home-plan-routines": {
-          "name": "Home Plan & Routines",
-          "description": "Weekly rhythms, zones, and family flow."
-        },
-        "home-chores-cleaning": {
-          "name": "Chores & Cleaning",
-          "description": "Chore charts, supplies, and reset zones."
-        },
-        "home-meal-planning": {
-          "name": "Meal Planning",
-          "description": "Menus, groceries, and kitchen rhythm."
-        },
-        "home-family-kids": {
-          "name": "Family & Kids",
-          "description": "Schedules, activities, and household command."
-        },
-        "home-seasonal-reset": {
-          "name": "Seasonal Reset",
-          "description": "Holiday, declutter, and seasonal home projects."
-        },
-        "office-kanban": {
-          "name": "Kanban Flow",
-          "description": "Backlog → To Do → Doing → Done."
-        },
-        "office-gantt": {
-          "name": "Gantt Timeline",
-          "description": "Tasks mapped across time."
-        },
-        "office-eisenhower": {
-          "name": "Eisenhower Matrix",
-          "description": "Urgent × Important quadrants."
-        },
-        "office-okrs": {
-          "name": "OKRs",
-          "description": "Objectives with measurable key results."
-        },
-        "office-five-s": {
-          "name": "5S Workplace",
-          "description": "Lean floor discipline — Sort through Sustain."
-        },
-        "mood-aesthetic-style": {
-          "name": "Aesthetic & Style",
-          "description": "Outfits, palettes, and vibe references."
-        },
-        "mood-interiors-space": {
-          "name": "Interiors & Space",
-          "description": "Rooms, furniture, and renovation mood."
-        },
-        "mood-travel-inspo": {
-          "name": "Travel Inspo",
-          "description": "Destinations, stays, and trip aesthetics."
-        },
-        "mood-events-weddings": {
-          "name": "Events & Weddings",
-          "description": "Ceremony, decor, and vendor vision."
-        },
-        "mood-brand-creative": {
-          "name": "Brand & Creative",
-          "description": "Logo, typography, and campaign looks."
-        }
-      }
-    },
-    "guide": {
-      "title": "Choose a guide",
-      "subtitle": "An AI companion for questions while you rebrand."
-    },
-    "reminderChannels": {
-      "title": "What kind of reminder helps you follow through?",
-      "subtitle": "Choose how Palette should remind you about dates, goals and next steps from The Plan.",
-      "calendarTitle": "I usually follow through when it is on my calendar",
-      "calendarLabel": "Calendar export",
-      "calendarDescription": "Best for appointments, deadlines and scheduled next steps.",
-      "emailTitle": "I need a reminder, but not a hard interruption",
-      "emailLabel": "Email reminders",
-      "emailDescription": "Best for check-ins, weekly reviews and longer notes from The Plan.",
-      "smsTitle": "I need a stronger nudge",
-      "smsLabel": "Text reminders",
-      "smsDescription": "Best for the reminders you really do not want to miss.",
-      "helper": "Use text for your most important reminders. Use email or calendar for everything else.",
-      "systemLine": "Calendar = scheduled follow-through. Email = soft accountability. Text = stronger nudge.",
-      "smsConsent": "I agree to receive text reminders for dates, goals and next steps I create in Palette. Message and data rates may apply. I can turn text reminders off anytime.",
-      "phoneLabel": "Phone number for text reminders",
-      "phoneHint": "Used only for text reminders you choose.",
-      "dailyLimit": "Up to 5 text reminders per day.",
-      "continue": "Continue"
-    },
     "attribution": {
       "title": "How did you find Palette Plotting?",
       "subtitle": "This helps us understand what's working.",
@@ -402,61 +107,9 @@
         "other": "Somewhere else"
       }
     },
-    "intensity": {
-      "title": "How often do you want check-ins?",
-      "titleByIntent": {
-        "life_rebranding": "How often do you want check-ins?",
-        "home_organization": "How intense is your reset?",
-        "office_work": "How intense is your planning?",
-        "moodboarding": "How often do you want to plot?"
-      },
-      "subtitle": "Set a rhythm for following through on The Plan. You can change this anytime.",
-      "continue": "Continue",
-      "setRoutine": "Continue",
-      "notificationsQuestion": "Send push nudges on your phone?",
-      "notificationsDescription": "Optional in-app push for your daily rhythm. Email and calendar reminders work on web too.",
-      "notificationsHint": "Optional in-app push for your daily rhythm. Email and calendar reminders work on web too.",
-      "yes": "Yes",
-      "notNow": "Not now",
-      "dailyTime": "Daily notification time",
-      "customizeInSettings": "You can change this anytime in Settings.",
-      "light": {
-        "title": "Light",
-        "tagline": "1 reminder a day.",
-        "description": "A simple daily check-in."
-      },
-      "consistent": {
-        "title": "Consistent",
-        "tagline": "2 reminders a day.",
-        "description": "Morning and evening nudges for your boards and The Plan."
-      },
-      "lockedIn": {
-        "title": "Locked In",
-        "tagline": "3 reminders a day.",
-        "description": "A stronger rhythm for active planning weeks."
-      },
-      "alerts": {
-        "alert": "Alert",
-        "first": "1st Alert",
-        "second": "2nd Alert",
-        "third": "3rd Alert"
-      }
-    },
-    "notifications": {
-      "title": "Turn on additional permissions",
-      "subtitle": "Help us improve Palette Plotting."
-    },
-    "tracking": {
-      "title": "Help us improve Palette Plotting (optional)",
-      "body": "Palette Plotting uses app activity data to measure ad performance and improve experience. Will you help us improve Palette Plotting?",
-      "yes": "Yes",
-      "no": "No"
-    },
     "email": {
-      "title": "Save your plot",
-      "titleLine1": "Save your plot &",
-      "titleLine2": "start your free trial",
-      "subtitle": "Create your account to lock in your rebrand workspace. Everything saves to this email.",
+      "title": "Create your account",
+      "subtitle": "Everything saves to this email. Pick up where you left off, on any device.",
       "emailLabel": "Email",
       "passwordLabel": "Password",
       "emailPlaceholder": "you@email.com",
@@ -483,60 +136,22 @@
     },
     "plotSynthesis": {
       "title": "Your workspace is ready.",
-      "subtitle": "Your starter boards, The Plan, extraction tools, and reminders are set up.",
+      "subtitle": "Your boards, your plan, and your reminders are set up.",
       "items": {
-        "workspace": "Your focus boards match the areas you selected.",
-        "boards": "The Plan is where dates, goals, and next steps become reminders.",
-        "tracking": "Use extraction to pull text, dates, and action items from boards and images."
+        "workspace": "Open your boards.",
+        "boards": "Use the plan for dates, goals, and next steps.",
+        "tracking": "Pull text and dates from a board or photo."
       }
     },
     "plotLoading": {
-      "title": "Building your board workspace…",
-      "subtitle": "Creating your focus boards, The Plan, and reminder setup.",
+      "title": "Building your workspace…",
+      "subtitle": "Setting up your boards and your plan.",
       "loading": "Building",
-      "hint": "Your first workspace starts from your selected focus areas.",
-      "testimonials": {
-        "row1": [
-          {
-            "quote": "Finally feels like my moodboard came to life.",
-            "author": "Jordan M."
-          },
-          {
-            "quote": "I stopped doom-scrolling and started plotting my era.",
-            "author": "Riley T."
-          },
-          {
-            "quote": "The aesthetic + plan combo is exactly what I needed.",
-            "author": "Casey L."
-          },
-          {
-            "quote": "My rebrand actually looks like me now.",
-            "author": "Morgan P."
-          }
-        ],
-        "row2": [
-          {
-            "quote": "Seeing it all in one place changed how I show up.",
-            "author": "Dev S."
-          },
-          {
-            "quote": "Reminders on my plotted goals keep me honest.",
-            "author": "Avery K."
-          },
-          {
-            "quote": "Small daily wins on the plan board add up fast.",
-            "author": "Quinn R."
-          },
-          {
-            "quote": "I open this more than any other app on my phone.",
-            "author": "Jamie H."
-          }
-        ]
-      }
+      "hint": "This usually takes a moment."
     },
     "beginJourney": {
-      "lead": "Your boards are taking shape.",
-      "subtitle": "Next we'll save your setup and turn it into your workspace."
+      "lead": "Your boards are set.",
+      "subtitle": "Next, we'll save your setup and build your workspace."
     }
   }
 }

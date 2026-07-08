@@ -1,5 +1,5 @@
 import type { Appearance } from "@/contexts/ThemeContext";
-import type { PrimarySetupIntent } from "@/lib/boards/starterTemplates";
+import type { StartingSystem } from "@/lib/boards/starterTemplates";
 
 export type SetupDraft = {
   firstName?: string;
@@ -39,39 +39,24 @@ export type SetupDraft = {
   desireCategories?: string[];
   currentFriction?: string;
   desiredIdentity?: string;
-  conditionalSpecificity?: Record<string, unknown>;
   /** App shell appearance (`light` | `dark`). */
   appearance?: Appearance;
-  toolPreferences?: string[];
   /** Keys from the "embody your new identity each day" setup step (exactly five when completed). Not synced to user_setup_path until a column exists. */
   embodyDailyPractices?: string[];
-  /** Board workspace preset — chosen during setup; applied at first entitlement. */
-  boardStarterTemplateSlug?: string;
   /** Primary setup path — seeds starter entitlement pack. */
-  primaryIntent?: PrimarySetupIntent;
+  startingSystem?: StartingSystem;
   homeFocusKey?: string;
   officePlanningSystem?: string;
   moodboardFocusKey?: string;
   /** UI locale (`en` | `es-419`) — set on welcome switcher or auto-detect. */
   locale?: "en" | "es-419";
-  preferredReminderChannels?: string;
-  phoneNumberE164?: string;
-  smsReminderConsent?: boolean;
 };
 
 const KEY = "pp_setup_draft_v1";
-const LEGACY_KEY = "sv_setup_draft_v1";
 
 export function readSetupDraft(): SetupDraft {
   try {
-    let raw = localStorage.getItem(KEY);
-    if (!raw) {
-      raw = localStorage.getItem(LEGACY_KEY);
-      if (raw) {
-        localStorage.setItem(KEY, raw);
-        localStorage.removeItem(LEGACY_KEY);
-      }
-    }
+    const raw = localStorage.getItem(KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? (parsed as SetupDraft) : {};

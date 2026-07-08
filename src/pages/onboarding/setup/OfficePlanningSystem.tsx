@@ -1,11 +1,9 @@
 import { useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { cn } from "@/lib/utils";
 import { readSetupDraft, writeSetupDraft } from "@/lib/setupDraft";
-import { OFFICE_SYSTEM_TO_TEMPLATE } from "@/lib/boards/starterTemplates";
 import {
   SETUP_CHOICE_TILE_SELECTED_GLOW,
   SETUP_CHOICE_DESC_CLASS,
@@ -19,10 +17,7 @@ const SYSTEMS = ["kanban", "gantt", "eisenhower", "okrs", "five_s"] as const;
 export default function SetupOfficePlanningSystem() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
+  const setupBase = "/onboarding/setup";
 
   const [selected, setSelected] = useState<string | null>(() => {
     const k = readSetupDraft().officePlanningSystem;
@@ -37,15 +32,13 @@ export default function SetupOfficePlanningSystem() {
     <SetupPage
       canContinue={selected != null}
       disableNativeScrollViewport
-      onBack={() => navigate(`${setupBase}/primary-intent`)}
+      onBack={() => navigate(`${setupBase}/starting-system`)}
       onContinue={() => {
         if (!selected) return;
-        const slug = OFFICE_SYSTEM_TO_TEMPLATE[selected];
         writeSetupDraft({
           officePlanningSystem: selected,
-          boardStarterTemplateSlug: slug,
         });
-        navigate(`${setupBase}/tool-preference`);
+        navigate(`${setupBase}/begin-journey`);
       }}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">

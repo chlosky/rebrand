@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { OnboardingLayout } from "@/components/onboarding/OnboardingLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,13 +15,11 @@ import {
   detectInitialAppLocale,
   isAppLocale,
   readStoredPreferredLocale,
-  resolveAppLocale,
 } from "@/lib/locale";
 import { setAppLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
 import { trackMarketingConversion } from "@/lib/marketingConversionTrack";
 import {
-  MARKETING_WEB_ONBOARDING_SETUP_PATH,
   MARKETING_WEB_ONBOARDING_WELCOME_PATH,
 } from "@/lib/marketingConversionCopy";
 import { detectInAppBrowser } from "@/lib/inAppBrowserDetection";
@@ -61,21 +59,12 @@ function WelcomePitch() {
 }
 
 function WelcomeTitle({ showFreeTrialLine }: { showFreeTrialLine?: boolean }) {
-  const { t, i18n } = useTranslation("onboarding");
-  const activeLocale = resolveAppLocale(i18n.resolvedLanguage || i18n.language);
-  const hasAccent = i18n.exists("welcome.nativeTitleAccent", { ns: "onboarding", lng: activeLocale });
+  const { t } = useTranslation("onboarding");
 
   return (
     <div className="flex flex-col items-center gap-2">
       <h1 className="font-welcome-serif mt-0 max-w-[20rem] text-center text-[30px] font-normal leading-[1.12] tracking-[-0.02em] text-zinc-900 sm:max-w-[28rem] sm:text-[34px] md:max-w-[36rem] md:text-[40px]">
-        {hasAccent ? (
-          <>
-            {t("welcome.nativeTitleLead")}
-            <span style={{ color: WELCOME_ACCENT }}>{t("welcome.nativeTitleAccent")}</span>
-          </>
-        ) : (
-          t("welcome.nativeTitle")
-        )}
+        {t("welcome.nativeTitle")}
       </h1>
       {showFreeTrialLine ? (
         <p className="font-sans text-[17px] font-medium tracking-[-0.02em] text-zinc-500" style={{ color: WELCOME_ACCENT }}>
@@ -130,11 +119,9 @@ const welcomeLayoutPropsBase = {
 const Welcome = () => {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const { user, isLoading } = useAuth();
   const isNative = useIsNativeApp();
   const isMobile = useIsMobile();
-  const isSuiteWelcome = pathname.includes("/onboarding/suite");
 
   useEffect(() => {
     if (isNative) return;
@@ -142,11 +129,10 @@ const Welcome = () => {
       void ensureOnboardingSessionCreds().catch((err) => {
         console.warn("[Welcome] ensureOnboardingSessionCreds failed:", err);
       });
-      const welcomePath = isSuiteWelcome ? "/onboarding/suite/welcome" : MARKETING_WEB_ONBOARDING_WELCOME_PATH;
-      recordWebOnboardingSessionStart({ isMobileViewport: isMobile, entryPath: welcomePath });
+      recordWebOnboardingSessionStart({ isMobileViewport: isMobile, entryPath: MARKETING_WEB_ONBOARDING_WELCOME_PATH });
       trackMarketingConversion("web_onboarding_welcome_view", {
         source: "welcome_page",
-        page_path: welcomePath,
+        page_path: MARKETING_WEB_ONBOARDING_WELCOME_PATH,
       });
     };
     if (!detectInAppBrowser().isInAppBrowser) {
@@ -155,7 +141,7 @@ const Welcome = () => {
     }
     const timeoutId = window.setTimeout(recordWelcomeView, 1500);
     return () => window.clearTimeout(timeoutId);
-  }, [isNative, isMobile, isSuiteWelcome]);
+  }, [isNative, isMobile]);
 
   useEffect(() => {
     void (async () => {
@@ -194,11 +180,11 @@ const Welcome = () => {
   }, [isNative]);
 
   const onContinue = () => {
+    const target = "/onboarding/setup/name";
     if (isNative) {
-      navigate("/onboarding/setup/primary-intent");
+      navigate(target);
       return;
     }
-    const target = isSuiteWelcome ? "/onboarding/suite/setup/primary-intent" : MARKETING_WEB_ONBOARDING_SETUP_PATH;
     trackMarketingConversion("web_onboarding_click", {
       source: "welcome_page",
       button_label: t("welcome.enterStudio"),

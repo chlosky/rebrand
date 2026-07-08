@@ -132,8 +132,8 @@ export default {
             transform: "translateY(0)",
           },
         },
-        /** Duplicated horizontal row; animate -50% for seamless loop (Path Loading testimonials). */
-        "palette-plotting-testimonials-marquee": {
+        /** Horizontal marquee loop (e.g. site urgency ticker). */
+        marquee: {
           "0%": {
             transform: "translateX(0)",
           },
@@ -150,9 +150,7 @@ export default {
         "onboarding-tools-ticker": "onboarding-tools-ticker 18s linear infinite",
         "marketing-tools-ticker-reverse":
           "marketing-tools-ticker-reverse 18s linear infinite",
-        "palette-plotting-testimonials-marquee": "palette-plotting-testimonials-marquee 42s linear infinite",
-        "palette-plotting-testimonials-marquee-slow": "palette-plotting-testimonials-marquee 56s linear infinite",
-        marquee: "palette-plotting-testimonials-marquee 75s linear infinite",
+        marquee: "marquee 75s linear infinite",
       },
     },
   },

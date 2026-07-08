@@ -5,9 +5,9 @@ import { Capacitor } from "@capacitor/core";
  * First-touch is immutable once stored; last-touch updates on new attributed visits.
  */
 
-const FIRST_TOUCH_STORAGE_KEY = "sv_attribution_first_touch_v2";
-const LAST_TOUCH_STORAGE_KEY = "sv_attribution_last_touch_v2";
-const FIRST_TOUCH_COOKIE = "sv_aff_first_v1";
+const FIRST_TOUCH_STORAGE_KEY = "pp_attribution_first_touch_v2";
+const LAST_TOUCH_STORAGE_KEY = "pp_attribution_last_touch_v2";
+const FIRST_TOUCH_COOKIE = "pp_aff_first_v1";
 
 const TRACKED_QUERY_KEYS = [
   "utm_source",

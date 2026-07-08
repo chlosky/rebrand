@@ -24,6 +24,7 @@ import {
 } from "@/lib/boards/api";
 import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
 import { BoardPrintDialog } from "@/components/boards/BoardPrintDialog";
+import { TrialExportUnlockDialog } from "@/components/boards/TrialExportUnlockDialog";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -33,7 +34,7 @@ const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
 
 export default function Boards() {
   const { user } = useAuth();
-  const { hasPro, loading: proLoading } = usePlottingPro();
+  const { hasPro, onTrial, loading: proLoading, refreshPlan } = usePlottingPro();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const workspaceParam = searchParams.get("workspace");
@@ -47,6 +48,8 @@ export default function Boards() {
   const [workspace, setWorkspace] = useState<BoardWorkspaceWithBoards | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [showTrialUnlock, setShowTrialUnlock] = useState(false);
+  const trialBlocksExports = hasPro && onTrial;
   const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
   const [isPortraitViewport, setIsPortraitViewport] = useState(() =>
@@ -420,7 +423,13 @@ export default function Boards() {
               variant="outline"
               size="sm"
               className="gap-1 text-xs max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
-              onClick={() => setDownloadOpen(true)}
+              onClick={() => {
+                if (trialBlocksExports) {
+                  setShowTrialUnlock(true);
+                  return;
+                }
+                setDownloadOpen(true);
+              }}
             >
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Download</span>
@@ -563,6 +572,12 @@ export default function Boards() {
                 if (editor) return editor.getLayoutJson();
                 return workspace.boards.find((b) => b.id === boardId)?.layout_json ?? {};
               }}
+            />
+            <TrialExportUnlockDialog
+              open={showTrialUnlock}
+              onOpenChange={setShowTrialUnlock}
+              refreshPlan={refreshPlan}
+              onUnlocked={() => setDownloadOpen(true)}
             />
           </>
         )}

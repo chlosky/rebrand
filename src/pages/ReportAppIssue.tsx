@@ -229,12 +229,40 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
     const uploadedPaths: string[] = [];
     try {
       for (const item of pendingImages) {
-        const safe = sanitizeFileBaseName(item.file.name);
+        let uploadFile = item.file;
+        if (
+          item.file.type.startsWith("image/") &&
+          item.file.type !== "image/svg+xml" &&
+          item.file.type !== "image/gif"
+        ) {
+          const bitmap = await createImageBitmap(item.file);
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(bitmap, 0, 0);
+              const outType = item.file.type === "image/png" ? "image/png" : "image/jpeg";
+              const blob = await new Promise<Blob | null>((resolve) => {
+                canvas.toBlob(resolve, outType, outType === "image/jpeg" ? 0.92 : undefined);
+              });
+              if (blob) {
+                const ext = outType === "image/png" ? "png" : "jpg";
+                const base = item.file.name.replace(/\.[^.]+$/, "") || "upload";
+                uploadFile = new File([blob], `${base}.${ext}`, { type: outType });
+              }
+            }
+          } finally {
+            bitmap.close();
+          }
+        }
+        const safe = sanitizeFileBaseName(uploadFile.name);
         const objectPath = `${user.id}/${crypto.randomUUID()}_${safe}`;
-        const contentType = getUploadContentType(item.file);
+        const contentType = getUploadContentType(uploadFile);
         const { error: upErr } = await supabase.storage
           .from("support-reports")
-          .upload(objectPath, item.file, {
+          .upload(objectPath, uploadFile, {
             contentType,
             upsert: false,
           });

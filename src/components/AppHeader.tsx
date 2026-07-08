@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LogIn, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-type IosAppHeaderProps = {
+type AppHeaderProps = {
   /** When true, show Sign out instead of Login and return to welcome after signing out. */
   signOutInsteadOfLogin?: boolean;
   /** Match onboarding welcome cosmic shell (dark starfield behind content). */
@@ -15,14 +15,14 @@ type IosAppHeaderProps = {
 };
 
 /**
- * Header for iOS app screens (secure checkout, sign-in) that matches the Privacy Policy header.
+ * Top header for sign-in and checkout screens.
  * Palette Plotting title links back to the welcome page; Login button links to sign-in.
  */
-export const IosAppHeader = ({
+export const AppHeader = ({
   signOutInsteadOfLogin = false,
   cosmicShell = false,
   hideAuthButton = false,
-}: IosAppHeaderProps) => {
+}: AppHeaderProps) => {
   const { t } = useTranslation(["dashboard", "common"]);
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);

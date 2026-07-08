@@ -1,14 +1,14 @@
 {
   "version": 2,
   "themes": [
-    "Identity",
     "Career & Money",
     "Love & Relationships",
     "Home & Space",
     "Beauty & Wellness",
     "Travel & Adventure",
     "Organization & Plan",
-    "Aesthetic & Mood"
+    "Aesthetic & Mood",
+    "Self & Direction"
   ],
   "images": []
 }

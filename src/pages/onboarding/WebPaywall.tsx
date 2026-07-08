@@ -1,41 +1,23 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import {
-  getLastWebPaywallError,
-  getWebRevenueCatCheckoutQuote,
-  isRevenueCatWebConfigured,
-  presentWebRevenueCatPaywall,
-} from "@/services/revenueCatWeb";
-import { armIapPostPurchaseEntitlementLatch } from "@/lib/iosPostPurchaseEntitlementGate";
-import { armWebGetAppPromptPending } from "@/lib/webFirstPurchaseGetAppPrompt";
-import { attachHideBrokenRevenueCatPaywallMedia } from "@/lib/revenueCatPaywallMedia";
 import { trackMarketingConversion } from "@/lib/marketingConversionTrack";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureOnboardingSessionCreds } from "@/lib/setupDraftBackendSync";
 import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
-import { isWebRevenueCatBillingEnabled, isWebStripeCheckoutEnabled } from "@/lib/webBillingConfig";
 import {
   startWebStripeCheckout,
   type WebStripeBillingPeriod,
 } from "@/lib/startWebStripeCheckout";
 import { Check, Loader2 } from "lucide-react";
 
-
-
 type PremiumPricing = {
   monthly: number;
   annual: number;
 };
-
-function formatUsd(amount: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-}
 
 function WebPaywallShell({
   children,
@@ -107,8 +89,7 @@ function WebPaywallShell({
   );
 }
 
-/** Stripe Checkout — default web launch path. */
-function WebPaywallStripe() {
+export default function WebPaywall() {
   const { t } = useTranslation("paywall");
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
@@ -118,10 +99,6 @@ function WebPaywallStripe() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      navigate("/", { replace: true });
-      return;
-    }
     if (isLoading) return;
     if (!user?.id) {
       navigate("/login", { replace: true, state: { from: "/onboarding/web-paywall" } });
@@ -232,7 +209,7 @@ function WebPaywallStripe() {
           {checkoutLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t("legacyIos.opening")}
+              {t("webStripe.openingCheckout")}
             </>
           ) : (
             cta
@@ -245,172 +222,4 @@ function WebPaywallStripe() {
       </div>
     </WebPaywallShell>
   );
-}
-
-/**
- * RevenueCat Web Billing — dormant unless `VITE_WEB_CHECKOUT_PROVIDER=revenuecat`.
- */
-function WebPaywallRevenueCat() {
-  const { t } = useTranslation("paywall");
-  const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<"paywall" | "dismissed" | "error">("paywall");
-  const [presenting, setPresenting] = useState(false);
-  const autoPresentedRef = useRef(false);
-
-  const openPaywall = useCallback(async () => {
-    if (!user?.id || presenting || !containerRef.current) return;
-
-    setPresenting(true);
-    setPhase("paywall");
-    const quote = await getWebRevenueCatCheckoutQuote(user.id);
-    try {
-      const creds = await ensureOnboardingSessionCreds();
-      await supabase.functions.invoke("update-onboarding-session", {
-        body: {
-          sessionId: creds.sessionId,
-          resumeToken: creds.resumeToken,
-          patch: {
-            paywall_id: "web_revenuecat_paywall",
-            paywall_variant: "default",
-            offering_id: quote?.contentId ?? null,
-            product_id: quote?.contentId ?? null,
-          },
-        },
-      });
-    } catch {
-      /* non-fatal */
-    }
-    trackMarketingConversion("paywall_view", {
-      source: "web_revenuecat_paywall",
-      page_path: "/onboarding/web-paywall",
-      content_id: quote?.contentId ?? "/onboarding/web-paywall",
-      content_name: quote?.contentName ?? "web_revenuecat_paywall",
-      ...(quote ? { value: quote.value, currency: quote.currency } : {}),
-    });
-    const paywallResult = await presentWebRevenueCatPaywall(user.id, {
-      htmlTarget: containerRef.current,
-      customerEmail: user.email ?? undefined,
-    });
-    setPresenting(false);
-
-    if (paywallResult.ok) {
-      trackMarketingConversion("subscription_complete", {
-        source: "web_revenuecat_paywall",
-        target_path: "/onboarding/post-paywall",
-        event_id: paywallResult.purchaseEventId,
-        content_id: paywallResult.productId,
-        content_name: paywallResult.productName,
-        ...(paywallResult.purchaseValue > 0
-          ? { value: paywallResult.purchaseValue, currency: paywallResult.purchaseCurrency }
-          : {}),
-      });
-      armIapPostPurchaseEntitlementLatch(user.id);
-      armWebGetAppPromptPending();
-      navigate("/onboarding/post-paywall", { replace: true });
-      return;
-    }
-
-    const detail = getLastWebPaywallError();
-    if (detail === "Cancelled") {
-      setPhase("dismissed");
-      return;
-    }
-    setPhase("error");
-    toast.error(detail || t("webWrapper.subscriptionNotCompleted"), { duration: 8000 });
-  }, [navigate, presenting, t, user?.email, user?.id]);
-
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      navigate("/", { replace: true });
-      return;
-    }
-    if (isLoading) return;
-    if (!user?.id) {
-      navigate("/login", { replace: true, state: { from: "/onboarding/web-paywall" } });
-      return;
-    }
-
-    if (!isRevenueCatWebConfigured()) {
-      setPhase("error");
-      toast.error(t("webWrapper.notConfigured"), { duration: 8000 });
-    }
-  }, [isLoading, navigate, t, user?.id]);
-
-  useEffect(() => {
-    if (phase !== "paywall" || autoPresentedRef.current || isLoading || !user?.id) return;
-    if (!isRevenueCatWebConfigured()) return;
-    autoPresentedRef.current = true;
-    void openPaywall();
-  }, [isLoading, openPaywall, phase, user?.id]);
-
-  useEffect(() => {
-    if (phase !== "paywall" || !containerRef.current) return;
-    return attachHideBrokenRevenueCatPaywallMedia(containerRef.current);
-  }, [phase, presenting]);
-
-  if (isLoading) {
-    return <div className="min-h-screen" style={{ backgroundColor: WELCOME_LIGHT_BASE }} />;
-  }
-
-  const fallbackPanel = (children: ReactNode) => (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-16 text-center">{children}</div>
-  );
-
-  return (
-    <WebPaywallShell>
-      {phase === "error"
-        ? fallbackPanel(
-            <>
-              <p className="text-sm text-zinc-600">
-                {getLastWebPaywallError() || t("webWrapper.checkoutFailed")}
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {isRevenueCatWebConfigured() ? (
-                  <Button type="button" onClick={() => void openPaywall()} disabled={presenting}>
-                    {t("legacyIos.tryAgain")}
-                  </Button>
-                ) : null}
-                <Button type="button" variant="outline" onClick={() => navigate("/", { replace: true })}>
-                  {t("webWrapper.close")}
-                </Button>
-              </div>
-            </>,
-          )
-        : null}
-
-      {phase === "dismissed"
-        ? fallbackPanel(
-            <>
-              <p className="text-sm text-zinc-600">{t("webWrapper.checkoutClosed")}</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button type="button" onClick={() => void openPaywall()} disabled={presenting}>
-                  {t("webWrapper.viewPlans")}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => navigate("/", { replace: true })}>
-                  {t("webWrapper.close")}
-                </Button>
-              </div>
-            </>,
-          )
-        : null}
-
-      <div
-        ref={containerRef}
-        className={cn("web-rc-paywall-host", phase === "paywall" ? "block" : "hidden")}
-        aria-live="polite"
-      />
-    </WebPaywallShell>
-  );
-}
-
-export default function WebPaywall() {
-  if (isWebStripeCheckoutEnabled()) {
-    return <WebPaywallStripe />;
-  }
-  if (isWebRevenueCatBillingEnabled()) {
-    return <WebPaywallRevenueCat />;
-  }
-  return <WebPaywallStripe />;
 }

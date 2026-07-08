@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 
 import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
 import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
@@ -12,11 +11,8 @@ import {
   clearIapPostPurchaseEntitlementLatch,
   getIapPostPurchaseLatchUserId,
   markIapSubscriptionConfirmed,
-  retryIosPostPurchaseEntitlementSyncInBackground,
   runIapPostPurchaseGateIfNeeded,
-} from "@/lib/iosPostPurchaseEntitlementGate";
-import { getLastPaywallError, syncRevenueCatEntitlementAfterPurchaseWithRetries } from "@/services/revenueCat";
-import { supabase } from "@/integrations/supabase/client";
+} from "@/lib/postPurchaseEntitlementGate";
 import { debugLog } from "@/debugLog";
 import { readSetupDraft } from "@/lib/setupDraft";
 import { readStoredPreferredLocale, resolveAppLocale } from "@/lib/locale";
@@ -178,41 +174,18 @@ export default function PostPaywallLoading() {
           return;
         }
 
-        if (gate === "delayed") {
-          console.warn("[post-paywall] entitlement verification delayed after purchase");
-          markIapSubscriptionConfirmed(getIapPostPurchaseLatchUserId());
-          retryIosPostPurchaseEntitlementSyncInBackground();
-        } else if (gate === "failed") {
+        if (gate === "failed") {
           if (tickId != null) window.clearInterval(tickId);
           debugLog({
             location: "PostPaywallLoading.tsx",
-            message: "Native IAP entitlement sync failed on loading screen",
-            data: { lastPaywallError: getLastPaywallError() },
+            message: "Stripe entitlement sync failed on loading screen",
             hypothesisId: "H5",
           });
-          toast.error(i18n.t("postPaywall.toastActivateFailedIos", { ns: "paywall" }));
+          toast.error(i18n.t("postPaywall.toastActivateFailed", { ns: "paywall" }));
           clearIapPostPurchaseEntitlementLatch();
-          const failRoute = Capacitor.isNativePlatform()
-            ? "/onboarding/ios-paywall"
-            : "/onboarding/web-paywall";
-          logPostPaywall("navigate fail route", { failRoute });
-          window.setTimeout(() => navigateRef.current(failRoute, { replace: true }), 450);
+          logPostPaywall("navigate web paywall (sync failed)");
+          window.setTimeout(() => navigateRef.current("/onboarding/web-paywall", { replace: true }), 450);
           return;
-        }
-
-        if (Capacitor.getPlatform() === "android") {
-          const ok = await syncRevenueCatEntitlementAfterPurchaseWithRetries();
-          if (!alive) {
-            logPostPaywall("aborted after android sync (alive=false)");
-            return;
-          }
-          if (!ok) {
-            if (tickId != null) window.clearInterval(tickId);
-            toast.error(i18n.t("postPaywall.toastActivateFailedAndroid", { ns: "paywall" }));
-            logPostPaywall("navigate android paywall (sync failed)");
-            window.setTimeout(() => navigateRef.current("/onboarding/android-paywall", { replace: true }), 450);
-            return;
-          }
         }
 
         logPostPaywall("provisioning start");
@@ -236,22 +209,6 @@ export default function PostPaywallLoading() {
         if (tickId != null) window.clearInterval(tickId);
         setProgress(100);
         clearIapPostPurchaseEntitlementLatch();
-
-        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
-          try {
-            const { data: reviewFlag } = await supabase
-              .from("feature_flags")
-              .select("is_enabled")
-              .eq("feature_name", "review_prompt")
-              .maybeSingle();
-            if (reviewFlag?.is_enabled) {
-              sessionStorage.setItem("pending_review_prompt_after_post_paywall", "true");
-              console.info("[review_prompt] post-paywall marker set for dashboard");
-            }
-          } catch {
-            /* review prompt must never block dashboard */
-          }
-        }
 
         logPostPaywall("navigate dashboard");
         window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 250);

@@ -46,7 +46,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
       {
         type: "bullets",
         items: [
-          "Identity: style, body, beauty, routines, standards, confidence, visibility.",
+          "Self & Direction: style, body, beauty, routines, standards, confidence, visibility.",
           "Money and work: income, career, business, offers, clients, savings, sales, systems.",
           "Home and environment: bedroom, office, kitchen, closet, storage, daily flow.",
           "Relationships and lifestyle: dating, friendships, family, social life, travel, rest.",

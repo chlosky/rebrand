@@ -155,9 +155,14 @@ serve(async (req) => {
       formParts.push(`subscription_data[metadata][app_user_id]=${encodeValue(obUserId)}`);
     }
 
-    // 3-day trial for monthly web launch offer
+    // 3-day trial for monthly web subscription (auto-renews after trial when card is on file).
     if (billing === "monthly") {
-      formParts.push(`subscription_data[trial_period_days]=${encodeValue("3")}`);
+      const trialDays = (Deno.env.get("STRIPE_TRIAL_DAYS") || "3").trim();
+      formParts.push(`payment_method_collection=${encodeValue("always")}`);
+      formParts.push(`subscription_data[trial_period_days]=${encodeValue(trialDays)}`);
+      formParts.push(
+        `subscription_data[trial_settings][end_behavior][missing_payment_method]=${encodeValue("cancel")}`,
+      );
     }
 
     // Enable promo codes in Checkout

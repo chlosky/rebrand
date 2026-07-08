@@ -18,7 +18,8 @@
     "cap:copy": "npx cap copy ios",
     "cap:update": "npx cap update ios",
     "compress:embody-double-videos": "node scripts/compress-embody-double-videos.mjs",
-    "gen:favicons": "node scripts/generate-favicon-pngs.mjs"
+    "gen:favicons": "node scripts/generate-favicon-pngs.mjs",
+    "strip:metadata": "node scripts/strip-media-metadata.mjs"
   },
   "dependencies": {
     "@capacitor-community/in-app-review": "^8.0.0",
@@ -71,9 +72,6 @@
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@revenuecat/purchases-capacitor": "^12.2.1",
-    "@revenuecat/purchases-capacitor-ui": "^12.2.1",
-    "@revenuecat/purchases-js": "^1.41.0",
     "@stripe/react-stripe-js": "^5.3.0",
     "@stripe/stripe-js": "^8.5.1",
     "@supabase/supabase-js": "^2.75.0",

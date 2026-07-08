@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { User, Bell, KeyRound, CreditCard, AlertTriangle, Trash2, ChevronRight } from "lucide-react";
+import { User, Bell, KeyRound, CreditCard, AlertTriangle, Trash2, ChevronRight, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,20 +24,11 @@ import { cn } from "@/lib/utils";
 import { validatePassword, validatePasswordMatch } from "@/lib/password-validation";
 import { Capacitor } from "@capacitor/core";
 import { Browser } from "@capacitor/browser";
-import { useAppleIAP } from "@/hooks/useAppleIAP";
-import {
-  openRevenueCatWebBillingPortal,
-  resolveRevenueCatWebBillingStatus,
-} from "@/services/revenueCatManageBilling";
-import {
-  isWebRevenueCatBillingEnabled,
-  isWebStripeCheckoutEnabled,
-} from "@/lib/webBillingConfig";
 import { useTranslation } from "react-i18next";
 import { resolveAppLocale, legalTermsPath, legalPrivacyPath } from "@/lib/locale";
 import { SITE_ORIGIN } from "@/lib/siteBrand";
-
-const PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/account/subscriptions";
+import { usePlottingPro } from "@/hooks/usePlottingPro";
+import { endStripeTrialEarly } from "@/lib/endStripeTrialEarly";
 
 const Settings = () => {
   const { t, i18n } = useTranslation("settings");
@@ -50,7 +41,8 @@ const Settings = () => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const { theme } = useTheme();
-  const appleIAP = useAppleIAP();
+  const { onTrial, refreshPlan } = usePlottingPro();
+  const [endingTrial, setEndingTrial] = useState(false);
 
   useEffect(() => {
     if (user === null) {
@@ -81,13 +73,7 @@ const Settings = () => {
   const passwordValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   /** Cadence from `user_plans.billing_period` only (Current Plan label). */
   const [billingPeriodLabel, setBillingPeriodLabel] = useState<string | null>(null);
-  /** From user_plans; routes Manage Billing by payment source. */
-  const [lastPaymentSource, setLastPaymentSource] = useState<
-    "stripe" | "apple" | "google_play" | null
-  >(null);
-  /** RC Web Billing subscriber -- checked so Settings can show a loading hint while portal status resolves. */
-  const [rcWebBillingAvailable, setRcWebBillingAvailable] = useState<boolean | null>(null);
-  /** Billing identity from user_plans; not used to infer RC Web Billing by placeholder prefix. */
+  /** Billing identity from user_plans. */
   const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
   const [verificationCode, setVerificationCode] = useState("");
@@ -131,29 +117,7 @@ const Settings = () => {
           setBillingPeriodLabel(bp);
         }
 
-        if (
-          plan?.last_payment_source === "stripe" ||
-          plan?.last_payment_source === "apple" ||
-          plan?.last_payment_source === "google_play"
-        ) {
-          setLastPaymentSource(plan.last_payment_source);
-        } else {
-          setLastPaymentSource(null);
-        }
-
         setStripeCustomerId(plan?.stripe_customer_id?.trim() || null);
-
-        if (isWebRevenueCatBillingEnabled()) {
-          const refreshRcWebBillingStatus = () => {
-            void resolveRevenueCatWebBillingStatus(user.id)
-              .then(({ webBilling }) => setRcWebBillingAvailable(webBilling))
-              .catch(() => setRcWebBillingAvailable(false));
-          };
-          refreshRcWebBillingStatus();
-          window.setTimeout(refreshRcWebBillingStatus, 1500);
-        } else {
-          setRcWebBillingAvailable(false);
-        }
 
         // Fetch user preferences (email reminders and text reminders)
         const { data: prefs, error: prefsError } = await (supabase as any)
@@ -541,119 +505,70 @@ const Settings = () => {
     }
   };
 
-  /**
-   * Manage billing routing:
-   *
-   * - Stripe (default): Stripe Customer Portal via `create-customer-portal`.
-   * - Apple / Google Play: legacy app-store paths when `last_payment_source` says so.
-   * - RevenueCat Web Billing: only when `VITE_WEB_CHECKOUT_PROVIDER=revenuecat`.
-   */
+  /** Opens Stripe Customer Portal for subscription management. */
   const handleManageBilling = async () => {
     if (!user) {
       toast.error(t("toasts.billingLoginRequired"));
       return;
     }
 
-    if (lastPaymentSource === "apple") {
-      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios" && appleIAP.canManageBillingNatively) {
-        try {
-          await appleIAP.openSubscriptionManagement(user.id);
-        } catch (err) {
-          console.error("Manage billing:", err);
-        }
+    try {
+      const portalToast = toast.loading(t("billing.openingPortal"));
+
+      if (!stripeCustomerId) {
+        await supabase.functions.invoke("sync-stripe-customer", { body: {} });
+      }
+
+      const returnUrl = window.location.origin.startsWith("http")
+        ? `${window.location.origin}/dashboard/settings`
+        : `${SITE_ORIGIN}/dashboard/settings`;
+
+      const { data, error } = await supabase.functions.invoke("create-customer-portal", {
+        body: { returnUrl },
+      });
+      toast.dismiss(portalToast);
+
+      if (error) throw error;
+
+      const payload = data as { url?: string | null; message?: string; error?: string } | null;
+      const url = typeof payload?.url === "string" ? payload.url.trim() : "";
+      if (!url) {
+        toast.error(payload?.message?.trim() || t("toasts.portalFailed"));
         return;
       }
 
-      toast.error(t("toasts.iosSubscriptionsHint"));
-      return;
-    }
-
-    if (lastPaymentSource === "google_play") {
-      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
-        try {
-          await Browser.open({ url: PLAY_SUBSCRIPTIONS_URL });
-        } catch (err) {
-          console.error("Manage billing (Play):", err);
-          toast.error(t("toasts.playSubscriptionsFailed"));
-        }
-        return;
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url });
+      } else {
+        window.location.href = url;
       }
-
-      toast.error(t("toasts.portalFailedFallback"));
-      return;
+    } catch (error) {
+      console.error("Manage billing (Stripe portal):", error);
+      toast.error(t("toasts.portalFailed"));
     }
-
-    const useStripePortal =
-      isWebStripeCheckoutEnabled() ||
-      lastPaymentSource === "stripe" ||
-      Boolean(stripeCustomerId);
-
-    if (useStripePortal) {
-      try {
-        const portalToast = toast.loading(t("billing.openingPortal"));
-
-        if (!stripeCustomerId) {
-          await supabase.functions.invoke("sync-stripe-customer", { body: {} });
-        }
-
-        const returnUrl = window.location.origin.startsWith("http")
-          ? `${window.location.origin}/dashboard/settings`
-          : `${SITE_ORIGIN}/dashboard/settings`;
-
-        const { data, error } = await supabase.functions.invoke("create-customer-portal", {
-          body: { returnUrl },
-        });
-        toast.dismiss(portalToast);
-
-        if (error) throw error;
-
-        const payload = data as { url?: string | null; message?: string; error?: string } | null;
-        const url = typeof payload?.url === "string" ? payload.url.trim() : "";
-        if (!url) {
-          toast.error(payload?.message?.trim() || t("toasts.portalFailed"));
-          return;
-        }
-
-        if (Capacitor.isNativePlatform()) {
-          await Browser.open({ url });
-        } else {
-          window.location.href = url;
-        }
-        return;
-      } catch (error) {
-        console.error("Manage billing (Stripe portal):", error);
-        toast.error(t("toasts.portalFailed"));
-        return;
-      }
-    }
-
-    if (isWebRevenueCatBillingEnabled() && rcWebBillingAvailable) {
-      try {
-        const portalToast = toast.loading(t("billing.openingPortal"));
-        const openedPortal = await openRevenueCatWebBillingPortal(user.id);
-        toast.dismiss(portalToast);
-        if (openedPortal) return;
-      } catch (error) {
-        console.error("Manage billing (RevenueCat portal):", error);
-        toast.error(t("toasts.portalFailed"));
-        return;
-      }
-    }
-
-    toast.error(t("toasts.portalFailedFallback"));
   };
 
 
+  const handleEndTrialEarly = async () => {
+    if (!user?.id || endingTrial) return;
+    setEndingTrial(true);
+    try {
+      const result = await endStripeTrialEarly(user.id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      refreshPlan();
+      toast.success(
+        result.alreadyActive ? t("billing.trialEndedAlready") : t("billing.trialEndedNow"),
+      );
+    } finally {
+      setEndingTrial(false);
+    }
+  };
+
   // Email reminders are now loaded from database in fetchUserData
   // This useEffect is no longer needed as it's handled in fetchUserData
-
-  const billingOptionsLoading =
-    isWebRevenueCatBillingEnabled() &&
-    !Capacitor.isNativePlatform() &&
-    rcWebBillingAvailable === null &&
-    lastPaymentSource !== "stripe" &&
-    lastPaymentSource !== "apple" &&
-    lastPaymentSource !== "google_play";
 
   return (
     <div
@@ -1122,35 +1037,45 @@ const Settings = () => {
                   </p>
                 </div>
 
-                {billingOptionsLoading ? (
-                  <>
+                {onTrial ? (
+                  <div
+                    className={cn(
+                      "space-y-3 rounded-lg p-3",
+                      theme === "dark" ? "border border-amber-400/30 bg-amber-500/10" : "border border-amber-200 bg-amber-50",
+                    )}
+                  >
+                    <p className="text-sm font-medium">{t("billing.trialActiveHeading")}</p>
+                    <p className="text-xs text-muted-foreground">{t("billing.trialActiveDescription")}</p>
                     <Button
                       type="button"
-                      variant="ghost"
-                      className={cn("w-full", theme === "dark" ? "bg-transparent border border-white/12 text-white shadow-none hover:bg-white/[0.06] hover:text-white active:bg-transparent disabled:opacity-50" : cn("bg-card text-card-foreground border border-border/50", "hover:bg-card/90 hover:text-card-foreground active:text-card-foreground", "focus-visible:text-card-foreground"))}
-                      onClick={() => void handleManageBilling()}
+                      variant="outline"
+                      className="w-full"
+                      disabled={endingTrial}
+                      onClick={() => void handleEndTrialEarly()}
                     >
-                      {t("billing.manageBilling")}
+                      {endingTrial ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("billing.trialEnding")}
+                        </>
+                      ) : (
+                        t("billing.endTrialEarly")
+                      )}
                     </Button>
-                    <p className="text-[11px] leading-snug text-muted-foreground text-center px-1">
-                      {t("billing.loadingOptions")}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className={cn("w-full", theme === "dark" ? "bg-transparent border border-white/12 text-white shadow-none hover:bg-white/[0.06] hover:text-white active:bg-transparent disabled:opacity-50" : cn("bg-card text-card-foreground border border-border/50", "hover:bg-card/90 hover:text-card-foreground active:text-card-foreground", "focus-visible:text-card-foreground"))}
-                      onClick={() => void handleManageBilling()}
-                    >
-                      {t("billing.manageBilling")}
-                    </Button>
-                    <p className="text-[11px] leading-snug text-muted-foreground text-center px-1">
-                      {t("billing.portalHint")}
-                    </p>
-                  </>
-                )}
+                  </div>
+                ) : null}
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={cn("w-full", theme === "dark" ? "bg-transparent border border-white/12 text-white shadow-none hover:bg-white/[0.06] hover:text-white active:bg-transparent disabled:opacity-50" : cn("bg-card text-card-foreground border border-border/50", "hover:bg-card/90 hover:text-card-foreground active:text-card-foreground", "focus-visible:text-card-foreground"))}
+                  onClick={() => void handleManageBilling()}
+                >
+                  {t("billing.manageBilling")}
+                </Button>
+                <p className="text-[11px] leading-snug text-muted-foreground text-center px-1">
+                  {t("billing.portalHint")}
+                </p>
               </div>
             </Card>
           </TabsContent>

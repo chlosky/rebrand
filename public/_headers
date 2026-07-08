@@ -1,7 +1,7 @@
 # index.html must not be cached long — it references hashed /assets/*.js chunks.
 # A stale index + fresh assets (or vice versa) causes lazy routes to fetch HTML
 # instead of JS (MIME type text/html) and Embody/other tools white-screen.
-# SPA routes (/mobilelanding, /dashboard, …) also serve index.html — they must
+# SPA routes (/dashboard, …) also serve index.html — they must
 # match this no-cache rule, not only / and /index.html.
 /*
   Cache-Control: no-cache, must-revalidate

@@ -6,8 +6,11 @@ import { ensureStarterWorkspaceFromCategories, ensureStarterWorkspaceFromSlug, f
 import {
   DEFAULT_FOUR_BOARD_TEMPLATE,
   FOUR_BOARD_FOCUS_CATEGORIES_SLUG,
+  HOME_FOCUS_TO_TEMPLATE,
+  MOODBOARD_FOCUS_TO_TEMPLATE,
+  OFFICE_SYSTEM_TO_TEMPLATE,
   normalizeFocusCategoryNames,
-  type PrimarySetupIntent,
+  type StartingSystem,
 } from "@/lib/boards/starterTemplates";
 import { clearSetupDraft, readSetupDraft, type SetupDraft } from "@/lib/setupDraft";
 
@@ -20,9 +23,9 @@ type OnboardingSessionRow = {
 };
 
 type StarterProvisioningSeed = {
-  boardStarterTemplateSlug: string;
-  primaryIntent?: PrimarySetupIntent;
+  startingSystem?: StartingSystem;
   desireCategories: string[];
+  templateSlug: string;
   usedTrustedLocalDraft: boolean;
 };
 
@@ -92,11 +95,11 @@ function isLocalSetupDraftTrusted(
   return true;
 }
 
-function readPrimaryIntent(
+function readStartingSystem(
   setupPath: Record<string, unknown> | null,
   localDraft: SetupDraft,
-): PrimarySetupIntent | undefined {
-  const fromPath = setupPath?.primary_intent;
+): StartingSystem | undefined {
+  const fromPath = setupPath?.starting_system;
   if (
     fromPath === "life_rebranding" ||
     fromPath === "home_organization" ||
@@ -105,7 +108,7 @@ function readPrimaryIntent(
   ) {
     return fromPath;
   }
-  return localDraft.primaryIntent;
+  return localDraft.startingSystem;
 }
 
 function readDesireCategories(
@@ -120,6 +123,43 @@ function readDesireCategories(
   return normalizeFocusCategoryNames(localDraft.desireCategories);
 }
 
+function readStringField(
+  setupPath: Record<string, unknown> | null,
+  pathKey: string,
+  draftValue: string | undefined,
+): string | undefined {
+  const fromPath = setupPath?.[pathKey];
+  if (typeof fromPath === "string" && fromPath.trim()) return fromPath.trim();
+  if (typeof draftValue === "string" && draftValue.trim()) return draftValue.trim();
+  return undefined;
+}
+
+function resolveTemplateSlugFromSetup(
+  startingSystem: StartingSystem | undefined,
+  setupPath: Record<string, unknown> | null,
+  localDraft: SetupDraft,
+): string {
+  if (startingSystem === "home_organization") {
+    const homeFocusKey = readStringField(setupPath, "home_focus_key", localDraft.homeFocusKey);
+    if (homeFocusKey && HOME_FOCUS_TO_TEMPLATE[homeFocusKey]) {
+      return HOME_FOCUS_TO_TEMPLATE[homeFocusKey];
+    }
+  }
+  if (startingSystem === "office_work") {
+    const officeSystem = readStringField(setupPath, "office_planning_system", localDraft.officePlanningSystem);
+    if (officeSystem && OFFICE_SYSTEM_TO_TEMPLATE[officeSystem]) {
+      return OFFICE_SYSTEM_TO_TEMPLATE[officeSystem];
+    }
+  }
+  if (startingSystem === "moodboarding") {
+    const moodboardFocusKey = readStringField(setupPath, "moodboard_focus_key", localDraft.moodboardFocusKey);
+    if (moodboardFocusKey && MOODBOARD_FOCUS_TO_TEMPLATE[moodboardFocusKey]) {
+      return MOODBOARD_FOCUS_TO_TEMPLATE[moodboardFocusKey];
+    }
+  }
+  return DEFAULT_FOUR_BOARD_TEMPLATE.slug;
+}
+
 async function resolveStarterProvisioningSeed(
   userId: string,
   authEmail: string | undefined,
@@ -132,15 +172,12 @@ async function resolveStarterProvisioningSeed(
     ? readSetupPathV1(onboardingSession?.onboarding_answers ?? null)
     : null;
 
-  const boardStarterTemplateSlug =
-    (typeof setupPath?.board_starter_template_slug === "string" && setupPath.board_starter_template_slug.trim()) ||
-    localDraft.boardStarterTemplateSlug?.trim() ||
-    DEFAULT_FOUR_BOARD_TEMPLATE.slug;
+  const startingSystem = readStartingSystem(setupPath, localDraft);
 
   return {
-    boardStarterTemplateSlug,
-    primaryIntent: readPrimaryIntent(setupPath, localDraft),
+    startingSystem,
     desireCategories: readDesireCategories(setupPath, localDraft),
+    templateSlug: resolveTemplateSlugFromSetup(startingSystem, setupPath, localDraft),
     usedTrustedLocalDraft: trustedLocalDraft,
   };
 }
@@ -195,14 +232,14 @@ export async function provisionPostPaywallIfNeeded(options?: {
   try {
     report(40);
     const useCategoryBoards =
-      seed.primaryIntent === "life_rebranding" && seed.desireCategories.length > 0;
+      seed.startingSystem === "life_rebranding" && seed.desireCategories.length > 0;
     if (useCategoryBoards) {
       const created = await ensureStarterWorkspaceFromCategories(userId, seed.desireCategories);
       if (!created) {
         await ensureStarterWorkspaceFromSlug(userId, FOUR_BOARD_FOCUS_CATEGORIES_SLUG);
       }
     } else {
-      await ensureStarterWorkspaceFromSlug(userId, seed.boardStarterTemplateSlug);
+      await ensureStarterWorkspaceFromSlug(userId, seed.templateSlug);
     }
 
     await (supabase as any)
@@ -226,7 +263,7 @@ export async function provisionPostPaywallIfNeeded(options?: {
 export function mapDesireSetupKeyToWeeklyCategory(desireCategory?: string): string {
   const raw = (desireCategory || "").trim();
   const categories = new Set([
-    "Identity",
+    "Self & Direction",
     "Career & Money",
     "Love & Relationships",
     "Home & Space",
@@ -238,5 +275,5 @@ export function mapDesireSetupKeyToWeeklyCategory(desireCategory?: string): stri
     "Health & Fitness",
   ]);
   if (categories.has(raw)) return raw;
-  return "Identity";
+  return "Self & Direction";
 }

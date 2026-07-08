@@ -1,6 +1,12 @@
 import ReportAppIssue from "@/pages/ReportAppIssue";
+import { MobileBottomInlet } from "@/components/MobileBottomInlet";
 
 /** Workspace help — support & feedback + inbox. */
 export default function WorkspaceHelp() {
-  return <ReportAppIssue workspaceMode />;
+  return (
+    <>
+      <MobileBottomInlet />
+      <ReportAppIssue workspaceMode />
+    </>
+  );
 }

@@ -34,6 +34,8 @@ import { cn } from "@/lib/utils";
 
 import { useTranslation } from "react-i18next";
 
+import { MobileBottomInlet } from "@/components/MobileBottomInlet";
+
 import { fetchUserWorkspaces, createWorkspaceFromTemplate } from "@/lib/boards/api";
 import { DEFAULT_FOUR_BOARD_TEMPLATE, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
 
@@ -802,8 +804,8 @@ export default function Workspace() {
 
 
   return (
-
     <div className={workspaceShellClass(dark)}>
+      <MobileBottomInlet />
 
       <WorkspaceHeader tabs={activeGuide ? undefined : tabs} />
 
@@ -821,7 +823,7 @@ export default function Workspace() {
           </h1>
         ) : null}
 
-        {loading && tab !== "library" ? (
+        {loading && tab !== "library" && tab !== "images" ? (
 
           <div
 
@@ -841,7 +843,6 @@ export default function Workspace() {
       </main>
 
     </div>
-
   );
 
 }

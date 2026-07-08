@@ -13,7 +13,7 @@ import {
   FacebookEventName,
   isMetaNativeConfigured,
 } from "@/lib/metaFacebook";
-import { IosAppHeader } from "@/components/IosAppHeader";
+import { AppHeader } from "@/components/AppHeader";
 import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
 import {
   SETUP_FIELD_CLASS,
@@ -123,7 +123,7 @@ const Auth = () => {
 
   return (
     <div className="relative min-h-screen bg-white font-sans text-zinc-900 antialiased">
-      <IosAppHeader hideAuthButton />
+      <AppHeader hideAuthButton />
 
       <div className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-8 sm:px-6">
         <div className="w-full max-w-md">

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useIsNativeApp } from "@/hooks/use-native-app";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { SetupPage } from "@/components/onboarding/SetupPage";
 import { Input } from "@/components/ui/input";
@@ -11,14 +10,11 @@ import { SETUP_FIELD_CLASS, SETUP_LABEL_CLASS } from "@/lib/onboardingSetupTheme
 import { useOnboardingSession } from "@/hooks/useOnboardingSession";
 import { useTranslation } from "react-i18next";
 
+const SETUP_BASE = "/onboarding/setup";
+
 export default function SetupName() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isNative = useIsNativeApp();
-  const isSuiteFunnel = isNative || pathname.includes("/onboarding/suite");
-  const setupBase = isSuiteFunnel ? "/onboarding/suite/setup" : "/onboarding/setup";
-  const welcomePath = isSuiteFunnel ? "/onboarding/suite/welcome" : "/onboarding/welcome";
   const { ensureSession } = useOnboardingSession();
   const initial = useMemo(() => readSetupDraft().firstName ?? "", []);
   const [firstName, setFirstName] = useState(initial);
@@ -29,9 +25,7 @@ export default function SetupName() {
   return (
     <SetupPage
       canContinue={canContinue}
-      onBack={() =>
-        navigate(isSuiteFunnel ? welcomePath : `${setupBase}/plot-synthesis`)
-      }
+      onBack={() => navigate("/onboarding/welcome")}
       onContinue={async () => {
         const trimmed = firstName.trim();
         if (!trimmed || isSaving) return;
@@ -39,7 +33,7 @@ export default function SetupName() {
         try {
           await ensureSession();
           await writeSetupDraft({ firstName: trimmed }, { awaitBackendSync: true });
-          navigate(isSuiteFunnel ? `${setupBase}/primary-intent` : `${setupBase}/email`);
+          navigate(`${SETUP_BASE}/starting-system`);
         } catch (e) {
           console.warn("[SetupName] failed to save first_name to onboarding_sessions:", e);
           toast.error(t("setup.name.saveError"));
@@ -66,4 +60,3 @@ export default function SetupName() {
     </SetupPage>
   );
 }
-

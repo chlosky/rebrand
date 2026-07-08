@@ -25,5 +25,5 @@ export const MARKETING_FREE_TRIAL_UNDER_BADGES = "Start your free trial on web";
 /** Primary CTA on /onboarding/welcome (browser). */
 export const MARKETING_CTA_PRIMARY = "Get started";
 export const MARKETING_WEB_ONBOARDING_WELCOME_PATH = "/onboarding/welcome";
-export const MARKETING_WEB_ONBOARDING_SETUP_PATH = "/onboarding/setup/primary-intent";
+export const MARKETING_WEB_ONBOARDING_SETUP_PATH = "/onboarding/setup/name";
 export const MARKETING_CTA_WEB_SETUP = "~3 min set up · no card to browse";

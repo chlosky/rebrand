@@ -15,8 +15,9 @@ function readBuildSha(): string {
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const buildSha = readBuildSha();
-  /** `npm run dev:mobile` — plain HTTP so phones on your LAN can load without trusting dev certs. */
+  /** Desktop `npm run dev` = HTTPS :8080. Mobile `npm run dev:mobile` = HTTP :8081 (run both at once). */
   const useHttp = mode === "mobiledev";
+  const devPort = useHttp ? 8081 : 8080;
   // Check for SSL certificates
   const certDir = path.resolve(__dirname, "certs");
   const keyPath = path.join(certDir, "key.pem");
@@ -33,7 +34,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: 8080,
+      port: devPort,
       https: https,
       strictPort: true,
     },
