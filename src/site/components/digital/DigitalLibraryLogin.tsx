@@ -1,25 +1,22 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  PALETTE_PLOTTING_GUIDE_PATH,
-  PALETTE_PLOTTING_GUIDE_SLUG,
-  type LibraryProductSummary,
+  DIGITAL_SESSION_URL,
+  DIGITAL_UNLOCK_URL,
+  DIGITAL_FUNCTIONS_APIKEY,
+  GUIDE_TOKEN_STORAGE_KEY,
+  buildGuideReaderUrl,
 } from "@/site/lib/digitalProducts";
-import { GUIDE_READER_PATH } from "@/site/lib/guidePublicManifest";
 import { cn } from "@/site/lib/utils";
 
 type DigitalLibraryLoginProps = {
-  productSlug?: string;
   heading?: string | null;
   subtext?: string | null;
-  redirectPath?: string;
 };
 
 export function DigitalLibraryLogin({
-  productSlug,
   heading = "Already purchased?",
   subtext = "Enter the email you used at checkout to open the guide.",
-  redirectPath = GUIDE_READER_PATH,
 }: DigitalLibraryLoginProps) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,27 +28,29 @@ export function DigitalLibraryLogin({
     setLoading(true);
 
     try {
-      const response = await fetch("/api/digital/unlock", {
+      const response = await fetch(DIGITAL_UNLOCK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          email,
-          ...(productSlug ? { product: productSlug } : {}),
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          apikey: DIGITAL_FUNCTIONS_APIKEY,
+          Authorization: `Bearer ${DIGITAL_FUNCTIONS_APIKEY}`,
+        },
+        body: JSON.stringify({ email }),
       });
-      const data = (await response.json()) as {
-        ok?: boolean;
+      const data = (await response.json().catch(() => ({}))) as {
+        entitled?: boolean;
+        token?: string;
+        firstSection?: string;
         error?: string;
-        redirect?: string;
       };
 
-      if (!response.ok || !data.ok) {
+      if (!response.ok || !data.entitled || !data.token) {
         setError(data.error ?? "Could not open the guide.");
         return;
       }
 
-      window.location.href = data.redirect ?? redirectPath;
+      localStorage.setItem(GUIDE_TOKEN_STORAGE_KEY, data.token);
+      window.location.href = buildGuideReaderUrl(data.token, data.firstSection ?? "start-here");
     } catch {
       setError("Could not open the guide. Try again.");
     } finally {
@@ -91,19 +90,25 @@ export function DigitalLibraryLogin({
 
 export function DigitalAccessNotice() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const access = searchParams.get("access");
-  const login = searchParams.get("login");
-  const loginMessage = searchParams.get("message");
+  const locked = searchParams.get("locked");
+  const purchase = searchParams.get("purchase");
 
   useEffect(() => {
     if (searchParams.get("signout") === "1") {
-      fetch("/api/digital/session", { method: "DELETE", credentials: "same-origin" }).finally(() => {
-        setSearchParams({}, { replace: true });
-      });
+      localStorage.removeItem(GUIDE_TOKEN_STORAGE_KEY);
+      setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
-  if (access === "required") {
+  if (purchase === "success") {
+    return (
+      <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+        Payment complete. Enter your checkout email below to open the guide.
+      </p>
+    );
+  }
+
+  if (locked === "1") {
     return (
       <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         Enter your checkout email below to open the guide.
@@ -111,45 +116,48 @@ export function DigitalAccessNotice() {
     );
   }
 
-  if (login === "failed") {
-    return (
-      <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
-        {loginMessage ? decodeURIComponent(loginMessage) : "Could not sign in. Try your checkout email."}
-      </p>
-    );
-  }
-
   return null;
 }
 
-export function useDigitalLibrary() {
+export function useDigitalProductAccess() {
   const [state, setState] = useState<{
     loading: boolean;
     authenticated: boolean;
-    email: string | null;
-    library: LibraryProductSummary[];
-  }>({ loading: true, authenticated: false, email: null, library: [] });
+    entitled: boolean;
+    token: string | null;
+    firstSection: string;
+  }>({ loading: true, authenticated: false, entitled: false, token: null, firstSection: "start-here" });
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/digital/session", { credentials: "same-origin" })
+    const token = localStorage.getItem(GUIDE_TOKEN_STORAGE_KEY);
+
+    if (!token) {
+      setState({ loading: false, authenticated: false, entitled: false, token: null, firstSection: "start-here" });
+      return;
+    }
+
+    fetch(DIGITAL_SESSION_URL, {
+      headers: {
+        apikey: DIGITAL_FUNCTIONS_APIKEY,
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((response) => response.json())
-      .then((data: {
-        authenticated?: boolean;
-        email?: string;
-        library?: LibraryProductSummary[];
-      }) => {
+      .then((data: { authenticated?: boolean; entitled?: boolean; firstSection?: string }) => {
         if (cancelled) return;
+        if (!data.authenticated) localStorage.removeItem(GUIDE_TOKEN_STORAGE_KEY);
         setState({
           loading: false,
           authenticated: Boolean(data.authenticated),
-          email: data.email ?? null,
-          library: data.library ?? [],
+          entitled: Boolean(data.entitled),
+          token: data.authenticated ? token : null,
+          firstSection: data.firstSection ?? "start-here",
         });
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ loading: false, authenticated: false, email: null, library: [] });
+          setState({ loading: false, authenticated: false, entitled: false, token: null, firstSection: "start-here" });
         }
       });
 
@@ -161,43 +169,6 @@ export function useDigitalLibrary() {
   return state;
 }
 
-export function useDigitalProductAccess(productSlug: string = PALETTE_PLOTTING_GUIDE_SLUG) {
-  const [state, setState] = useState<{
-    loading: boolean;
-    authenticated: boolean;
-    entitled: boolean;
-  }>({ loading: true, authenticated: false, entitled: false });
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/digital/session?product=${encodeURIComponent(productSlug)}`, {
-      credentials: "same-origin",
-    })
-      .then((response) => response.json())
-      .then((data: { authenticated?: boolean; entitled?: boolean }) => {
-        if (cancelled) return;
-        setState({
-          loading: false,
-          authenticated: Boolean(data.authenticated),
-          entitled: Boolean(data.entitled),
-        });
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setState({ loading: false, authenticated: false, entitled: false });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [productSlug]);
-
-  return state;
+export function signOutDigitalLibrary(): void {
+  localStorage.removeItem(GUIDE_TOKEN_STORAGE_KEY);
 }
-
-export async function signOutDigitalLibrary(): Promise<void> {
-  await fetch("/api/digital/session", { method: "DELETE", credentials: "same-origin" });
-}
-
-export { PALETTE_PLOTTING_GUIDE_PATH, PALETTE_PLOTTING_GUIDE_SLUG };

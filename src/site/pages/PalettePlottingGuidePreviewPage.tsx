@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import {
   DigitalAccessNotice,
@@ -10,10 +10,10 @@ import {
 import { SiteLayout } from "@/site/components/layout/SiteLayout";
 import { Button } from "@/site/components/ui/button";
 import {
-  trackGAAddToCart,
-  trackMetaAddToCart,
-  trackTikTokAddToCart,
-} from "@/site/lib/analytics";
+  CREATE_GUIDE_CHECKOUT_URL,
+  DIGITAL_FUNCTIONS_APIKEY,
+  buildGuideReaderUrl,
+} from "@/site/lib/digitalProducts";
 import {
   GUIDE_FAQ,
   GUIDE_HIGHLIGHTS,
@@ -25,11 +25,8 @@ import {
   GUIDE_PRODUCT_HERO,
   GUIDE_PRODUCT_TITLE,
   GUIDE_PUBLIC_SECTIONS,
-  GUIDE_READER_PATH,
   GUIDE_TAGLINE,
 } from "@/site/lib/guidePublicManifest";
-import { addVariantToCart } from "@/site/lib/shopifyStorefront";
-import { SHOPIFY_GUIDE_VARIANT_ID } from "@/site/lib/shopifyVariants";
 import { pageTitle, SITE_NAME } from "@/site/lib/siteBrand";
 import { cn } from "@/site/lib/utils";
 import { SITE_ORIGIN, usePageSeo } from "@/site/lib/usePageSeo";
@@ -37,7 +34,6 @@ import { SITE_ORIGIN, usePageSeo } from "@/site/lib/usePageSeo";
 export default function PalettePlottingGuidePreviewPage() {
   const access = useDigitalProductAccess();
   const location = useLocation();
-  const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [cartPending, setCartPending] = useState(false);
   const [cartError, setCartError] = useState<string | null>(null);
@@ -82,31 +78,33 @@ export default function PalettePlottingGuidePreviewPage() {
     return () => window.cancelAnimationFrame(frame);
   }, [location.hash]);
 
-  async function handleSignOut() {
-    await signOutDigitalLibrary();
+  function handleSignOut() {
+    signOutDigitalLibrary();
     window.location.href = "/palette-plotting-guide";
   }
 
-  async function handleAddToCart() {
+  async function handleBuy() {
     setCartPending(true);
     setCartError(null);
     try {
-      const item = {
-        contentId: SHOPIFY_GUIDE_VARIANT_ID,
-        contentName: GUIDE_PRODUCT_TITLE,
-        price: GUIDE_PRICE_USD,
-        quantity: 1,
-      };
-      await addVariantToCart(SHOPIFY_GUIDE_VARIANT_ID, 1);
-      trackTikTokAddToCart(item);
-      trackMetaAddToCart(item);
-      trackGAAddToCart(item);
-      navigate("/cart");
+      const response = await fetch(CREATE_GUIDE_CHECKOUT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: DIGITAL_FUNCTIONS_APIKEY,
+          Authorization: `Bearer ${DIGITAL_FUNCTIONS_APIKEY}`,
+        },
+        body: JSON.stringify({}),
+      });
+      const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!response.ok || !data.url) {
+        throw new Error(data.error ?? "Could not start checkout. Please try again.");
+      }
+      window.location.href = data.url;
     } catch (error) {
       setCartError(
-        error instanceof Error ? error.message : "Could not add to cart. Please try again.",
+        error instanceof Error ? error.message : "Could not start checkout. Please try again.",
       );
-    } finally {
       setCartPending(false);
     }
   }
@@ -117,18 +115,18 @@ export default function PalettePlottingGuidePreviewPage() {
         type="button"
         size="lg"
         className="h-12 min-h-[44px] w-full rounded-xl bg-neutral-900 text-base font-semibold text-white hover:bg-neutral-800"
-        onClick={handleAddToCart}
+        onClick={handleBuy}
         disabled={cartPending}
       >
-        {cartPending ? "Adding…" : `Add to Cart — ${GUIDE_PRICE_LABEL}`}
+        {cartPending ? "Starting checkout…" : `Buy the guide — ${GUIDE_PRICE_LABEL}`}
       </Button>
       {cartError ? <p className="mt-2 text-sm text-red-600">{cartError}</p> : null}
     </div>
   );
 
-  const primaryAction = access.entitled ? (
+  const primaryAction = access.entitled && access.token ? (
     <a
-      href={GUIDE_READER_PATH}
+      href={buildGuideReaderUrl(access.token, access.firstSection)}
       className="inline-flex h-12 min-h-[44px] w-full items-center justify-center rounded-xl bg-neutral-900 text-base font-semibold text-white hover:bg-neutral-800"
     >
       Open guide
@@ -165,14 +163,14 @@ export default function PalettePlottingGuidePreviewPage() {
             Digital guide · one-time purchase · read on this site
           </p>
           <p className="mt-2 text-sm leading-relaxed text-red-600">
-            Customers that have already purchased a board automatically receive free access. Simply{" "}
+            Already purchased? Simply{" "}
             <a
               href={`#${GUIDE_OPEN_SECTION_ID}`}
               className="font-medium underline underline-offset-2 hover:text-red-700"
             >
               scroll down
             </a>{" "}
-            to unlock with email after purchase.
+            to unlock with your checkout email.
           </p>
         </div>
 
@@ -243,7 +241,7 @@ export default function PalettePlottingGuidePreviewPage() {
           id={GUIDE_OPEN_SECTION_ID}
           className="mt-10 scroll-mt-24 border-t border-neutral-200 pt-8"
         >
-          <DigitalLibraryLogin productSlug="palette-plotting-guide" />
+          <DigitalLibraryLogin />
         </section>
 
         <section className="mt-12 pb-4" aria-labelledby="guide-faq-heading">

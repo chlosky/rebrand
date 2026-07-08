@@ -77,11 +77,11 @@ export const GUIDE_HIGHLIGHTS = [
 export const GUIDE_FAQ = [
   {
     q: "How do I get the guide?",
-    a: "Add the Palette Plotting Guide to cart and check out on this site.",
+    a: "Tap Buy the guide, complete the secure checkout, and you're done — it's a one-time purchase.",
   },
   {
     q: "How do I open it after I buy?",
-    a: "Come back to this page, enter the email you used at checkout, and tap Open guide. The reader opens right here on paletteplot.com.",
+    a: "Come back to this page, enter the email you used at checkout, and tap Open guide. The reader opens right in your browser.",
   },
   {
     q: "How long do I have access?",

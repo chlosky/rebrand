@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { postStripePurchaseToRevenueCat } from "../_shared/postStripeToRevenueCat.ts";
 import { attachAppUserIdToStripeSubscription } from "../_shared/stripeSubscriptionMetadata.ts";
+import { GUIDE_PRODUCT_SLUG, grantGuideEntitlement } from "../_shared/digitalGuide.ts";
 
 // Sanitize error messages to prevent exposing sensitive information
 function sanitizeErrorMessage(error: unknown): string {
@@ -817,6 +818,29 @@ async function handleInvoicePaymentFailed(supabase: any, invoice: any) {
 
 async function handleCheckoutSessionCompleted(supabase: any, session: any, stripeSecretKey: string) {
   try {
+  // One-time digital guide purchase: grant a lifetime entitlement to the buyer's email.
+  if (session.metadata?.product === GUIDE_PRODUCT_SLUG) {
+    if (session.payment_status !== 'paid') {
+      console.log('Skipping guide entitlement - payment not completed:', session.payment_status);
+      return;
+    }
+    const guideEmail = session.customer_details?.email || session.customer_email || null;
+    if (!guideEmail) {
+      console.error('Guide checkout completed but no email on session', session.id);
+      return;
+    }
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id || null;
+    await grantGuideEntitlement(supabase, {
+      email: guideEmail,
+      checkoutSessionId: session.id,
+      paymentIntentId,
+    });
+    console.log('GUIDE_ENTITLEMENT_GRANTED', { email: guideEmail, session: session.id });
+    return;
+  }
+
   const userId = session.metadata?.user_id;
   if (!userId) {
     // New flow: payment-first onboarding (no auth user yet).

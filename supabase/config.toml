@@ -102,3 +102,15 @@ verify_jwt = true
 
 [functions.admin-sign-support-attachments]
 verify_jwt = false
+
+[functions.digital-unlock]
+verify_jwt = false
+
+[functions.digital-session]
+verify_jwt = false
+
+[functions.create-guide-checkout]
+verify_jwt = false
+
+[functions.palette-plotting-guide-reader]
+verify_jwt = false
