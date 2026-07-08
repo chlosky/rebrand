@@ -9,6 +9,10 @@ import {
   Trash2,
   Type,
   CaseSensitive,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignHorizontal,
   Pencil,
   Shapes,
   Sparkles,
@@ -47,6 +51,21 @@ export type BoardMarksQuickAction =
   | "delete";
 
 export type BoardMarkTextSize = "S" | "M" | "L" | "XL";
+
+export type BoardMarkTextAlign = "left" | "center" | "right";
+
+export type BoardMarkTextFont = "sans" | "serif" | "display" | "script";
+
+export const BOARD_MARK_FONT_OPTIONS: {
+  id: BoardMarkTextFont;
+  label: string;
+  fontFamily: string;
+}[] = [
+  { id: "sans", label: "Sans", fontFamily: "Satoshi, system-ui, sans-serif" },
+  { id: "serif", label: "Serif", fontFamily: "Georgia, 'Times New Roman', serif" },
+  { id: "display", label: "Display", fontFamily: '"Bricolage Grotesque", Satoshi, system-ui, sans-serif' },
+  { id: "script", label: "Script", fontFamily: "Allura, cursive" },
+];
 
 export type BoardMarkShapeType =
   | "rect"
@@ -154,6 +173,8 @@ type BoardMarksQuickSelectorProps = {
   onBoardColorPick?: (hex: string) => void;
   onElementColorPick?: (hex: string) => void;
   onElementSizePick?: (size: BoardMarkTextSize) => void;
+  onElementTextAlignPick?: (align: BoardMarkTextAlign) => void;
+  onElementFontPick?: (font: BoardMarkTextFont) => void;
   onShapePick?: (shape: BoardMarkShapeType) => void;
   onStickerPick?: (sticker: BoardMarkStickerId) => void;
   onStructurePick?: (structure: BoardDiagramType) => void;
@@ -164,6 +185,17 @@ const TEXT_SIZE_OPTIONS: { id: BoardMarkTextSize; label: string }[] = [
   { id: "M", label: "M" },
   { id: "L", label: "L" },
   { id: "XL", label: "XL" },
+];
+
+const TEXT_ALIGN_OPTIONS: { id: BoardMarkTextAlign; label: string; Icon: LucideIcon }[] = [
+  { id: "left", label: "Left", Icon: AlignLeft },
+  { id: "center", label: "Center", Icon: AlignCenter },
+  { id: "right", label: "Right", Icon: AlignRight },
+];
+
+const EDIT_SUBMENU_OPTIONS: { id: "position" | "font"; label: string; Icon: LucideIcon }[] = [
+  { id: "position", label: "Position", Icon: AlignHorizontal },
+  { id: "font", label: "Font", Icon: CaseSensitive },
 ];
 
 const WHEEL = 176;
@@ -216,16 +248,38 @@ export function BoardMarksQuickSelector({
   onBoardColorPick,
   onElementColorPick,
   onElementSizePick,
+  onElementTextAlignPick,
+  onElementFontPick,
   onShapePick,
   onStickerPick,
   onStructurePick,
 }: BoardMarksQuickSelectorProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sizeOpen, setSizeOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [alignOpen, setAlignOpen] = useState(false);
+  const [fontOpen, setFontOpen] = useState(false);
   const [shapesOpen, setShapesOpen] = useState(false);
   const [stickersOpen, setStickersOpen] = useState(false);
   const [structuresOpen, setStructuresOpen] = useState(false);
-  const subMenuOpen = paletteOpen || sizeOpen || shapesOpen || stickersOpen || structuresOpen;
+  const subMenuOpen =
+    paletteOpen ||
+    sizeOpen ||
+    editOpen ||
+    alignOpen ||
+    fontOpen ||
+    shapesOpen ||
+    stickersOpen ||
+    structuresOpen;
+
+  // Radial shows six chromatic picks plus white and black (full list has more than eight).
+  const radialColorPicks = (() => {
+    if (!boardColorOptions.length) return [];
+    const white = boardColorOptions.find((p) => p.label === "White");
+    const black = boardColorOptions.find((p) => p.label === "Black");
+    const chromatic = boardColorOptions.filter((p) => p.label !== "White" && p.label !== "Black");
+    return [...chromatic.slice(0, 6), ...(white ? [white] : []), ...(black ? [black] : [])];
+  })();
 
   const wheelItems = (() => {
     if (mode === "object") {
@@ -253,9 +307,26 @@ export function BoardMarksQuickSelector({
   const backToMain = () => {
     setPaletteOpen(false);
     setSizeOpen(false);
+    setEditOpen(false);
+    setAlignOpen(false);
+    setFontOpen(false);
     setShapesOpen(false);
     setStickersOpen(false);
     setStructuresOpen(false);
+  };
+
+  const backOneLevel = () => {
+    if (alignOpen) {
+      setAlignOpen(false);
+      setEditOpen(true);
+      return;
+    }
+    if (fontOpen) {
+      setFontOpen(false);
+      setEditOpen(true);
+      return;
+    }
+    backToMain();
   };
 
   useEffect(() => {
@@ -263,8 +334,15 @@ export function BoardMarksQuickSelector({
       if (e.key !== "Escape") return;
       e.preventDefault();
       e.stopPropagation();
-      if (paletteOpen) setPaletteOpen(false);
+      if (alignOpen) {
+        setAlignOpen(false);
+        setEditOpen(true);
+      } else if (fontOpen) {
+        setFontOpen(false);
+        setEditOpen(true);
+      } else if (paletteOpen) setPaletteOpen(false);
       else if (sizeOpen) setSizeOpen(false);
+      else if (editOpen) setEditOpen(false);
       else if (shapesOpen) setShapesOpen(false);
       else if (stickersOpen) setStickersOpen(false);
       else if (structuresOpen) setStructuresOpen(false);
@@ -272,9 +350,15 @@ export function BoardMarksQuickSelector({
     };
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [onClose, paletteOpen, sizeOpen, shapesOpen, stickersOpen, structuresOpen]);
+  }, [onClose, paletteOpen, sizeOpen, editOpen, alignOpen, fontOpen, shapesOpen, stickersOpen, structuresOpen]);
 
   const handleBackdropClick = () => {
+    if (alignOpen || fontOpen) {
+      if (alignOpen) setAlignOpen(false);
+      if (fontOpen) setFontOpen(false);
+      setEditOpen(true);
+      return;
+    }
     if (subMenuOpen) backToMain();
     else onClose();
   };
@@ -282,6 +366,9 @@ export function BoardMarksQuickSelector({
   const handleItemClick = (id: BoardMarksQuickAction) => {
     if (id === "color") {
       setSizeOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
       setShapesOpen(false);
       setStickersOpen(false);
       setStructuresOpen(false);
@@ -290,15 +377,32 @@ export function BoardMarksQuickSelector({
     }
     if (id === "size") {
       setPaletteOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
       setShapesOpen(false);
       setStickersOpen(false);
       setStructuresOpen(false);
       setSizeOpen(true);
       return;
     }
+    if (id === "edit") {
+      setPaletteOpen(false);
+      setSizeOpen(false);
+      setShapesOpen(false);
+      setStickersOpen(false);
+      setStructuresOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
+      setEditOpen(true);
+      return;
+    }
     if (id === "shapes") {
       setPaletteOpen(false);
       setSizeOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
       setStickersOpen(false);
       setStructuresOpen(false);
       setShapesOpen(true);
@@ -307,6 +411,9 @@ export function BoardMarksQuickSelector({
     if (id === "structures") {
       setPaletteOpen(false);
       setSizeOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
       setShapesOpen(false);
       setStickersOpen(false);
       setStructuresOpen(true);
@@ -315,6 +422,9 @@ export function BoardMarksQuickSelector({
     if (id === "stickers") {
       setPaletteOpen(false);
       setSizeOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
       setShapesOpen(false);
       setStructuresOpen(false);
       setStickersOpen(true);
@@ -331,6 +441,22 @@ export function BoardMarksQuickSelector({
 
   const handleSizePick = (size: BoardMarkTextSize) => {
     onElementSizePick?.(size);
+    onClose();
+  };
+
+  const handleEditSubPick = (id: "position" | "font") => {
+    setEditOpen(false);
+    if (id === "position") setAlignOpen(true);
+    else setFontOpen(true);
+  };
+
+  const handleAlignPick = (align: BoardMarkTextAlign) => {
+    onElementTextAlignPick?.(align);
+    onClose();
+  };
+
+  const handleFontPick = (font: BoardMarkTextFont) => {
+    onElementFontPick?.(font);
     onClose();
   };
 
@@ -375,7 +501,7 @@ export function BoardMarksQuickSelector({
               aria-label="Back to menu"
               onClick={(e) => {
                 e.stopPropagation();
-                backToMain();
+                backOneLevel();
               }}
               className="absolute left-1/2 top-1/2 z-10 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
@@ -393,6 +519,21 @@ export function BoardMarksQuickSelector({
           {sizeOpen && (
             <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
               Text size
+            </span>
+          )}
+          {editOpen && !alignOpen && !fontOpen && (
+            <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
+              Text edit
+            </span>
+          )}
+          {alignOpen && (
+            <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
+              Position
+            </span>
+          )}
+          {fontOpen && (
+            <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
+              Font
             </span>
           )}
           {shapesOpen && (
@@ -433,11 +574,11 @@ export function BoardMarksQuickSelector({
               );
             })}
 
-          {paletteOpen && boardColorOptions.length > 0 && (
+          {paletteOpen && radialColorPicks.length > 0 && (
             <>
-              {boardColorOptions.slice(0, 8).map((pick, index) => {
+              {radialColorPicks.map((pick, index) => {
                 const start = 205;
-                const step = 130 / Math.max(boardColorOptions.slice(0, 8).length - 1, 1);
+                const step = 130 / Math.max(radialColorPicks.length - 1, 1);
                 const angle = start + index * step;
                 const rad = (angle * Math.PI) / 180;
                 const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
@@ -456,7 +597,8 @@ export function BoardMarksQuickSelector({
                       handleColorPick(pick.hex);
                     }}
                     className={cn(
-                      "absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 ring-white/50 transition-transform",
+                      "absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-1 transition-transform",
+                      pick.label === "White" ? "ring-neutral-400" : "ring-white/50",
                       "hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
                       active && "scale-110 ring-2 ring-white",
                     )}
@@ -466,6 +608,100 @@ export function BoardMarksQuickSelector({
               })}
             </>
           )}
+
+          {editOpen &&
+            !alignOpen &&
+            !fontOpen &&
+            EDIT_SUBMENU_OPTIONS.map(({ id, label, Icon }, index) => {
+              const angles = spreadAngles(EDIT_SUBMENU_OPTIONS.length);
+              const angle = angles[index];
+              const rad = (angle * Math.PI) / 180;
+              const left = CENTER + Math.cos(rad) * ITEM_RADIUS;
+              const top = CENTER + Math.sin(rad) * ITEM_RADIUS;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  title={label}
+                  aria-label={label}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditSubPick(id);
+                  }}
+                  className={cn(
+                    "absolute flex min-w-[3.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 rounded-full border border-white/10 bg-white/10 px-1 py-1.5 text-white transition-all",
+                    "hover:scale-105 hover:border-white/30 hover:bg-white/20 active:scale-95",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60",
+                  )}
+                  style={{ left, top }}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                  <span className="text-[11px] font-bold leading-none tracking-wide text-white">{label}</span>
+                </button>
+              );
+            })}
+
+          {alignOpen &&
+            TEXT_ALIGN_OPTIONS.map(({ id, label, Icon }, index) => {
+              const start = 205;
+              const step = 130 / Math.max(TEXT_ALIGN_OPTIONS.length - 1, 1);
+              const angle = start + index * step;
+              const rad = (angle * Math.PI) / 180;
+              const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
+              const top = CENTER + Math.sin(rad) * SWATCH_RADIUS;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  title={`Align ${label}`}
+                  aria-label={`Align text ${label.toLowerCase()}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAlignPick(id);
+                  }}
+                  className={cn(
+                    "absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-0.5 rounded-full border border-white/20 bg-white/10 text-white transition-transform",
+                    "hover:scale-110 hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  )}
+                  style={{ left, top }}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                  <span className="text-[8px] font-bold leading-none">{label}</span>
+                </button>
+              );
+            })}
+
+          {fontOpen &&
+            BOARD_MARK_FONT_OPTIONS.map(({ id, label, fontFamily }, index) => {
+              const start = 205;
+              const step = 130 / Math.max(BOARD_MARK_FONT_OPTIONS.length - 1, 1);
+              const angle = start + index * step;
+              const rad = (angle * Math.PI) / 180;
+              const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
+              const top = CENTER + Math.sin(rad) * SWATCH_RADIUS;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  title={label}
+                  aria-label={`Set font to ${label}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFontPick(id);
+                  }}
+                  className={cn(
+                    "absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[11px] font-bold text-white transition-transform",
+                    "hover:scale-110 hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  )}
+                  style={{ left, top, fontFamily }}
+                >
+                  Aa
+                </button>
+              );
+            })}
 
           {sizeOpen &&
             TEXT_SIZE_OPTIONS.map(({ id, label }, index) => {

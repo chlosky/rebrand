@@ -17,6 +17,9 @@ import {
 } from "@/lib/boards/applyActionGuideOperations";
 
 import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
+import type { BoardMarkShapeType, BoardMarkStickerId } from "@/components/boards/BoardMarksQuickSelector";
+import { BOARD_MARK_STICKER_OPTIONS } from "@/components/boards/BoardMarksQuickSelector";
+import { BOARD_IMAGE_THEMES, loadBoardImageLibrary, filterLibraryByTheme } from "@/lib/boards/imageLibrary";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -55,7 +58,7 @@ type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
 
 
 const VISION_WELCOME_MESSAGE =
-  "Tell me the feeling of this board — I'll plot color, words, and structures with you.";
+  "I help with this board only — colors, labels, Our Collection images, notes, structures, and layout. What do you want to add or change?";
 
 const ACTION_WELCOME_MESSAGE =
   "Ask the guide to clean up actions, adjust reminders, or explain the plan.";
@@ -173,36 +176,44 @@ async function isCompanionAuthError(error: unknown): Promise<boolean> {
 
 
 
+const VALID_STICKERS = new Set<BoardMarkStickerId>(BOARD_MARK_STICKER_OPTIONS.map((s) => s.id));
+
+const VALID_SHAPES = new Set<BoardMarkShapeType>([
+  "rect",
+  "circle",
+  "triangle",
+  "line",
+  "hexagon",
+  "pentagon",
+  "star",
+  "diamond",
+  "arrow",
+  "heart",
+  "bubble",
+  "cylinder",
+]);
+
 const VALID_COLOR_KEYS = new Set(Object.keys(BOARD_COLORS));
 
+const VALID_LIBRARY_THEMES = new Set<string>(BOARD_IMAGE_THEMES);
+
 const VALID_DIAGRAMS = new Set<BoardDiagramType>([
-
   "eisenhower",
-
   "checklist",
-
   "calendar",
-
   "zones",
-
   "timeline",
-
   "kanban",
-
   "gantt",
-
   "okrs",
-
   "five_s",
-
   "divider",
-
 ]);
 
 
 
 const VISION_FALLBACK_ASK_REPLY =
-  "I can help with that. What would you like me to add first: a Statement, a Sticky note, a Checklist, or a Priority grid?";
+  "I can help with this board — colors, labels, Our Collection images, notes, structures, and layout. Tell me what to add or change.";
 
 const ACTION_FALLBACK_ASK_REPLY =
   "I can help with that. What would you like to adjust — actions, reminder channels, or timing?";
@@ -252,8 +263,26 @@ function finalizeAssistantReply(
 
 type GuideAction = Record<string, unknown> & { type: string };
 
+const FORBIDDEN_GUIDE_ACTION_TYPES = new Set([
+  "analyze_workspace",
+  "analyze",
+  "extract_insights",
+  "add_image",
+  "add_upload_image",
+  "add_user_image",
+  "add_image_url",
+  "upload_image",
+]);
+
+function isForbiddenGuideAction(action: unknown): boolean {
+  if (!action || typeof action !== "object") return false;
+  const type = (action as Record<string, unknown>).type;
+  return typeof type === "string" && FORBIDDEN_GUIDE_ACTION_TYPES.has(type);
+}
+
 function isValidGuideAction(action: unknown): action is GuideAction {
   if (!action || typeof action !== "object") return false;
+  if (isForbiddenGuideAction(action)) return false;
   const a = action as Record<string, unknown>;
   switch (a.type) {
     case "set_color":
@@ -264,6 +293,16 @@ function isValidGuideAction(action: unknown): action is GuideAction {
       return typeof a.text === "string" && a.text.trim().length > 0;
     case "add_diagram":
       return typeof a.diagram === "string" && VALID_DIAGRAMS.has(a.diagram as BoardDiagramType);
+    case "add_sticker":
+      return typeof a.sticker === "string" && VALID_STICKERS.has(a.sticker as BoardMarkStickerId);
+    case "add_shape":
+      return typeof a.shape === "string" && VALID_SHAPES.has(a.shape as BoardMarkShapeType);
+    case "add_library_image":
+      return typeof a.theme === "string" && VALID_LIBRARY_THEMES.has(a.theme);
+    case "kanban_seed":
+      return Array.isArray(a.columns) && a.columns.length > 0;
+    case "gantt_seed":
+      return Array.isArray(a.tasks) && a.tasks.length > 0;
     default:
       return false;
   }
@@ -528,6 +567,44 @@ export function BoardGuideChatPanel({
               typeof action.accent === "string" ? action.accent : "#2563EB",
             );
             applied += 1;
+            continue;
+          }
+
+          if (type === "add_sticker" && typeof action.sticker === "string") {
+            editor.addStickerAt(
+              action.sticker as BoardMarkStickerId,
+              clamp01(typeof action.x === "number" ? action.x : 0.5),
+              clamp01(typeof action.y === "number" ? action.y : 0.5),
+            );
+            applied += 1;
+            continue;
+          }
+
+          if (type === "add_shape" && typeof action.shape === "string") {
+            editor.addShapeAt(
+              action.shape as BoardMarkShapeType,
+              clamp01(typeof action.x === "number" ? action.x : 0.5),
+              clamp01(typeof action.y === "number" ? action.y : 0.5),
+            );
+            applied += 1;
+            continue;
+          }
+
+          if (type === "add_library_image" && typeof action.theme === "string") {
+            const library = await loadBoardImageLibrary();
+            const themed = filterLibraryByTheme(library, action.theme);
+            if (!themed.length) continue;
+            const count =
+              typeof action.count === "number" ? Math.max(1, Math.min(3, Math.round(action.count))) : 1;
+            const baseX = clamp01(typeof action.x === "number" ? action.x : 0.5);
+            const baseY = clamp01(typeof action.y === "number" ? action.y : 0.5);
+            for (let i = 0; i < Math.min(count, themed.length); i += 1) {
+              await editor.addImageFromUrl(themed[i].url, {
+                normX: clamp01(baseX + i * 0.08),
+                normY: clamp01(baseY + (i % 2) * 0.06),
+              });
+              applied += 1;
+            }
           }
         } catch (error) {
           console.error("Failed to apply guide action", action, error);
@@ -760,7 +837,14 @@ export function BoardGuideChatPanel({
                 Ask the guide to clean up actions, adjust reminders, or explain the plan.
               </p>
             </div>
-          ) : null}
+          ) : (
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Guide</p>
+              <p className="mt-0.5 text-[10px] leading-snug text-stone-600">
+                Board help only — colors, labels, Our Collection images, notes, structures, layout.
+              </p>
+            </div>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -884,7 +968,7 @@ export function BoardGuideChatPanel({
 
           onChange={(e) => setDraft(e.target.value)}
 
-          placeholder={mode === "action" ? "Fewer texts, rename a plan, explain channels…" : "The vibe, the goal, the feeling…"}
+          placeholder={mode === "action" ? "Fewer texts, rename a plan, explain channels…" : "Ask what to add, arrange or plan"}
 
           className="h-9 min-w-0 flex-1 border-stone-300 bg-[#faf8f5] text-xs"
 

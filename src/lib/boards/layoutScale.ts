@@ -1,5 +1,3 @@
-import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
-
 const NUMERIC_LAYOUT_KEYS = [
   "left",
   "top",
@@ -13,14 +11,16 @@ const NUMERIC_LAYOUT_KEYS = [
   "padding",
 ] as const;
 
-/** Scale Fabric layout JSON from artboard coordinates to a target pixel size. */
+/** Scale Fabric layout JSON from source artboard coordinates to a target pixel size. */
 export function scaleLayoutJson(
   layoutJson: Record<string, unknown>,
+  sourceWidth: number,
+  sourceHeight: number,
   targetWidth: number,
   targetHeight: number,
 ): Record<string, unknown> {
-  const scaleX = targetWidth / ARTBOARD_WIDTH;
-  const scaleY = targetHeight / ARTBOARD_HEIGHT;
+  const scaleX = targetWidth / sourceWidth;
+  const scaleY = targetHeight / sourceHeight;
   const uniform = Math.min(scaleX, scaleY);
   const copy = JSON.parse(JSON.stringify(layoutJson)) as Record<string, unknown>;
   const objects = copy.objects;
@@ -41,16 +41,18 @@ export function scaleLayoutJson(
   return copy;
 }
 
-export function artboardAspectRatio(): number {
-  return ARTBOARD_WIDTH / ARTBOARD_HEIGHT;
+export function artboardAspectRatio(sourceWidth: number, sourceHeight: number): number {
+  return sourceWidth / sourceHeight;
 }
 
-/** Fit 4:5 artboard content inside a page box (centered, letterboxed). */
+/** Fit source artboard content inside a page box (centered, letterboxed). */
 export function fitArtboardInBox(
   pageWidth: number,
   pageHeight: number,
+  sourceWidth: number,
+  sourceHeight: number,
 ): { x: number; y: number; width: number; height: number } {
-  const artAspect = artboardAspectRatio();
+  const artAspect = artboardAspectRatio(sourceWidth, sourceHeight);
   const pageAspect = pageWidth / pageHeight;
   if (pageAspect > artAspect) {
     const height = pageHeight;

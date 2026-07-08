@@ -3,10 +3,12 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { Canvas, Circle, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
+import { artboardSizeForOrientation, withArtboardMeta } from "@/lib/boards/artboard";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
 import type { BoardLayoutMode } from "@/lib/boards/types";
 import { cn } from "@/lib/utils";
@@ -17,11 +19,40 @@ import {
   type BoardMarkShapeType,
   type BoardMarkStickerId,
   type BoardMarkTextSize,
+  type BoardMarkTextAlign,
+  type BoardMarkTextFont,
+  BOARD_MARK_FONT_OPTIONS,
 } from "@/components/boards/BoardMarksQuickSelector";
 import { PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE } from "@/components/boards/BoardPlottingWorkbench";
 
 export const ARTBOARD_WIDTH = 1080;
 export const ARTBOARD_HEIGHT = 1350;
+
+/** Nudge an object back inside the real artboard so it can reach the true edges without clipping. */
+function keepObjectFullyInsideArtboard(
+  obj: FabricObject,
+  artboardWidth: number,
+  artboardHeight: number,
+) {
+  obj.setCoords();
+  const bounds = obj.getBoundingRect();
+  const tooWide = bounds.width > artboardWidth;
+  const tooTall = bounds.height > artboardHeight;
+  let dx = 0;
+  let dy = 0;
+  if (!tooWide) {
+    if (bounds.left < 0) dx = -bounds.left;
+    else if (bounds.left + bounds.width > artboardWidth) dx = artboardWidth - (bounds.left + bounds.width);
+  }
+  if (!tooTall) {
+    if (bounds.top < 0) dy = -bounds.top;
+    else if (bounds.top + bounds.height > artboardHeight) dy = artboardHeight - (bounds.top + bounds.height);
+  }
+  if (dx || dy) {
+    obj.set({ left: (obj.left ?? 0) + dx, top: (obj.top ?? 0) + dy });
+    obj.setCoords();
+  }
+}
 
 const DECAL_INK = "#111111";
 const DECAL_MUTED = "rgba(17,17,17,0.58)";
@@ -78,6 +109,10 @@ const MARK_TEXT_SIZES: Record<BoardMarkTextSize, number> = {
   XL: 42,
 };
 
+const MARK_TEXT_FONTS: Record<BoardMarkTextFont, string> = Object.fromEntries(
+  BOARD_MARK_FONT_OPTIONS.map((option) => [option.id, option.fontFamily]),
+) as Record<BoardMarkTextFont, string>;
+
 const MARK_TEXT_FILL = "#000000";
 const MARK_SHAPE_STROKE = "#111111";
 const MARK_DRAW_WIDTH = 4;
@@ -87,16 +122,8 @@ const STICKY_DEFAULT_W = 280;
 const STICKY_DEFAULT_H = 200;
 const STICKY_MIN_W = 140;
 const STICKY_MIN_H = 100;
-const STICKY_CONTROL_STYLE = {
-  cornerStyle: "circle" as const,
-  borderColor: "rgba(17,17,17,0.45)",
-  cornerColor: "#111111",
-  transparentCorners: false,
-  hasControls: true,
-  hasBorders: true,
-};
 
-/** Fabric default — blue border + square handles (desktop-style). */
+/** Fabric default — blue border + square handles. */
 const FABRIC_CONTROL_STYLE = {
   cornerStyle: "rect" as const,
   borderColor: "rgb(102, 153, 255)",
@@ -106,15 +133,21 @@ const FABRIC_CONTROL_STYLE = {
   hasBorders: true,
 };
 
-const STICKY_FABRIC_CONTROLS = FABRIC_CONTROL_STYLE;
-
-function applyStickyFabricControls(group: Group) {
-  group.set({
-    ...STICKY_FABRIC_CONTROLS,
+function applyBoardFabricControls(obj: FabricObject) {
+  obj.set({
+    ...FABRIC_CONTROL_STYLE,
     selectable: true,
     evented: true,
     hasControls: true,
     hasBorders: true,
+  });
+  obj.setCoords();
+  return obj;
+}
+
+function applyStickyFabricControls(group: Group) {
+  applyBoardFabricControls(group);
+  group.set({
     lockUniScaling: false,
     objectCaching: false,
     markKind: "sticky",
@@ -1634,13 +1667,17 @@ export type BoardCanvasHandle = {
   canRedo: () => boolean;
   getLayoutJson: () => Record<string, unknown>;
   addShape: (shape: BoardMarkShapeType) => void;
+  addShapeAt: (shape: BoardMarkShapeType, x: number, y: number) => void;
   addSticker: (sticker: BoardMarkStickerId) => void;
+  addStickerAt: (sticker: BoardMarkStickerId, x: number, y: number) => void;
   startDrawMode: () => void;
 };
 
 export type ImageFitOptions = {
   fit?: "default" | "cover";
   sendToBack?: boolean;
+  normX?: number;
+  normY?: number;
 };
 
 type QuickSelectorState = {
@@ -1667,6 +1704,7 @@ type BoardCanvasEditorProps = {
   layoutMode?: BoardLayoutMode;
   artboardWidth?: number;
   artboardHeight?: number;
+  orientation?: "portrait" | "landscape";
   readOnly?: boolean;
   /** Tighter layout when shown in grid / carousel cells */
   embedded?: boolean;
@@ -1693,6 +1731,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       layoutMode = "vision",
       artboardWidth = ARTBOARD_WIDTH,
       artboardHeight = ARTBOARD_HEIGHT,
+      orientation,
       readOnly = false,
       embedded = false,
       cellFit = "contain",
@@ -1706,6 +1745,25 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     },
     ref,
   ) {
+    // Real (orientation-aware) artboard size. Prefer explicit dims; fall back to orientation.
+    const artboardSize = useMemo(() => {
+      if (typeof artboardWidth === "number" && typeof artboardHeight === "number") {
+        return {
+          width: artboardWidth,
+          height: artboardHeight,
+          orientation: (artboardWidth > artboardHeight ? "landscape" : "portrait") as
+            | "landscape"
+            | "portrait",
+        };
+      }
+      return artboardSizeForOrientation(orientation);
+    }, [artboardWidth, artboardHeight, orientation]);
+
+    // Real usable artboard coordinate space (1350×1080 for landscape). All placement,
+    // canvas sizing and pointer math must use these, never the scaled display size.
+    const activeArtboardWidth = artboardSize.width;
+    const activeArtboardHeight = artboardSize.height;
+
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasWrapRef = useRef<HTMLDivElement>(null);
     const canvasElRef = useRef<HTMLCanvasElement>(null);
@@ -1727,8 +1785,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const deleteTargetRef = useRef<FabricObject | null>(null);
     const isActiveRef = useRef(isActive);
     isActiveRef.current = isActive;
-    const markControlStyleRef = useRef(STICKY_CONTROL_STYLE);
-    markControlStyleRef.current = fabricSelectionControls ? FABRIC_CONTROL_STYLE : STICKY_CONTROL_STYLE;
     const syncTextFocusRef = useRef(fabricSelectionControls);
     syncTextFocusRef.current = fabricSelectionControls;
 
@@ -1770,9 +1826,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas || readOnly) return;
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => {
-        onSave(canvas.toJSON() as Record<string, unknown>);
+        onSave(withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize));
       }, 700);
-    }, [onSave, readOnly]);
+    }, [onSave, readOnly, artboardSize]);
 
     const notifyHistoryChange = useCallback(() => {
       const h = historyRef.current;
@@ -1970,8 +2026,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       setQuickSelector({
         x: clientX - rect.left,
         y: clientY - rect.top,
-        normX: Math.min(1, Math.max(0, pointer.x / artboardWidth)),
-        normY: Math.min(1, Math.max(0, pointer.y / artboardHeight)),
+        normX: Math.min(1, Math.max(0, pointer.x / activeArtboardWidth)),
+        normY: Math.min(1, Math.max(0, pointer.y / activeArtboardHeight)),
         mode: target ? "object" : "empty",
         textCapable,
         shapeCapable,
@@ -1984,17 +2040,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     const fitCanvas = useCallback((canvas: Canvas) => {
       const container = containerRef.current;
-      const wrap = canvasWrapRef.current;
       if (!container) return;
       const pad = embedded ? 0 : 32;
       const maxW = Math.max(container.clientWidth - pad, 1);
       const maxH = Math.max(container.clientHeight - pad, 1);
-      const containScale = Math.min(maxW / artboardWidth, maxH / artboardHeight);
-      const coverScale = Math.max(maxW / artboardWidth, maxH / artboardHeight);
-      const baseScale =
-        embedded && cellFit === "cover"
-          ? coverScale
-          : Math.min(containScale, embedded ? Infinity : 1);
+      const containScale = Math.min(maxW / activeArtboardWidth, maxH / activeArtboardHeight);
+      const baseScale = Math.min(containScale, embedded ? Infinity : 1);
       const zoom =
         viewZoom === "fit"
           ? baseScale > 0
@@ -2005,27 +2056,28 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             : baseScale > 0
               ? baseScale
               : 0.5;
-      canvas.setZoom(zoom);
-      const scaledW = artboardWidth * zoom;
-      const scaledH = artboardHeight * zoom;
-      canvas.setDimensions({ width: scaledW, height: scaledH });
-      const canvasEl = canvas.getElement();
-      if (embedded && cellFit === "cover" && wrap) {
-        canvasEl.style.marginLeft = `${(maxW - scaledW) / 2}px`;
-        canvasEl.style.marginTop = `${(maxH - scaledH) / 2}px`;
-      } else {
-        canvasEl.style.marginLeft = "";
-        canvasEl.style.marginTop = "";
-      }
+
+      const displayW = Math.max(1, Math.round(activeArtboardWidth * zoom));
+      const displayH = Math.max(1, Math.round(activeArtboardHeight * zoom));
+
+      // Full artboard coordinate space for objects; CSS display scaled to fit the cell.
+      canvas.setDimensions(
+        { width: activeArtboardWidth, height: activeArtboardHeight },
+        { backstoreOnly: true },
+      );
+      canvas.setDimensions({ width: displayW, height: displayH }, { cssOnly: true });
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      canvas.setZoom(1);
+      canvas.calcOffset();
       canvas.requestRenderAll();
-    }, [cellFit, embedded, viewZoom]);
+    }, [embedded, viewZoom, activeArtboardWidth, activeArtboardHeight]);
 
     useEffect(() => {
       if (!canvasElRef.current) return;
       const bg = boardFillForKey(colorKey);
       const canvas = new Canvas(canvasElRef.current, {
-        width: artboardWidth,
-        height: artboardHeight,
+        width: activeArtboardWidth,
+        height: activeArtboardHeight,
         backgroundColor: bg,
         selection: !readOnly,
       });
@@ -2119,9 +2171,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
               stickyGroup.setCoords();
               canvas.requestRenderAll();
-            } else if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
-              obj.set(markControlStyleRef.current);
-              obj.setCoords();
+            } else if (
+              obj.get("markKind") ||
+              obj instanceof FabricImage ||
+              obj instanceof IText ||
+              obj instanceof Textbox ||
+              obj instanceof FabricText
+            ) {
+              applyBoardFabricControls(obj);
               canvas.requestRenderAll();
             }
           }
@@ -2281,6 +2338,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
           restoreAllGroupsAfterLoad(canvas);
+          for (const obj of canvas.getObjects()) {
+            if (structureProp(obj, "structureId")) continue;
+            if (obj.get("markKind") || obj instanceof FabricImage) {
+              applyBoardFabricControls(obj);
+            }
+          }
           if (fabricSelectionControls) {
             for (const obj of canvas.getObjects()) {
               if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
@@ -2305,8 +2368,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText(text, {
-        left: artboardWidth / 2,
-        top: artboardHeight * 0.38,
+        left: activeArtboardWidth / 2,
+        top: activeArtboardHeight * 0.38,
         originX: "center",
         originY: "top",
         fontSize: 42,
@@ -2314,6 +2377,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         fill: MARK_TEXT_FILL,
         fontWeight: "600",
       });
+      applyBoardFabricControls(t);
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
@@ -2339,8 +2403,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const sticky = createStickyNoteGroup({
-        left: artboardWidth / 2 - STICKY_DEFAULT_W / 2,
-        top: artboardHeight * 0.38 - STICKY_DEFAULT_H / 2,
+        left: activeArtboardWidth / 2 - STICKY_DEFAULT_W / 2,
+        top: activeArtboardHeight * 0.38 - STICKY_DEFAULT_H / 2,
       });
       canvas.add(sticky);
       canvas.setActiveObject(sticky);
@@ -2359,13 +2423,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       const t = new IText("", {
-        left: normX * artboardWidth,
-        top: normY * artboardHeight,
+        left: normX * activeArtboardWidth,
+        top: normY * activeArtboardHeight,
         fontSize: MARK_TEXT_SIZES.XL,
         fontFamily: "system-ui, sans-serif",
         fill: MARK_TEXT_FILL,
         fontWeight: "600",
       });
+      applyBoardFabricControls(t);
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
@@ -2394,8 +2459,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const h = STICKY_DEFAULT_H;
 
       const sticky = createStickyNoteGroup({
-        left: normX * artboardWidth - w / 2,
-        top: normY * artboardHeight - h / 2,
+        left: normX * activeArtboardWidth - w / 2,
+        top: normY * activeArtboardHeight - h / 2,
       });
 
       canvas.add(sticky);
@@ -2408,7 +2473,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       });
 
       scheduleSave();
-    }, [readOnly, scheduleSave, artboardWidth, artboardHeight]);
+    }, [readOnly, scheduleSave, activeArtboardWidth, activeArtboardHeight]);
 
     const exitDrawMode = useCallback(() => {
       const canvas = fabricRef.current;
@@ -2436,12 +2501,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (shapeType: BoardMarkShapeType, normX: number, normY: number, stroke = MARK_SHAPE_STROKE) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const cx = normX * artboardWidth;
-        const cy = normY * artboardHeight;
+        const cx = normX * activeArtboardWidth;
+        const cy = normY * activeArtboardHeight;
 
         if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
           const group = createTextCapableShapeGroup(shapeType, cx, cy, stroke);
-          if (fabricSelectionControls) group.set(FABRIC_CONTROL_STYLE);
+          applyBoardFabricControls(group);
           canvas.add(group);
           enterObjectTextEditing(canvas, group, fabricSelectionControls);
           scheduleSave();
@@ -2624,6 +2689,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             ...mark,
           });
         }
+        applyBoardFabricControls(shape);
         canvas.add(shape);
         canvas.setActiveObject(shape);
         canvas.requestRenderAll();
@@ -2637,8 +2703,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const sticker = new FabricText(BOARD_MARK_STICKER_EMOJI[stickerId], {
-          left: normX * artboardWidth,
-          top: normY * artboardHeight,
+          left: normX * activeArtboardWidth,
+          top: normY * activeArtboardHeight,
           fontSize: 72,
           fontFamily: "system-ui, sans-serif",
           originX: "center",
@@ -2646,6 +2712,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           markKind: "sticker",
           stickerId,
         });
+        applyBoardFabricControls(sticker);
         canvas.add(sticker);
         canvas.setActiveObject(sticker);
         canvas.requestRenderAll();
@@ -2676,11 +2743,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           const group = createTextCapableShapeGroup(shapeType, center.x, center.y, stroke);
           const textObj = findEditableTextInGroup(group);
           if (textObj && existingText) textObj.set("text", existingText);
+          applyBoardFabricControls(group);
           canvas.add(group);
           canvas.setActiveObject(group);
           canvas.requestRenderAll();
         } else {
-          addShapeAtPoint(shapeType, center.x / artboardWidth, center.y / artboardHeight, stroke);
+          addShapeAtPoint(shapeType, center.x / activeArtboardWidth, center.y / activeArtboardHeight, stroke);
         }
         recordHistory();
       },
@@ -2706,41 +2774,54 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     const placeImage = (canvas: Canvas, img: FabricImage, options?: ImageFitOptions) => {
       const fit = options?.fit ?? "default";
+      const centerX =
+        typeof options?.normX === "number" ? options.normX * activeArtboardWidth : activeArtboardWidth / 2;
+      const centerY =
+        typeof options?.normY === "number" ? options.normY * activeArtboardHeight : activeArtboardHeight / 2;
       if (fit === "cover") {
         const iw = img.width || 1;
         const ih = img.height || 1;
         const imgAspect = iw / ih;
-        const boardAspect = artboardWidth / artboardHeight;
+        const boardAspect = activeArtboardWidth / activeArtboardHeight;
         let scale: number;
         if (imgAspect > boardAspect) {
-          scale = artboardHeight / ih;
+          scale = activeArtboardHeight / ih;
         } else {
-          scale = artboardWidth / iw;
+          scale = activeArtboardWidth / iw;
         }
         img.set({
-          left: artboardWidth / 2,
-          top: artboardHeight / 2,
+          left: centerX,
+          top: centerY,
           originX: "center",
           originY: "center",
           scaleX: scale,
           scaleY: scale,
         });
       } else {
-        const maxSide = Math.min(artboardWidth, artboardHeight) * 0.45;
-        const scale = Math.min(maxSide / (img.width || 1), maxSide / (img.height || 1), 1);
+        const iw = img.width || 1;
+        const ih = img.height || 1;
+        const maxWidth = activeArtboardWidth * 0.36;
+        const maxHeight = activeArtboardHeight * 0.42;
+        const scale = Math.min(maxWidth / iw, maxHeight / ih, 1);
         img.set({
-          left: artboardWidth * 0.25,
-          top: artboardHeight * 0.15,
+          left: centerX,
+          top: centerY,
+          originX: "center",
+          originY: "center",
+          angle: 0,
           scaleX: scale,
           scaleY: scale,
         });
       }
+      applyBoardFabricControls(img);
       canvas.add(img);
       if (options?.sendToBack) {
         canvas.sendObjectToBack(img);
       }
       canvas.setActiveObject(img);
       canvas.requestRenderAll();
+      recordHistoryRef.current();
+      scheduleSaveRef.current();
     };
 
     const addImageFromUrl = useCallback(async (url: string, options?: ImageFitOptions) => {
@@ -2789,6 +2870,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         originX: "center",
         originY: "center",
       });
+      applyBoardFabricControls(t);
       canvas.add(t);
       canvas.requestRenderAll();
     }, [readOnly]);
@@ -2798,8 +2880,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const t = new FabricText(text, {
-          left: x * artboardWidth,
-          top: y * artboardHeight,
+          left: x * activeArtboardWidth,
+          top: y * activeArtboardHeight,
           fontSize,
           fontFamily: "system-ui, sans-serif",
           fill,
@@ -2820,8 +2902,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const w = 260;
         const h = 170;
         const sticky = createStickyNoteGroup({
-          left: x * artboardWidth,
-          top: y * artboardHeight,
+          left: x * activeArtboardWidth,
+          top: y * activeArtboardHeight,
           width: w,
           height: h,
           text,
@@ -2967,12 +3049,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         accent = DECAL_INK,
       ) => {
         const canvas = fabricRef.current;
-        if (!canvas || readOnly || !artboardWidth || !artboardHeight) return;
+        if (!canvas || readOnly || !activeArtboardWidth || !activeArtboardHeight) return;
 
-        const left = x * artboardWidth;
-        const top = y * artboardHeight;
-        const width = w * artboardWidth;
-        const height = h * artboardHeight;
+        const left = x * activeArtboardWidth;
+        const top = y * activeArtboardHeight;
+        const width = w * activeArtboardWidth;
+        const height = h * activeArtboardHeight;
 
         const objects: FabricObject[] = [];
 
@@ -3140,16 +3222,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           top,
           subTargetCheck: false,
           objectCaching: true,
-          ...(fabricSelectionControls
-            ? FABRIC_CONTROL_STYLE
-            : {
-                cornerStyle: "circle" as const,
-                borderColor: "rgba(17,17,17,0.45)",
-                cornerColor: "#111111",
-                transparentCorners: false,
-              }),
+          ...FABRIC_CONTROL_STYLE,
         });
 
+        applyBoardFabricControls(group);
         canvas.add(group);
         group.setCoords();
         canvas.setActiveObject(group);
@@ -3157,7 +3233,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         recordHistory();
         scheduleSave();
       },
-      [artboardHeight, artboardWidth, fabricSelectionControls, readOnly, recordHistory, scheduleSave],
+      [activeArtboardHeight, activeArtboardWidth, fabricSelectionControls, readOnly, recordHistory, scheduleSave],
     );
 
     const mergeLayoutObjects = useCallback(async (
@@ -3179,8 +3255,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const tempEl = document.createElement("canvas");
       const temp = new StaticCanvas(tempEl, {
-        width: artboardWidth,
-        height: artboardHeight,
+        width: activeArtboardWidth,
+        height: activeArtboardHeight,
       });
       await temp.loadFromJSON(fragment);
       const clones = await Promise.all(temp.getObjects().map((obj) => obj.clone()));
@@ -3192,7 +3268,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           else if (structureProp(obj, "structureType") === "calendar") restoreCalendarAfterLoad(obj);
           else if (structureProp(obj, "structureId")) restoreStructureAfterLoad(obj);
         }
-        canvas.add(obj as FabricObject);
+        const added = obj as FabricObject;
+        if (!structureProp(added, "structureId")) {
+          applyBoardFabricControls(added);
+        }
+        canvas.add(added);
       }
       rebindStructureHandlersRef.current(canvas);
       canvas.requestRenderAll();
@@ -3237,8 +3317,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const pasteAtPoint = useCallback(
       async (normX: number, normY: number) => {
         if (!boardObjectClipboard?.length) return false;
-        const left = normX * artboardWidth;
-        const top = normY * artboardHeight;
+        const left = normX * activeArtboardWidth;
+        const top = normY * activeArtboardHeight;
         let minLeft = Infinity;
         let minTop = Infinity;
         for (const obj of boardObjectClipboard) {
@@ -3314,8 +3394,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       resetHistory(canvas);
       suppressHistoryRef.current = false;
 
-      onSave(canvas.toJSON() as Record<string, unknown>);
-    }, [colorKey, onSave, readOnly, resetHistory]);
+      onSave(withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize));
+    }, [artboardSize, colorKey, onSave, readOnly, resetHistory]);
 
     const selectAllObjects = useCallback(() => {
       const canvas = fabricRef.current;
@@ -3334,14 +3414,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.requestRenderAll();
     }, [readOnly]);
 
-    const editMarkSelected = useCallback(() => {
-      const canvas = fabricRef.current;
-      if (!canvas || readOnly) return;
-      const active = deleteTargetRef.current ?? canvas.getActiveObject();
-      if (!active) return;
-      enterObjectTextEditing(canvas, active, fabricSelectionControls);
-    }, [fabricSelectionControls, readOnly]);
-
     const applyMarkFontSize = useCallback(
       (size: BoardMarkTextSize) => {
         const canvas = fabricRef.current;
@@ -3356,6 +3428,61 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           const text = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
           if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
             text.set("fontSize", fontSize);
+          } else {
+            return;
+          }
+        } else {
+          return;
+        }
+
+        canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
+      },
+      [readOnly, recordHistory, scheduleSave],
+    );
+
+    const applyMarkTextAlign = useCallback(
+      (align: BoardMarkTextAlign) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return;
+        const active = canvas.getActiveObject();
+        if (!active) return;
+
+        if (active instanceof IText || active instanceof Textbox || active instanceof FabricText) {
+          active.set("textAlign", align);
+        } else if (active instanceof Group) {
+          const text = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
+          if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
+            text.set("textAlign", align);
+          } else {
+            return;
+          }
+        } else {
+          return;
+        }
+
+        canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
+      },
+      [readOnly, recordHistory, scheduleSave],
+    );
+
+    const applyMarkFontFamily = useCallback(
+      (font: BoardMarkTextFont) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return;
+        const active = canvas.getActiveObject();
+        if (!active) return;
+        const fontFamily = MARK_TEXT_FONTS[font];
+
+        if (active instanceof IText || active instanceof Textbox || active instanceof FabricText) {
+          active.set("fontFamily", fontFamily);
+        } else if (active instanceof Group) {
+          const text = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
+          if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
+            text.set("fontFamily", fontFamily);
           } else {
             return;
           }
@@ -3526,7 +3653,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         else if (action === "sticky") addStickyNoteAtPoint(normX, normY);
         else if (action === "image") onRequestImagePick?.();
         else if (action === "draw") startDrawMode();
-        else if (action === "edit") editMarkSelected();
         else if (action === "paste") void pasteAtPoint(normX, normY);
       },
       [
@@ -3534,7 +3660,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         addTextAtPoint,
         copySelected,
         deleteSelected,
-        editMarkSelected,
         onRequestImagePick,
         pasteAtPoint,
         quickSelector,
@@ -3773,11 +3898,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       redo,
       canUndo,
       canRedo,
-      getLayoutJson: () => (fabricRef.current?.toJSON() as Record<string, unknown>) ?? {},
+      getLayoutJson: () =>
+        withArtboardMeta((fabricRef.current?.toJSON() as Record<string, unknown>) ?? {}, artboardSize),
       addShape: (shape) => addShapeAtPoint(shape, 0.5, 0.5),
+      addShapeAt: (shape, x, y) => addShapeAtPoint(shape, x, y),
       addSticker: (sticker) => addStickerAtPoint(sticker, 0.5, 0.5),
+      addStickerAt: (sticker, x, y) => addStickerAtPoint(sticker, x, y),
       startDrawMode,
-    }), [addDiagramOverlay, addImageFromFile, addImageFromUrl, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, resetBoard, startDrawMode, undo]);
+    }), [addDiagramOverlay, addImageFromFile, addImageFromUrl, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, resetBoard, startDrawMode, undo]);
 
     return (
       <div
@@ -3794,7 +3922,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           ref={canvasWrapRef}
           className={cn(
             "relative h-full w-full overflow-hidden",
-            embedded ? "flex items-start justify-center" : "min-h-[140px] rounded-sm shadow-[0_2px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]",
+            embedded ? "flex items-center justify-center" : "min-h-[140px] rounded-sm shadow-[0_2px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]",
           )}
         >
           <canvas ref={canvasElRef} />
@@ -3852,6 +3980,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               onBoardColorPick={onBoardColorPick}
               onElementColorPick={applyMarkColor}
               onElementSizePick={applyMarkFontSize}
+              onElementTextAlignPick={applyMarkTextAlign}
+              onElementFontPick={applyMarkFontFamily}
               onShapePick={handleShapePick}
               onStickerPick={handleStickerPick}
               onStructurePick={handleStructurePick}

@@ -1,5 +1,6 @@
 import { StaticCanvas, FabricImage } from "fabric";
 import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
+import { readArtboardSizeFromLayoutJson } from "@/lib/boards/artboard";
 import { boardFillForKey } from "@/lib/boards/colors";
 import { fitArtboardInBox } from "@/lib/boards/layoutScale";
 import { saveBoardImageBlob } from "@/lib/boards/saveBoardImage";
@@ -35,6 +36,9 @@ export type RenderBoardOptions = {
   colorKey: string;
   pageWidthPx: number;
   pageHeightPx: number;
+  /** Source artboard dimensions (portrait 1080×1350, landscape 1350×1080). */
+  artboardWidth?: number;
+  artboardHeight?: number;
   backgroundPageColor?: string;
   /** Override letterbox placement (phone wallpaper, etc.). */
   contentBox?: { x: number; y: number; width: number; height: number };
@@ -53,13 +57,22 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
     colorKey,
     pageWidthPx,
     pageHeightPx,
+    artboardWidth,
+    artboardHeight,
     backgroundPageColor = "#ffffff",
     contentBox: contentBoxOverride,
     preservePixelDimensions = false,
     imageFormat = "png",
     imageQuality,
   } = options;
-  const contentBox = contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx);
+  const sourceSize = readArtboardSizeFromLayoutJson(
+    layoutJson,
+    artboardWidth && artboardHeight && artboardWidth > artboardHeight ? "landscape" : "portrait",
+  );
+  const sourceWidth = artboardWidth ?? sourceSize.width;
+  const sourceHeight = artboardHeight ?? sourceSize.height;
+  const contentBox =
+    contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx, sourceWidth, sourceHeight);
   const bg = boardFillForKey(colorKey);
   const pixelBox = preservePixelDimensions
     ? { width: pageWidthPx, height: pageHeightPx, scale: 1 }
@@ -74,8 +87,8 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
 
   const contentEl = document.createElement("canvas");
   const contentCanvas = new StaticCanvas(contentEl, {
-    width: ARTBOARD_WIDTH,
-    height: ARTBOARD_HEIGHT,
+    width: sourceWidth,
+    height: sourceHeight,
     backgroundColor: bg,
   });
 
@@ -140,13 +153,22 @@ export async function renderBoardToBlob(options: RenderBoardOptions): Promise<Bl
     colorKey,
     pageWidthPx,
     pageHeightPx,
+    artboardWidth,
+    artboardHeight,
     backgroundPageColor = "#ffffff",
     contentBox: contentBoxOverride,
     preservePixelDimensions = false,
     imageFormat = "png",
     imageQuality,
   } = options;
-  const contentBox = contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx);
+  const sourceSize = readArtboardSizeFromLayoutJson(
+    layoutJson,
+    artboardWidth && artboardHeight && artboardWidth > artboardHeight ? "landscape" : "portrait",
+  );
+  const sourceWidth = artboardWidth ?? sourceSize.width;
+  const sourceHeight = artboardHeight ?? sourceSize.height;
+  const contentBox =
+    contentBoxOverride ?? fitArtboardInBox(pageWidthPx, pageHeightPx, sourceWidth, sourceHeight);
   const bg = boardFillForKey(colorKey);
   const pixelBox = preservePixelDimensions
     ? { width: pageWidthPx, height: pageHeightPx, scale: 1 }
@@ -161,8 +183,8 @@ export async function renderBoardToBlob(options: RenderBoardOptions): Promise<Bl
 
   const contentEl = document.createElement("canvas");
   const contentCanvas = new StaticCanvas(contentEl, {
-    width: ARTBOARD_WIDTH,
-    height: ARTBOARD_HEIGHT,
+    width: sourceWidth,
+    height: sourceHeight,
     backgroundColor: bg,
   });
 
@@ -244,6 +266,14 @@ export const BOARD_PRINT_PRESETS = [
     dpi: 300,
   },
   {
+    id: "tabloid",
+    label: 'Tabloid (11×17")',
+    description: "Large home / office printer",
+    pageWidthIn: 11,
+    pageHeightIn: 17,
+    dpi: 300,
+  },
+  {
     id: "super-b",
     label: 'Super B (13×19")',
     description: "Wide-format inkjet",
@@ -303,7 +333,30 @@ export type BoardPrintSource = {
   layoutJson: Record<string, unknown>;
   colorKey: string;
   title: string;
+  artboardWidth?: number;
+  artboardHeight?: number;
+  orientation?: "portrait" | "landscape";
 };
+
+/** Print page inches, rotated to match the board's orientation. */
+function pageInchesForBoard(
+  preset: BoardPrintPreset,
+  sourceWidth: number,
+  sourceHeight: number,
+): { pageWidthIn: number; pageHeightIn: number } {
+  if (preset.id === "screen") {
+    return {
+      pageWidthIn: sourceWidth / preset.dpi,
+      pageHeightIn: sourceHeight / preset.dpi,
+    };
+  }
+  const boardIsLandscape = sourceWidth > sourceHeight;
+  const shortSide = Math.min(preset.pageWidthIn, preset.pageHeightIn);
+  const longSide = Math.max(preset.pageWidthIn, preset.pageHeightIn);
+  return boardIsLandscape
+    ? { pageWidthIn: longSide, pageHeightIn: shortSide }
+    : { pageWidthIn: shortSide, pageHeightIn: longSide };
+}
 
 function boardFileSlug(title: string): string {
   return title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 40) || "board";
@@ -340,39 +393,49 @@ export async function downloadBoardsPrintPdf(
   if (boards.length === 0) return;
 
   const { jsPDF } = await import("jspdf");
-  const spec = getPrintPresetOutputSpec(preset);
-  const pageW = spec.pageWidthPx;
-  const pageH = spec.pageHeightPx;
-  const pageWidthPt = spec.pageWidthPt;
-  const pageHeightPt = spec.pageHeightPt;
-  const format: [number, number] = [pageWidthPt, pageHeightPt];
-  const landscape = preset.pageWidthIn > preset.pageHeightIn;
 
-  const pdf = new jsPDF({
-    orientation: landscape ? "landscape" : "portrait",
-    unit: "pt",
-    format,
-    compress: true,
-  });
+  // Each board sizes its own page so landscape boards get landscape pages.
+  let pdf: import("jspdf").jsPDF | null = null;
 
   for (let i = 0; i < boards.length; i++) {
     const board = boards[i];
-    if (i > 0) pdf.addPage(format, landscape ? "landscape" : "portrait");
+    const sourceSize = readArtboardSizeFromLayoutJson(
+      board.layoutJson,
+      board.orientation ?? "portrait",
+    );
+    const sourceWidth = board.artboardWidth ?? sourceSize.width;
+    const sourceHeight = board.artboardHeight ?? sourceSize.height;
 
-    const pageBackgroundColor = boardFillForKey(board.colorKey);
+    const pageInches = pageInchesForBoard(preset, sourceWidth, sourceHeight);
+    const pageWidthPx = inchesToPixels(pageInches.pageWidthIn, preset.dpi);
+    const pageHeightPx = inchesToPixels(pageInches.pageHeightIn, preset.dpi);
+    const pageWidthPt = pageInches.pageWidthIn * 72;
+    const pageHeightPt = pageInches.pageHeightIn * 72;
+    const orientation = pageWidthPt > pageHeightPt ? "landscape" : "portrait";
+    const format: [number, number] = [pageWidthPt, pageHeightPt];
+
+    if (!pdf) {
+      pdf = new jsPDF({ orientation, unit: "pt", format, compress: true });
+    } else {
+      pdf.addPage(format, orientation);
+    }
 
     const dataUrl = await renderBoardToDataUrl({
       layoutJson: board.layoutJson,
       colorKey: board.colorKey,
-      pageWidthPx: pageW,
-      pageHeightPx: pageH,
-      backgroundPageColor: pageBackgroundColor,
+      pageWidthPx,
+      pageHeightPx,
+      artboardWidth: sourceWidth,
+      artboardHeight: sourceHeight,
+      backgroundPageColor: boardFillForKey(board.colorKey),
       preservePixelDimensions: true,
       imageFormat: "jpeg",
       imageQuality: 0.92,
     });
     pdf.addImage(dataUrl, "JPEG", 0, 0, pageWidthPt, pageHeightPt, undefined, "FAST");
   }
+
+  if (!pdf) return;
 
   const slug =
     boards.length === 1
@@ -423,11 +486,14 @@ export async function renderBoardArtboardDataUrl(
   layoutJson: Record<string, unknown>,
   colorKey: string,
 ): Promise<string> {
+  const source = readArtboardSizeFromLayoutJson(layoutJson);
   return renderBoardToDataUrl({
     layoutJson,
     colorKey,
-    pageWidthPx: ARTBOARD_WIDTH,
-    pageHeightPx: ARTBOARD_HEIGHT,
+    pageWidthPx: source.width,
+    pageHeightPx: source.height,
+    artboardWidth: source.width,
+    artboardHeight: source.height,
     backgroundPageColor: boardFillForKey(colorKey),
   });
 }

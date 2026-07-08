@@ -7,6 +7,8 @@ import {
 } from "../_shared/requirePlottingPro.ts";
 import {
   BOARDS_AI_SAFETY_POLICY,
+  DEFAULT_BOARD_FALLBACK,
+  PALETTE_GUIDE_SCOPE_LOCK,
   screenBoardsUserInput,
 } from "../_shared/boardsAiGuardrails.ts";
 
@@ -66,18 +68,22 @@ Action operation types (use real ids from action_map context):
 
 Behavior:
 - Ask before changing the action map. Summarize proposed edits and ask "Want me to apply that?"
-- Do not finalize, export calendar, or send reminders. User uses header buttons for Analyze, Calendar export, and Finalize.
-- If action_map is missing or empty, suggest Analyze workspace first.
+- Do not finalize, export calendar, or send reminders. User uses header buttons for Calendar export and Finalize.
+- Do not run or offer Analyze workspace — tell the user to click Analyze in the header; you cannot run it.
+- If action_map is missing or empty, explain they can use Analyze workspace in the header, then ask what to add to the draft.
 - If map is finalized, say the plan is finalized and offer to reopen as draft with proposed changes — do not silently edit.
 - Each Action gets exactly one reminder type. Use separate Actions if the user wants multiple nudges.
 - Calendar for real dates/deadlines; Email for softer reviews; Text only for urgent short actions.
 - SMS text max 70 chars, ASCII, no emoji, no links. Use the actual action title — no generic app/board copy.
-- Never generate: return to your practice, open the app, check your board, your dream life is waiting.
+- Love, relationships, money, career, home, and planning are valid topics. Do not refuse them.
+- Do not discuss other users, company internals, code, APIs, models, or how the app is built.
 - Keep replies short and practical. No therapy language. Do not mention Canva.
 
 User-facing names: Focus, Plan, Action, Calendar, Email, Text.`;
 
 const SYSTEM = `${ACTION_CAPABILITIES}
+
+${PALETTE_GUIDE_SCOPE_LOCK}
 
 ${BOARDS_AI_SAFETY_POLICY}`;
 
@@ -226,7 +232,7 @@ ${mapSummary}`;
     const reply =
       typeof parsed.reply === "string" && parsed.reply.trim()
         ? parsed.reply.trim()
-        : "What would you like to adjust in your action map?";
+        : DEFAULT_BOARD_FALLBACK;
     const reply_without_action =
       typeof parsed.reply_without_action === "string" && parsed.reply_without_action.trim()
         ? parsed.reply_without_action.trim()

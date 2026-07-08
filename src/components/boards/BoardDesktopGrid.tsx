@@ -220,7 +220,7 @@ export function BoardDesktopGrid({
         width: Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth)),
 
         height: isMatrix
-          ? Math.round(cellHeight)
+          ? Math.max(Math.round(cellWidth * boardAspectHeight), 220)
           : Math.max(Math.round(cellWidth * boardAspectHeight), Math.round(cellHeight)),
 
       });
@@ -546,7 +546,7 @@ export function BoardDesktopGrid({
                       onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
                       isActive={board.id === activeId}
                       embedded
-                      cellFit={isMatrix ? "contain" : "cover"}
+                      cellFit="contain"
                       viewZoom="fit"
                     />
 

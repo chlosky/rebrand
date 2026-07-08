@@ -111,6 +111,11 @@ export function BoardPrintDialog({
           layoutJson: getLayoutJson(board.id),
           colorKey: board.color_key,
           title: board.title,
+          artboardWidth: board.artboard_width,
+          artboardHeight: board.artboard_height,
+          orientation: (board.artboard_width > board.artboard_height ? "landscape" : "portrait") as
+            | "landscape"
+            | "portrait",
         }));
 
         await downloadBoardsPrintPdf(sources, printPreset, { shareOnMobile: isMobile });

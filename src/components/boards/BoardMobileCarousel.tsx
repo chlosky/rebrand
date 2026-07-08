@@ -234,7 +234,7 @@ export function BoardMobileCarousel({
                 onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
                 isActive={board.id === activeId}
                 embedded
-                cellFit="cover"
+                cellFit="contain"
                 fabricSelectionControls
                 onBoardColorPick={(hex) => void onBoardColorChange?.(board.id, hex)}
                 onRequestImagePick={board.id === activeId ? onRequestImagePick : undefined}
