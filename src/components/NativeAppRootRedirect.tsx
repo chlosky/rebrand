@@ -3,6 +3,8 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsNativeApp } from '@/hooks/use-native-app';
 import Home from '@/site/pages/Home';
+import ToolWaitingList from '@/pages/ToolWaitingList';
+import { isSiteAccessRequired } from '@/lib/toolSite';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
 import { debugLog } from '@/debugLog';
@@ -189,6 +191,9 @@ export const NativeAppRootRedirect = () => {
     return <Navigate to="/workspace" replace />;
   }
 
-  // Web/PWA: show the palette plot marketing homepage
+  // Web/PWA: tool site shows waitlist; shop homepage elsewhere.
+  if (isSiteAccessRequired()) {
+    return <ToolWaitingList />;
+  }
   return <Home />;
 };

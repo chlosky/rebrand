@@ -1523,7 +1523,7 @@ function restoreAllGroupsAfterLoad(canvas: Canvas) {
     } else if (obj.get("markKind") === "image-frame") {
       restoreImageFrameAfterLoad(obj);
     } else if (structureProp(obj, "structureType") === "calendar") {
-      restoreCalendarAfterLoad(obj);
+      restoreCalendarAfterLoad(canvas, obj);
     } else if (structureProp(obj, "structureId")) {
       restoreStructureAfterLoad(obj);
     }
@@ -1577,29 +1577,12 @@ function restoreStructureAfterLoad(group: Group) {
   }
 }
 
-function restoreCalendarAfterLoad(group: Group) {
-  group.set({
-    subTargetCheck: false,
-    interactive: true,
-    objectCaching: false,
-    structureType: "calendar",
-  });
-
+function restoreCalendarAfterLoad(canvas: Canvas, group: Group) {
   const month = clampCalendarMonth(Number(group.get("calendarMonth")));
   const year = clampCalendarYear(Number(group.get("calendarYear")));
-  const width = getStructureLayoutWidth(group);
-  const height = getStructureLayoutHeight(group);
-
-  group.set({
-    calendarMonth: month,
-    calendarYear: year,
-    structureWidth: width,
-    structureHeight: height,
-    scaleX: 1,
-    scaleY: 1,
-  });
-
-  group.setCoords();
+  const width = Math.max(CALENDAR_MIN_W, getStructureLayoutWidth(group));
+  const height = Math.max(CALENDAR_MIN_H, getStructureLayoutHeight(group));
+  replaceCalendarGroup(canvas, group, month, year, width, height, { select: false });
 }
 
 function replaceCalendarGroup(
@@ -1609,6 +1592,7 @@ function replaceCalendarGroup(
   year: number,
   width?: number,
   height?: number,
+  options?: { select?: boolean },
 ): Group {
   const left = group.left ?? 0;
   const top = group.top ?? 0;
@@ -1629,7 +1613,9 @@ function replaceCalendarGroup(
 
   canvas.remove(group);
   canvas.add(next);
-  canvas.setActiveObject(next);
+  if (options?.select !== false) {
+    canvas.setActiveObject(next);
+  }
   next.setCoords();
   canvas.requestRenderAll();
 
@@ -1639,6 +1625,7 @@ function replaceCalendarGroup(
 function normalizeCalendarResize(canvas: Canvas, group: Group) {
   const sx = group.scaleX ?? 1;
   const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
 
   const currentW = getStructureLayoutWidth(group);
   const currentH = getStructureLayoutHeight(group);
@@ -2141,7 +2128,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const updateSelectedCalendar = useCallback(
       (patch: { month?: number; year?: number }) => {
         const canvas = fabricRef.current;
-        if (!canvas) return;
+        if (!canvas || !isActiveRef.current) return;
 
         const active = canvas.getActiveObject();
 
@@ -2152,6 +2139,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         const nextMonth = patch.month == null ? currentMonth : clampCalendarMonth(patch.month);
         const nextYear = patch.year == null ? currentYear : clampCalendarYear(patch.year);
+
+        if (nextMonth === currentMonth && nextYear === currentYear) return;
 
         const next = replaceCalendarGroup(canvas, active, nextMonth, nextYear);
         setCalendarControl({
@@ -2336,11 +2325,15 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (embedded) {
         const wrapper = canvas.getElement().parentElement;
         if (wrapper) {
-          wrapper.style.width = `${displayW}px`;
-          wrapper.style.height = `${displayH}px`;
+          wrapper.style.width = "100%";
+          wrapper.style.height = "100%";
           wrapper.style.maxWidth = "100%";
           wrapper.style.maxHeight = "100%";
         }
+        const canvasEl = canvas.getElement();
+        const portraitBoard = activeArtboardHeight >= activeArtboardWidth;
+        canvasEl.style.marginLeft = displayW < maxW ? `${(maxW - displayW) / 2}px` : "0";
+        canvasEl.style.marginTop = portraitBoard ? "0" : displayH < maxH ? `${(maxH - displayH) / 2}px` : "0";
       }
       canvas.calcOffset();
       canvas.requestRenderAll();
@@ -3698,7 +3691,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           applyStickyFabricControls(added);
         } else if (added instanceof Group) {
           if (added.get("markKind") === "shape" && added.get("textCapable")) restoreShapeGroupAfterLoad(added);
-          else if (structureProp(added, "structureType") === "calendar") restoreCalendarAfterLoad(added);
+          else if (structureProp(added, "structureType") === "calendar") restoreCalendarAfterLoad(canvas, added);
           else if (structureProp(added, "structureId")) restoreStructureAfterLoad(added);
         }
         if (!structureProp(added, "structureId")) {
@@ -4482,7 +4475,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           ref={canvasWrapRef}
           className={cn(
             "relative h-full w-full overflow-hidden",
-            embedded ? "flex items-center justify-center" : "min-h-[140px] rounded-sm shadow-[0_2px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]",
+            embedded ? "flex items-start justify-center" : "min-h-[140px] rounded-sm shadow-[0_2px_24px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]",
           )}
         >
           <canvas ref={canvasElRef} />

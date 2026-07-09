@@ -191,12 +191,6 @@ export function BoardDesktopGrid({
 
       const boardGaps = GRID_GAP_PX * Math.max(STANDARD_BOARD_COUNT - 1, 0);
 
-
-
-      const maxWFromWidth = isMatrix
-        ? (availW - GRID_GAP_PX) / 2
-        : (availW - addReserve - boardGaps) / STANDARD_BOARD_COUNT;
-
       const canvasAvailH = Math.max(availH - TITLE_BAR_PX, 160);
 
       const multiplier = zoomPreset === "fit" ? 1 : zoomPreset;
@@ -206,27 +200,31 @@ export function BoardDesktopGrid({
           ? firstBoard.artboard_height / firstBoard.artboard_width
           : ARTBOARD_HEIGHT / ARTBOARD_WIDTH;
 
+      let cellWidth: number;
+      let cellHeight: number;
 
+      if (isMatrix) {
+        cellWidth = ((availW - GRID_GAP_PX) / 2) * multiplier;
+        cellHeight = Math.max(Math.round(cellWidth * boardAspectHeight), 220);
+      } else {
+        // Portrait row: use full vertical space, then derive width from artboard aspect.
+        cellHeight = canvasAvailH * multiplier;
+        cellWidth = cellHeight / boardAspectHeight;
 
-      let cellWidth = maxWFromWidth * multiplier;
-
-      let cellHeight = (isMatrix ? Math.max((availH - GRID_GAP_PX) / 2 - TITLE_BAR_PX, 220) : canvasAvailH) * multiplier;
-
-
-
-      if (!isMatrix && cellWidth * STANDARD_BOARD_COUNT + boardGaps + addReserve > availW) {
-
-        cellWidth = maxWFromWidth;
-
+        const totalRowWidth = STANDARD_BOARD_COUNT * cellWidth + boardGaps + addReserve;
+        if (totalRowWidth > availW) {
+          const fitScale = availW / totalRowWidth;
+          cellWidth *= fitScale;
+          cellHeight *= fitScale;
+        }
       }
 
-
+      cellWidth = Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth));
+      cellHeight = Math.max(220, Math.round(cellWidth * boardAspectHeight));
 
       setCellSize({
-        width: Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth)),
-        height: isMatrix
-          ? Math.max(Math.round(cellWidth * boardAspectHeight), 220)
-          : Math.max(Math.round(cellWidth * boardAspectHeight), 220),
+        width: cellWidth,
+        height: cellHeight,
       });
 
     };
@@ -388,13 +386,13 @@ export function BoardDesktopGrid({
 
             className={cn(
               "min-h-full gap-2.5",
-              isMatrix ? "grid grid-cols-2 content-start items-start" : "flex flex-row flex-nowrap items-stretch",
+              isMatrix ? "grid grid-cols-2 content-start items-start" : "flex h-full min-h-full flex-row flex-nowrap items-stretch",
             )}
 
             style={
               isMatrix
                 ? { gridAutoRows: rowHeight, minHeight: rowHeight }
-                : { width: rowScrollWidth, minHeight: rowHeight, height: rowHeight }
+                : { width: rowScrollWidth, minHeight: rowHeight, height: "100%" }
             }
 
           >

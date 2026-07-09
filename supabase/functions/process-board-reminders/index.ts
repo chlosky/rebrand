@@ -484,10 +484,6 @@ serve(async (req) => {
         const result = await sendBrevoReminderEmail({
           to: email,
           actionTitle: reminder.title,
-          focusTitle: typeof metadata?.focus_title === "string" ? metadata.focus_title : null,
-          planTitle: typeof metadata?.plan_title === "string" ? metadata.plan_title : null,
-          remindAt: reminder.remind_at,
-          details: reminder.body,
           reminderId: reminder.id,
         });
         await supabase.from("board_reminder_deliveries").insert({
@@ -510,9 +506,9 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             to: email,
-            subject: `Reminder: ${reminder.title}`,
-            textBody: reminder.body ?? reminder.title,
-            htmlBody: `<p><strong>${reminder.title}</strong></p>${reminder.body ? `<p>${reminder.body}</p>` : ""}`,
+            subject: reminder.title,
+            textBody: reminder.title,
+            htmlBody: `<p>${reminder.title}</p>`,
             tag: "board-reminder",
           }),
         });

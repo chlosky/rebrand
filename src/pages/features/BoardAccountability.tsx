@@ -308,15 +308,6 @@ export default function BoardAccountability() {
       const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
       if (reminderType === "calendar") continue;
       const channels = [reminderType];
-
-      const body = [
-        r.goal_title ? `Focus: ${r.goal_title}` : null,
-        r.plan_title ? `Plan: ${r.plan_title}` : null,
-        `Cadence: ${r.cadence}`,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-
       const smsContent =
         reminderType === "sms"
           ? stripSmsText(r.sms_text ?? r.title).slice(0, 70)
@@ -326,7 +317,7 @@ export default function BoardAccountability() {
         board_id: planBoard.id,
         user_id: user.id,
         title: r.title,
-        body,
+        body: null,
         remind_at: reminderToIso(r),
         timezone: tz,
         channels,

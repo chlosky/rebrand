@@ -30,10 +30,6 @@ export function formatReminderTime(iso: string): string {
 export async function sendBrevoReminderEmail(input: {
   to: string;
   actionTitle: string;
-  focusTitle?: string | null;
-  planTitle?: string | null;
-  remindAt?: string | null;
-  details?: string | null;
   reminderId: string;
 }): Promise<{ ok: boolean; statusCode?: number; messageId?: string | null; error?: string }> {
   const apiKey = Deno.env.get("BREVO_API_KEY");
@@ -43,30 +39,7 @@ export async function sendBrevoReminderEmail(input: {
   }
 
   const cleanTitle = input.actionTitle.trim();
-  const subject = cleanTitle.length <= 70 ? `Reminder: ${cleanTitle}` : cleanTitle.slice(0, 120);
-  const whenLine = input.remindAt ? formatReminderTime(input.remindAt) : null;
-
-  const htmlContent = `
-    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#171717">
-      <h1 style="font-size:18px;margin:0 0 12px">${escapeHtml(cleanTitle)}</h1>
-      ${input.focusTitle ? `<p><strong>Focus:</strong> ${escapeHtml(input.focusTitle)}</p>` : ""}
-      ${input.planTitle ? `<p><strong>Plan:</strong> ${escapeHtml(input.planTitle)}</p>` : ""}
-      ${whenLine ? `<p><strong>When:</strong> ${escapeHtml(whenLine)}</p>` : ""}
-      ${input.details ? `<p>${escapeHtml(input.details)}</p>` : ""}
-      <p style="font-size:12px;color:#666;margin-top:20px">You created this reminder in Palette Plotting.</p>
-    </div>
-  `;
-
-  const textContent = [
-    cleanTitle,
-    input.focusTitle ? `Focus: ${input.focusTitle}` : "",
-    input.planTitle ? `Plan: ${input.planTitle}` : "",
-    whenLine ? `When: ${whenLine}` : "",
-    input.details || "",
-    "You created this reminder in Palette Plotting.",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const subject = cleanTitle.length <= 120 ? cleanTitle : cleanTitle.slice(0, 120);
 
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -82,8 +55,8 @@ export async function sendBrevoReminderEmail(input: {
       },
       to: [{ email: input.to }],
       subject,
-      htmlContent,
-      textContent,
+      htmlContent: `<p>${escapeHtml(cleanTitle)}</p>`,
+      textContent: cleanTitle,
       tags: ["palette_plan_reminder"],
       headers: {
         "X-Palette-Reminder-Id": input.reminderId,

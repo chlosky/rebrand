@@ -39,9 +39,8 @@ export function buildIcalCalendar(reminders: BoardReminder[], calendarName = "Pa
       `DTSTAMP:${formatIcalDate(new Date().toISOString())}`,
       `DTSTART:${formatIcalDate(r.remind_at)}`,
       `SUMMARY:${escapeIcal(r.title)}`,
+      "END:VEVENT",
     );
-    if (r.body) lines.push(`DESCRIPTION:${escapeIcal(r.body)}`);
-    lines.push("END:VEVENT");
   }
 
   lines.push("END:VCALENDAR");
@@ -115,14 +114,6 @@ export function buildAccountabilityIcalCalendar(
   reminders.forEach((reminder, index) => {
     const startIso = reminderToIso(reminder);
     const uid = `palette-${reminder.action_id || `reminder-${index}`}@paletteplotting.com`;
-    const description = [
-      reminder.goal_title ? `Focus: ${reminder.goal_title}` : null,
-      reminder.plan_title ? `Plan: ${reminder.plan_title}` : null,
-      "Created in Palette Plotting.",
-    ]
-      .filter(Boolean)
-      .join("\\n");
-
     lines.push(
       "BEGIN:VEVENT",
       `UID:${uid}`,
@@ -130,7 +121,6 @@ export function buildAccountabilityIcalCalendar(
       `DTSTART:${formatIcalDate(startIso)}`,
       rruleForAccountabilityReminder(reminder),
       `SUMMARY:${escapeIcal(reminder.title)}`,
-      `DESCRIPTION:${escapeIcal(description)}`,
       "END:VEVENT",
     );
   });

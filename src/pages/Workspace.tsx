@@ -100,8 +100,6 @@ const GUIDE_CATEGORY_LABEL_KEYS: Record<string, string> = {
 
   "life-rebrand": "workspace.library.categories.lifeRebrand",
 
-  moodboarding: "workspace.library.categories.moodboard",
-
   "home-organization": "workspace.library.categories.homeOrg",
 
   "office-optimization": "workspace.library.categories.office",

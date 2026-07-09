@@ -11,7 +11,6 @@ import type {
 } from "@/lib/boards/accountabilityMap";
 import {
   CADENCE_OPTIONS,
-  DAILY_TIME_QUICK_OPTIONS,
   DEFAULT_REMINDER_CHANNELS,
   DEFAULT_REMINDER_TYPE,
   naturalizeTitle,
@@ -92,19 +91,7 @@ function CadenceTimingControls({
   onTime: (t: string) => void;
 }) {
   const timeValue = remind_time ?? "09:00";
-  const timeOptions: readonly string[] =
-    (DAILY_TIME_QUICK_OPTIONS as readonly string[]).includes(timeValue)
-      ? DAILY_TIME_QUICK_OPTIONS
-      : [...DAILY_TIME_QUICK_OPTIONS, timeValue];
-
-  const timeLabel = (t: string) => {
-    const [h, m] = t.split(":").map((x) => parseInt(x, 10));
-    const hour = Number.isFinite(h) ? h : 9;
-    const min = Number.isFinite(m) ? m : 0;
-    const period = hour >= 12 ? "PM" : "AM";
-    const h12 = hour % 12 || 12;
-    return `${h12}:${String(min).padStart(2, "0")} ${period}`;
-  };
+  const dayOfMonth = Math.min(31, Math.max(1, remind_day_of_month ?? 1));
 
   return (
     <div className="flex shrink-0 flex-nowrap items-center gap-0.5">
@@ -123,7 +110,7 @@ function CadenceTimingControls({
       <div
         className={cn(
           "shrink-0",
-          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[104px]" : "w-[52px]",
+          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[104px]" : "w-[40px]",
         )}
       >
         {cadence === "once" ? (
@@ -135,18 +122,19 @@ function CadenceTimingControls({
             className={cn(PILL_SELECT, "w-full")}
           />
         ) : cadence === "monthly" ? (
-          <select
+          <input
+            type="number"
+            min={1}
+            max={31}
             disabled={locked}
-          value={String(Math.min(31, Math.max(1, remind_day_of_month ?? 1)))}
-          onChange={(e) => onDayOfMonth(parseInt(e.target.value, 10))}
-            className={cn(PILL_SELECT, "w-full")}
-          >
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+            value={dayOfMonth}
+            onChange={(e) => {
+              const parsed = parseInt(e.target.value, 10);
+              if (Number.isFinite(parsed)) onDayOfMonth(Math.min(31, Math.max(1, parsed)));
+            }}
+            className={cn(PILL_SELECT, "w-full text-center tabular-nums")}
+            aria-label="Day of month"
+          />
         ) : cadence === "weekly" ? (
           <select
             disabled={locked}
@@ -162,18 +150,14 @@ function CadenceTimingControls({
           </select>
         ) : null}
       </div>
-      <select
+      <input
+        type="time"
         disabled={locked}
         value={timeValue}
-        onChange={(e) => onTime(e.target.value)}
-        className={cn(PILL_SELECT, "w-[72px]")}
-      >
-        {timeOptions.map((t) => (
-          <option key={t} value={t}>
-            {timeLabel(t)}
-          </option>
-        ))}
-      </select>
+        onChange={(e) => onTime(e.target.value || "09:00")}
+        className={cn(PILL_SELECT, "w-[7.5rem] min-w-[7.5rem] px-2")}
+        aria-label="Reminder time"
+      />
     </div>
   );
 }
@@ -333,6 +317,23 @@ function ActionNodeRow({
           onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
           onTime={(t) => onPatch({ remind_time: t })}
         />
+        {action.channels.sms && !locked ? (
+          <>
+            <Input
+              value={action.sms_text ?? smsTextFromTitle(action.title)}
+              onChange={(e) =>
+                onPatch({ sms_text: stripSmsText(e.target.value).slice(0, SMS_MAX_LENGTH) })
+              }
+              className="h-7 min-w-[7rem] max-w-[11rem] shrink border-0 bg-neutral-100 px-2 text-[10px] shadow-none focus-visible:ring-1 focus-visible:ring-neutral-300"
+              maxLength={SMS_MAX_LENGTH}
+              placeholder="Text message"
+              aria-label="Text reminder"
+            />
+            <span className={cn("shrink-0 text-[10px]", smsOver ? "text-destructive" : "text-neutral-400")}>
+              {smsLen}/{SMS_MAX_LENGTH}
+            </span>
+          </>
+        ) : null}
         <RejectOrDeleteButton
           suggested={action.status === "suggested"}
           locked={locked}
@@ -340,24 +341,6 @@ function ActionNodeRow({
           onDelete={onDelete}
         />
       </div>
-
-      {action.channels.sms && !locked ? (
-        <div className="flex flex-wrap items-center gap-2 px-2.5 pb-0.5">
-          <span className="shrink-0 text-[10px] text-neutral-500">Text reminder</span>
-          <Input
-            value={action.sms_text ?? smsTextFromTitle(action.title)}
-            onChange={(e) =>
-              onPatch({ sms_text: stripSmsText(e.target.value).slice(0, SMS_MAX_LENGTH) })
-            }
-            className="h-7 min-w-[160px] flex-1 text-sm"
-            maxLength={SMS_MAX_LENGTH}
-            placeholder="70 characters max"
-          />
-          <span className={cn("shrink-0 text-[10px]", smsOver ? "text-destructive" : "text-neutral-400")}>
-            {smsLen}/{SMS_MAX_LENGTH}
-          </span>
-        </div>
-      ) : null}
     </div>
   );
 }

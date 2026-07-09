@@ -6,11 +6,12 @@ import {
 } from "@/site/lib/newsletter";
 import { cn } from "@/site/lib/utils";
 
-const SUCCESS_MESSAGE = "You're on the list. Watch for The Palette Letter in your inbox.";
+const SUCCESS_WAITING = "You're on the list. We'll email you when early access opens.";
+const SUCCESS_DEFAULT = "You're on the list. Watch for The Palette Letter in your inbox.";
 
 type PaletteLetterSignupProps = {
   source: NewsletterSignupSource;
-  layout?: "card" | "footer";
+  layout?: "card" | "footer" | "waiting";
   className?: string;
   pagePath?: string;
 };
@@ -54,50 +55,61 @@ export function PaletteLetterSignup({
         className={cn(
           layout === "footer"
             ? "rounded-xl border border-neutral-200 bg-white p-4"
-            : "rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8",
+            : layout === "waiting"
+              ? "rounded-2xl border border-neutral-200 bg-white p-6"
+              : "rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8",
           className,
         )}
         role="status"
       >
-        <p className="text-sm font-medium text-neutral-900 sm:text-base">{SUCCESS_MESSAGE}</p>
+        <p className="text-sm font-medium text-neutral-900 sm:text-base">
+          {layout === "waiting" ? SUCCESS_WAITING : SUCCESS_DEFAULT}
+        </p>
       </div>
     );
   }
 
   const isFooter = layout === "footer";
+  const isWaiting = layout === "waiting";
 
   return (
     <section
       className={cn(
         isFooter
           ? "rounded-xl border border-neutral-200 bg-white p-4"
-          : "rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8",
+          : isWaiting
+            ? "rounded-2xl border border-neutral-200 bg-white p-6 text-center"
+            : "rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8",
         className,
       )}
       aria-labelledby={isFooter ? "footer-palette-letter-heading" : "palette-letter-heading"}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-neutral-500">
-        The Palette Letter
-      </p>
+      {!isWaiting ? (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-neutral-500">
+          The Palette Letter
+        </p>
+      ) : null}
       <h2
         id={isFooter ? "footer-palette-letter-heading" : "palette-letter-heading"}
         className={cn(
-          "mt-2 font-semibold text-neutral-900",
-          isFooter ? "text-base" : "text-xl sm:text-2xl",
+          "font-semibold text-neutral-900",
+          isFooter ? "mt-2 text-base" : isWaiting ? "text-lg" : "mt-2 text-xl sm:text-2xl",
         )}
       >
-        Join The Palette Letter
+        {isWaiting ? "Join the waitlist" : "Join The Palette Letter"}
       </h2>
       <p
         className={cn(
           "text-sm leading-relaxed text-neutral-600",
-          isFooter ? "mt-2" : "mt-3 sm:text-base",
+          isFooter ? "mt-2" : isWaiting ? "mt-2" : "mt-3 sm:text-base",
         )}
       >
-        Be the first to know about discounts. Board ideas, color inspo, and Palette Plot drops.
+        {isWaiting
+          ? "One email when Palette Plotting opens. No spam."
+          : "Be the first to know about discounts. Board ideas, color inspo, and Palette Plot drops."}
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+      <form onSubmit={handleSubmit} className={cn("mt-5 space-y-3", isWaiting && "text-left")}>
         <label className="block">
           <span className="sr-only">Email address</span>
           <input
@@ -118,7 +130,7 @@ export function PaletteLetterSignup({
           disabled={status === "submitting"}
           className="h-12 w-full rounded-xl text-base font-semibold"
         >
-          {status === "submitting" ? "Joining…" : "Join the list"}
+          {status === "submitting" ? "Joining…" : isWaiting ? "Join waitlist" : "Join the list"}
         </Button>
         <p className="text-xs leading-relaxed text-neutral-500">
           By joining, you agree to receive emails from Palette Plot. You can unsubscribe anytime.
