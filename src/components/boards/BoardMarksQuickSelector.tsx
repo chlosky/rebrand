@@ -654,7 +654,10 @@ export function BoardMarksQuickSelector({
                   type="button"
                   role="menuitem"
                   title={label}
-                  onClick={() => handleItemClick(id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleItemClick(id);
+                  }}
                   className={cn(mainItemClass, accent)}
                   style={{ left, top }}
                 >

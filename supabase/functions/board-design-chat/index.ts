@@ -125,7 +125,7 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
    Default removes the first match; set "all": true to remove every match.
    Always propose deletions — never delete without user confirmation (yes / Apply suggestion).
 
-12. add_board — add a new focus board tab (max 3 focus boards plus The Plan):
+12. add_board — add a new user-created focus board tab:
    { "type": "add_board", "title": "Travel Ideas" }
    title optional — defaults to Focus Board N.
 

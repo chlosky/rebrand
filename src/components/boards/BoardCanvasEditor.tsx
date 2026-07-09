@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { Canvas, Circle, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
 import { artboardSizeForOrientation, withArtboardMeta } from "@/lib/boards/artboard";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
@@ -2030,6 +2030,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const restoringHistoryRef = useRef(false);
     const suppressHistoryRef = useRef(false);
     const historyRef = useRef<{ snapshots: string[]; index: number }>({ snapshots: [], index: -1 });
+    const lastEmittedLayoutRef = useRef<{ boardId: string; json: string } | null>(null);
     const onHistoryChangeRef = useRef(onHistoryChange);
     const rebindStructureHandlersRef = useRef<(canvas: Canvas) => void>(() => {});
     const handleStructurePointerRef = useRef<(canvas: Canvas, target: FabricObjectType) => boolean>(() => false);
@@ -2084,9 +2085,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas || readOnly) return;
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => {
-        onSave(withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize));
+        const layout = withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize);
+        lastEmittedLayoutRef.current = { boardId, json: JSON.stringify(layout) };
+        onSave(layout);
       }, 700);
-    }, [onSave, readOnly, artboardSize]);
+    }, [onSave, readOnly, artboardSize, boardId]);
 
     const notifyHistoryChange = useCallback(() => {
       const h = historyRef.current;
@@ -2632,6 +2635,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!fabricCanvasRenderable(canvas)) return;
 
         const loadKey = boardLayoutLoadKey(boardId, colorKey, layoutJson);
+        const lastEmittedLayout = lastEmittedLayoutRef.current;
+        if (
+          lastEmittedLayout?.boardId === boardId &&
+          lastEmittedLayout.json === JSON.stringify(layoutJson)
+        ) {
+          loadedBoardRef.current = loadKey;
+          return;
+        }
         if (loadedBoardRef.current === loadKey) return;
 
         loadedBoardRef.current = loadKey;
@@ -3370,7 +3381,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
 
-      const t = new FabricText(text, {
+      const t = new IText(text, {
         left,
         top,
         fontSize,
@@ -3396,7 +3407,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
 
-        const t = new FabricText(text, {
+        const t = new IText(text, {
           left: x * activeArtboardWidth,
           top: y * activeArtboardHeight,
           fontSize,
@@ -4307,10 +4318,15 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           return;
         }
         const { normX, normY } = quickSelector;
+        if (action === "statement") {
+          flushSync(() => setQuickSelector(null));
+          deleteTargetRef.current = null;
+          addTextAtPoint(normX, normY);
+          return;
+        }
         setQuickSelector(null);
         deleteTargetRef.current = null;
-        if (action === "statement") addTextAtPoint(normX, normY);
-        else if (action === "sticky") addStickyNoteAtPoint(normX, normY);
+        if (action === "sticky") addStickyNoteAtPoint(normX, normY);
         else if (action === "image") onRequestImagePick?.();
         else if (action === "draw") startDrawMode();
         else if (action === "paste") void pasteAtPoint(normX, normY);

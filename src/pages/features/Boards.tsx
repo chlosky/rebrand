@@ -386,11 +386,6 @@ export default function Boards() {
 
   const handleAddBoard = async () => {
     if (!workspace) return;
-    const focusCount = workspace.boards.filter((b) => b.role === "focus").length;
-    if (focusCount >= 3) {
-      toast.message("Each set includes three focus boards plus The Plan");
-      return;
-    }
     await handleAddBoardFromAi();
     toast.success("Focus board added");
   };
