@@ -79,28 +79,38 @@ function weekdayToIcal(day: string | null | undefined): string {
   }
 }
 
-function rruleForAccountabilityReminder(reminder: AccountabilityReminder): string {
+function validDateFromIso(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function rruleForAccountabilityReminder(reminder: AccountabilityReminder, until: Date | null = null): string {
+  const untilPart = until ? `;UNTIL=${formatIcalDate(until.toISOString())}` : "";
+
   if (reminder.cadence === "daily") {
-    return "RRULE:FREQ=DAILY";
+    return `RRULE:FREQ=DAILY${untilPart}`;
   }
 
   if (reminder.cadence === "weekly") {
-    return `RRULE:FREQ=WEEKLY;BYDAY=${weekdayToIcal(reminder.day_of_week)}`;
+    return `RRULE:FREQ=WEEKLY;BYDAY=${weekdayToIcal(reminder.day_of_week)}${untilPart}`;
   }
 
   if (reminder.cadence === "monthly") {
     const dom = reminder.day_of_month ?? 1;
-    return `RRULE:FREQ=MONTHLY;BYMONTHDAY=${dom === -1 ? -1 : Math.min(31, Math.max(1, dom))}`;
+    return `RRULE:FREQ=MONTHLY;BYMONTHDAY=${dom === -1 ? -1 : Math.min(31, Math.max(1, dom))}${untilPart}`;
   }
 
-  return "RRULE:FREQ=MONTHLY;INTERVAL=3";
+  return `RRULE:FREQ=MONTHLY;INTERVAL=3${untilPart}`;
 }
 
 export function buildAccountabilityIcalCalendar(
   reminders: AccountabilityReminder[],
   calendarName = "Palette Plotting — Action Reminders",
+  maxDateIso?: string | null,
 ): string {
   const now = new Date().toISOString();
+  const maxDate = validDateFromIso(maxDateIso);
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -113,13 +123,15 @@ export function buildAccountabilityIcalCalendar(
 
   reminders.forEach((reminder, index) => {
     const startIso = reminderToIso(reminder);
+    if (maxDate && new Date(startIso).getTime() > maxDate.getTime()) return;
+
     const uid = `palette-${reminder.action_id || `reminder-${index}`}@paletteplotting.com`;
     lines.push(
       "BEGIN:VEVENT",
       `UID:${uid}`,
       `DTSTAMP:${formatIcalDate(now)}`,
       `DTSTART:${formatIcalDate(startIso)}`,
-      rruleForAccountabilityReminder(reminder),
+      rruleForAccountabilityReminder(reminder, maxDate),
       `SUMMARY:${escapeIcal(reminder.title)}`,
       "END:VEVENT",
     );
@@ -132,8 +144,9 @@ export function buildAccountabilityIcalCalendar(
 export function downloadAccountabilityIcalFile(
   reminders: AccountabilityReminder[],
   filename = "palette-plotting-action-reminders.ics",
+  maxDateIso?: string | null,
 ): void {
-  const ics = buildAccountabilityIcalCalendar(reminders);
+  const ics = buildAccountabilityIcalCalendar(reminders, "Palette Plotting — Action Reminders", maxDateIso);
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

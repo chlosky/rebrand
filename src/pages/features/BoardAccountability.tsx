@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Download,
   Route,
   LayoutGrid,
@@ -26,8 +27,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BoardAccountabilityFlow } from "@/components/boards/BoardAccountabilityFlow";
 import { BoardActionKitTray } from "@/components/boards/BoardActionKitTray";
-import { TrialExportUnlockDialog } from "@/components/boards/TrialExportUnlockDialog";
 import { BoardGuideChatPanel } from "@/components/boards/BoardCompanionPanel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import {
   createBoardReminder,
@@ -64,6 +70,8 @@ const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
 
 const DAILY_SMS_LIMIT = 5;
 
+type CalendarImportTarget = "apple" | "google" | "outlook";
+
 function normalizeToE164(phone: string): string | null {
   const trimmed = phone.trim();
   const digits = trimmed.replace(/\D/g, "");
@@ -86,9 +94,25 @@ function actionErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function openCalendarImportTarget(target?: CalendarImportTarget) {
+  if (target === "google") {
+    window.open("https://calendar.google.com/calendar/u/0/r/settings/export", "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  if (target === "outlook") {
+    window.open("https://outlook.live.com/calendar/0/addcalendar", "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  if (target === "apple") {
+    window.open("https://www.icloud.com/calendar/", "_blank", "noopener,noreferrer");
+  }
+}
+
 export default function BoardAccountability() {
   const { user } = useAuth();
-  const { hasPro, onTrial, loading: proLoading, refreshPlan } = usePlottingPro();
+  const { hasPro, currentPeriodEnd, loading: proLoading } = usePlottingPro();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const workspaceParam = searchParams.get("workspace");
@@ -99,6 +123,7 @@ export default function BoardAccountability() {
   const [map, setMap] = useState<AccountabilityMap | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzePhase, setAnalyzePhase] = useState<string | null>(null);
+  const analyzePhaseTimersRef = useRef<number[]>([]);
   const [showReanalyzeDialog, setShowReanalyzeDialog] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [exportingIcal, setExportingIcal] = useState(false);
@@ -110,8 +135,6 @@ export default function BoardAccountability() {
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
   const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
   const [pendingSmsActionId, setPendingSmsActionId] = useState<string | null>(null);
-  const [showTrialUnlock, setShowTrialUnlock] = useState(false);
-  const trialBlocksExports = hasPro && onTrial;
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -221,6 +244,8 @@ export default function BoardAccountability() {
       setShowReanalyzeDialog(true);
       return;
     }
+    for (const id of analyzePhaseTimersRef.current) window.clearTimeout(id);
+    analyzePhaseTimersRef.current = [];
     setAnalyzing(true);
     setAnalyzePhase("Reading your workspace…");
     try {
@@ -234,8 +259,10 @@ export default function BoardAccountability() {
         return;
       }
 
-      window.setTimeout(() => setAnalyzePhase("Finding focus areas and actions…"), 800);
-      window.setTimeout(() => setAnalyzePhase("Drafting your action map…"), 1600);
+      analyzePhaseTimersRef.current.push(
+        window.setTimeout(() => setAnalyzePhase("Finding focus areas and actions…"), 800),
+        window.setTimeout(() => setAnalyzePhase("Drafting your action map…"), 1600),
+      );
 
       const { data, error } = await supabase.functions.invoke("board-accountability-map", {
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -259,6 +286,8 @@ export default function BoardAccountability() {
         toast.error("Couldn't analyze your boards. Try again in a moment.");
       }
     } finally {
+      for (const id of analyzePhaseTimersRef.current) window.clearTimeout(id);
+      analyzePhaseTimersRef.current = [];
       setAnalyzing(false);
       setAnalyzePhase(null);
     }
@@ -318,11 +347,15 @@ export default function BoardAccountability() {
 
     for (const r of finalizedMap.reminders) {
       const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
-      if (reminderType === "calendar") {
-        calendar += 1;
+      const channels = [reminderType];
+      const remindAt = reminderToIso(r);
+      if (
+        reminderType === "calendar" &&
+        currentPeriodEnd &&
+        new Date(remindAt).getTime() > new Date(currentPeriodEnd).getTime()
+      ) {
         continue;
       }
-      const channels = [reminderType];
       const smsContent =
         reminderType === "sms"
           ? stripSmsText(r.sms_text ?? r.title).slice(0, 70)
@@ -333,7 +366,7 @@ export default function BoardAccountability() {
         user_id: user.id,
         title: r.title,
         body: null,
-        remind_at: reminderToIso(r),
+        remind_at: remindAt,
         timezone: tz,
         channels,
         source: "ai_extracted",
@@ -358,6 +391,7 @@ export default function BoardAccountability() {
 
       if (reminderType === "email") email += 1;
       if (reminderType === "sms") sms += 1;
+      if (reminderType === "calendar") calendar += 1;
     }
 
     return { email, sms, calendar, total: email + sms + calendar };
@@ -395,8 +429,13 @@ export default function BoardAccountability() {
     return buildRemindersFromMap(map);
   }, [map]);
 
+  const calendarExportReminders = useMemo(
+    () => exportableReminders.filter((r) => r.reminder_type === "calendar"),
+    [exportableReminders],
+  );
+
   const hasDraft = Boolean(map?.focuses?.length);
-  const hasCalendarReminders = exportableReminders.length > 0;
+  const hasCalendarReminders = calendarExportReminders.length > 0;
 
   const smsConfiguredCount = useMemo(() => {
     if (!map) return 0;
@@ -531,15 +570,20 @@ export default function BoardAccountability() {
     return true;
   };
 
-  const doExportIcal = () => {
-    if (!exportableReminders.length) {
-      toast.error("Add at least one scheduled action to export to your calendar.");
+  const doExportIcal = (target?: CalendarImportTarget) => {
+    if (!calendarExportReminders.length) {
+      toast.error("Add at least one calendar action to export to your calendar.");
       return;
     }
 
     setExportingIcal(true);
     try {
-      downloadAccountabilityIcalFile(exportableReminders, "palette-plotting-action-reminders.ics");
+      downloadAccountabilityIcalFile(
+        calendarExportReminders,
+        "palette-plotting-action-reminders.ics",
+        currentPeriodEnd,
+      );
+      openCalendarImportTarget(target);
       toast.success("Calendar file ready");
     } catch {
       toast.error("Couldn't add to calendar");
@@ -548,13 +592,8 @@ export default function BoardAccountability() {
     }
   };
 
-  const runExportIcal = () => {
-    if (trialBlocksExports) {
-      setShowTrialUnlock(true);
-      return;
-    }
-
-    doExportIcal();
+  const runExportIcal = (target?: CalendarImportTarget) => {
+    doExportIcal(target);
   };
 
   const smsReady = hasPro && smsRemindersEnabled && smsPhoneConfigured && smsConsentOk;
@@ -591,16 +630,35 @@ export default function BoardAccountability() {
               {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
               Analyze workspace
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1 text-xs"
-              disabled={exportingIcal || !hasCalendarReminders}
-              onClick={() => runExportIcal()}
-            >
-              {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-              Calendar export
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs"
+                  disabled={exportingIcal || !hasCalendarReminders}
+                >
+                  {exportingIcal ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  Calendar export
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[11rem]">
+                <DropdownMenuItem className="text-xs" onClick={() => runExportIcal("apple")}>
+                  Apple Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs" onClick={() => runExportIcal("google")}>
+                  Google Calendar
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs" onClick={() => runExportIcal("outlook")}>
+                  Outlook
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               size="sm"
               className="gap-1 bg-stone-900 text-xs"
@@ -733,7 +791,7 @@ export default function BoardAccountability() {
           <DialogHeader>
             <DialogTitle>Re-analyze workspace?</DialogTitle>
             <DialogDescription>
-              This may replace your current map. Email and text reminders refresh when you tap Update.
+              This may replace your current map. Email, text, and calendar reminders refresh when you tap Update.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -795,12 +853,6 @@ export default function BoardAccountability() {
         </DialogContent>
       </Dialog>
 
-      <TrialExportUnlockDialog
-        open={showTrialUnlock}
-        onOpenChange={setShowTrialUnlock}
-        refreshPlan={refreshPlan}
-        onUnlocked={doExportIcal}
-      />
     </div>
   );
 }

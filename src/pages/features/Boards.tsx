@@ -511,7 +511,7 @@ export default function Boards() {
               }}
             >
               <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Download</span>
+              <span className="hidden sm:inline">Print & Download</span>
             </Button>
             <div className="ml-1 flex shrink-0 items-center gap-2 border-l border-neutral-200 pl-2 max-md:ml-0.5 max-md:gap-1 max-md:pl-1.5">
               <Route className="h-5 w-5 shrink-0 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />

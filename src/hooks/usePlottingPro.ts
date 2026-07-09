@@ -6,6 +6,7 @@ export type PlottingPlanSnapshot = {
   hasPro: boolean;
   onTrial: boolean;
   hadTrial: boolean;
+  currentPeriodEnd: string | null;
 };
 
 /** One fetch per signed-in user per session — dashboard lock state only. */
@@ -27,7 +28,7 @@ type UserPlanRow = {
 
 function snapshotFromPlan(row: UserPlanRow | null): PlottingPlanSnapshot {
   if (!row?.tier) {
-    return { hasPro: false, onTrial: false, hadTrial: false };
+    return { hasPro: false, onTrial: false, hadTrial: false, currentPeriodEnd: null };
   }
 
   const status = row.status ?? "";
@@ -37,7 +38,7 @@ function snapshotFromPlan(row: UserPlanRow | null): PlottingPlanSnapshot {
   const onTrial = hasPro && (row.on_trial === true || status === "trialing");
   const hadTrial = row.had_trial === true || status === "trialing";
 
-  return { hasPro, onTrial, hadTrial };
+  return { hasPro, onTrial, hadTrial, currentPeriodEnd: row.current_period_end ?? null };
 }
 
 async function fetchPlottingPlan(userId: string): Promise<PlottingPlanSnapshot> {
@@ -63,6 +64,7 @@ export function usePlottingPro() {
   const [hasPro, setHasPro] = useState(cached?.hasPro ?? false);
   const [onTrial, setOnTrial] = useState(cached?.onTrial ?? false);
   const [hadTrial, setHadTrial] = useState(cached?.hadTrial ?? false);
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState(cached?.currentPeriodEnd ?? null);
   const [loading, setLoading] = useState(cached === undefined && !authLoading);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -80,6 +82,7 @@ export function usePlottingPro() {
       setHasPro(false);
       setOnTrial(false);
       setHadTrial(false);
+      setCurrentPeriodEnd(null);
       setLoading(false);
       return;
     }
@@ -89,6 +92,7 @@ export function usePlottingPro() {
       setHasPro(hit.hasPro);
       setOnTrial(hit.onTrial);
       setHadTrial(hit.hadTrial);
+      setCurrentPeriodEnd(hit.currentPeriodEnd);
       setLoading(false);
       return;
     }
@@ -106,13 +110,15 @@ export function usePlottingPro() {
           setHasPro(snapshot.hasPro);
           setOnTrial(snapshot.onTrial);
           setHadTrial(snapshot.hadTrial);
+          setCurrentPeriodEnd(snapshot.currentPeriodEnd);
         }
       } catch {
         if (!cancelled) {
-          planCache.set(user.id, { hasPro: false, onTrial: false, hadTrial: false });
+          planCache.set(user.id, { hasPro: false, onTrial: false, hadTrial: false, currentPeriodEnd: null });
           setHasPro(false);
           setOnTrial(false);
           setHadTrial(false);
+          setCurrentPeriodEnd(null);
         }
       } finally {
         planInFlight.delete(user.id);
@@ -125,5 +131,5 @@ export function usePlottingPro() {
     };
   }, [user?.id, authLoading, refreshToken]);
 
-  return { hasPro, onTrial, hadTrial, loading: authLoading || loading, refreshPlan };
+  return { hasPro, onTrial, hadTrial, currentPeriodEnd, loading: authLoading || loading, refreshPlan };
 }

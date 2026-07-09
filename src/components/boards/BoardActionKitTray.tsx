@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { CheckCircle2, Download, Loader2, MessageCircleHeart, ScanSearch } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { BoardGuideChatPanel } from "@/components/boards/BoardCompanionPanel";
 import type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
 import { cn } from "@/lib/utils";
+
+type CalendarImportTarget = "apple" | "google" | "outlook";
 
 type BoardActionKitTrayProps = {
   workspaceId: string;
@@ -15,7 +23,7 @@ type BoardActionKitTrayProps = {
   exportingIcal: boolean;
   remindersDisabled: boolean;
   hasCalendarReminders: boolean;
-  onExportIcal: () => void;
+  onExportIcal: (target?: CalendarImportTarget) => void;
   finalizing: boolean;
   hasDraft: boolean;
   finalized: boolean;
@@ -78,19 +86,33 @@ export function BoardActionKitTray({
           <span className="truncate">Analyze</span>
         </button>
 
-        <button
-          type="button"
-          disabled={exportingIcal || remindersDisabled || !hasCalendarReminders}
-          onClick={() => onExportIcal()}
-          className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg py-2 text-[10px] font-medium text-stone-600 disabled:opacity-50"
-        >
-          {exportingIcal ? (
-            <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.75} />
-          ) : (
-            <Download className="h-5 w-5" strokeWidth={1.75} />
-          )}
-          <span className="truncate">Calendar</span>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={exportingIcal || remindersDisabled || !hasCalendarReminders}
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg py-2 text-[10px] font-medium text-stone-600 disabled:opacity-50"
+            >
+              {exportingIcal ? (
+                <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.75} />
+              ) : (
+                <Download className="h-5 w-5" strokeWidth={1.75} />
+              )}
+              <span className="truncate">Calendar</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="min-w-[10rem]">
+            <DropdownMenuItem className="text-xs" onClick={() => onExportIcal("apple")}>
+              Apple Calendar
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-xs" onClick={() => onExportIcal("google")}>
+              Google Calendar
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-xs" onClick={() => onExportIcal("outlook")}>
+              Outlook
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <button
           type="button"

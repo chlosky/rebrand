@@ -92,10 +92,10 @@
     "planWeekly": "Weekly",
     "openingPortal": "Opening billing portal…",
     "trialActiveHeading": "Free trial active",
-    "trialActiveDescription": "Board downloads and calendar export unlock when your paid subscription starts. Start billing now to unlock them immediately.",
+    "trialActiveDescription": "Board downloads unlock when your paid subscription starts. Start billing now to unlock them immediately.",
     "endTrialEarly": "Start subscription now",
     "trialEnding": "Starting subscription…",
-    "trialEndedNow": "Subscription started — downloads and calendar export are unlocked.",
+    "trialEndedNow": "Subscription started — board downloads are unlocked.",
     "trialEndedAlready": "Your subscription is already active."
   },
   "legal": {
