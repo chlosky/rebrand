@@ -1,5 +1,5 @@
 import { StaticCanvas, FabricImage } from "fabric";
-import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH } from "@/components/boards/BoardCanvasEditor";
+import { ARTBOARD_HEIGHT, ARTBOARD_WIDTH, restoreBoardLayoutAfterLoad } from "@/components/boards/BoardCanvasEditor";
 import { readArtboardSizeFromLayoutJson } from "@/lib/boards/artboard";
 import { boardFillForKey } from "@/lib/boards/colors";
 import { fitArtboardInBox } from "@/lib/boards/layoutScale";
@@ -98,6 +98,7 @@ export async function renderBoardToDataUrl(options: RenderBoardOptions): Promise
 
   if (hasObjects) {
     await contentCanvas.loadFromJSON(layoutJson);
+    restoreBoardLayoutAfterLoad(contentCanvas);
   }
   contentCanvas.backgroundColor = bg;
   contentCanvas.renderAll();
@@ -194,6 +195,7 @@ export async function renderBoardToBlob(options: RenderBoardOptions): Promise<Bl
 
   if (hasObjects) {
     await contentCanvas.loadFromJSON(layoutJson);
+    restoreBoardLayoutAfterLoad(contentCanvas);
   }
   contentCanvas.backgroundColor = bg;
   contentCanvas.renderAll();

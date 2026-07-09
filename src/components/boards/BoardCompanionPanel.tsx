@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { RefObject } from "react";
 
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
 
-import { BOARD_COLORS } from "@/lib/boards/colors";
+import { BOARD_COLORS, normalizeBoardColorHex } from "@/lib/boards/colors";
 import type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
 import {
   applyActionGuideOperations,
@@ -58,7 +58,7 @@ type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
 
 
 const VISION_WELCOME_MESSAGE =
-  "I help with this board only — colors, labels, Our Collection images, notes, structures, and layout. What do you want to add or change?";
+  "What do you want to add, change, or remove — content, colors, layout, or board names?";
 
 const ACTION_WELCOME_MESSAGE =
   "Ask the guide to clean up actions, adjust reminders, or explain the plan.";
@@ -213,7 +213,7 @@ const VALID_DIAGRAMS = new Set<BoardDiagramType>([
 
 
 const VISION_FALLBACK_ASK_REPLY =
-  "I can help with this board — colors, labels, Our Collection images, notes, structures, and layout. Tell me what to add or change.";
+  "I can help with your boards — names, colors, stickies, labels, Our Collection images, notes, structures, and layout. Tell me what to add or change.";
 
 const ACTION_FALLBACK_ASK_REPLY =
   "I can help with that. What would you like to adjust — actions, reminder channels, or timing?";
@@ -254,7 +254,7 @@ function finalizeAssistantReply(
 ): string {
   if (appliedCount > 0) {
     const raw = (reply ?? "").trim();
-    return raw || `Done — I added ${appliedCount} ${appliedCount === 1 ? "piece" : "pieces"} to the board.`;
+    return raw || `Done — I applied ${appliedCount} ${appliedCount === 1 ? "change" : "changes"} to the board.`;
   }
   const neutral = (replyWithoutAction ?? reply ?? "").trim();
   if (neutral && !replyClaimsBoardChanges(neutral)) return neutral;
@@ -285,12 +285,15 @@ function isValidGuideAction(action: unknown): action is GuideAction {
   if (isForbiddenGuideAction(action)) return false;
   const a = action as Record<string, unknown>;
   switch (a.type) {
-    case "set_color":
-      return typeof a.color_key === "string" && VALID_COLOR_KEYS.has(a.color_key);
+    case "set_color": {
+      if (typeof a.color_key !== "string") return false;
+      const key = a.color_key.trim();
+      return VALID_COLOR_KEYS.has(key) || normalizeBoardColorHex(key) !== null;
+    }
     case "add_text":
       return typeof a.text === "string" && a.text.trim().length > 0;
     case "add_sticky":
-      return typeof a.text === "string" && a.text.trim().length > 0;
+      return true;
     case "add_diagram":
       return typeof a.diagram === "string" && VALID_DIAGRAMS.has(a.diagram as BoardDiagramType);
     case "add_sticker":
@@ -298,32 +301,171 @@ function isValidGuideAction(action: unknown): action is GuideAction {
     case "add_shape":
       return typeof a.shape === "string" && VALID_SHAPES.has(a.shape as BoardMarkShapeType);
     case "add_library_image":
-      return typeof a.theme === "string" && VALID_LIBRARY_THEMES.has(a.theme);
+      return (
+        (typeof a.theme === "string" && VALID_LIBRARY_THEMES.has(a.theme)) ||
+        (typeof a.keywords === "string" && a.keywords.trim().length > 0)
+      );
+    case "rename_board":
+      return typeof a.title === "string" && a.title.trim().length > 0;
+    case "delete_element":
+      if (typeof a.element_index === "number" && Number.isFinite(a.element_index)) return true;
+      if (typeof a.match_text === "string" && a.match_text.trim().length > 0) return true;
+      if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
+      return false;
     case "kanban_seed":
       return Array.isArray(a.columns) && a.columns.length > 0;
     case "gantt_seed":
       return Array.isArray(a.tasks) && a.tasks.length > 0;
+    case "add_board":
+    case "delete_board":
+    case "duplicate_board":
+    case "clear_board":
+    case "start_draw_mode":
+      return true;
     default:
       return false;
   }
 }
 
 function filterValidGuideActions(actions: unknown[]): GuideAction[] {
-  return actions.filter(isValidGuideAction);
+  return actions
+    .map((action) => {
+      if (!action || typeof action !== "object") return action;
+      const raw = action as Record<string, unknown>;
+      if (raw.type === "add_sticky_note" || raw.type === "sticky_note") {
+        return { ...raw, type: "add_sticky" };
+      }
+      if (raw.type === "add_structure" || raw.type === "add_decal") {
+        return {
+          ...raw,
+          type: "add_diagram",
+          diagram: raw.diagram ?? raw.structure,
+        };
+      }
+      if (raw.type === "add_statement") {
+        return { ...raw, type: "add_text" };
+      }
+      const boardTitle =
+        raw.board_title ?? raw.board ?? raw.board_name ?? raw.target_board;
+      if (typeof boardTitle === "string" && boardTitle.trim() && raw.type !== "rename_board") {
+        return { ...raw, board_title: boardTitle };
+      }
+      return action;
+    })
+    .filter(isValidGuideAction);
 }
 
 function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
+function actionSpecifiesBoard(action: GuideAction): boolean {
+  if (typeof action.board_id === "string" && action.board_id.trim()) return true;
+  return !!boardTitleNeedle(action);
+}
 
+function boardTitleNeedle(action: GuideAction): string | null {
+  const fields = [action.board_title, action.board, action.board_name, action.target_board];
+  for (const field of fields) {
+    if (typeof field === "string" && field.trim()) return field.trim().toLowerCase();
+  }
+  return null;
+}
+
+function resolveTargetBoardId(
+  action: GuideAction,
+  activeBoardId: string,
+  workspaceBoards: { id: string; title: string; role?: string }[],
+): string | null {
+  if (typeof action.board_id === "string") {
+    const id = action.board_id.trim();
+    if (workspaceBoards.some((b) => b.id === id)) return id;
+  }
+  const needle = boardTitleNeedle(action);
+  if (needle) {
+    const boardNum = needle.match(/^board\s*(\d+)$/);
+    if (boardNum) {
+      const idx = Number(boardNum[1]) - 1;
+      if (idx >= 0 && idx < workspaceBoards.length) return workspaceBoards[idx].id;
+    }
+    const exact = workspaceBoards.find((b) => b.title.trim().toLowerCase() === needle);
+    if (exact) return exact.id;
+    const partial =
+      workspaceBoards.find((b) => b.title.trim().toLowerCase().includes(needle)) ??
+      workspaceBoards.find((b) => needle.includes(b.title.trim().toLowerCase()));
+    if (partial) return partial.id;
+    const words = needle.split(/[\s,&]+/).filter((w) => w.length > 2);
+    if (words.length) {
+      const ranked = workspaceBoards
+        .map((b) => ({
+          id: b.id,
+          hits: words.filter((w) => b.title.trim().toLowerCase().includes(w)).length,
+        }))
+        .filter((r) => r.hits > 0)
+        .sort((a, b) => b.hits - a.hits);
+      if (ranked.length === 1 || (ranked.length > 1 && ranked[0].hits > ranked[1].hits)) {
+        return ranked[0].id;
+      }
+    }
+  }
+  if (!actionSpecifiesBoard(action)) return activeBoardId || null;
+  return null;
+}
+
+function getPendingTargetBoards(
+  actions: unknown[],
+  activeBoardId: string,
+  workspaceBoards: { id: string; title: string; role?: string }[],
+): { id: string; title: string }[] {
+  const ids = new Set<string>();
+  for (const raw of filterValidGuideActions(actions)) {
+    if (raw.type === "add_board") continue;
+    const id = resolveTargetBoardId(raw, activeBoardId, workspaceBoards);
+    if (id && id !== activeBoardId) ids.add(id);
+  }
+  return [...ids].map((id) => {
+    const board = workspaceBoards.find((b) => b.id === id);
+    return { id, title: board?.title?.trim() || "that board" };
+  });
+}
+
+function formatBoardSelectHint(boards: { title: string }[]): string {
+  if (boards.length === 1) {
+    return `Click "${boards[0].title}" in the board grid to select it, then tap Apply.`;
+  }
+  const names = boards.map((b) => `"${b.title}"`).join(", ");
+  return `These changes target multiple boards (${names}). Click one board in the grid to select it, then tap Apply.`;
+}
+
+const CANVAS_GUIDE_ACTIONS = new Set([
+  "clear_board",
+  "start_draw_mode",
+  "delete_element",
+  "kanban_seed",
+  "gantt_seed",
+  "add_text",
+  "add_sticky",
+  "add_diagram",
+  "add_sticker",
+  "add_shape",
+  "add_library_image",
+]);
 
 type BoardGuideChatPanelProps = {
   mode: "vision" | "action";
   workspaceId: string;
   activeBoardId?: string;
+  workspaceBoards?: { id: string; title: string; role?: string }[];
   editorRef?: RefObject<BoardCanvasHandle | null>;
+  getEditor?: () => BoardCanvasHandle | null;
+  getEditorForBoard?: (boardId: string) => BoardCanvasHandle | null | Promise<BoardCanvasHandle | null>;
   onBoardColorChange?: (boardId: string, colorKey: string) => Promise<void>;
+  onRenameBoard?: (boardId: string, title: string) => Promise<void>;
+  onAddBoard?: (title?: string) => Promise<void>;
+  onDeleteBoard?: (boardId: string) => Promise<void>;
+  onDuplicateBoard?: (boardId: string, title?: string) => Promise<void>;
+  onSelectBoard?: (boardId: string) => void;
+  getActiveBoardId?: () => string;
   actionMap?: AccountabilityMap | null;
   onActionMapChange?: (map: AccountabilityMap) => void;
   compact?: boolean;
@@ -335,8 +477,17 @@ export function BoardGuideChatPanel({
   mode,
   workspaceId,
   activeBoardId = "",
+  workspaceBoards = [],
   editorRef,
+  getEditor,
+  getEditorForBoard,
   onBoardColorChange,
+  onRenameBoard,
+  onAddBoard,
+  onDeleteBoard,
+  onDuplicateBoard,
+  onSelectBoard,
+  getActiveBoardId,
   actionMap = null,
   onActionMapChange,
   compact = false,
@@ -368,6 +519,18 @@ export function BoardGuideChatPanel({
 
   const [listening, setListening] = useState(false);
   const [speechSupported] = useState(() => speechSupportedRef.current);
+
+  const pendingTargetBoards = useMemo(
+    () =>
+      mode === "vision" && pendingGuideActions.length > 0
+        ? getPendingTargetBoards(
+            pendingGuideActions,
+            getActiveBoardId?.() ?? activeBoardId,
+            workspaceBoards,
+          )
+        : [],
+    [activeBoardId, getActiveBoardId, mode, pendingGuideActions, workspaceBoards],
+  );
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     requestAnimationFrame(() => {
@@ -487,27 +650,101 @@ export function BoardGuideChatPanel({
 
   const applyVisionActions = useCallback(
     async (actions: unknown[]): Promise<number> => {
-      if (!activeBoardId) {
+      const currentActiveBoardId = getActiveBoardId?.() ?? activeBoardId;
+      if (!currentActiveBoardId) {
         console.error("Guide applyActions: missing activeBoardId");
         return 0;
       }
 
-      const editor = editorRef?.current;
       let applied = 0;
+      const usedLibraryImageUrls = new Set<string>();
 
       for (const raw of filterValidGuideActions(actions)) {
         const action = raw;
         const type = action.type;
 
+        if (type === "add_board" && onAddBoard) {
+          try {
+            await onAddBoard(typeof action.title === "string" ? action.title.trim() : undefined);
+            applied += 1;
+          } catch (err) {
+            console.error("Guide applyActions: add_board failed", err);
+          }
+          continue;
+        }
+
+        const targetBoardId = resolveTargetBoardId(action, currentActiveBoardId, workspaceBoards);
+        if (!targetBoardId) continue;
+
         try {
-          if (type === "set_color" && typeof action.color_key === "string" && onBoardColorChange) {
-            await onBoardColorChange(activeBoardId, action.color_key);
+          if (type === "delete_board" && onDeleteBoard) {
+            const board = workspaceBoards.find((b) => b.id === targetBoardId);
+            if (board?.role === "plan") continue;
+            await onDeleteBoard(targetBoardId);
             applied += 1;
             continue;
           }
 
+          if (type === "duplicate_board" && onDuplicateBoard) {
+            await onDuplicateBoard(
+              targetBoardId,
+              typeof action.title === "string" ? action.title.trim() : undefined,
+            );
+            applied += 1;
+            continue;
+          }
+
+          if (type === "set_color" && typeof action.color_key === "string" && onBoardColorChange) {
+            const rawKey = action.color_key.trim();
+            const colorKey = normalizeBoardColorHex(rawKey) ?? (VALID_COLOR_KEYS.has(rawKey) ? rawKey : null);
+            if (!colorKey) continue;
+            await onBoardColorChange(targetBoardId, colorKey);
+            applied += 1;
+            continue;
+          }
+
+          if (type === "rename_board" && typeof action.title === "string" && onRenameBoard) {
+            const nextTitle = action.title.trim();
+            if (!nextTitle) continue;
+            await onRenameBoard(targetBoardId, nextTitle);
+            applied += 1;
+            continue;
+          }
+
+          if (targetBoardId !== currentActiveBoardId && CANVAS_GUIDE_ACTIONS.has(type)) {
+            continue;
+          }
+
+          const editor = getEditor?.() ?? editorRef?.current ?? null;
+
           if (!editor) {
-            console.error("Guide applyActions: editor ref missing for", type);
+            console.error("Guide applyActions: editor ref missing for", type, "on board", targetBoardId);
+            continue;
+          }
+
+          if (type === "clear_board") {
+            editor.resetBoard();
+            applied += 1;
+            continue;
+          }
+
+          if (type === "start_draw_mode") {
+            editor.startDrawMode();
+            applied += 1;
+            continue;
+          }
+
+          if (type === "delete_element") {
+            const removed = editor.removeElements({
+              element_index: typeof action.element_index === "number" ? action.element_index : undefined,
+              match_text: typeof action.match_text === "string" ? action.match_text : undefined,
+              kind: typeof action.kind === "string" ? action.kind : undefined,
+              sticker: typeof action.sticker === "string" ? action.sticker : undefined,
+              shape: typeof action.shape === "string" ? action.shape : undefined,
+              structure: typeof action.structure === "string" ? action.structure : undefined,
+              all: action.all === true,
+            });
+            applied += removed;
             continue;
           }
 
@@ -541,9 +778,9 @@ export function BoardGuideChatPanel({
             continue;
           }
 
-          if (type === "add_sticky" && typeof action.text === "string") {
+          if (type === "add_sticky") {
             editor.addStickyNoteAt(
-              action.text,
+              "",
               clamp01(typeof action.x === "number" ? action.x : 0.12),
               clamp01(typeof action.y === "number" ? action.y : 0.35),
               typeof action.fill === "string" ? action.fill : "#FFF9C4",
@@ -590,16 +827,44 @@ export function BoardGuideChatPanel({
             continue;
           }
 
-          if (type === "add_library_image" && typeof action.theme === "string") {
+          if (type === "add_library_image" && (typeof action.theme === "string" || typeof action.keywords === "string")) {
             const library = await loadBoardImageLibrary();
-            const themed = filterLibraryByTheme(library, action.theme);
-            if (!themed.length) continue;
-            const count =
-              typeof action.count === "number" ? Math.max(1, Math.min(3, Math.round(action.count))) : 1;
+            let pool = typeof action.theme === "string" ? filterLibraryByTheme(library, action.theme) : [...library];
+            if (typeof action.keywords === "string") {
+              const words = action.keywords
+                .toLowerCase()
+                .split(/[\s,]+/)
+                .filter((w) => w.length > 2);
+              if (words.length) {
+                const ranked = pool
+                  .map((img) => {
+                    const hay = `${img.description} ${img.category} ${(img.tags ?? []).join(" ")}`.toLowerCase();
+                    return { img, hits: words.filter((w) => hay.includes(w)).length };
+                  })
+                  .filter((r) => r.hits > 0)
+                  .sort((a, b) => b.hits - a.hits);
+                if (ranked.length) pool = ranked.map((r) => r.img);
+              }
+            }
+            if (!pool.length) continue;
+            const uniquePool = [...new Map(pool.map((img) => [img.url, img])).values()];
+            let picks = uniquePool;
+            if (typeof action.image_index === "number" && Number.isFinite(action.image_index)) {
+              const idx = Math.max(0, Math.min(uniquePool.length - 1, Math.round(action.image_index)));
+              picks = [uniquePool[idx]];
+            } else {
+              const count =
+                typeof action.count === "number" ? Math.max(1, Math.min(3, Math.round(action.count))) : 1;
+              const fresh = uniquePool.filter((img) => !usedLibraryImageUrls.has(img.url));
+              const source = fresh.length ? fresh : uniquePool;
+              picks = source.slice(0, Math.min(count, source.length));
+            }
+            if (!picks.length) continue;
             const baseX = clamp01(typeof action.x === "number" ? action.x : 0.5);
             const baseY = clamp01(typeof action.y === "number" ? action.y : 0.5);
-            for (let i = 0; i < Math.min(count, themed.length); i += 1) {
-              await editor.addImageFromUrl(themed[i].url, {
+            for (let i = 0; i < picks.length; i += 1) {
+              usedLibraryImageUrls.add(picks[i].url);
+              await editor.addImageFromUrl(picks[i].url, {
                 normX: clamp01(baseX + i * 0.08),
                 normY: clamp01(baseY + (i % 2) * 0.06),
               });
@@ -613,7 +878,7 @@ export function BoardGuideChatPanel({
 
       return applied;
     },
-    [activeBoardId, editorRef, onBoardColorChange],
+    [activeBoardId, editorRef, getActiveBoardId, getEditor, onAddBoard, onBoardColorChange, onDeleteBoard, onDuplicateBoard, onRenameBoard, workspaceBoards],
   );
 
   const applyActionOperations = useCallback(
@@ -659,6 +924,22 @@ export function BoardGuideChatPanel({
     setGuideError(null);
     setLastApplied(0);
     try {
+      const currentActiveBoardId = getActiveBoardId?.() ?? activeBoardId;
+      const offTargetBoards =
+        mode === "vision"
+          ? getPendingTargetBoards(pendingGuideActions, currentActiveBoardId, workspaceBoards)
+          : [];
+
+      if (offTargetBoards.length === 1 && onSelectBoard && offTargetBoards[0].id !== currentActiveBoardId) {
+        onSelectBoard(offTargetBoards[0].id);
+        const deadline = Date.now() + 1200;
+        while (Date.now() < deadline) {
+          const editor = getEditorForBoard?.(offTargetBoards[0].id) ?? getEditor?.() ?? editorRef?.current ?? null;
+          if (editor) break;
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+      }
+
       const appliedCount = await applyPending(pendingGuideActions);
       setPendingGuideActions([]);
       setLastApplied(appliedCount);
@@ -670,20 +951,34 @@ export function BoardGuideChatPanel({
             content:
               mode === "action"
                 ? `Done — I applied ${appliedCount} ${appliedCount === 1 ? "change" : "changes"} to your draft.`
-                : `Done — I added ${appliedCount} ${appliedCount === 1 ? "piece" : "pieces"} to the board.`,
+                : `Done — I applied ${appliedCount} ${appliedCount === 1 ? "change" : "changes"} to the board.`,
           },
         ]);
       } else {
+        const boardHint =
+          offTargetBoards.length > 0 ? ` ${formatBoardSelectHint(offTargetBoards)}` : "";
         setGuideError(
           mode === "action"
             ? "I couldn't apply those changes to your draft. Try again."
-            : "I couldn't apply those changes to the board. Try again.",
+            : `I couldn't apply those changes.${boardHint || " Click the board you want to edit in the grid, then try Apply again."}`,
         );
       }
     } finally {
       setSending(false);
     }
-  }, [applyPending, mode, pendingGuideActions, sending]);
+  }, [
+    activeBoardId,
+    applyPending,
+    editorRef,
+    getActiveBoardId,
+    getEditor,
+    getEditorForBoard,
+    mode,
+    onSelectBoard,
+    pendingGuideActions,
+    sending,
+    workspaceBoards,
+  ]);
 
   const sendMessage = useCallback(async () => {
     const text = draft.trim();
@@ -829,30 +1124,13 @@ export function BoardGuideChatPanel({
       )}
     >
       {showHeader ? (
-        <div className="flex shrink-0 border-b border-stone-300/60 px-3 py-2">
-          {mode === "action" ? (
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Guide</p>
-              <p className="mt-0.5 text-[10px] leading-snug text-stone-600">
-                Ask the guide to clean up actions, adjust reminders, or explain the plan.
-              </p>
-            </div>
-          ) : (
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Guide</p>
-              <p className="mt-0.5 text-[10px] leading-snug text-stone-600">
-                Board help only — colors, labels, Our Collection images, notes, structures, layout.
-              </p>
-            </div>
-          )}
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-stone-300/60 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Guide</p>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className={cn(
-              "h-8 justify-start gap-2 px-2 text-xs font-medium text-stone-600 hover:text-red-700",
-              mode === "action" ? "w-auto shrink-0" : "w-full",
-            )}
+            className="h-8 shrink-0 gap-1.5 px-2 text-xs font-medium text-stone-600 hover:text-red-700"
             onClick={clearChat}
             disabled={messages.length <= 1 && messages[0]?.content === welcome.content}
           >
@@ -906,7 +1184,13 @@ export function BoardGuideChatPanel({
             <PenLine className="h-3 w-3" />
             {mode === "action"
               ? `Done — applied ${lastApplied} ${lastApplied === 1 ? "change" : "changes"} to your draft`
-              : `Done — added ${lastApplied} ${lastApplied === 1 ? "piece" : "pieces"} to the board`}
+              : `Done — applied ${lastApplied} ${lastApplied === 1 ? "change" : "changes"} to the board`}
+          </p>
+        ) : null}
+
+        {pendingTargetBoards.length > 0 ? (
+          <p className="rounded-lg border border-sky-300/80 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-950">
+            <strong>Before you apply:</strong> {formatBoardSelectHint(pendingTargetBoards)}
           </p>
         ) : null}
 
@@ -968,7 +1252,7 @@ export function BoardGuideChatPanel({
 
           onChange={(e) => setDraft(e.target.value)}
 
-          placeholder={mode === "action" ? "Fewer texts, rename a plan, explain channels…" : "Ask what to add, arrange or plan"}
+          placeholder={mode === "action" ? "" : "Ask what to add, arrange or plan"}
 
           className="h-9 min-w-0 flex-1 border-stone-300 bg-[#faf8f5] text-xs"
 
@@ -1021,8 +1305,17 @@ export function BoardGuideChatPanel({
 type BoardCompanionPanelProps = {
   workspaceId: string;
   activeBoardId: string;
+  workspaceBoards?: { id: string; title: string; role?: string }[];
   editorRef: RefObject<BoardCanvasHandle | null>;
+  getEditor?: () => BoardCanvasHandle | null;
+  getEditorForBoard?: (boardId: string) => BoardCanvasHandle | null | Promise<BoardCanvasHandle | null>;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
+  onRenameBoard?: (boardId: string, title: string) => Promise<void>;
+  onAddBoard?: (title?: string) => Promise<void>;
+  onDeleteBoard?: (boardId: string) => Promise<void>;
+  onDuplicateBoard?: (boardId: string, title?: string) => Promise<void>;
+  onSelectBoard?: (boardId: string) => void;
+  getActiveBoardId?: () => string;
   compact?: boolean;
 };
 

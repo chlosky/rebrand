@@ -449,6 +449,14 @@ export async function syncUserPlansFromRevenueCatPayload(
       console.error("[revenuecatUserPlansSync] downgrade error:", downErr);
       return { ok: false, error: downErr.message };
     }
+    const { error: cancelRemErr } = await supabase
+      .from("board_reminders")
+      .update({ status: "cancelled" })
+      .eq("user_id", appUserId)
+      .eq("status", "scheduled");
+    if (cancelRemErr) {
+      console.warn("[revenuecatUserPlansSync] board_reminders cancel:", cancelRemErr);
+    }
     return { ok: true, active: false, downgraded: true };
   }
 

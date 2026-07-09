@@ -23,6 +23,7 @@ import {
   updateBoardMeta,
 } from "@/lib/boards/api";
 import type { BoardWorkspaceWithBoards } from "@/lib/boards/types";
+import { boardFillForKey } from "@/lib/boards/colors";
 import { BoardPrintDialog } from "@/components/boards/BoardPrintDialog";
 import { TrialExportUnlockDialog } from "@/components/boards/TrialExportUnlockDialog";
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
@@ -91,6 +92,17 @@ export default function Boards() {
     return editorMapRef.current.get(id) ?? activeEditorRef.current;
   }, []);
 
+  const getBoardEditor = useCallback((boardId: string) => {
+    const direct = editorMapRef.current.get(boardId);
+    if (direct) return direct;
+    for (const handle of editorMapRef.current.values()) {
+      if (handle.boardId === boardId) return handle;
+    }
+    return null;
+  }, []);
+
+  const getActiveBoardId = useCallback(() => activeBoardIdRef.current, []);
+
   const placeStructureOnActiveBoard = useCallback((type: BoardDiagramType, items?: string[]) => {
     const boardId = activeBoardIdRef.current;
     if (!boardId) return;
@@ -101,10 +113,19 @@ export default function Boards() {
   }, [getActiveBoardEditor]);
 
   const registerEditor = useCallback((boardId: string, handle: BoardCanvasHandle | null) => {
-    if (handle) editorMapRef.current.set(boardId, handle);
-    else editorMapRef.current.delete(boardId);
+    if (handle) {
+      editorMapRef.current.set(boardId, handle);
+      if (handle.boardId !== boardId) {
+        editorMapRef.current.set(handle.boardId, handle);
+      }
+      if (boardId === activeBoardIdRef.current) {
+        activeEditorRef.current = handle;
+      }
+      return;
+    }
+    editorMapRef.current.delete(boardId);
     if (boardId === activeBoardIdRef.current) {
-      activeEditorRef.current = editorMapRef.current.get(boardId) ?? null;
+      activeEditorRef.current = null;
     }
   }, []);
 
@@ -115,6 +136,10 @@ export default function Boards() {
     syncUndoRedoFromEditor(handle);
   }, [activeBoardId, syncUndoRedoFromEditor]);
 
+  const workspaceBoards = useMemo(
+    () => (workspace?.boards ?? []).map((b) => ({ id: b.id, title: b.title, role: b.role })),
+    [workspace?.boards],
+  );
   const activeBoard = useMemo(
     () => workspace?.boards.find((b) => b.id === activeBoardId) ?? workspace?.boards[0] ?? null,
     [workspace, activeBoardId],
@@ -126,13 +151,19 @@ export default function Boards() {
   const isLandscapeSet = workspacePresentation === "matrix";
   const activeWorkspaceId = workspaceParam ?? workspace?.id ?? null;
 
-  const handleUndo = useCallback(() => {
-    getActiveBoardEditor()?.undo();
-  }, [getActiveBoardEditor]);
+  const handleUndo = useCallback(async () => {
+    const editor = getActiveBoardEditor();
+    if (!editor) return;
+    await editor.undo();
+    syncUndoRedoFromEditor(getActiveBoardEditor());
+  }, [getActiveBoardEditor, syncUndoRedoFromEditor]);
 
-  const handleRedo = useCallback(() => {
-    getActiveBoardEditor()?.redo();
-  }, [getActiveBoardEditor]);
+  const handleRedo = useCallback(async () => {
+    const editor = getActiveBoardEditor();
+    if (!editor) return;
+    await editor.redo();
+    syncUndoRedoFromEditor(getActiveBoardEditor());
+  }, [getActiveBoardEditor, syncUndoRedoFromEditor]);
 
   const loadWorkspace = useCallback(async () => {
     if (!user?.id || proLoading) return;
@@ -263,71 +294,113 @@ export default function Boards() {
     setImagePickOpen(true);
   }, []);
 
+  const handleAddBoardFromAi = useCallback(
+    async (title?: string) => {
+      if (!workspace || !user?.id) return;
+      const focusCount = workspace.boards.filter((b) => b.role === "focus").length;
+      if (focusCount >= 3) return;
+      const n = workspace.boards.length;
+      const boardTitle = title?.trim() || `Focus Board ${focusCount + 1}`;
+      try {
+        const board = await addBoard(
+          workspace.id,
+          user.id,
+          boardTitle,
+          "focus",
+          n,
+          activeBoard
+            ? {
+                artboard_width: activeBoard.artboard_width,
+                artboard_height: activeBoard.artboard_height,
+              }
+            : undefined,
+        );
+        setWorkspace({ ...workspace, boards: [...workspace.boards, board] });
+        selectBoard(board.id);
+      } catch {
+        toast.error("Could not add board");
+      }
+    },
+    [workspace, user?.id, activeBoard, selectBoard],
+  );
+
+  const handleDeleteBoardFromAi = useCallback(
+    async (boardId: string) => {
+      if (!workspace) return;
+      const board = workspace.boards.find((b) => b.id === boardId);
+      if (!board || board.role === "plan") return;
+      try {
+        await deleteBoard(boardId);
+        const next = workspace.boards.filter((b) => b.id !== boardId);
+        setWorkspace({ ...workspace, boards: next });
+        if (activeBoardId === boardId) selectBoard(next[0]?.id ?? "");
+      } catch {
+        toast.error("Could not remove board");
+      }
+    },
+    [workspace, activeBoardId, selectBoard],
+  );
+
+  const handleDuplicateBoardFromAi = useCallback(
+    async (sourceBoardId: string, title?: string) => {
+      if (!workspace || !user?.id) return;
+      const source = workspace.boards.find((b) => b.id === sourceBoardId);
+      if (!source) return;
+      const layout =
+        editorMapRef.current.get(source.id)?.getLayoutJson() ?? source.layout_json;
+      const baseTitle = source.title.replace(/ \(copy( \d+)?\)$/i, "");
+      const nextTitle = title?.trim() || `${baseTitle} (copy)`;
+      try {
+        const board = await addBoard(
+          workspace.id,
+          user.id,
+          nextTitle,
+          "focus",
+          workspace.boards.length,
+          {
+            artboard_width: source.artboard_width,
+            artboard_height: source.artboard_height,
+          },
+        );
+        await saveBoardLayout(board.id, layout);
+        await updateBoardMeta(board.id, {
+          color_key: source.color_key,
+          title_color: source.title_color,
+          title_font: source.title_font,
+          layout_mode: source.layout_mode,
+        });
+        const duplicated: typeof board = {
+          ...board,
+          layout_json: layout,
+          color_key: source.color_key,
+          title_color: source.title_color,
+          title_font: source.title_font,
+          layout_mode: source.layout_mode,
+        };
+        setWorkspace({ ...workspace, boards: [...workspace.boards, duplicated] });
+        selectBoard(board.id);
+      } catch {
+        toast.error("Could not duplicate board");
+      }
+    },
+    [workspace, user?.id, selectBoard],
+  );
+
   const handleAddBoard = async () => {
-    if (!workspace || !user?.id) return;
+    if (!workspace) return;
     const focusCount = workspace.boards.filter((b) => b.role === "focus").length;
-    const n = workspace.boards.length;
-    try {
-      const board = await addBoard(
-        workspace.id,
-        user.id,
-        `Focus Board ${focusCount + 1}`,
-        "focus",
-        n,
-        activeBoard
-          ? {
-              artboard_width: activeBoard.artboard_width,
-              artboard_height: activeBoard.artboard_height,
-            }
-          : undefined,
-      );
-      setWorkspace({ ...workspace, boards: [...workspace.boards, board] });
-      selectBoard(board.id);
-      toast.success("Focus board added");
-    } catch {
-      toast.error("Could not add board");
+    if (focusCount >= 3) {
+      toast.message("Each set includes three focus boards plus The Plan");
+      return;
     }
+    await handleAddBoardFromAi();
+    toast.success("Focus board added");
   };
 
   const handleDuplicateBoard = async () => {
-    if (!workspace || !activeBoard || !user?.id) return;
-    const layout =
-      editorMapRef.current.get(activeBoard.id)?.getLayoutJson() ?? activeBoard.layout_json;
-    const baseTitle = activeBoard.title.replace(/ \(copy( \d+)?\)$/i, "");
-    const title = `${baseTitle} (copy)`;
-    try {
-      const board = await addBoard(
-        workspace.id,
-        user.id,
-        title,
-        "focus",
-        workspace.boards.length,
-        {
-          artboard_width: activeBoard.artboard_width,
-          artboard_height: activeBoard.artboard_height,
-        },
-      );
-      await saveBoardLayout(board.id, layout);
-      await updateBoardMeta(board.id, {
-        color_key: activeBoard.color_key,
-        title_color: activeBoard.title_color,
-        title_font: activeBoard.title_font,
-        layout_mode: activeBoard.layout_mode,
-      });
-      const duplicated: typeof board = {
-        ...board,
-        layout_json: layout,
-        color_key: activeBoard.color_key,
-        title_color: activeBoard.title_color,
-        title_font: activeBoard.title_font,
-        layout_mode: activeBoard.layout_mode,
-      };
-      setWorkspace({ ...workspace, boards: [...workspace.boards, duplicated] });
-      selectBoard(board.id);
-      toast.success("Board duplicated");
-    } catch {
-      toast.error("Could not duplicate board");
-    }
+    if (!activeBoard) return;
+    await handleDuplicateBoardFromAi(activeBoard.id);
+    toast.success("Board duplicated");
   };
 
   const handleReorderBoards = useCallback(
@@ -376,6 +449,8 @@ export default function Boards() {
   if (!user) return null;
 
   const boards = workspace?.boards ?? [];
+  const focusBoardCount = boards.filter((b) => b.role === "focus").length;
+  const canAddFocusBoard = focusBoardCount < 3;
   const canRemoveBoard = activeBoard?.role !== "plan";
 
   return (
@@ -403,6 +478,7 @@ export default function Boards() {
               size="sm"
               className="gap-1 text-xs max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
               onClick={handleAddBoard}
+              disabled={!canAddFocusBoard}
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Add board</span>
@@ -513,12 +589,20 @@ export default function Boards() {
               workspaceId={workspace.id}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
+              workspaceBoards={workspaceBoards}
               editorRef={activeEditorRef}
               getEditor={getActiveBoardEditor}
+              getEditorForBoard={getBoardEditor}
+              getActiveBoardId={getActiveBoardId}
+              onSelectBoard={selectBoard}
               onPlaceStructure={placeStructureOnActiveBoard}
               userId={user.id}
               onBoardColorChange={handleBoardColorFromAi}
+              onRenameBoard={handleRenameBoard}
               onPickImage={handlePickImage}
+              onAddBoard={canAddFocusBoard ? handleAddBoardFromAi : undefined}
+              onDeleteBoard={handleDeleteBoardFromAi}
+              onDuplicateBoard={handleDuplicateBoardFromAi}
             />
           </div>
         ) : (
@@ -527,10 +611,19 @@ export default function Boards() {
               workspaceId={workspace.id}
               activeBoard={activeBoard}
               activeBoardId={activeBoard.id}
+              workspaceBoards={workspaceBoards}
               editorRef={activeEditorRef}
+              getEditor={getActiveBoardEditor}
+              getEditorForBoard={getBoardEditor}
+              getActiveBoardId={getActiveBoardId}
+              onSelectBoard={selectBoard}
               userId={user.id}
               onBoardColorChange={handleBoardColorFromAi}
+              onRenameBoard={handleRenameBoard}
               onPickImage={handlePickImage}
+              onAddBoard={canAddFocusBoard ? handleAddBoardFromAi : undefined}
+              onDeleteBoard={handleDeleteBoardFromAi}
+              onDuplicateBoard={handleDuplicateBoardFromAi}
             />
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -540,7 +633,7 @@ export default function Boards() {
                 onSelect={selectBoard}
                 onSave={handleSaveLayoutFor}
                 registerEditor={registerEditor}
-                onAddBoard={handleAddBoard}
+                onAddBoard={canAddFocusBoard ? handleAddBoard : undefined}
                 onRenameBoard={handleRenameBoard}
                 zoomPreset={boardZoom}
                 presentationMode={workspacePresentation}

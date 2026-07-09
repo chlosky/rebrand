@@ -52,7 +52,7 @@ function suggestedBorder(status: string) {
 }
 
 const PILL_SELECT =
-  "h-7 shrink-0 rounded-lg border-0 bg-neutral-100 px-2 text-[11px] text-neutral-700 outline-none focus:ring-1 focus:ring-neutral-300";
+  "h-7 max-w-full shrink-0 rounded-lg border-0 bg-neutral-100 px-1.5 text-[10px] text-neutral-700 outline-none focus:ring-1 focus:ring-neutral-300";
 
 type ReminderType = "calendar" | "email" | "sms";
 
@@ -107,12 +107,12 @@ function CadenceTimingControls({
   };
 
   return (
-    <div className="flex shrink-0 flex-nowrap items-center gap-1">
+    <div className="flex shrink-0 flex-nowrap items-center gap-0.5">
       <select
         disabled={locked}
         value={cadence}
         onChange={(e) => onCadence(e.target.value as MapCadence)}
-        className={cn(PILL_SELECT, "w-[76px] capitalize")}
+        className={cn(PILL_SELECT, "w-[62px] capitalize")}
       >
         {CADENCE_OPTIONS.map((c) => (
           <option key={c} value={c}>
@@ -123,7 +123,7 @@ function CadenceTimingControls({
       <div
         className={cn(
           "shrink-0",
-          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[120px]" : "w-[80px]",
+          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[104px]" : "w-[52px]",
         )}
       >
         {cadence === "once" ? (
@@ -143,7 +143,7 @@ function CadenceTimingControls({
           >
             {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
-                Day {d}
+                {d}
               </option>
             ))}
           </select>
@@ -166,7 +166,7 @@ function CadenceTimingControls({
         disabled={locked}
         value={timeValue}
         onChange={(e) => onTime(e.target.value)}
-        className={cn(PILL_SELECT, "w-[96px]")}
+        className={cn(PILL_SELECT, "w-[72px]")}
       >
         {timeOptions.map((t) => (
           <option key={t} value={t}>
@@ -289,10 +289,10 @@ function ActionNodeRow({
   };
 
   return (
-    <div className="flex w-full max-w-full flex-col gap-1" data-map-node>
+    <div className="w-full max-w-full" data-map-node>
       <div
         className={cn(
-          "inline-flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
+          "inline-flex min-h-[40px] w-full max-w-full flex-nowrap items-center gap-1 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
           suggestedBorder(action.status),
         )}
       >
@@ -304,17 +304,17 @@ function ActionNodeRow({
             const cleaned = naturalizeTitle(e.target.value);
             if (cleaned !== e.target.value) onPatch({ title: cleaned });
           }}
-          className="h-8 min-w-[100px] flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
+          className="h-8 min-w-[7.5rem] flex-1 truncate border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
           placeholder="Action"
         />
         <select
           disabled={locked}
           value={reminderType}
           onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
-          className={cn(PILL_SELECT, "w-[96px]")}
+          className={cn(PILL_SELECT, "w-[58px]")}
           title="Reminder type"
         >
-          <option value="calendar">Calendar</option>
+          <option value="calendar">Cal</option>
           <option value="email">Email</option>
           <option value="sms" disabled={!hasPro || !smsReady}>
             Text
@@ -447,7 +447,7 @@ export function BoardAccountabilityFlow({
     el?.classList.add("cursor-grab");
   };
 
-  const locked = map?.finalized ?? false;
+  const locked = false;
 
   const patch = (next: AccountabilityMap) => {
     const withEdited = { ...next, edited_at: new Date().toISOString() };
@@ -562,9 +562,6 @@ export function BoardAccountabilityFlow({
     return { remind_day_of_month: null, remind_day_of_week: null };
   };
 
-  const lowConfidence =
-    map?.meta_confidence != null && map.meta_confidence < 0.65 && !map.finalized;
-
   const emptyMap = !map?.focuses?.length;
 
   return (
@@ -598,18 +595,13 @@ export function BoardAccountabilityFlow({
               Turn your workspace into an action map
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-              Analyze your Vision workspace to draft focus areas, plans, actions and reminders. You
-              can edit everything before anything is finalized.
+              Analyze your Vision workspace to draft focus areas, plans, actions and reminders. Edit anytime;
+              tap Update to refresh scheduled reminders.
             </p>
             <p className="mt-3 text-xs text-neutral-500">Nothing is sent until you review and finalize.</p>
           </div>
         ) : (
           <>
-            {lowConfidence ? (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
-                Palette found a few possible actions. Review closely before finalizing.
-              </div>
-            ) : null}
             <div
               className={cn(
                 "mb-6 grid gap-8 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500",

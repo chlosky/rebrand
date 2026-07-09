@@ -43,17 +43,7 @@ function withReminderChannels(
 }
 
 function touchMap(map: AccountabilityMap): AccountabilityMap {
-  const edited_at = new Date().toISOString();
-  if (map.finalized) {
-    return {
-      ...map,
-      finalized: false,
-      reminders: [],
-      analysis_status: "draft_ready",
-      edited_at,
-    };
-  }
-  return { ...map, edited_at };
+  return { ...map, edited_at: new Date().toISOString() };
 }
 
 function defaultAction(planId: string, title: string): AccountabilityAction {

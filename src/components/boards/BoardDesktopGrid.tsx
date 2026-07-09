@@ -42,16 +42,23 @@ function RegisteredBoardCanvasEditor({
   registerEditor,
   ...rest
 }: RegisteredBoardCanvasEditorProps) {
+  const handleRef = useRef<BoardCanvasHandle | null>(null);
+
   const setRef = useCallback(
     (handle: BoardCanvasHandle | null) => {
+      handleRef.current = handle;
       if (handle) registerEditor(boardId, handle);
     },
     [boardId, registerEditor],
   );
 
+  useEffect(() => {
+    if (handleRef.current) registerEditor(boardId, handleRef.current);
+  });
+
   useEffect(() => () => registerEditor(boardId, null), [boardId, registerEditor]);
 
-  return <BoardCanvasEditor ref={setRef} {...rest} />;
+  return <BoardCanvasEditor ref={setRef} boardId={boardId} {...rest} />;
 }
 
 type CellSize = { width: number; height: number };
@@ -216,13 +223,10 @@ export function BoardDesktopGrid({
 
 
       setCellSize({
-
         width: Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth)),
-
         height: isMatrix
           ? Math.max(Math.round(cellWidth * boardAspectHeight), 220)
-          : Math.max(Math.round(cellWidth * boardAspectHeight), Math.round(cellHeight)),
-
+          : Math.max(Math.round(cellWidth * boardAspectHeight), 220),
       });
 
     };
@@ -357,7 +361,7 @@ export function BoardDesktopGrid({
 
           className={cn(
             "board-row-scroll flex h-full flex-col scroll-smooth p-2",
-            isMatrix ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-hidden",
+            isMatrix ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-auto",
           )}
 
           onScroll={updateScrollHints}

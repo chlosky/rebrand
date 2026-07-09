@@ -441,6 +441,17 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
     return;
   }
 
+  if (newStatus === 'canceled' || newStatus === 'past_due') {
+    const { error: cancelRemErr } = await supabase
+      .from('board_reminders')
+      .update({ status: 'cancelled' })
+      .eq('user_id', userId)
+      .eq('status', 'scheduled');
+    if (cancelRemErr) {
+      console.warn('board_reminders cancel on plan status change:', cancelRemErr);
+    }
+  }
+
   await attachAppUserIdToStripeSubscription(stripeSecretKey, subscription.id, userId);
   await postStripePurchaseToRevenueCat(userId, subscription.id);
 
@@ -656,6 +667,15 @@ async function handleSubscriptionCancellation(supabase: any, subscription: any) 
 
     if (planError) {
       console.error('Error canceling user_plans:', planError);
+    } else {
+      const { error: cancelRemErr } = await supabase
+        .from('board_reminders')
+        .update({ status: 'cancelled' })
+        .eq('user_id', finalUserId)
+        .eq('status', 'scheduled');
+      if (cancelRemErr) {
+        console.warn('board_reminders cancel on subscription deletion:', cancelRemErr);
+      }
     }
 
   // Send cancellation email

@@ -94,7 +94,7 @@ export function BoardActionKitTray({
 
         <button
           type="button"
-          disabled={!hasDraft || finalizing || finalized}
+          disabled={!hasDraft || finalizing}
           onClick={() => void onFinalize()}
           className={cn(
             "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg py-2 text-[10px] font-medium disabled:opacity-50",
@@ -106,7 +106,7 @@ export function BoardActionKitTray({
           ) : (
             <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} />
           )}
-          <span className="truncate">Finalize</span>
+          <span className="truncate">{finalized ? "Update" : "Finalize"}</span>
         </button>
       </div>
 

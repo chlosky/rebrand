@@ -101,7 +101,13 @@
       "subtitle": "Jump back into a set you've already started or start a new one.",
       "startNewSet": "Start a new set",
       "creating": "Starting…",
-      "empty": "No sets yet — start your first set above."
+      "empty": "No sets yet — start your first set above.",
+      "rename": "Rename",
+      "renameTitle": "Rename set",
+      "renameLabel": "Set name",
+      "renameSave": "Save",
+      "renameCancel": "Cancel",
+      "renameError": "Could not rename set"
     },
     "library": {
       "heading": "Library",
@@ -191,10 +197,10 @@
     },
     "orders": {
       "title": "Orders",
-      "subtitle": "Your board orders and their status.",
-      "empty": "No orders yet. Boards you buy will show up here.",
+      "subtitle": "Your orders and their status.",
+      "empty": "No orders yet. Purchases you make will show up here.",
       "loading": "Loading your orders…",
-      "shopBoards": "Shop boards",
+      "shopBoards": "Shop now",
       "itemsLabel": "Items",
       "totalLabel": "Total",
       "status": {

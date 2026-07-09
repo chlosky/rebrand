@@ -36,6 +36,7 @@ import {
   loadDefaultWorkspace,
 } from "@/lib/boards/api";
 import {
+  buildRemindersFromMap,
   finalizeAccountabilityMap,
   normalizeAccountabilityMap,
   reminderToIso,
@@ -97,7 +98,6 @@ export default function BoardAccountability() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzePhase, setAnalyzePhase] = useState<string | null>(null);
   const [showReanalyzeDialog, setShowReanalyzeDialog] = useState(false);
-  const [showNeedsContent, setShowNeedsContent] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [exportingIcal, setExportingIcal] = useState(false);
   const [smsRemindersEnabled, setSmsRemindersEnabled] = useState(false);
@@ -128,6 +128,24 @@ export default function BoardAccountability() {
       }
     },
     [workspace],
+  );
+
+  /** Grid + Guide edits stay live after finalize; reminders refresh on Update. */
+  const applyMapChange = useCallback(
+    (next: AccountabilityMap) => {
+      if (map?.finalized) {
+        persistMap({
+          ...scrubMapTitles(next),
+          finalized: false,
+          reminders: [],
+          analysis_status: "draft_ready",
+          edited_at: new Date().toISOString(),
+        });
+        return;
+      }
+      persistMap(next);
+    },
+    [map?.finalized, persistMap],
   );
 
   const loadWorkspace = useCallback(async () => {
@@ -195,7 +213,7 @@ export default function BoardAccountability() {
 
   const runAnalyze = async (skipConfirm = false) => {
     if (!workspace) return;
-    if (map?.focuses?.length && !skipConfirm && !map.finalized) {
+    if (map?.focuses?.length && !skipConfirm) {
       setShowReanalyzeDialog(true);
       return;
     }
@@ -221,19 +239,9 @@ export default function BoardAccountability() {
       });
       if (error) throw error;
 
-      if (data?.status === "needs_more_content") {
-        setShowNeedsContent(true);
-        return;
-      }
-
       const normalized = normalizeAccountabilityMap(data);
-      if (!normalized) {
-        setShowNeedsContent(true);
-        return;
-      }
+      if (!normalized) return;
       persistMap(normalized);
-      toast.dismiss();
-      toast.success("Action map drafted — review and edit before finalizing", { duration: 1500 });
     } catch (error: unknown) {
       const status =
         error && typeof error === "object" && "context" in error
@@ -351,7 +359,11 @@ export default function BoardAccountability() {
       const next = finalizeAccountabilityMap(map);
       await scheduleAllReminders(next);
       persistMap(next);
-      toast.success("Your action map is finalized. Your reminders are ready.");
+      toast.success(
+        map?.finalized
+          ? "Your plan and reminders are updated."
+          : "Your action map is finalized. Your reminders are ready.",
+      );
     } catch (e) {
       toast.error(actionErrorMessage(e, "Couldn't finalize your plan"));
     } finally {
@@ -359,11 +371,14 @@ export default function BoardAccountability() {
     }
   };
 
+  const exportableReminders = useMemo(() => {
+    if (!map) return [];
+    if (map.finalized && map.reminders.length) return map.reminders;
+    return buildRemindersFromMap(map);
+  }, [map]);
+
   const hasDraft = Boolean(map?.focuses?.length);
-  const hasCalendarReminders = Boolean(
-    map?.finalized && map.reminders.some((r) => r.reminder_type === "calendar"),
-  );
-  const remindersDisabled = !map?.finalized;
+  const hasCalendarReminders = exportableReminders.length > 0;
 
   const smsConfiguredCount = useMemo(() => {
     if (!map) return 0;
@@ -463,20 +478,14 @@ export default function BoardAccountability() {
   };
 
   const doExportIcal = () => {
-    if (!map?.finalized || !map.reminders.length) {
-      toast.error(map?.finalized ? "No calendar reminders in this plan" : "Finalize your plan first");
-      return;
-    }
-
-    const calendarReminders = map.reminders.filter((r) => r.reminder_type === "calendar");
-    if (!calendarReminders.length) {
-      toast.message("No actions have Calendar selected. Turn on Calendar for the actions you want to export.");
+    if (!exportableReminders.length) {
+      toast.error("Add at least one scheduled action to export to your calendar.");
       return;
     }
 
     setExportingIcal(true);
     try {
-      downloadAccountabilityIcalFile(calendarReminders, "palette-plotting-action-reminders.ics");
+      downloadAccountabilityIcalFile(exportableReminders, "palette-plotting-action-reminders.ics");
       toast.success("Calendar file ready");
     } catch {
       toast.error("Couldn't add to calendar");
@@ -532,7 +541,7 @@ export default function BoardAccountability() {
               variant="outline"
               size="sm"
               className="gap-1 text-xs"
-              disabled={exportingIcal || remindersDisabled || !hasCalendarReminders}
+              disabled={exportingIcal || !hasCalendarReminders}
               onClick={() => runExportIcal()}
             >
               {exportingIcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
@@ -541,11 +550,11 @@ export default function BoardAccountability() {
             <Button
               size="sm"
               className="gap-1 bg-stone-900 text-xs"
-              disabled={!hasDraft || finalizing || map?.finalized}
+              disabled={!hasDraft || finalizing}
               onClick={() => void runFinalize()}
             >
               {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-              Finalize
+              {map?.finalized ? "Update" : "Finalize"}
             </Button>
             <div className="ml-1 flex shrink-0 items-center gap-2 border-l border-neutral-200 pl-2">
               <LayoutGrid className="h-5 w-5 shrink-0 text-neutral-700" />
@@ -587,7 +596,7 @@ export default function BoardAccountability() {
           ) : null}
           {map?.finalized ? (
             <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
-              Finalized
+              Reminders on · edit anytime
             </span>
           ) : null}
           {map ? <p className="shrink-0 text-[11px] text-stone-500">{smsCounterText}</p> : null}
@@ -618,7 +627,7 @@ export default function BoardAccountability() {
                   mode="action"
                   workspaceId={workspace.id}
                   actionMap={map}
-                  onActionMapChange={persistMap}
+                  onActionMapChange={applyMapChange}
                 />
               </aside>
             ) : null}
@@ -628,7 +637,7 @@ export default function BoardAccountability() {
                 <BoardAccountabilityFlow
                   map={map}
                   boards={workspace.boards}
-                  onChange={persistMap}
+                  onChange={applyMapChange}
                   smsReady={smsReady}
                   hasPro={hasPro}
                   compact
@@ -640,12 +649,12 @@ export default function BoardAccountability() {
                 <BoardActionKitTray
                   workspaceId={workspace.id}
                   actionMap={map}
-                  onActionMapChange={persistMap}
+                  onActionMapChange={applyMapChange}
                   analyzing={analyzing}
                   loading={loading}
                   onAnalyze={() => void runAnalyze()}
                   exportingIcal={exportingIcal}
-                  remindersDisabled={remindersDisabled}
+                  remindersDisabled={false}
                   hasCalendarReminders={hasCalendarReminders}
                   onExportIcal={runExportIcal}
                   finalizing={finalizing}
@@ -658,7 +667,7 @@ export default function BoardAccountability() {
               <BoardAccountabilityFlow
                 map={map}
                 boards={workspace.boards}
-                onChange={persistMap}
+                onChange={applyMapChange}
                 smsReady={smsReady}
                 hasPro={hasPro}
                 onRequestSmsSetup={() => {
@@ -676,8 +685,7 @@ export default function BoardAccountability() {
           <DialogHeader>
             <DialogTitle>Re-analyze workspace?</DialogTitle>
             <DialogDescription>
-              This may replace your current draft. Your finalized reminders will not change unless you
-              finalize again.
+              This may replace your current map. Email and text reminders refresh when you tap Update.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -692,23 +700,6 @@ export default function BoardAccountability() {
             >
               Re-analyze
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showNeedsContent} onOpenChange={setShowNeedsContent}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Palette needs a little more to work with</DialogTitle>
-            <DialogDescription>
-              Add a few notes, images, goals or dates to your Vision workspace, then analyze again.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNeedsContent(false)}>
-              Close
-            </Button>
-            <Button onClick={() => navigate(visionBoardsHref)}>Back to Vision</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

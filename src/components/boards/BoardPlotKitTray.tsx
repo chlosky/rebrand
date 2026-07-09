@@ -26,24 +26,40 @@ type BoardPlotKitTrayProps = {
   workspaceId: string;
   activeBoard: Board;
   activeBoardId: string;
+  workspaceBoards: { id: string; title: string; role?: string }[];
   editorRef: RefObject<BoardCanvasHandle | null>;
   getEditor?: () => BoardCanvasHandle | null;
+  getEditorForBoard?: (boardId: string) => BoardCanvasHandle | null | Promise<BoardCanvasHandle | null>;
   onPlaceStructure?: (type: BoardDiagramType, items?: string[]) => void;
   userId: string;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
+  onRenameBoard: (boardId: string, title: string) => Promise<void>;
   onPickImage: (url: string) => void;
+  onAddBoard?: (title?: string) => Promise<void>;
+  onDeleteBoard?: (boardId: string) => Promise<void>;
+  onDuplicateBoard?: (boardId: string, title?: string) => Promise<void>;
+  onSelectBoard?: (boardId: string) => void;
+  getActiveBoardId?: () => string;
 };
 
 export function BoardPlotKitTray({
   workspaceId,
   activeBoard,
   activeBoardId,
+  workspaceBoards,
   editorRef,
   getEditor,
+  getEditorForBoard,
   onPlaceStructure,
   userId,
   onBoardColorChange,
+  onRenameBoard,
   onPickImage,
+  onAddBoard,
+  onDeleteBoard,
+  onDuplicateBoard,
+  onSelectBoard,
+  getActiveBoardId,
 }: BoardPlotKitTrayProps) {
   const [sheetTab, setSheetTab] = useState<PlotDockTab | null>(null);
   const close = () => setSheetTab(null);
@@ -102,8 +118,17 @@ export function BoardPlotKitTray({
               <BoardCompanionPanel
                 workspaceId={workspaceId}
                 activeBoardId={activeBoardId}
+                workspaceBoards={workspaceBoards}
                 editorRef={editorRef}
+                getEditor={getEditor}
+                getEditorForBoard={getEditorForBoard}
                 onBoardColorChange={onBoardColorChange}
+                onRenameBoard={onRenameBoard}
+                onAddBoard={onAddBoard}
+                onDeleteBoard={onDeleteBoard}
+                onDuplicateBoard={onDuplicateBoard}
+                onSelectBoard={onSelectBoard}
+                getActiveBoardId={getActiveBoardId}
                 compact
               />
             )}

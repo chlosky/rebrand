@@ -5,7 +5,9 @@ import {
   DEFAULT_FOUR_BOARD_TEMPLATE,
   normalizeFocusCategoryNames,
   resolveBoardStarterTemplate,
+  STANDARD_FOCUS_BOARD_COUNT,
   type BoardStarterTemplate,
+  type StarterBoardDef,
 } from "@/lib/boards/starterTemplates";
 
 export async function fetchUserWorkspaces(userId: string): Promise<BoardWorkspace[]> {
@@ -90,12 +92,23 @@ export async function createWorkspaceFromTemplate(
     .single();
   if (wErr) throw wErr;
 
-  const boardRows = template.boards.map((b) => ({
+  const focusBoards = template.boards.filter((b) => b.role === "focus").slice(0, STANDARD_FOCUS_BOARD_COUNT);
+  const planBoard: StarterBoardDef =
+    template.boards.find((b) => b.role === "plan") ?? {
+      title: "The Plan",
+      role: "plan",
+      color_key: "white_opaque",
+      sort_order: focusBoards.length,
+      layout_mode: "vision",
+    };
+  const starterBoards = [...focusBoards, planBoard].map((b, sort_order) => ({ ...b, sort_order }));
+
+  const boardRows = starterBoards.map((b) => ({
     workspace_id: workspace.id,
     user_id: userId,
     title: b.title,
     role: b.role,
-    color_key: b.color_key,
+    color_key: "white_opaque",
     sort_order: b.sort_order,
     layout_mode: b.layout_mode ?? "vision",
     artboard_width: b.artboard_width ?? 1080,
@@ -107,6 +120,13 @@ export async function createWorkspaceFromTemplate(
   if (bErr) throw bErr;
 
   return { ...(workspace as BoardWorkspace), boards: (boards ?? []) as Board[] };
+}
+
+export async function updateWorkspaceName(workspaceId: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Workspace name is required");
+  const { error } = await supabase.from("board_workspaces").update({ name: trimmed }).eq("id", workspaceId);
+  if (error) throw error;
 }
 
 export async function saveBoardLayout(boardId: string, layoutJson: Record<string, unknown>): Promise<void> {
@@ -140,7 +160,7 @@ export async function addBoard(
       user_id: userId,
       title,
       role,
-      color_key: role === "plan" ? "white_opaque" : "light_pink",
+      color_key: "white_opaque",
       sort_order: sortOrder,
       artboard_width: dimensions?.artboard_width ?? 1080,
       artboard_height: dimensions?.artboard_height ?? 1350,

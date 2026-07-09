@@ -67,7 +67,7 @@ export function boardFillForKey(key: string): string {
   const hex = normalizeBoardColorHex(key);
   if (hex) return hex;
   const entry = BOARD_COLORS[key as BoardColorKey];
-  return entry?.fill.toLowerCase() ?? "#fafafa";
+  return entry?.fill.toLowerCase() ?? "#ffffff";
 }
 
 export function boardColorHexForKey(key: string): string {

@@ -15,6 +15,7 @@ import {
   sendBrevoReminderEmail,
   sendBrevoReminderSms,
 } from "../_shared/brevoReminders.ts";
+import { userHasActivePlottingPro } from "../_shared/requirePlottingPro.ts";
 
 
 
@@ -344,9 +345,59 @@ serve(async (req) => {
 
   let smsSkippedLimit = 0;
 
+  let cancelledSubscription = 0;
+
+  const subscriptionCache = new Map<string, boolean>();
+
+
+
+  async function planAllowsReminders(userId: string): Promise<boolean> {
+
+    const cached = subscriptionCache.get(userId);
+
+    if (cached !== undefined) return cached;
+
+    const ok = await userHasActivePlottingPro(supabase, userId);
+
+    subscriptionCache.set(userId, ok);
+
+    return ok;
+
+  }
+
 
 
   for (const reminder of due ?? []) {
+
+    if (!(await planAllowsReminders(reminder.user_id))) {
+
+      await supabase
+
+        .from("board_reminders")
+
+        .update({ status: "cancelled" })
+
+        .eq("id", reminder.id);
+
+      await supabase.from("board_reminder_deliveries").insert({
+
+        reminder_id: reminder.id,
+
+        channel: primaryReminderChannel(reminder.channels ?? ["email"]),
+
+        status: "skipped_plan_inactive",
+
+        error: "subscription_inactive",
+
+      });
+
+      cancelledSubscription++;
+
+      continue;
+
+    }
+
+
 
     const { data: profile } = await supabase
 
@@ -751,6 +802,8 @@ serve(async (req) => {
       sms_sent: smsSent,
 
       sms_skipped_daily_limit: smsSkippedLimit,
+
+      cancelled_subscription: cancelledSubscription,
 
       daily_sms_limit: DEFAULT_SMS_DAILY_LIMIT,
 

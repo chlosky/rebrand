@@ -145,18 +145,18 @@ function applyBoardFabricControls(obj: FabricObject) {
   return obj;
 }
 
-function applyStickyFabricControls(group: Group) {
-  applyBoardFabricControls(group);
-  group.set({
+function applyStickyFabricControls(obj: Group | Rect) {
+  applyBoardFabricControls(obj);
+  obj.set({
     lockUniScaling: false,
     objectCaching: false,
     markKind: "sticky",
   });
 
-  group.setCoords();
-  group.canvas?.requestRenderAll();
+  obj.setCoords();
+  obj.canvas?.requestRenderAll();
 
-  return group;
+  return obj;
 }
 
 const TEXT_CAPABLE_SHAPES = new Set<BoardMarkShapeType>([
@@ -193,6 +193,10 @@ for (const prop of [
   "calendarCellIndex",
   "calendarDayNumber",
   "calendarDateKey",
+  "imageCornerRadius",
+  "frameShapeType",
+  "frameWidth",
+  "frameHeight",
 ] as const) {
   if (!FabricObject.customProperties.includes(prop)) {
     FabricObject.customProperties.push(prop);
@@ -208,19 +212,237 @@ function findEditableTextInGroup(group: Group): Textbox | IText | null {
   return found instanceof Textbox || found instanceof IText ? found : null;
 }
 
-function stickyGroupFromTarget(obj: FabricObject): Group | null {
+const IMAGE_FRAME_SHAPES = new Set<BoardMarkShapeType>(["rect", "circle", "heart", "star", "hexagon", "diamond"]);
+
+function imageFrameGroupFromTarget(obj: FabricObject): Group | null {
   let current: FabricObject = obj;
   while (current.group) current = current.group as FabricObject;
-  if (current instanceof Group && current.get("markKind") === "sticky") return current;
+  if (current instanceof Group && current.get("markKind") === "image-frame") return current;
   if (
-    (obj instanceof Textbox || obj instanceof IText) &&
-    obj.get("markKind") === "sticky-text" &&
+    obj instanceof FabricImage &&
+    obj.get("markKind") === "frame-image" &&
     obj.group instanceof Group &&
-    obj.group.get("markKind") === "sticky"
+    obj.group.get("markKind") === "image-frame"
   ) {
     return obj.group;
   }
   return null;
+}
+
+function boardImageFromTarget(obj: FabricObject): FabricImage | null {
+  const frame = imageFrameGroupFromTarget(obj);
+  if (frame) {
+    const inner = frame.getObjects().find((o) => o instanceof FabricImage && o.get("markKind") === "frame-image");
+    return inner instanceof FabricImage ? inner : null;
+  }
+  if (obj instanceof FabricImage && obj.get("markKind") !== "sticker") {
+    let root: FabricObject = obj;
+    while (root.group) root = root.group as FabricObject;
+    return root instanceof FabricImage ? root : null;
+  }
+  return null;
+}
+
+function createImageFrameClipShape(shapeType: BoardMarkShapeType, width: number, height: number): FabricObject {
+  const hw = width / 2;
+  const hh = height / 2;
+  if (shapeType === "circle") {
+    return new Circle({
+      radius: Math.min(hw, hh),
+      originX: "center",
+      originY: "center",
+      left: 0,
+      top: 0,
+    });
+  }
+  if (shapeType === "heart") {
+    return new Path(
+      "M 50 88 C 20 66 6 52 6 34 C 6 20 16 10 30 10 C 38 10 45 14 50 20 C 55 14 62 10 70 10 C 84 10 94 20 94 34 C 94 52 80 66 50 88 Z",
+      {
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+        scaleX: width / 100,
+        scaleY: height / 100,
+      },
+    );
+  }
+  if (shapeType === "star") {
+    return new Polygon(
+      [
+        { x: 0, y: -52 },
+        { x: 12, y: -16 },
+        { x: 50, y: -16 },
+        { x: 20, y: 8 },
+        { x: 32, y: 44 },
+        { x: 0, y: 24 },
+        { x: -32, y: 44 },
+        { x: -20, y: 8 },
+        { x: -50, y: -16 },
+        { x: -12, y: -16 },
+      ],
+      {
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+        scaleX: width / 100,
+        scaleY: height / 100,
+      },
+    );
+  }
+  if (shapeType === "hexagon") {
+    return new Polygon(
+      [
+        { x: 0, y: -50 },
+        { x: 43, y: -25 },
+        { x: 43, y: 25 },
+        { x: 0, y: 50 },
+        { x: -43, y: 25 },
+        { x: -43, y: -25 },
+      ],
+      {
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+        scaleX: width / 86,
+        scaleY: height / 100,
+      },
+    );
+  }
+  if (shapeType === "diamond") {
+    return new Polygon(
+      [
+        { x: 0, y: -55 },
+        { x: 40, y: 0 },
+        { x: 0, y: 55 },
+        { x: -40, y: 0 },
+      ],
+      {
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+        scaleX: width / 80,
+        scaleY: height / 110,
+      },
+    );
+  }
+  return new Rect({
+    width,
+    height,
+    rx: 0,
+    ry: 0,
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+  });
+}
+
+function applyImageCornerRadius(img: FabricImage, radius: number) {
+  const w = img.width ?? 1;
+  const h = img.height ?? 1;
+  if (radius <= 0) {
+    img.set({ clipPath: undefined, imageCornerRadius: 0 });
+    img.setCoords();
+    return;
+  }
+  const displayR = radius === -1 ? Math.min(w * Math.abs(img.scaleX ?? 1), h * Math.abs(img.scaleY ?? 1)) / 2 : radius;
+  const rx = Math.min(displayR / Math.abs(img.scaleX ?? 1), w / 2, h / 2);
+  const clip = new Rect({
+    width: w,
+    height: h,
+    rx,
+    ry: rx,
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+  });
+  img.set({ clipPath: clip, imageCornerRadius: radius });
+  img.setCoords();
+}
+
+function restoreImageCornerRadius(img: FabricImage) {
+  const radius = Number(img.get("imageCornerRadius") ?? 0);
+  if (radius > 0 || radius === -1) applyImageCornerRadius(img, radius);
+}
+
+function restoreImageFrameAfterLoad(group: Group) {
+  const shapeType = group.get("frameShapeType") as BoardMarkShapeType | undefined;
+  const frameW = Number(group.get("frameWidth") ?? group.width ?? 200);
+  const frameH = Number(group.get("frameHeight") ?? group.height ?? 200);
+  if (shapeType && IMAGE_FRAME_SHAPES.has(shapeType)) {
+    group.set({
+      clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
+      subTargetCheck: false,
+      interactive: true,
+      objectCaching: false,
+      markKind: "image-frame",
+    });
+  }
+  for (const child of group.getObjects()) {
+    if (child instanceof FabricImage && child.get("markKind") === "frame-image") {
+      child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
+    }
+  }
+  applyBoardFabricControls(group);
+  group.setCoords();
+}
+
+function prepareImageForFrame(img: FabricImage, frameW: number, frameH: number) {
+  const iw = img.width ?? 1;
+  const ih = img.height ?? 1;
+  const coverScale = Math.max(frameW / iw, frameH / ih);
+  img.set({
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+    angle: 0,
+    scaleX: coverScale,
+    scaleY: coverScale,
+    markKind: "frame-image",
+    selectable: false,
+    evented: false,
+    hasControls: false,
+    hasBorders: false,
+    clipPath: undefined,
+    imageCornerRadius: 0,
+  });
+}
+
+function stickyStrokeForFill(fill: string) {
+  return fill === "#FFF9C4" ? "#E8D44D" : fill;
+}
+
+function isStickyRect(obj: FabricObject | null | undefined): obj is Rect {
+  return obj instanceof Rect && obj.get("markKind") === "sticky";
+}
+
+function isLegacyFlatStickyTextbox(obj: FabricObject | null | undefined): obj is Textbox {
+  return obj instanceof Textbox && obj.get("markKind") === "sticky";
+}
+
+function isLegacyStickyGroup(obj: FabricObject | null | undefined): obj is Group {
+  return obj instanceof Group && obj.get("markKind") === "sticky";
+}
+
+function stickyMarkFromTarget(obj: FabricObject): Rect | Group | null {
+  if (isStickyRect(obj)) return obj;
+  let current: FabricObject = obj;
+  while (current.group) current = current.group as FabricObject;
+  if (isStickyRect(current)) return current;
+  if (isLegacyStickyGroup(current)) return current;
+  return null;
+}
+
+function stickyGroupFromTarget(obj: FabricObject): Group | null {
+  const mark = stickyMarkFromTarget(obj);
+  return mark instanceof Group ? mark : null;
 }
 
 function stickyLocalBox(width: number, height: number) {
@@ -280,7 +502,7 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
     scaleX: 1,
     scaleY: 1,
     selectable: false,
-    evented: true,
+    evented: false,
     markKind: "sticky-bg",
   });
 
@@ -293,7 +515,7 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
     scaleX: 1,
     scaleY: 1,
     selectable: false,
-    evented: true,
+    evented: false,
     editable: true,
     markKind: "sticky-text",
   });
@@ -307,7 +529,7 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
     scaleY: 1,
     stickyWidth: nextW,
     stickyHeight: nextH,
-    subTargetCheck: true,
+    subTargetCheck: false,
     interactive: true,
     objectCaching: false,
     selectable: true,
@@ -322,34 +544,118 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
   return group;
 }
 
-function normalizeStickyResize(group: Group) {
-  const sx = group.scaleX ?? 1;
-  const sy = group.scaleY ?? 1;
-  const stored = getStickyStoredSize(group);
-
-  const nextW = Math.max(STICKY_MIN_W, stored.width * sx);
-  const nextH = Math.max(STICKY_MIN_H, stored.height * sy);
-
-  updateStickyLayout(group, nextW, nextH);
-  applyStickyFabricControls(group);
-
-  return group;
+function restoreStickyAfterLoad(obj: FabricObject) {
+  if (isStickyRect(obj)) {
+    normalizeStickyResize(obj);
+    applyStickyFabricControls(obj);
+    return obj;
+  }
+  return obj;
 }
 
-function normalizeStickyTextEdit(group: Group) {
-  const stored = getStickyStoredSize(group);
-  updateStickyLayout(group, stored.width, stored.height);
-  applyStickyFabricControls(group);
-  return group;
+function normalizeStickyResize(sticky: Rect) {
+  const sx = sticky.scaleX ?? 1;
+  const sy = sticky.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return sticky;
+
+  const storedW = Number(sticky.get("stickyWidth")) || STICKY_DEFAULT_W;
+  const storedH = Number(sticky.get("stickyHeight")) || STICKY_DEFAULT_H;
+  const nextW = Math.max(STICKY_MIN_W, storedW * sx);
+  const nextH = Math.max(STICKY_MIN_H, storedH * sy);
+
+  sticky.set({
+    width: nextW,
+    height: nextH,
+    scaleX: 1,
+    scaleY: 1,
+    stickyWidth: nextW,
+    stickyHeight: nextH,
+  });
+  sticky.setCoords();
+  return sticky;
 }
 
-function restoreStickyAfterLoad(group: Group) {
+function replaceStickyOnCanvas(canvas: Canvas, prev: FabricObject, sticky: Rect) {
+  const index = canvas.getObjects().indexOf(prev);
+  canvas.remove(prev);
+  if (index >= 0) canvas.insertAt(index, sticky);
+  else canvas.add(sticky);
+  applyStickyFabricControls(sticky);
+  sticky.setCoords();
+  return sticky;
+}
+
+function flattenLegacyStickyGroup(canvas: Canvas, group: Group): Rect | null {
+  const { rect } = stickyParts(group);
   const stored = getStickyStoredSize(group);
+  const fill = typeof rect?.fill === "string" ? rect.fill : "#FFF9C4";
+  const stroke = typeof rect?.stroke === "string" ? rect.stroke : stickyStrokeForFill(fill);
+  const centerX = group.left ?? 0;
+  const centerY = group.top ?? 0;
 
-  updateStickyLayout(group, stored.width, stored.height);
-  applyStickyFabricControls(group);
+  const sticky = createStickyNoteRect({
+    left: centerX - stored.width / 2,
+    top: centerY - stored.height / 2,
+    width: stored.width,
+    height: stored.height,
+    fill,
+    stroke,
+    angle: group.angle ?? 0,
+  });
 
-  return group;
+  return replaceStickyOnCanvas(canvas, group, sticky);
+}
+
+function migrateTextboxStickyToRect(canvas: Canvas, textbox: Textbox): Rect {
+  const w = Number(textbox.get("stickyWidth")) || STICKY_DEFAULT_W;
+  const h = Number(textbox.get("stickyHeight")) || STICKY_DEFAULT_H;
+  const fill =
+    (typeof textbox.backgroundColor === "string" && textbox.backgroundColor) ||
+    (typeof textbox.fill === "string" && textbox.fill !== "#171717" ? textbox.fill : "#FFF9C4");
+  const stroke = typeof textbox.stroke === "string" ? textbox.stroke : stickyStrokeForFill(fill);
+  const sticky = createStickyNoteRect({
+    left: (textbox.left ?? 0) as number,
+    top: (textbox.top ?? 0) as number,
+    width: w,
+    height: h,
+    fill: fill === "#171717" ? "#FFF9C4" : fill,
+    stroke,
+    angle: textbox.angle ?? 0,
+  });
+  return replaceStickyOnCanvas(canvas, textbox, sticky);
+}
+
+function createStickyNoteRect(params: {
+  left: number;
+  top: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  stroke?: string;
+  angle?: number;
+}): Rect {
+  const w = Math.max(STICKY_MIN_W, params.width ?? STICKY_DEFAULT_W);
+  const h = Math.max(STICKY_MIN_H, params.height ?? STICKY_DEFAULT_H);
+  const fill = params.fill ?? "#FFF9C4";
+  const stroke = params.stroke ?? stickyStrokeForFill(fill);
+
+  return new Rect({
+    left: params.left,
+    top: params.top,
+    width: w,
+    height: h,
+    fill,
+    stroke,
+    strokeWidth: 1,
+    originX: "left",
+    originY: "top",
+    angle: params.angle ?? 0,
+    markKind: "sticky",
+    stickyWidth: w,
+    stickyHeight: h,
+    objectCaching: false,
+    lockScalingFlip: true,
+  });
 }
 
 function createStickyNoteGroup(params: {
@@ -357,74 +663,17 @@ function createStickyNoteGroup(params: {
   top: number;
   width?: number;
   height?: number;
-  text?: string;
   fill?: string;
-}): Group {
+}): Rect {
   const w = Math.max(STICKY_MIN_W, params.width ?? STICKY_DEFAULT_W);
   const h = Math.max(STICKY_MIN_H, params.height ?? STICKY_DEFAULT_H);
-  const fill = params.fill ?? "#FFF9C4";
-  const stroke = fill === "#FFF9C4" ? "#E8D44D" : fill;
-  const box = stickyLocalBox(w, h);
-
-  const rect = new Rect({
-    left: box.rectLeft,
-    top: box.rectTop,
+  return createStickyNoteRect({
+    left: params.left,
+    top: params.top,
     width: w,
     height: h,
-    fill,
-    stroke,
-    strokeWidth: 1,
-    rx: 8,
-    ry: 8,
-    originX: "left",
-    originY: "top",
-    selectable: false,
-    evented: true,
-    scaleX: 1,
-    scaleY: 1,
-    markKind: "sticky-bg",
+    fill: params.fill,
   });
-
-  const note = new Textbox(params.text ?? "", {
-    left: box.textLeft,
-    top: box.textTop,
-    width: box.textWidth,
-    fontSize: 22,
-    fontFamily: "system-ui, sans-serif",
-    fill: "#171717",
-    textAlign: "left",
-    originX: "left",
-    originY: "top",
-    splitByGrapheme: true,
-    editable: true,
-    evented: true,
-    selectable: false,
-    scaleX: 1,
-    scaleY: 1,
-    markKind: "sticky-text",
-  });
-
-  const group = new Group([rect, note], {
-    left: params.left + w / 2,
-    top: params.top + h / 2,
-    width: w,
-    height: h,
-    originX: "center",
-    originY: "center",
-    subTargetCheck: true,
-    interactive: true,
-    objectCaching: false,
-    selectable: true,
-    evented: true,
-    markKind: "sticky",
-    stickyWidth: w,
-    stickyHeight: h,
-  });
-
-  updateStickyLayout(group, w, h);
-  applyStickyFabricControls(group);
-
-  return group;
 }
 
 function enterObjectTextEditing(
@@ -432,55 +681,22 @@ function enterObjectTextEditing(
   obj: FabricObject,
   syncFocus = false,
 ): boolean {
-  const stickyGroup = stickyGroupFromTarget(obj);
+  if (isStickyRect(obj) || stickyGroupFromTarget(obj)) return false;
+
   let textObj: Textbox | IText | null = null;
+  let root: FabricObject = obj;
+  while (root.group) root = root.group as FabricObject;
 
-  if (stickyGroup) {
-    textObj = stickyParts(stickyGroup).text ?? findEditableTextInGroup(stickyGroup);
-  } else {
-    let root: FabricObject = obj;
-    while (root.group) root = root.group as FabricObject;
-
-    if (root instanceof Textbox || root instanceof IText) {
-      textObj = root;
-    } else if (root instanceof Group) {
-      textObj = findEditableTextInGroup(root);
-    }
+  if (root instanceof Textbox || root instanceof IText) {
+    textObj = root;
+  } else if (root instanceof Group) {
+    textObj = findEditableTextInGroup(root);
   }
 
   if (!textObj) return false;
 
-  if (stickyGroup) {
-    updateStickyLayout(stickyGroup);
-    applyStickyFabricControls(stickyGroup);
-
-    canvas.discardActiveObject();
-    canvas.setActiveObject(stickyGroup);
-
-    stickyGroup.set({
-      hasControls: false,
-      hasBorders: false,
-    });
-
-    stickyGroup.setCoords();
-  } else {
-    canvas.setActiveObject(textObj);
-  }
-
+  canvas.setActiveObject(textObj);
   canvas.requestRenderAll();
-
-  const restoreStickyControls = () => {
-    if (!stickyGroup) return;
-
-    normalizeStickyTextEdit(stickyGroup);
-    canvas.discardActiveObject();
-    canvas.setActiveObject(stickyGroup);
-    applyStickyFabricControls(stickyGroup);
-    canvas.requestRenderAll();
-  };
-
-  textObj.off("editing:exited", restoreStickyControls);
-  textObj.on("editing:exited", restoreStickyControls);
 
   const beginEditing = () => {
     textObj.enterEditing();
@@ -1290,18 +1506,39 @@ function getStructureLayoutHeight(group: Group): number {
 }
 
 function restoreAllGroupsAfterLoad(canvas: Canvas) {
-  canvas.getObjects().forEach((obj) => {
-    if (!(obj instanceof Group)) return;
-    if (obj.get("markKind") === "sticky") {
+  for (const obj of [...canvas.getObjects()]) {
+    if (isLegacyFlatStickyTextbox(obj)) {
+      migrateTextboxStickyToRect(canvas, obj);
+      continue;
+    }
+    if (isStickyRect(obj)) {
       restoreStickyAfterLoad(obj);
+      continue;
+    }
+    if (!(obj instanceof Group)) continue;
+    if (obj.get("markKind") === "sticky") {
+      flattenLegacyStickyGroup(canvas, obj);
     } else if (obj.get("markKind") === "shape" && obj.get("textCapable")) {
       restoreShapeGroupAfterLoad(obj);
+    } else if (obj.get("markKind") === "image-frame") {
+      restoreImageFrameAfterLoad(obj);
     } else if (structureProp(obj, "structureType") === "calendar") {
       restoreCalendarAfterLoad(obj);
     } else if (structureProp(obj, "structureId")) {
       restoreStructureAfterLoad(obj);
     }
-  });
+  }
+}
+
+/** Rebuild clip paths and group layout after loadFromJSON (editor + export). */
+export function restoreBoardLayoutAfterLoad(canvas: Canvas) {
+  restoreAllGroupsAfterLoad(canvas);
+  for (const obj of canvas.getObjects()) {
+    if (structureProp(obj, "structureId")) continue;
+    if (obj instanceof FabricImage && obj.get("markKind") !== "frame-image") {
+      restoreImageCornerRadius(obj);
+    }
+  }
 }
 
 function restoreStructureAfterLoad(group: Group) {
@@ -1637,6 +1874,7 @@ export type BoardDiagramType =
   | "divider";
 
 export type BoardCanvasHandle = {
+  boardId: string;
   addText: (text?: string) => void;
   addTextAt: (text: string, left: number, top: number, fontSize?: number) => void;
   addTextNormalized: (text: string, x: number, y: number, fontSize?: number, fill?: string) => void;
@@ -1660,9 +1898,18 @@ export type BoardCanvasHandle = {
   canPasteClipboard: () => boolean;
   hasSelection: () => boolean;
   deleteSelected: () => void;
+  removeElements: (criteria: {
+    element_index?: number;
+    match_text?: string;
+    kind?: string;
+    sticker?: string;
+    shape?: string;
+    structure?: string;
+    all?: boolean;
+  }) => number;
   resetBoard: () => void;
-  undo: () => void;
-  redo: () => void;
+  undo: () => void | Promise<void>;
+  redo: () => void | Promise<void>;
   canUndo: () => boolean;
   canRedo: () => boolean;
   getLayoutJson: () => Record<string, unknown>;
@@ -1689,6 +1936,7 @@ type QuickSelectorState = {
   textCapable?: boolean;
   shapeCapable?: boolean;
   stickerCapable?: boolean;
+  imageCapable?: boolean;
 };
 
 type CalendarControlState = {
@@ -1781,6 +2029,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const [quickSelector, setQuickSelector] = useState<QuickSelectorState | null>(null);
     const [calendarControl, setCalendarControl] = useState<CalendarControlState | null>(null);
     const [drawingMode, setDrawingMode] = useState(false);
+    const [cropMode, setCropMode] = useState(false);
+    const cropTargetRef = useRef<{ group: Group | null; image: FabricImage } | null>(null);
     const drawColorRef = useRef(MARK_SHAPE_STROKE);
     const deleteTargetRef = useRef<FabricObject | null>(null);
     const isActiveRef = useRef(isActive);
@@ -1926,7 +2176,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const bg = boardFillForKey(colorKey);
         await canvas.loadFromJSON(JSON.parse(json));
         canvas.backgroundColor = bg;
-        restoreAllGroupsAfterLoad(canvas);
+        restoreBoardLayoutAfterLoad(canvas);
+        for (const obj of canvas.getObjects()) {
+          if (structureProp(obj, "structureId")) continue;
+          if (obj.get("markKind") || obj instanceof FabricImage) {
+            applyBoardFabricControls(obj);
+          }
+        }
         canvas.discardActiveObject();
         canvas.requestRenderAll();
         restoringHistoryRef.current = false;
@@ -1938,18 +2194,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [colorKey, notifyHistoryChange, scheduleSave],
     );
 
-    const undo = useCallback(() => {
+    const undo = useCallback(async () => {
       flushPendingHistory();
       const h = historyRef.current;
       if (h.index <= 0) return;
-      void applyHistorySnapshot(h.index - 1);
+      await applyHistorySnapshot(h.index - 1);
     }, [applyHistorySnapshot, flushPendingHistory]);
 
-    const redo = useCallback(() => {
+    const redo = useCallback(async () => {
       flushPendingHistory();
       const h = historyRef.current;
       if (h.index >= h.snapshots.length - 1) return;
-      void applyHistorySnapshot(h.index + 1);
+      await applyHistorySnapshot(h.index + 1);
     }, [applyHistorySnapshot, flushPendingHistory]);
 
     const canUndo = useCallback(() => historyRef.current.index > 0, []);
@@ -2008,12 +2264,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let textCapable = false;
       let shapeCapable = false;
       let stickerCapable = false;
+      let imageCapable = false;
       if (target instanceof IText || target instanceof Textbox || target instanceof FabricText) {
         textCapable = true;
       } else if (target) {
         let root = target;
         while (root.group) {
-          root = root.group;
+          root = root.group as FabricObject;
         }
         if (root instanceof Group) {
           textCapable = root.getObjects().some((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
@@ -2021,6 +2278,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const markKind = typeof root.get === "function" ? root.get("markKind") : undefined;
         shapeCapable = markKind === "shape";
         stickerCapable = markKind === "sticker";
+        imageCapable =
+          markKind === "image-frame" ||
+          (root instanceof FabricImage && markKind !== "sticker" && markKind !== "frame-image");
       }
 
       setQuickSelector({
@@ -2032,11 +2292,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         textCapable,
         shapeCapable,
         stickerCapable,
+        imageCapable,
       });
     }, [readOnly]);
 
     const openQuickSelectorRef = useRef(openQuickSelectorFromEvent);
     openQuickSelectorRef.current = openQuickSelectorFromEvent;
+    const enterImageCropModeRef = useRef<(target?: FabricObject | null) => boolean>(() => false);
 
     const fitCanvas = useCallback((canvas: Canvas) => {
       const container = containerRef.current;
@@ -2065,9 +2327,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         { width: activeArtboardWidth, height: activeArtboardHeight },
         { backstoreOnly: true },
       );
-      canvas.setDimensions({ width: displayW, height: displayH }, { cssOnly: true });
+      canvas.setDimensions(
+        { width: `${displayW}px`, height: `${displayH}px` },
+        { cssOnly: true },
+      );
       canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
       canvas.setZoom(1);
+      if (embedded) {
+        const wrapper = canvas.getElement().parentElement;
+        if (wrapper) {
+          wrapper.style.width = `${displayW}px`;
+          wrapper.style.height = `${displayH}px`;
+          wrapper.style.maxWidth = "100%";
+          wrapper.style.maxHeight = "100%";
+        }
+      }
       canvas.calcOffset();
       canvas.requestRenderAll();
     }, [embedded, viewZoom, activeArtboardWidth, activeArtboardHeight]);
@@ -2089,7 +2363,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       let containerObserver: ResizeObserver | undefined;
       if (embedded && containerRef.current) {
-        containerObserver = new ResizeObserver(() => fitCanvas(canvas));
+        let fitFrame = 0;
+        containerObserver = new ResizeObserver(() => {
+          if (fitFrame) cancelAnimationFrame(fitFrame);
+          fitFrame = requestAnimationFrame(() => {
+            fitFrame = 0;
+            fitCanvas(canvas);
+          });
+        });
         containerObserver.observe(containerRef.current);
       }
 
@@ -2108,9 +2389,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         };
         canvas.on("object:modified", (event) => {
           const target = event.target;
-          if (target instanceof Group) {
+          if (isStickyRect(target)) {
+            normalizeStickyResize(target);
+            applyStickyFabricControls(target);
+          } else if (target instanceof Group) {
             if (target.get("markKind") === "sticky") {
-              normalizeStickyResize(target);
+              flattenLegacyStickyGroup(canvas, target);
             } else if (target.get("markKind") === "shape" && target.get("textCapable")) {
               normalizeTextCapableShapeResize(target);
             } else if (target.get("structureId")) {
@@ -2129,57 +2413,32 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         });
         canvas.on("object:added", onHistoryImmediate);
         canvas.on("object:removed", onHistoryImmediate);
-        const onStickyTextChanged = (event: { target?: FabricObject }) => {
-          const target = event.target;
-
-          if (
-            (target instanceof Textbox || target instanceof IText) &&
-            target.get("markKind") === "sticky-text" &&
-            target.group instanceof Group &&
-            target.group.get("markKind") === "sticky"
-          ) {
-            const stickyGroup = target.group;
-
-            if (target.isEditing) {
-              const stored = getStickyStoredSize(stickyGroup);
-              updateStickyLayout(stickyGroup, stored.width, stored.height);
-            } else {
-              normalizeStickyTextEdit(stickyGroup);
-              canvas.discardActiveObject();
-              canvas.setActiveObject(stickyGroup);
-              applyStickyFabricControls(stickyGroup);
-              canvas.requestRenderAll();
-            }
-          }
-
-          onHistoryDebounced();
-        };
-        canvas.on("text:changed", onStickyTextChanged);
-        canvas.on("editing:exited", onStickyTextChanged);
         const handleSelectionChanged = (event?: { selected?: FabricObject[] }) => {
           const obj = event?.selected?.[0];
           if (obj) {
-            const stickyGroup = stickyGroupFromTarget(obj);
-            if (stickyGroup) {
-              updateStickyLayout(stickyGroup);
-              applyStickyFabricControls(stickyGroup);
-
-              if (canvas.getActiveObject() !== stickyGroup) {
-                canvas.discardActiveObject();
-                canvas.setActiveObject(stickyGroup);
+            if (isStickyRect(obj)) {
+              applyStickyFabricControls(obj);
+              canvas.requestRenderAll();
+            } else {
+              const stickyGroup = stickyGroupFromTarget(obj);
+              if (stickyGroup) {
+                applyStickyFabricControls(stickyGroup);
+                if (canvas.getActiveObject() !== stickyGroup) {
+                  canvas.discardActiveObject();
+                  canvas.setActiveObject(stickyGroup);
+                }
+                stickyGroup.setCoords();
+                canvas.requestRenderAll();
+              } else if (
+                obj.get("markKind") ||
+                obj instanceof FabricImage ||
+                obj instanceof IText ||
+                obj instanceof Textbox ||
+                obj instanceof FabricText
+              ) {
+                applyBoardFabricControls(obj);
+                canvas.requestRenderAll();
               }
-
-              stickyGroup.setCoords();
-              canvas.requestRenderAll();
-            } else if (
-              obj.get("markKind") ||
-              obj instanceof FabricImage ||
-              obj instanceof IText ||
-              obj instanceof Textbox ||
-              obj instanceof FabricText
-            ) {
-              applyBoardFabricControls(obj);
-              canvas.requestRenderAll();
             }
           }
           refreshCalendarControlRef.current(canvas);
@@ -2194,10 +2453,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           if (path) {
             path.set({ markKind: "draw" });
           }
+          onHistoryImmediate();
         });
         canvas.on("mouse:dblclick", (opt) => {
           const target = opt.target;
           if (!target) return;
+          if (imageFrameGroupFromTarget(target as FabricObject)) {
+            if (enterImageCropModeRef.current(target as FabricObject)) {
+              opt.e.preventDefault?.();
+              opt.e.stopPropagation?.();
+              return;
+            }
+          }
           if (enterObjectTextEditing(canvas, target as FabricObject)) {
             opt.e.preventDefault?.();
             opt.e.stopPropagation?.();
@@ -2234,18 +2501,20 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             }
           }
 
-          if (syncTextFocusRef.current && target && !stickyGroupFromTarget(target)) {
-            let root: FabricObject = target;
-            while (root.group) root = root.group as FabricObject;
-            if (
-              (root instanceof IText || root instanceof Textbox) &&
-              root.get("markKind") !== "sticky-text" &&
-              !structureProp(root, "structureRole")
-            ) {
-              if (enterObjectTextEditing(canvas, root, true)) {
-                opt.e.preventDefault?.();
-                opt.e.stopPropagation?.();
-                return;
+          if (syncTextFocusRef.current && target) {
+            if (!isStickyRect(target as FabricObject) && !stickyGroupFromTarget(target as FabricObject)) {
+              let root: FabricObject = target;
+              while (root.group) root = root.group as FabricObject;
+              if (
+                (root instanceof IText || root instanceof Textbox) &&
+                root.get("markKind") !== "sticky-text" &&
+                !structureProp(root, "structureRole")
+              ) {
+                if (enterObjectTextEditing(canvas, root, true)) {
+                  opt.e.preventDefault?.();
+                  opt.e.stopPropagation?.();
+                  return;
+                }
               }
             }
           }
@@ -2337,7 +2606,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         suppressHistoryRef.current = true;
         canvas.loadFromJSON(layoutJson).then(() => {
           canvas.backgroundColor = bg;
-          restoreAllGroupsAfterLoad(canvas);
+          restoreBoardLayoutAfterLoad(canvas);
           for (const obj of canvas.getObjects()) {
             if (structureProp(obj, "structureId")) continue;
             if (obj.get("markKind") || obj instanceof FabricImage) {
@@ -2357,6 +2626,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           rebindStructureHandlersRef.current(canvas);
         });
       } else {
+        if (!canvas.contextContainer) return;
         canvas.clear();
         canvas.backgroundColor = bg;
         canvas.requestRenderAll();
@@ -2411,13 +2681,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       applyStickyFabricControls(sticky);
       canvas.requestRenderAll();
 
-      requestAnimationFrame(() => {
-        enterObjectTextEditing(canvas, sticky, true);
-      });
-
       commitHistorySnapshot();
       scheduleSave();
-    }, [commitHistorySnapshot, readOnly, scheduleSave]);
+    }, [commitHistorySnapshot, readOnly, scheduleSave, activeArtboardWidth, activeArtboardHeight]);
 
     const addTextAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
@@ -2468,10 +2734,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       applyStickyFabricControls(sticky);
       canvas.requestRenderAll();
 
-      requestAnimationFrame(() => {
-        enterObjectTextEditing(canvas, sticky, true);
-      });
-
       scheduleSave();
     }, [readOnly, scheduleSave, activeArtboardWidth, activeArtboardHeight]);
 
@@ -2496,6 +2758,170 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.requestRenderAll();
       setDrawingMode(true);
     }, [readOnly]);
+
+    const exitCropMode = useCallback(() => {
+      const canvas = fabricRef.current;
+      const crop = cropTargetRef.current;
+      if (!canvas || !crop) {
+        setCropMode(false);
+        return;
+      }
+      crop.group?.set({
+        hasControls: true,
+        hasBorders: true,
+        lockMovementX: false,
+        lockMovementY: false,
+        lockScaling: false,
+        lockRotation: false,
+        selectable: true,
+        evented: true,
+        subTargetCheck: false,
+      });
+      applyBoardFabricControls(crop.group ?? crop.image);
+      crop.image.set({
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
+      });
+      if (crop.group) {
+        canvas.setActiveObject(crop.group);
+      }
+      cropTargetRef.current = null;
+      setCropMode(false);
+      canvas.requestRenderAll();
+      recordHistory();
+      scheduleSave();
+    }, [recordHistory, scheduleSave]);
+
+    const enterImageCropMode = useCallback(
+      (target?: FabricObject | null) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return false;
+        const selected = target ?? deleteTargetRef.current ?? canvas.getActiveObject();
+        if (!selected) return false;
+
+        let group: Group | null = null;
+        let image: FabricImage | null = null;
+
+        const frame = imageFrameGroupFromTarget(selected);
+        if (frame) {
+          group = frame;
+          image = boardImageFromTarget(selected);
+        } else if (selected instanceof FabricImage) {
+          image = boardImageFromTarget(selected);
+        }
+
+        if (!image) return false;
+
+        setQuickSelector(null);
+        deleteTargetRef.current = group ?? image;
+        group?.set({
+          hasControls: false,
+          hasBorders: false,
+          lockMovementX: true,
+          lockMovementY: true,
+          lockScaling: true,
+          lockRotation: true,
+          selectable: false,
+          evented: false,
+        });
+        image.set({
+          hasControls: true,
+          hasBorders: true,
+          selectable: true,
+          evented: true,
+          lockRotation: true,
+        });
+        applyBoardFabricControls(image);
+        canvas.setActiveObject(image);
+        cropTargetRef.current = { group, image };
+        setCropMode(true);
+        canvas.requestRenderAll();
+        return true;
+      },
+      [readOnly],
+    );
+    enterImageCropModeRef.current = enterImageCropMode;
+
+    const applyImageCornerToActive = useCallback(
+      (radius: number) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return;
+        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
+        if (!selected) return;
+        const frame = imageFrameGroupFromTarget(selected);
+        if (frame) return;
+        const image = boardImageFromTarget(selected);
+        if (!image) return;
+        applyImageCornerRadius(image, radius);
+        canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
+      },
+      [readOnly, recordHistory, scheduleSave],
+    );
+
+    const applyImageFrameToActive = useCallback(
+      (shapeType: BoardMarkShapeType) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly || !IMAGE_FRAME_SHAPES.has(shapeType)) return;
+        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
+        if (!selected) return;
+
+        const existingFrame = imageFrameGroupFromTarget(selected);
+        if (existingFrame) {
+          const frameW = Number(existingFrame.get("frameWidth") ?? existingFrame.width ?? 200);
+          const frameH = Number(existingFrame.get("frameHeight") ?? existingFrame.height ?? 200);
+          existingFrame.set({
+            clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
+            frameShapeType: shapeType,
+          });
+          existingFrame.setCoords();
+          canvas.setActiveObject(existingFrame);
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
+          return;
+        }
+
+        const image = boardImageFromTarget(selected);
+        if (!image) return;
+
+        const frameW = (image.width ?? 1) * Math.abs(image.scaleX ?? 1);
+        const frameH = (image.height ?? 1) * Math.abs(image.scaleY ?? 1);
+        const center = image.getCenterPoint();
+        const angle = image.angle ?? 0;
+
+        canvas.remove(image);
+        prepareImageForFrame(image, frameW, frameH);
+
+        const group = new Group([image], {
+          left: center.x,
+          top: center.y,
+          originX: "center",
+          originY: "center",
+          width: frameW,
+          height: frameH,
+          angle,
+          clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
+          markKind: "image-frame",
+          frameShapeType: shapeType,
+          frameWidth: frameW,
+          frameHeight: frameH,
+          subTargetCheck: false,
+          interactive: true,
+          objectCaching: false,
+        });
+        applyBoardFabricControls(group);
+        canvas.add(group);
+        canvas.setActiveObject(group);
+        canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
+      },
+      [readOnly, recordHistory, scheduleSave],
+    );
 
     const addShapeAtPoint = useCallback(
       (shapeType: BoardMarkShapeType, normX: number, normY: number, stroke = MARK_SHAPE_STROKE) => {
@@ -2813,6 +3239,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           scaleY: scale,
         });
       }
+      img.set({ markKind: "image" });
       applyBoardFabricControls(img);
       canvas.add(img);
       if (options?.sendToBack) {
@@ -2896,17 +3323,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     );
 
     const addStickyNoteAt = useCallback(
-      (text: string, x: number, y: number, fill = "#FFF9C4") => {
+      (_text: string, x: number, y: number, fill = "#FFF9C4") => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
         const w = 260;
         const h = 170;
         const sticky = createStickyNoteGroup({
-          left: x * activeArtboardWidth,
-          top: y * activeArtboardHeight,
+          left: x * activeArtboardWidth - w / 2,
+          top: y * activeArtboardHeight - h / 2,
           width: w,
           height: h,
-          text,
           fill,
         });
         canvas.add(sticky);
@@ -3262,17 +3688,22 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const clones = await Promise.all(temp.getObjects().map((obj) => obj.clone()));
       temp.dispose();
       for (const obj of clones) {
-        if (obj instanceof Group) {
-          if (obj.get("markKind") === "sticky") restoreStickyAfterLoad(obj);
-          else if (obj.get("markKind") === "shape" && obj.get("textCapable")) restoreShapeGroupAfterLoad(obj);
-          else if (structureProp(obj, "structureType") === "calendar") restoreCalendarAfterLoad(obj);
-          else if (structureProp(obj, "structureId")) restoreStructureAfterLoad(obj);
-        }
         const added = obj as FabricObject;
+        canvas.add(added);
+        if (isLegacyStickyGroup(added)) {
+          flattenLegacyStickyGroup(canvas, added);
+        } else if (isLegacyFlatStickyTextbox(added)) {
+          migrateTextboxStickyToRect(canvas, added);
+        } else if (isStickyRect(added)) {
+          applyStickyFabricControls(added);
+        } else if (added instanceof Group) {
+          if (added.get("markKind") === "shape" && added.get("textCapable")) restoreShapeGroupAfterLoad(added);
+          else if (structureProp(added, "structureType") === "calendar") restoreCalendarAfterLoad(added);
+          else if (structureProp(added, "structureId")) restoreStructureAfterLoad(added);
+        }
         if (!structureProp(added, "structureId")) {
           applyBoardFabricControls(added);
         }
-        canvas.add(added);
       }
       rebindStructureHandlersRef.current(canvas);
       canvas.requestRenderAll();
@@ -3333,6 +3764,126 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [mergeLayoutObjects],
     );
 
+    const removeElements = useCallback(
+      (criteria: {
+        element_index?: number;
+        match_text?: string;
+        kind?: string;
+        sticker?: string;
+        shape?: string;
+        structure?: string;
+        all?: boolean;
+      }) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return 0;
+
+        const matchText =
+          typeof criteria.match_text === "string" ? criteria.match_text.trim().toLowerCase() : "";
+        const kindFilter = typeof criteria.kind === "string" ? criteria.kind.trim().toLowerCase() : "";
+        const stickerFilter = typeof criteria.sticker === "string" ? criteria.sticker.trim().toLowerCase() : "";
+        const shapeFilter = typeof criteria.shape === "string" ? criteria.shape.trim().toLowerCase() : "";
+        const structureFilter =
+          typeof criteria.structure === "string" ? criteria.structure.trim().toLowerCase() : "";
+
+        const textFromObject = (obj: FabricObject): string => {
+          if (obj instanceof FabricText || obj instanceof Textbox || obj instanceof IText) {
+            return (obj.text ?? "").toString().trim();
+          }
+          if (obj instanceof Group) {
+            for (const child of obj.getObjects()) {
+              const nested = textFromObject(child);
+              if (nested) return nested;
+            }
+          }
+          return "";
+        };
+
+        const describeObject = (obj: FabricObject) => {
+          const structureType = structureProp(obj, "structureType") as string | undefined;
+          if (structureType) {
+            return { kind: "structure", structure: structureType.toLowerCase(), text: "" };
+          }
+          const markKind = (obj.get("markKind") as string | undefined)?.toLowerCase();
+          if (markKind === "sticky") {
+            return { kind: "sticky", text: textFromObject(obj).toLowerCase() };
+          }
+          if (markKind === "sticker") {
+            return {
+              kind: "sticker",
+              sticker: String(obj.get("stickerId") ?? "").toLowerCase(),
+              text: textFromObject(obj).toLowerCase(),
+            };
+          }
+          if (markKind === "shape") {
+            return {
+              kind: "shape",
+              shape: String(obj.get("shapeType") ?? "shape").toLowerCase(),
+              text: textFromObject(obj).toLowerCase(),
+            };
+          }
+          if (markKind === "image" || markKind === "image-frame") {
+            return { kind: "image", text: "" };
+          }
+          if (obj instanceof FabricImage) {
+            return { kind: markKind === "sticker" ? "sticker" : "image", text: "" };
+          }
+          if (obj instanceof FabricText || obj instanceof Textbox || obj instanceof IText) {
+            return {
+              kind: markKind === "sticker" ? "sticker" : "text",
+              text: textFromObject(obj).toLowerCase(),
+            };
+          }
+          return { kind: "element", text: textFromObject(obj).toLowerCase() };
+        };
+
+        const objects = canvas.getObjects();
+        const matchesIndex = (index: number) =>
+          typeof criteria.element_index === "number" &&
+          Number.isFinite(criteria.element_index) &&
+          Math.round(criteria.element_index) === index;
+
+        const matchesCriteria = (obj: FabricObject, index: number) => {
+          if (matchesIndex(index)) return true;
+          const desc = describeObject(obj);
+          if (kindFilter && desc.kind !== kindFilter) return false;
+          if (stickerFilter && (!("sticker" in desc) || desc.sticker !== stickerFilter)) return false;
+          if (shapeFilter && (!("shape" in desc) || desc.shape !== shapeFilter)) return false;
+          if (structureFilter && (!("structure" in desc) || desc.structure !== structureFilter)) return false;
+          if (matchText && !desc.text.includes(matchText)) return false;
+          if (!kindFilter && !stickerFilter && !shapeFilter && !structureFilter && !matchText) return false;
+          return true;
+        };
+
+        const toRemove: FabricObject[] = [];
+        for (let index = 0; index < objects.length; index += 1) {
+          const obj = objects[index];
+          if (!matchesCriteria(obj, index)) continue;
+          toRemove.push(obj);
+          if (!criteria.all) break;
+        }
+
+        if (!criteria.all && toRemove.length > 1) {
+          toRemove.length = 1;
+        }
+
+        if (!toRemove.length) return 0;
+
+        canvas.discardActiveObject();
+        for (const obj of toRemove) {
+          if (obj instanceof IText || obj instanceof Textbox) {
+            if (obj.isEditing) obj.exitEditing();
+          }
+          canvas.remove(obj);
+        }
+        deleteTargetRef.current = null;
+        canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
+        return toRemove.length;
+      },
+      [readOnly, recordHistory, scheduleSave],
+    );
+
     const deleteSelected = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
@@ -3376,7 +3927,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     const resetBoard = useCallback(() => {
       const canvas = fabricRef.current;
-      if (!canvas || readOnly) return;
+      if (!canvas || readOnly || !canvas.contextContainer) return;
       const bg = boardFillForKey(colorKey);
 
       window.clearTimeout(saveTimerRef.current);
@@ -3517,6 +4068,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         if (isTextObject(root)) {
           root.set("fill", hex);
+        } else if (isStickyRect(root)) {
+          root.set({ fill: hex, stroke: stickyStrokeForFill(hex) });
         } else if (root.get("markKind") === "sticky") {
           const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
           if (rect instanceof Rect) {
@@ -3590,6 +4143,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           exitDrawMode();
           return;
         }
+        if (cropMode && e.key === "Escape") {
+          e.preventDefault();
+          exitCropMode();
+          return;
+        }
 
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
           e.preventDefault();
@@ -3624,12 +4182,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       };
       window.addEventListener("keydown", onKeyDown);
       return () => window.removeEventListener("keydown", onKeyDown);
-    }, [copySelected, deleteSelected, drawingMode, exitDrawMode, pasteClipboard, readOnly, redo, selectAllObjects, undo]);
+    }, [copySelected, cropMode, deleteSelected, drawingMode, exitCropMode, exitDrawMode, pasteClipboard, readOnly, redo, selectAllObjects, undo]);
 
     useEffect(() => {
       if (isActive) return;
       exitDrawMode();
-    }, [exitDrawMode, isActive]);
+      exitCropMode();
+    }, [exitCropMode, exitDrawMode, isActive]);
 
     const handleQuickPick = useCallback(
       (action: BoardMarksQuickAction) => {
@@ -3745,7 +4304,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const isStatementTarget = (obj: FabricObject | undefined): boolean => {
         if (!obj) return false;
-        if (stickyGroupFromTarget(obj)) return false;
+        if (isStickyRect(obj) || stickyGroupFromTarget(obj)) return false;
         let root: FabricObject = obj;
         while (root.group) root = root.group as FabricObject;
         return (
@@ -3763,8 +4322,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const textEditTarget = (obj: FabricObject | undefined): FabricObject | null => {
         if (!obj) return null;
-        const stickyGroup = stickyGroupFromTarget(obj);
-        if (stickyGroup) return stickyGroup;
+        if (isStickyRect(obj) || stickyGroupFromTarget(obj)) return null;
         let root: FabricObject = obj;
         while (root.group) root = root.group as FabricObject;
         if (root instanceof IText || root instanceof Textbox) return root;
@@ -3878,6 +4436,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     }, [exitDrawMode, fabricSelectionControls, readOnly]);
 
     useImperativeHandle(ref, () => ({
+      boardId,
       addText,
       addTextAt,
       addTextNormalized,
@@ -3893,6 +4452,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canPasteClipboard,
       hasSelection,
       deleteSelected,
+      removeElements,
       resetBoard,
       undo,
       redo,
@@ -3905,7 +4465,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       addSticker: (sticker) => addStickerAtPoint(sticker, 0.5, 0.5),
       addStickerAt: (sticker, x, y) => addStickerAtPoint(sticker, x, y),
       startDrawMode,
-    }), [addDiagramOverlay, addImageFromFile, addImageFromUrl, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, resetBoard, startDrawMode, undo]);
+    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, removeElements, resetBoard, startDrawMode, undo]);
 
     return (
       <div
@@ -3929,6 +4489,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           {!readOnly && isActive && drawingMode && (
             <div className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full border border-stone-300/80 bg-white/95 px-3 py-1 text-[11px] font-medium text-stone-700 shadow-sm">
               {fabricSelectionControls ? "Double tap to finish" : "Esc to finish"}
+            </div>
+          )}
+          {!readOnly && isActive && cropMode && (
+            <div className="absolute left-1/2 top-2 z-20 -translate-x-1/2">
+              <button
+                type="button"
+                onClick={exitCropMode}
+                className="rounded-full border border-stone-300/80 bg-white/95 px-3 py-1 text-[11px] font-semibold text-stone-800 shadow-sm hover:bg-white"
+              >
+                Done
+              </button>
             </div>
           )}
           {!readOnly && isActive && calendarControl ? (
@@ -3972,6 +4543,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               textCapable={quickSelector.textCapable}
               shapeCapable={quickSelector.shapeCapable}
               stickerCapable={quickSelector.stickerCapable}
+              imageCapable={quickSelector.imageCapable}
               canPaste={canPasteClipboard()}
               onPick={handleQuickPick}
               onClose={closeQuickSelector}
@@ -3982,6 +4554,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               onElementSizePick={applyMarkFontSize}
               onElementTextAlignPick={applyMarkTextAlign}
               onElementFontPick={applyMarkFontFamily}
+              onImageCornerPick={applyImageCornerToActive}
+              onImageFramePick={applyImageFrameToActive}
               onShapePick={handleShapePick}
               onStickerPick={handleStickerPick}
               onStructurePick={handleStructurePick}

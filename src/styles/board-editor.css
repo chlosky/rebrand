@@ -23,12 +23,22 @@
     min-height: 0;
     height: 100%;
   }
+
+  .board-mobile-carousel .canvas-container {
+    max-width: 100%;
+    max-height: 100%;
+  }
 }
 
 @media (min-width: 768px) {
   .board-grid-cell .board-artboard-host {
     min-height: 0;
     height: 100%;
+  }
+
+  .board-grid-cell .canvas-container {
+    max-width: 100%;
+    max-height: 100%;
   }
 
   .board-row-scroll {

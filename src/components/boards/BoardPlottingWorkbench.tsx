@@ -150,7 +150,7 @@ const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
 ];
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
-  companion: "Board help only — colors, labels, Our Collection images, notes, structures, layout.",
+  companion: "Colors, labels, Our Collection images, notes, structures, layout, and board names.",
   clippings: "Browse Our Collection or add photos to Your Library.",
   structures: "Drop planning grids onto the board — mix freely on any board.",
   marks: "Right-click empty board to add marks · right-click a note to edit.",
@@ -160,20 +160,38 @@ type BoardPlottingWorkbenchProps = {
   workspaceId: string;
   activeBoard: Board;
   activeBoardId: string;
+  workspaceBoards: { id: string; title: string; role?: string }[];
   editorRef: RefObject<BoardCanvasHandle | null>;
   userId: string;
   onBoardColorChange: (boardId: string, colorKey: string) => Promise<void>;
+  onRenameBoard: (boardId: string, title: string) => Promise<void>;
   onPickImage: (url: string) => void;
+  getEditor?: () => BoardCanvasHandle | null;
+  getEditorForBoard?: (boardId: string) => BoardCanvasHandle | null | Promise<BoardCanvasHandle | null>;
+  onAddBoard?: (title?: string) => Promise<void>;
+  onDeleteBoard?: (boardId: string) => Promise<void>;
+  onDuplicateBoard?: (boardId: string, title?: string) => Promise<void>;
+  onSelectBoard?: (boardId: string) => void;
+  getActiveBoardId?: () => string;
 };
 
 export function BoardPlottingWorkbench({
   workspaceId,
   activeBoard,
   activeBoardId,
+  workspaceBoards,
   editorRef,
   userId,
   onBoardColorChange,
+  onRenameBoard,
   onPickImage,
+  getEditor,
+  getEditorForBoard,
+  onAddBoard,
+  onDeleteBoard,
+  onDuplicateBoard,
+  onSelectBoard,
+  getActiveBoardId,
 }: BoardPlottingWorkbenchProps) {
   const [openTab, setOpenTab] = useState<PlotDockTab | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -263,20 +281,31 @@ export function BoardPlottingWorkbench({
 
       {!collapsed && openTab ? (
         <div className="flex h-full min-h-0 w-[min(100vw,17.5rem)] flex-col overflow-hidden xl:w-72">
-          <header className="border-b border-stone-300/60 px-3 py-2.5">
-            <p className="font-welcome-serif text-sm font-normal text-stone-900">
-              {DOCK_TABS.find((t) => t.id === openTab)?.label}
-            </p>
-            <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{TAB_INTROS[openTab]}</p>
-          </header>
+          {openTab !== "companion" ? (
+            <header className="border-b border-stone-300/60 px-3 py-2.5">
+              <p className="font-welcome-serif text-sm font-normal text-stone-900">
+                {DOCK_TABS.find((t) => t.id === openTab)?.label}
+              </p>
+              <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{TAB_INTROS[openTab]}</p>
+            </header>
+          ) : null}
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {openTab === "companion" && (
               <BoardCompanionPanel
                 workspaceId={workspaceId}
                 activeBoardId={activeBoardId}
+                workspaceBoards={workspaceBoards}
                 editorRef={editorRef}
+                getEditor={getEditor}
+                getEditorForBoard={getEditorForBoard}
                 onBoardColorChange={onBoardColorChange}
+                onRenameBoard={onRenameBoard}
+                onAddBoard={onAddBoard}
+                onDeleteBoard={onDeleteBoard}
+                onDuplicateBoard={onDuplicateBoard}
+                onSelectBoard={onSelectBoard}
+                getActiveBoardId={getActiveBoardId}
               />
             )}
 

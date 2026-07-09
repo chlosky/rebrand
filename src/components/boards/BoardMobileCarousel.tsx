@@ -26,16 +26,23 @@ function RegisteredBoardCanvasEditor({
   registerEditor,
   ...rest
 }: RegisteredBoardCanvasEditorProps) {
+  const handleRef = useRef<BoardCanvasHandle | null>(null);
+
   const setRef = useCallback(
     (handle: BoardCanvasHandle | null) => {
+      handleRef.current = handle;
       if (handle) registerEditor(boardId, handle);
     },
     [boardId, registerEditor],
   );
 
+  useEffect(() => {
+    if (handleRef.current) registerEditor(boardId, handleRef.current);
+  });
+
   useEffect(() => () => registerEditor(boardId, null), [boardId, registerEditor]);
 
-  return <BoardCanvasEditor ref={setRef} {...rest} />;
+  return <BoardCanvasEditor ref={setRef} boardId={boardId} {...rest} />;
 }
 
 export function BoardMobileCarousel({

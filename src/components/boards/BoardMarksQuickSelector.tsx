@@ -12,7 +12,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  AlignHorizontal,
+  AlignHorizontalJustifyCenter,
   Pencil,
   Shapes,
   Sparkles,
@@ -29,6 +29,7 @@ import {
   Heart,
   MessageCircle,
   Database,
+  Radius,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,9 @@ export type BoardMarksQuickAction =
   | "size"
   | "copy"
   | "paste"
-  | "delete";
+  | "delete"
+  | "corners"
+  | "frame";
 
 export type BoardMarkTextSize = "S" | "M" | "L" | "XL";
 
@@ -158,6 +161,27 @@ export const BOARD_MARK_STICKER_EMOJI: Record<BoardMarkStickerId, string> = Obje
   BOARD_MARK_STICKER_OPTIONS.map((s) => [s.id, s.emoji]),
 ) as Record<BoardMarkStickerId, string>;
 
+export const BOARD_MARK_FRAME_OPTIONS: {
+  id: BoardMarkShapeType;
+  label: string;
+  Icon: LucideIcon;
+}[] = [
+  { id: "rect", label: "Rect", Icon: Square },
+  { id: "circle", label: "Circle", Icon: CircleIcon },
+  { id: "heart", label: "Heart", Icon: Heart },
+  { id: "star", label: "Star", Icon: Star },
+  { id: "hexagon", label: "Hex", Icon: Hexagon },
+  { id: "diamond", label: "Diamond", Icon: Diamond },
+];
+
+const IMAGE_CORNER_OPTIONS: { id: number; label: string }[] = [
+  { id: 0, label: "None" },
+  { id: 16, label: "Soft" },
+  { id: 32, label: "Round" },
+  { id: 48, label: "Large" },
+  { id: -1, label: "Circle" },
+];
+
 type BoardMarksQuickSelectorProps = {
   x: number;
   y: number;
@@ -165,6 +189,7 @@ type BoardMarksQuickSelectorProps = {
   textCapable?: boolean;
   shapeCapable?: boolean;
   stickerCapable?: boolean;
+  imageCapable?: boolean;
   canPaste?: boolean;
   onPick: (action: BoardMarksQuickAction) => void;
   onClose: () => void;
@@ -175,6 +200,8 @@ type BoardMarksQuickSelectorProps = {
   onElementSizePick?: (size: BoardMarkTextSize) => void;
   onElementTextAlignPick?: (align: BoardMarkTextAlign) => void;
   onElementFontPick?: (font: BoardMarkTextFont) => void;
+  onImageCornerPick?: (radius: number) => void;
+  onImageFramePick?: (shape: BoardMarkShapeType) => void;
   onShapePick?: (shape: BoardMarkShapeType) => void;
   onStickerPick?: (sticker: BoardMarkStickerId) => void;
   onStructurePick?: (structure: BoardDiagramType) => void;
@@ -194,7 +221,7 @@ const TEXT_ALIGN_OPTIONS: { id: BoardMarkTextAlign; label: string; Icon: LucideI
 ];
 
 const EDIT_SUBMENU_OPTIONS: { id: "position" | "font"; label: string; Icon: LucideIcon }[] = [
-  { id: "position", label: "Position", Icon: AlignHorizontal },
+  { id: "position", label: "Position", Icon: AlignHorizontalJustifyCenter },
   { id: "font", label: "Font", Icon: CaseSensitive },
 ];
 
@@ -233,6 +260,13 @@ const OBJECT_ACTIONS: WheelItem[] = [
   { id: "delete", label: "Delete", Icon: Trash2, accent: "text-red-300" },
 ];
 
+const IMAGE_OBJECT_ACTIONS: WheelItem[] = [
+  { id: "corners", label: "Corners", Icon: Radius },
+  { id: "frame", label: "Frame", Icon: Shapes },
+  { id: "copy", label: "Copy", Icon: ClipboardCopy },
+  { id: "delete", label: "Delete", Icon: Trash2, accent: "text-red-300" },
+];
+
 export function BoardMarksQuickSelector({
   x,
   y,
@@ -240,6 +274,7 @@ export function BoardMarksQuickSelector({
   textCapable = false,
   shapeCapable = false,
   stickerCapable = false,
+  imageCapable = false,
   canPaste = false,
   onPick,
   onClose,
@@ -250,6 +285,8 @@ export function BoardMarksQuickSelector({
   onElementSizePick,
   onElementTextAlignPick,
   onElementFontPick,
+  onImageCornerPick,
+  onImageFramePick,
   onShapePick,
   onStickerPick,
   onStructurePick,
@@ -259,6 +296,8 @@ export function BoardMarksQuickSelector({
   const [editOpen, setEditOpen] = useState(false);
   const [alignOpen, setAlignOpen] = useState(false);
   const [fontOpen, setFontOpen] = useState(false);
+  const [cornersOpen, setCornersOpen] = useState(false);
+  const [frameOpen, setFrameOpen] = useState(false);
   const [shapesOpen, setShapesOpen] = useState(false);
   const [stickersOpen, setStickersOpen] = useState(false);
   const [structuresOpen, setStructuresOpen] = useState(false);
@@ -268,6 +307,8 @@ export function BoardMarksQuickSelector({
     editOpen ||
     alignOpen ||
     fontOpen ||
+    cornersOpen ||
+    frameOpen ||
     shapesOpen ||
     stickersOpen ||
     structuresOpen;
@@ -283,6 +324,10 @@ export function BoardMarksQuickSelector({
 
   const wheelItems = (() => {
     if (mode === "object") {
+      if (imageCapable) {
+        const angles = spreadAngles(IMAGE_OBJECT_ACTIONS.length);
+        return IMAGE_OBJECT_ACTIONS.map((item, i) => ({ ...item, angle: angles[i] }));
+      }
       const actions = OBJECT_ACTIONS.filter((item) => {
         if (item.id === "size" || item.id === "edit") return textCapable;
         if (item.id === "stickers") return stickerCapable;
@@ -310,6 +355,8 @@ export function BoardMarksQuickSelector({
     setEditOpen(false);
     setAlignOpen(false);
     setFontOpen(false);
+    setCornersOpen(false);
+    setFrameOpen(false);
     setShapesOpen(false);
     setStickersOpen(false);
     setStructuresOpen(false);
@@ -340,7 +387,9 @@ export function BoardMarksQuickSelector({
       } else if (fontOpen) {
         setFontOpen(false);
         setEditOpen(true);
-      } else if (paletteOpen) setPaletteOpen(false);
+      } else if (cornersOpen) setCornersOpen(false);
+      else if (frameOpen) setFrameOpen(false);
+      else if (paletteOpen) setPaletteOpen(false);
       else if (sizeOpen) setSizeOpen(false);
       else if (editOpen) setEditOpen(false);
       else if (shapesOpen) setShapesOpen(false);
@@ -350,7 +399,7 @@ export function BoardMarksQuickSelector({
     };
     window.addEventListener("keydown", onKeyDown, { capture: true });
     return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [onClose, paletteOpen, sizeOpen, editOpen, alignOpen, fontOpen, shapesOpen, stickersOpen, structuresOpen]);
+  }, [onClose, paletteOpen, sizeOpen, editOpen, alignOpen, fontOpen, cornersOpen, frameOpen, shapesOpen, stickersOpen, structuresOpen]);
 
   const handleBackdropClick = () => {
     if (alignOpen || fontOpen) {
@@ -389,12 +438,40 @@ export function BoardMarksQuickSelector({
     if (id === "edit") {
       setPaletteOpen(false);
       setSizeOpen(false);
+      setCornersOpen(false);
+      setFrameOpen(false);
       setShapesOpen(false);
       setStickersOpen(false);
       setStructuresOpen(false);
       setAlignOpen(false);
       setFontOpen(false);
       setEditOpen(true);
+      return;
+    }
+    if (id === "corners") {
+      setPaletteOpen(false);
+      setSizeOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
+      setFrameOpen(false);
+      setShapesOpen(false);
+      setStickersOpen(false);
+      setStructuresOpen(false);
+      setCornersOpen(true);
+      return;
+    }
+    if (id === "frame") {
+      setPaletteOpen(false);
+      setSizeOpen(false);
+      setEditOpen(false);
+      setAlignOpen(false);
+      setFontOpen(false);
+      setCornersOpen(false);
+      setShapesOpen(false);
+      setStickersOpen(false);
+      setStructuresOpen(false);
+      setFrameOpen(true);
       return;
     }
     if (id === "shapes") {
@@ -457,6 +534,16 @@ export function BoardMarksQuickSelector({
 
   const handleFontPick = (font: BoardMarkTextFont) => {
     onElementFontPick?.(font);
+    onClose();
+  };
+
+  const handleCornerPick = (radius: number) => {
+    onImageCornerPick?.(radius);
+    onClose();
+  };
+
+  const handleFramePick = (shape: BoardMarkShapeType) => {
+    onImageFramePick?.(shape);
     onClose();
   };
 
@@ -534,6 +621,16 @@ export function BoardMarksQuickSelector({
           {fontOpen && (
             <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
               Font
+            </span>
+          )}
+          {cornersOpen && (
+            <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
+              Corners
+            </span>
+          )}
+          {frameOpen && (
+            <span className="pointer-events-none absolute left-1/2 top-1/2 w-16 -translate-x-1/2 translate-y-5 text-center text-[10px] font-medium leading-tight text-white/70">
+              Frame
             </span>
           )}
           {shapesOpen && (
@@ -699,6 +796,66 @@ export function BoardMarksQuickSelector({
                   style={{ left, top, fontFamily }}
                 >
                   Aa
+                </button>
+              );
+            })}
+
+          {cornersOpen &&
+            IMAGE_CORNER_OPTIONS.map(({ id, label }, index) => {
+              const start = 205;
+              const step = 130 / Math.max(IMAGE_CORNER_OPTIONS.length - 1, 1);
+              const angle = start + index * step;
+              const rad = (angle * Math.PI) / 180;
+              const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
+              const top = CENTER + Math.sin(rad) * SWATCH_RADIUS;
+
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  title={label}
+                  aria-label={`Corner radius ${label}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCornerPick(id);
+                  }}
+                  className={cn(
+                    "absolute flex h-7 min-w-[1.75rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 px-1.5 text-[10px] font-bold text-white transition-transform",
+                    "hover:scale-110 hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  )}
+                  style={{ left, top }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+
+          {frameOpen &&
+            BOARD_MARK_FRAME_OPTIONS.map(({ id, label, Icon }, index) => {
+              const start = 205;
+              const step = 130 / Math.max(BOARD_MARK_FRAME_OPTIONS.length - 1, 1);
+              const angle = start + index * step;
+              const rad = (angle * Math.PI) / 180;
+              const left = CENTER + Math.cos(rad) * SWATCH_RADIUS;
+              const top = CENTER + Math.sin(rad) * SWATCH_RADIUS;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  title={label}
+                  aria-label={`Frame shape ${label}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFramePick(id);
+                  }}
+                  className={cn(
+                    "absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-transform",
+                    "hover:scale-110 hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                  )}
+                  style={{ left, top }}
+                >
+                  <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
               );
             })}

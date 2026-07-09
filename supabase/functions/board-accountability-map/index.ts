@@ -5,7 +5,7 @@ import {
   plottingProRequiredResponse,
   userHasActivePlottingPro,
 } from "../_shared/requirePlottingPro.ts";
-import { BOARDS_AI_SAFETY_POLICY, screenBoardsCorpus } from "../_shared/boardsAiGuardrails.ts";
+import { BOARDS_AI_SAFETY_POLICY, ACTION_MAP_EXTRACTION_POLICY, screenBoardsCorpus } from "../_shared/boardsAiGuardrails.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +16,7 @@ type BoardRow = {
   id: string;
   title: string;
   role: string;
+  color_key: string;
   layout_json: unknown;
   sort_order: number;
 };
@@ -30,27 +31,73 @@ function isJunkBoardText(text: string): boolean {
   return false;
 }
 
-function collectTextsFromLayout(layout: unknown): { texts: string[]; imageCount: number } {
-  const texts: string[] = [];
-  let imageCount = 0;
+function collectBoardPayloadFromLayout(layout: unknown): {
+  text_elements: string[];
+  sticky_note_text: string[];
+  checklist_rows: string[];
+  structure_labels: string[];
+  section_labels: string[];
+  dates: string[];
+  image_count: number;
+  image_tags: string[];
+  image_descriptions: string[];
+} {
+  const text_elements: string[] = [];
+  const sticky_note_text: string[] = [];
+  const checklist_rows: string[] = [];
+  const structure_labels: string[] = [];
+  const section_labels: string[] = [];
+  const dates: string[] = [];
+  const image_tags: string[] = [];
+  const image_descriptions: string[] = [];
+  let image_count = 0;
+
   const walk = (items: unknown[]) => {
     for (const raw of items) {
       if (!raw || typeof raw !== "object") continue;
       const o = raw as Record<string, unknown>;
       const role = String(o.structureRole ?? "");
-      if (role === "add-row" || role === "add-button" || role === "checkbox") continue;
+      const markKind = String(o.markKind ?? "").toLowerCase();
+      if (role === "add-row" || role === "add-button" || role === "checkbox" || role === "checkmark") continue;
+
       if (typeof o.text === "string") {
         const t = o.text.trim();
-        if (t.length > 1 && !isJunkBoardText(t)) texts.push(t);
+        if (t.length > 1 && !isJunkBoardText(t)) {
+          if (markKind === "sticky") sticky_note_text.push(t);
+          else if (role === "label" || role === "priority-left" || role === "priority-right") {
+            checklist_rows.push(t);
+            structure_labels.push(t);
+          } else if (role === "calendar-day-number" || role === "calendar-title") dates.push(t);
+          else if (o.structureId || o.structureType) structure_labels.push(t);
+          else text_elements.push(t);
+        }
       }
+
       const type = String(o.type ?? "").toLowerCase();
-      if (type === "image" || type.includes("image")) imageCount += 1;
+      if (type === "image" || markKind === "image" || markKind === "image-frame" || markKind === "frame-image") {
+        image_count += 1;
+        const src = typeof o.src === "string" ? o.src : "";
+        if (src) image_descriptions.push(src.split("/").pop()?.replace(/\.\w+$/, "") ?? src);
+        const theme = typeof o.theme === "string" ? o.theme : typeof o.libraryTheme === "string" ? o.libraryTheme : "";
+        if (theme) image_tags.push(theme);
+      }
       if (Array.isArray(o.objects)) walk(o.objects);
     }
   };
+
   const objs = (layout as { objects?: unknown[] })?.objects;
   if (Array.isArray(objs)) walk(objs);
-  return { texts, imageCount };
+  return {
+    text_elements,
+    sticky_note_text,
+    checklist_rows,
+    structure_labels,
+    section_labels,
+    dates,
+    image_count,
+    image_tags: [...new Set(image_tags)].slice(0, 16),
+    image_descriptions: [...new Set(image_descriptions)].slice(0, 16),
+  };
 }
 
 function focusBoards(boards: BoardRow[]) {
@@ -69,12 +116,22 @@ function defaultReviewDate(): string {
 function isGenericPlaceholderTitle(text: string): boolean {
   const t = text.trim().toLowerCase().replace(/\s+/g, " ");
   if (!t) return false;
-  if (t === "review board" || t === "review cycle" || t === "daily gratitude") return true;
-  if (t === "accountability review") return true;
-  if (/^review\s+(the\s+)?(focus\s+)?board(\s+\d+)?\.?$/.test(t)) return true;
-  if (/^review\s+focus\s+board\s*\d*\.?$/.test(t)) return true;
-  if (/^weekly\s+review(\s+(of|for))?\s+(the\s+)?(focus\s+)?board/.test(t)) return true;
+  if (t === "review board" || t === "review cycle" || t === "daily gratitude" || t === "progress") return true;
+  if (t === "accountability review" || t === "focus plan" || t === "becoming plan") return true;
+  if (/^review\s+(the\s+)?(focus\s+)?board/.test(t)) return true;
+  if (/^review\s+\w+(\s+board)?$/.test(t)) return true;
+  if (/^weekly\s+review/.test(t)) return true;
   if (/^check\s+(in\s+on\s+)?(the\s+)?(focus\s+)?board/.test(t)) return true;
+  if (/^check\s+(your\s+)?board/.test(t)) return true;
+  if (/^progress(\s+toward|\s+on|\s+with|\s+in)?\s/.test(t)) return true;
+  if (/^more\s+/.test(t)) return true;
+  if (/^reflect\s+on/.test(t)) return true;
+  if (/stay\s+aligned/.test(t)) return true;
+  if (/continue\s+(your\s+)?journey/.test(t)) return true;
+  if (/return\s+to\s+(your\s+)?(vision|board|practice)/.test(t)) return true;
+  if (/open\s+the\s+app/.test(t)) return true;
+  if (/think\s+about/.test(t)) return true;
+  if (t === "become better") return true;
   return false;
 }
 
@@ -162,20 +219,38 @@ function scrubMapTitles(map: Record<string, unknown>): Record<string, unknown> {
   return { ...map, plans, actions };
 }
 
-function workspaceHasEnoughContent(boardPayload: { texts: string[]; image_count: number }[]): boolean {
-  const textChars = boardPayload.reduce((sum, b) => sum + b.texts.join(" ").length, 0);
-  const imageCount = boardPayload.reduce((sum, b) => sum + b.image_count, 0);
-  return textChars >= 24 || imageCount >= 2;
+function buildFocusOnlyMap(focusList: BoardRow[]): Record<string, unknown> {
+  const now = new Date().toISOString();
+  return {
+    version: 2 as const,
+    summary: "Palette drafted this from your workspace. Review before finalizing.",
+    analysis_status: "draft_ready",
+    analyzed_at: now,
+    edited_at: null,
+    finalized_at: null,
+    meta_confidence: null,
+    finalized: false,
+    review_cycle: {
+      title: "Review cycle",
+      remind_date: defaultReviewDate(),
+      remind_time: "09:00",
+    },
+    focuses: focusList.map((b, i) => ({
+      id: `focus-${i + 1}`,
+      board_id: b.id,
+      title: b.title,
+    })),
+    plans: [],
+    actions: [],
+    unmapped_items: [],
+    reminders: [],
+  };
 }
 
-function needsMoreContentResponse() {
-  return new Response(
-    JSON.stringify({
-      status: "needs_more_content",
-      message: "Not enough workspace content to draft a useful action map.",
-    }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-  );
+function focusMapResponse(focusList: BoardRow[]) {
+  return new Response(JSON.stringify(buildFocusOnlyMap(focusList)), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 serve(async (req) => {
@@ -231,7 +306,7 @@ serve(async (req) => {
 
     const { data: boards, error: boardsErr } = await supabase
       .from("boards")
-      .select("id, title, role, layout_json, sort_order")
+      .select("id, title, role, color_key, layout_json, sort_order")
       .eq("workspace_id", workspace_id)
       .eq("user_id", userData.user.id)
       .order("sort_order", { ascending: true });
@@ -253,27 +328,40 @@ serve(async (req) => {
     }
 
     const boardPayload = boardRows.map((b) => {
-      const { texts, imageCount } = collectTextsFromLayout(b.layout_json);
+      const content = collectBoardPayloadFromLayout(b.layout_json);
       return {
-        id: b.id,
-        title: b.title,
+        board_id: b.id,
+        board_title: b.title,
         role: b.role,
-        texts: texts.slice(0, 32),
-        image_count: imageCount,
+        color_key: b.color_key,
+        ...content,
       };
     });
 
-    if (!workspaceHasEnoughContent(boardPayload)) {
-      return needsMoreContentResponse();
-    }
-
     const corpus = boardPayload
-      .map((b) => `${b.title} (${b.role}): ${b.texts.join(" | ")}`)
+      .map((b) => {
+        const parts = [
+          ...b.text_elements,
+          ...b.sticky_note_text,
+          ...b.checklist_rows,
+          ...b.structure_labels,
+          ...b.dates,
+          ...b.image_tags,
+        ];
+        return `${b.board_title} (${b.role}, ${b.color_key}): ${parts.join(" | ")}`;
+      })
       .join("\n");
 
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiKey || !screenBoardsCorpus(corpus)) {
-      return needsMoreContentResponse();
+    if (!openaiKey) {
+      return new Response(JSON.stringify({ error: "AI not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!screenBoardsCorpus(corpus)) {
+      return focusMapResponse(focusList);
     }
 
     const focusIds = focusList.map((b, i) => ({
@@ -308,14 +396,26 @@ SMS RULES (only when reminder_type is sms):
 - if reminder_type is not sms, sms_text must be null
 - Never use generic copy like "return to your practice", "check your board", or "open the app"
 
-AI BEHAVIOR:
-- Use only content supported by the workspace — do not invent focus areas or filler goals
-- No generic "Daily Gratitude", "Review board", or placeholder actions unless the workspace supports them
-- No therapy language, manifesting, alignment, or fake specificity
-- Keep titles short and editable
-- Prefer concrete actions over vague motivation
-- Mark uncertain items with lower confidence (0.4-0.6) and source_evidence
-- If workspace is too thin, return { "status": "needs_more_content", "message": "..." }
+AI BEHAVIOR — Action Map extraction:
+The Action page turns Vision boards into Focus / Plan / Action follow-through. Extract real next steps from board text, sticky notes, checklist/structure rows, dates and The Plan board (role "plan").
+
+Do NOT invent generic accountability filler. Never create:
+- "Review [board title]" / "Review [board] board"
+- "Progress toward…" / "More [board title]"
+- "Check your board" / "Reflect on…" / motivational or therapy language
+
+Extraction priority:
+1. Checklist/structure rows
+2. Explicit task verbs (book, buy, schedule, call, email, apply, post, create, clean, workout, order, follow up, pay, send, update, prepare)
+3. Dates and time references
+4. Purchases, appointments, routines supported by board text
+
+Every plan MUST include 1-4 concrete actions. Prefer board text; when thin, draft editable actions from the plan title and board theme — not review/progress filler.
+Each action needs source_evidence quoting actual board text when available.
+Keep titles short and editable. Mark uncertain items with lower confidence and source_evidence.
+
+Reminder channel: AI assigns reminder_type only — not Brevo email/SMS copy. Default email. sms_text null unless reminder_type is sms.
+No therapy language, manifesting, alignment, or fake specificity.
 
 STRUCTURE:
 - 1-3 plans per focus, each with 1-4 actions
@@ -371,7 +471,7 @@ Return JSON only:
         messages: [
           {
             role: "system",
-            content: `Return valid JSON only.\n\n${BOARDS_AI_SAFETY_POLICY}`,
+            content: `Return valid JSON only.\n\n${BOARDS_AI_SAFETY_POLICY}\n\n${ACTION_MAP_EXTRACTION_POLICY}`,
           },
           { role: "user", content: prompt },
         ],
@@ -382,7 +482,7 @@ Return JSON only:
 
     if (!aiRes.ok) {
       console.error("OpenAI error:", await aiRes.text());
-      return needsMoreContentResponse();
+      return focusMapResponse(focusList);
     }
 
     const aiJson = await aiRes.json();
@@ -391,18 +491,17 @@ Return JSON only:
     try {
       parsed = JSON.parse(raw);
     } catch {
-      return needsMoreContentResponse();
+      return focusMapResponse(focusList);
     }
 
-    if (parsed.status === "needs_more_content") {
-      return needsMoreContentResponse();
+    if (parsed.status === "needs_more_content" || parsed.version !== 2 || !Array.isArray(parsed.focuses)) {
+      return focusMapResponse(focusList);
     }
 
-    const hasPlans = Array.isArray(parsed.plans) && parsed.plans.length > 0;
-    const hasActions = Array.isArray(parsed.actions) && parsed.actions.length > 0;
-
-    if (parsed.version !== 2 || !Array.isArray(parsed.focuses) || !hasPlans || !hasActions) {
-      return needsMoreContentResponse();
+    const hasPlans = Array.isArray(parsed.plans);
+    const hasActions = Array.isArray(parsed.actions);
+    if (!hasPlans || !hasActions) {
+      return focusMapResponse(focusList);
     }
 
     const reviewRaw = (parsed.review_cycle ?? parsed.quarterly_reset) as Record<string, unknown> | undefined;
