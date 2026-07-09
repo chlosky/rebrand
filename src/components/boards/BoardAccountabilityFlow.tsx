@@ -110,7 +110,7 @@ function CadenceTimingControls({
       <div
         className={cn(
           "shrink-0",
-          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[104px]" : "w-[40px]",
+          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[96px]" : "w-[40px]",
         )}
       >
         {cadence === "once" ? (
@@ -155,7 +155,7 @@ function CadenceTimingControls({
         disabled={locked}
         value={timeValue}
         onChange={(e) => onTime(e.target.value || "09:00")}
-        className={cn(PILL_SELECT, "w-[7.5rem] min-w-[7.5rem] px-2")}
+        className={cn(PILL_SELECT, "w-[5.25rem] min-w-[5.25rem] px-1.5 text-center [&::-webkit-calendar-picker-indicator]:hidden")}
         aria-label="Reminder time"
       />
     </div>
@@ -273,7 +273,7 @@ function ActionNodeRow({
   };
 
   return (
-    <div className="w-full max-w-full" data-map-node>
+    <div className="w-full max-w-full space-y-1" data-map-node>
       <div
         className={cn(
           "inline-flex min-h-[40px] w-full max-w-full flex-nowrap items-center gap-1 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
@@ -288,7 +288,7 @@ function ActionNodeRow({
             const cleaned = naturalizeTitle(e.target.value);
             if (cleaned !== e.target.value) onPatch({ title: cleaned });
           }}
-          className="h-8 min-w-[7.5rem] flex-1 truncate border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
+          className="h-8 min-w-0 flex-1 truncate border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
           placeholder="Action"
         />
         <select
@@ -317,23 +317,6 @@ function ActionNodeRow({
           onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
           onTime={(t) => onPatch({ remind_time: t })}
         />
-        {action.channels.sms && !locked ? (
-          <>
-            <Input
-              value={action.sms_text ?? smsTextFromTitle(action.title)}
-              onChange={(e) =>
-                onPatch({ sms_text: stripSmsText(e.target.value).slice(0, SMS_MAX_LENGTH) })
-              }
-              className="h-7 min-w-[7rem] max-w-[11rem] shrink border-0 bg-neutral-100 px-2 text-[10px] shadow-none focus-visible:ring-1 focus-visible:ring-neutral-300"
-              maxLength={SMS_MAX_LENGTH}
-              placeholder="Text message"
-              aria-label="Text reminder"
-            />
-            <span className={cn("shrink-0 text-[10px]", smsOver ? "text-destructive" : "text-neutral-400")}>
-              {smsLen}/{SMS_MAX_LENGTH}
-            </span>
-          </>
-        ) : null}
         <RejectOrDeleteButton
           suggested={action.status === "suggested"}
           locked={locked}
@@ -341,6 +324,23 @@ function ActionNodeRow({
           onDelete={onDelete}
         />
       </div>
+      {action.channels.sms && !locked ? (
+        <div className="ml-2 flex max-w-[28rem] items-center gap-2 px-1">
+          <Input
+            value={action.sms_text ?? smsTextFromTitle(action.title)}
+            onChange={(e) =>
+              onPatch({ sms_text: stripSmsText(e.target.value).slice(0, SMS_MAX_LENGTH) })
+            }
+            className="h-7 min-w-0 flex-1 rounded-lg border-0 bg-neutral-100 px-2 text-[10px] shadow-none focus-visible:ring-1 focus-visible:ring-neutral-300"
+            maxLength={SMS_MAX_LENGTH}
+            placeholder="Text message"
+            aria-label="Text reminder"
+          />
+          <span className={cn("shrink-0 text-[10px]", smsOver ? "text-destructive" : "text-neutral-400")}>
+            {smsLen}/{SMS_MAX_LENGTH}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -583,7 +583,7 @@ export function BoardAccountabilityFlow({
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-neutral-600">
               Analyze your Vision workspace to draft focus areas, plans, actions and reminders. Edit anytime;
-              tap Update to refresh scheduled reminders.
+              tap Update to refresh email, text, and calendar reminders.
             </p>
             <p className="mt-3 text-xs text-neutral-500">Nothing is sent until you review and finalize.</p>
           </div>

@@ -310,6 +310,35 @@ function billingPeriodFromStripeSubscription(subscription: {
   return 'monthly';
 }
 
+function stripeUnixToIso(value: unknown): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  const date = new Date(value * 1000);
+  if (!Number.isFinite(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function getStripeSubscriptionPeriodEndIso(subscription: any): string | null {
+  const itemPeriodEnd = subscription?.items?.data?.[0]?.current_period_end;
+  const topLevelPeriodEnd = subscription?.current_period_end;
+  return stripeUnixToIso(itemPeriodEnd) ?? stripeUnixToIso(topLevelPeriodEnd);
+}
+
+function getStripeSubscriptionPeriodEndDate(subscription: any): Date | null {
+  const iso = getStripeSubscriptionPeriodEndIso(subscription);
+  return iso ? new Date(iso) : null;
+}
+
+function logMissingSubscriptionPeriodEnd(context: string, subscription: any) {
+  console.error(`[stripe-webhook] Missing subscription period end: ${context}`, {
+    subscriptionId: subscription?.id ?? null,
+    subscriptionStatus: subscription?.status ?? null,
+    topLevelCurrentPeriodEnd: subscription?.current_period_end ?? null,
+    itemCurrentPeriodEnd: subscription?.items?.data?.[0]?.current_period_end ?? null,
+    itemCurrentPeriodStart: subscription?.items?.data?.[0]?.current_period_start ?? null,
+    itemCount: Array.isArray(subscription?.items?.data) ? subscription.items.data.length : null,
+  });
+}
+
 async function handleSubscriptionUpdate(supabase: any, subscription: any, stripeSecretKey: string) {
   let resolvedUserId =
     subscription.metadata?.user_id || subscription.metadata?.app_user_id;
@@ -414,6 +443,11 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
   const trialStart = subscription.trial_start as number | undefined;
   const onTrial = isTrialing || (typeof trialEnd === 'number' && trialEnd > nowSec);
   const hadTrial = typeof trialStart === 'number' && trialStart > 0;
+  const currentPeriodEndIso = getStripeSubscriptionPeriodEndIso(subscription);
+  if (!currentPeriodEndIso) {
+    logMissingSubscriptionPeriodEnd('handleSubscriptionUpdate', subscription);
+    return;
+  }
 
   // Update user_plans table (single source of truth for tiers)
   const { error: planError } = await supabase
@@ -428,7 +462,7 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
       status: newStatus,
       on_trial: onTrial,
       ...(hadTrial ? { had_trial: true } : {}),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_end: currentPeriodEndIso,
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id',
@@ -696,9 +730,10 @@ async function handleSubscriptionCancellation(supabase: any, subscription: any) 
     const userName = profile?.first_name || profile?.username || 'there';
     const userEmail = user.user.email;
 
-    // Get expiry date from subscription (current_period_end)
-    const expiryDate = subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000).toLocaleDateString('en-US', {
+    // Get expiry date from the subscription item billing period when available.
+    const periodEndDate = getStripeSubscriptionPeriodEndDate(subscription);
+    const expiryDate = periodEndDate
+      ? periodEndDate.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
@@ -1154,8 +1189,10 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
             subscriptionOnTrial = sub.status === "trialing";
             subscriptionHadTrial = typeof sub.trial_start === "number" && sub.trial_start > 0;
             subscriptionBillingPeriod = billingPeriodFromStripeSubscription(sub);
-            if (sub.current_period_end) {
-              currentPeriodEndIso = new Date(sub.current_period_end * 1000).toISOString();
+            currentPeriodEndIso = getStripeSubscriptionPeriodEndIso(sub);
+            if (!currentPeriodEndIso) {
+              logMissingSubscriptionPeriodEnd('checkout.session.completed account creation', sub);
+              return;
             }
           }
         } catch (err) {
@@ -1401,7 +1438,11 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
 
       if (subscriptionResponse.ok) {
         const subscription = await subscriptionResponse.json();
-        periodEnd = new Date(subscription.current_period_end * 1000);
+        periodEnd = getStripeSubscriptionPeriodEndDate(subscription);
+        if (!periodEnd) {
+          logMissingSubscriptionPeriodEnd('save user_plans from checkout session', subscription);
+          return;
+        }
         billingPeriod = billingPeriodFromStripeSubscription(subscription);
         onTrial = subscription.status === 'trialing';
         hadTrial = typeof subscription.trial_start === 'number' && subscription.trial_start > 0;

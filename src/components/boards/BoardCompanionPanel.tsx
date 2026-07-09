@@ -198,15 +198,18 @@ const VALID_COLOR_KEYS = new Set(Object.keys(BOARD_COLORS));
 
 const VALID_LIBRARY_THEMES = new Set<string>(BOARD_IMAGE_THEMES);
 
-const VALID_DIAGRAMS = new Set<BoardDiagramType>([]);
-
-
-
-const VISION_FALLBACK_ASK_REPLY =
-  "I can help with your boards — names, colors, stickies, labels, Our Collection images, notes, and layout. Tell me what to add or change.";
-
-const ACTION_FALLBACK_ASK_REPLY =
-  "I can help with that. What would you like to adjust — actions, reminder channels, or timing?";
+const VALID_DIAGRAMS = new Set<BoardDiagramType>([
+  "eisenhower",
+  "checklist",
+  "calendar",
+  "zones",
+  "timeline",
+  "kanban",
+  "gantt",
+  "okrs",
+  "five_s",
+  "divider",
+]);
 
 function replyClaimsActionChanges(text: string): boolean {
   return /\b(I('ve| have)?\s+(updated|changed|removed|added|set|finalized)|I updated|I changed|I removed)\b/i.test(
@@ -225,7 +228,7 @@ function finalizeActionAssistantReply(
   }
   const neutral = (replyWithoutAction ?? reply ?? "").trim();
   if (neutral && !replyClaimsActionChanges(neutral)) return neutral;
-  return ACTION_FALLBACK_ASK_REPLY;
+  return "";
 }
 
 const CONFIRM_RE = /^(yes|yeah|yep|y|sure|ok|okay|do it|apply it|go ahead|please do|sounds good)\.?$/i;
@@ -248,7 +251,7 @@ function finalizeAssistantReply(
   }
   const neutral = (replyWithoutAction ?? reply ?? "").trim();
   if (neutral && !replyClaimsBoardChanges(neutral)) return neutral;
-  return VISION_FALLBACK_ASK_REPLY;
+  return "";
 }
 
 type GuideAction = Record<string, unknown> & { type: string };
@@ -285,7 +288,7 @@ function isValidGuideAction(action: unknown): action is GuideAction {
     case "add_sticky":
       return true;
     case "add_diagram":
-      return false;
+      return typeof a.diagram === "string" && VALID_DIAGRAMS.has(a.diagram as BoardDiagramType);
     case "add_sticker":
       return typeof a.sticker === "string" && VALID_STICKERS.has(a.sticker as BoardMarkStickerId);
     case "add_shape":
@@ -303,8 +306,9 @@ function isValidGuideAction(action: unknown): action is GuideAction {
       if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
       return false;
     case "kanban_seed":
+      return Array.isArray(a.columns) && a.columns.length > 0;
     case "gantt_seed":
-      return false;
+      return Array.isArray(a.tasks) && a.tasks.length > 0;
     case "add_board":
     case "delete_board":
     case "duplicate_board":
@@ -325,7 +329,11 @@ function filterValidGuideActions(actions: unknown[]): GuideAction[] {
         return { ...raw, type: "add_sticky" };
       }
       if (raw.type === "add_structure" || raw.type === "add_decal") {
-        return { ...raw, type: "__disabled_structure" };
+        return {
+          ...raw,
+          type: "add_diagram",
+          diagram: raw.diagram ?? raw.structure,
+        };
       }
       if (raw.type === "add_statement") {
         return { ...raw, type: "add_text" };
@@ -1016,7 +1024,9 @@ export function BoardGuideChatPanel({
                   mode: "action",
                   workspace_id: workspaceId,
                   message: text,
-                  history: nextMessages.filter((m) => m.role === "user" || m.role === "assistant").slice(-8),
+                  history: messages
+                    .filter((m) => m.role === "user" || m.role === "assistant")
+                    .slice(-8),
                   action_map: actionMap,
                 }
               : {
@@ -1060,8 +1070,19 @@ export function BoardGuideChatPanel({
 
       const finalReply =
         mode === "action"
-          ? finalizeActionAssistantReply(payload.reply, payload.reply_without_action, 0)
+          ? (() => {
+              const base = finalizeActionAssistantReply(payload.reply, payload.reply_without_action, 0);
+              if (combined.length > 0 && !/apply that/i.test(base)) {
+                return `${base} Want me to apply that?`;
+              }
+              return base;
+            })()
           : finalizeAssistantReply(payload.reply, payload.reply_without_action, 0);
+
+      if (!finalReply.trim()) {
+        setGuideError("Guide couldn't respond right now. Try again.");
+        return;
+      }
 
       setMessages((prev) => [...prev, { role: "assistant", content: finalReply }]);
 

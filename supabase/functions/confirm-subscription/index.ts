@@ -3,6 +3,32 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { postStripePurchaseToRevenueCat } from "../_shared/postStripeToRevenueCat.ts";
 import { attachAppUserIdToStripeSubscription } from "../_shared/stripeSubscriptionMetadata.ts";
 
+function stripeUnixToIso(value: unknown): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  const date = new Date(value * 1000);
+  if (!Number.isFinite(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString();
+}
+
+function getStripeSubscriptionPeriodEndIso(subscription: any): string | null {
+  const itemPeriodEnd = subscription?.items?.data?.[0]?.current_period_end;
+  const topLevelPeriodEnd = subscription?.current_period_end;
+  return stripeUnixToIso(itemPeriodEnd) ?? stripeUnixToIso(topLevelPeriodEnd);
+}
+
+function getStripeSubscriptionBillingPeriod(subscription: any): "monthly" | "annual" | "weekly" {
+  const interval = subscription?.items?.data?.[0]?.price?.recurring?.interval;
+  if (interval === "year") return "annual";
+  if (interval === "week") return "weekly";
+  return "monthly";
+}
+
 // Sanitize error messages to prevent exposing sensitive information
 function sanitizeErrorMessage(error: unknown): string {
   const defaultMessage = "An error occurred. Please try again.";
@@ -192,11 +218,15 @@ serve(async (req) => {
         ? metaBilling
         : null;
 
-    const { data: existingPlan } = await supabase
+    const { data: existingPlan, error: existingPlanError } = await supabase
       .from('user_plans')
-      .select('first_billing_source')
+      .select('first_payment_source')
       .eq('user_id', user.id)
       .maybeSingle();
+
+    if (existingPlanError) {
+      console.warn("[confirm-subscription] existing user_plans lookup failed:", existingPlanError);
+    }
 
     // user_plans upsert — column names match public.user_plans
     const planData: Record<string, unknown> = {
@@ -212,8 +242,8 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
-    if (!existingPlan?.first_billing_source) {
-      planData.first_billing_source = 'stripe';
+    if (!existingPlan?.first_payment_source) {
+      planData.first_payment_source = 'stripe';
     }
 
     // Handle subscription vs one-time payment
@@ -246,7 +276,33 @@ serve(async (req) => {
       const subscription = await subscriptionResponse.json();
 
       planData.stripe_subscription_id = subscriptionIdFromSession;
-      planData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
+      const currentPeriodEndIso = getStripeSubscriptionPeriodEndIso(subscription);
+
+      if (!currentPeriodEndIso) {
+        console.error("[confirm-subscription] Missing subscription period end", {
+          checkoutSessionId: sessionId,
+          subscriptionId: subscriptionIdFromSession,
+          subscriptionStatus: subscription.status ?? null,
+          topLevelCurrentPeriodEnd: subscription.current_period_end ?? null,
+          itemCurrentPeriodEnd: subscription.items?.data?.[0]?.current_period_end ?? null,
+          itemCurrentPeriodStart: subscription.items?.data?.[0]?.current_period_start ?? null,
+          itemCount: Array.isArray(subscription.items?.data) ? subscription.items.data.length : null,
+        });
+
+        return new Response(
+          JSON.stringify({
+            error: "missing_subscription_period_end",
+            subscription_id: subscriptionIdFromSession,
+            subscription_status: subscription.status ?? null,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      planData.current_period_end = currentPeriodEndIso;
       planData.status =
         subscription.status === 'active'
           ? 'active'
@@ -258,17 +314,7 @@ serve(async (req) => {
                 ? 'trialing'
                 : 'active';
 
-      const interval =
-        subscription.items?.data?.[0]?.price?.recurring?.interval as
-          | string
-          | undefined;
-      planData.billing_period =
-        billingFromMetadata ??
-        (interval === 'year'
-          ? 'annual'
-          : interval === 'week'
-            ? 'weekly'
-            : 'monthly');
+      planData.billing_period = billingFromMetadata ?? getStripeSubscriptionBillingPeriod(subscription);
 
       const nowSec = Date.now() / 1000;
       const trialEnd = subscription.trial_end as number | undefined;

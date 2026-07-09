@@ -1,6 +1,5 @@
 import type { NavigateFunction } from "react-router-dom";
 import { toast } from "sonner";
-import { armIapPostPurchaseEntitlementLatch } from "@/lib/postPurchaseEntitlementGate";
 import i18n from "@/i18n";
 
 export type WebPaywallFlowOutcome = "success" | "skipped";
@@ -18,7 +17,6 @@ export async function runWebPaywallFlowAfterSignup(options: {
     return "skipped";
   }
 
-  armIapPostPurchaseEntitlementLatch(options.userId);
   options.navigate("/onboarding/web-paywall", { replace: true });
   return "success";
 }

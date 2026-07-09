@@ -7,17 +7,10 @@ import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
 import { SETUP_MUTED_TEXT_CLASS } from "@/lib/onboardingSetupTheme";
 import { cn } from "@/lib/utils";
 import { provisionPostPaywallIfNeeded } from "@/lib/postPaywallProvisioning";
-import {
-  clearIapPostPurchaseEntitlementLatch,
-  getIapPostPurchaseLatchUserId,
-  markIapSubscriptionConfirmed,
-  runIapPostPurchaseGateIfNeeded,
-} from "@/lib/postPurchaseEntitlementGate";
-import { debugLog } from "@/debugLog";
+import { markIapSubscriptionConfirmed } from "@/lib/postPurchaseEntitlementGate";
 import { readSetupDraft } from "@/lib/setupDraft";
 import { readStoredPreferredLocale, resolveAppLocale } from "@/lib/locale";
 import i18n from "@/i18n";
-import { toast } from "sonner";
 
 /** Visual ring only — not tied to backend provisioning milestones. */
 const VISUAL_PROGRESS_CAP = 97;
@@ -166,28 +159,6 @@ export default function PostPaywallLoading() {
     (async () => {
       startVisualProgress();
       try {
-        logPostPaywall("entitlement gate start");
-        const gate = await runIapPostPurchaseGateIfNeeded();
-        logPostPaywall("entitlement gate end", { gate });
-        if (!alive) {
-          logPostPaywall("aborted after gate (alive=false)");
-          return;
-        }
-
-        if (gate === "failed") {
-          if (tickId != null) window.clearInterval(tickId);
-          debugLog({
-            location: "PostPaywallLoading.tsx",
-            message: "Stripe entitlement sync failed on loading screen",
-            hypothesisId: "H5",
-          });
-          toast.error(i18n.t("postPaywall.toastActivateFailed", { ns: "paywall" }));
-          clearIapPostPurchaseEntitlementLatch();
-          logPostPaywall("navigate web paywall (sync failed)");
-          window.setTimeout(() => navigateRef.current("/onboarding/web-paywall", { replace: true }), 450);
-          return;
-        }
-
         logPostPaywall("provisioning start");
         const provisionResult = await provisionPostPaywallIfNeeded({
           quiet: true,
@@ -203,12 +174,11 @@ export default function PostPaywallLoading() {
           return;
         }
 
-        markIapSubscriptionConfirmed(getIapPostPurchaseLatchUserId());
+        markIapSubscriptionConfirmed(null);
 
         setPhase("finishing");
         if (tickId != null) window.clearInterval(tickId);
         setProgress(100);
-        clearIapPostPurchaseEntitlementLatch();
 
         logPostPaywall("navigate dashboard");
         window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 250);
@@ -216,8 +186,7 @@ export default function PostPaywallLoading() {
         console.error("[post-paywall] provisioning failed:", e);
         logPostPaywall("provisioning error", { error: String((e as Error)?.message ?? e) });
         if (!alive) return;
-        markIapSubscriptionConfirmed(getIapPostPurchaseLatchUserId());
-        clearIapPostPurchaseEntitlementLatch();
+        markIapSubscriptionConfirmed(null);
         logPostPaywall("navigate dashboard after error");
         window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 650);
       }

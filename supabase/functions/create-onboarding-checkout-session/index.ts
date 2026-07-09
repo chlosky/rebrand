@@ -122,7 +122,7 @@ serve(async (req) => {
     // Stripe success redirect goes to payment processing page first (waits for webhook)
     const successUrl = `${baseUrl}/payment-processing?sid=${encodeURIComponent(String(sessionId))}&token=${encodeURIComponent(
       String(resumeToken),
-    )}`;
+    )}&checkout_session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/onboarding/web-paywall`;
 
     // Create Stripe Checkout Session

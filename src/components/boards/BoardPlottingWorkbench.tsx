@@ -146,7 +146,7 @@ const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
 ];
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
-  companion: "Colors, labels, Our Collection images, notes, structures, layout, and board names.",
+  companion: "Colors, labels, images, notes, structures, digital decals, layout, and board names.",
   clippings: "Browse Our Collection or add photos to Your Library.",
   structures: "Pick board color and saved presets.",
   marks: "Right-click empty board to add marks.",

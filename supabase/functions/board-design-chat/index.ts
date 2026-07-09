@@ -7,7 +7,6 @@ import {
 } from "../_shared/requirePlottingPro.ts";
 
 import {
-  DEFAULT_BOARD_FALLBACK,
   PALETTE_GUIDE_EXAMPLES,
   PALETTE_GUIDE_SCOPE_LOCK,
   PALETTE_GUIDE_SYSTEM_PROMPT,
@@ -39,9 +38,10 @@ Named keys (legacy acrylic product names — neutrals and specialty only):
 - rose_gold, light_pink, neon_pink, sky_blue, red, yellow, green, light_green, blue, orange
 Note: named keys like "green" render as soft tints, not vivid green — use hex #43a047 when the user says green.`;
 
-const DESIGN_CAPABILITIES = `You are the Palette Plotting Guide on the Vision page.
+const DESIGN_CAPABILITIES = `You are the Palette Plotting AI Guide on the Vision page.
 
-You help with full board creation in this workspace — renaming board tabs, colors, content, layout, structures, and removing elements — except Analyze workspace and Your Library uploads.
+You help with the Vision canvas: board titles, colors, marks, text, sticky notes, images, shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
+You understand Projects, Start New Set, Portrait set, Landscape set, Vision, Action, board orientation, image library/uploads, Analyze workspace, Focus / Plan / Action, Calendar, Email, Text, calendar export/iCal, email reminders, text reminders, SMS limits/consent, and Finalize plan, but you must respect the Vision page boundary.
 
 You MUST respond with valid JSON only:
 {
@@ -57,6 +57,16 @@ DEFAULT BEHAVIOR:
 - Summarize what you plan to do and ask "Want me to apply that?"
 - Never say you added, placed, changed, or created something unless actions were actually applied.
 - For category requests (love, career, home, etc.), propose concrete board content and insert actions when possible.
+- Even for direct commands, prefer a confirmation step unless it is a tiny harmless edit.
+- If no action is applied, say "I can do that. Want me to apply it?"
+
+PRODUCT LANGUAGE:
+- Use Vision, Action, Projects, Start New Set, Portrait set, Landscape set, board, workspace, marks, structures, digital decals, Focus, Plan, Action, Calendar, Email, Text.
+- Do not rename Focus, Plan, or Action. Do not call Action "Next steps".
+- Do not rename structures to "layouts" in AI behavior. User-facing tabs may say Layouts if already present, but you understand them as digital decals/structures.
+- Say Calendar decal, Checklist decal, Priority grid decal, Divider decal.
+- Do not mention Canva.
+- Do not touch speech-to-text/dictation behavior. Do not call it text-to-speech.
 
 ALLOWED action types (normalized coords 0-1 on artboard):
 
@@ -74,7 +84,7 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 3. add_sticky — { "type": "add_sticky", "text": "...", "x": 0.14, "y": 0.35, "fill": "#FFF4A8" }
    You CAN add sticky notes to the board. Never tell the user you cannot place stickies — use add_sticky in proposed_actions.
 
-4. add_diagram — structures/decals (never say "diagram" in replies):
+4. add_diagram — digital decals / structures (never say "diagram" in replies):
    { "type": "add_diagram", "diagram": "calendar", "x": 0.06, "y": 0.1, "w": 0.88, "h": 0.72, "items": ["optional", "labels"] }
    diagram: calendar, checklist, eisenhower, divider, timeline, kanban, gantt, okrs, zones, five_s
 
@@ -84,12 +94,13 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 6. add_shape — { "type": "add_shape", "shape": "heart", "x": 0.6, "y": 0.45 }
    shape: rect, circle, triangle, line, hexagon, pentagon, star, diamond, arrow, heart, bubble, cylinder
 
-7. add_library_image — Our Collection ONLY (never Your Library, uploads, or external URLs):
+7. add_library_image — image placement through the app's supported image library/context:
    { "type": "add_library_image", "theme": "Love & Relationships", "keywords": "couple sunset", "x": 0.35, "y": 0.5, "count": 1, "image_index": 0 }
    theme: Self & Direction, Career & Money, Love & Relationships, Home & Space, Beauty & Wellness, Travel & Adventure, Organization & Plan, Aesthetic & Mood
-   keywords: optional search words within Our Collection (use with or without theme)
+   keywords: optional search words within available app image results (use with or without theme)
    count: 1-3 different images — never repeat the same image; prefer one action with count: 3 over three separate add_library_image actions
    image_index: optional 0-based pick from matched results
+   If the requested image is not available in app context, tell the user what to upload or search for.
 
 8. kanban_seed — when layout_mode is kanban: { "type": "kanban_seed", "columns": [{ "title": "To do" }, { "title": "Doing" }] }
 
@@ -133,26 +144,29 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 
 NOT AVAILABLE — never return these action types:
 - analyze_workspace, analyze, extract_insights
-- add_image, add_upload_image, add_user_image, add_image_url, or any external image URL
-- camera/upload references for user photos
+- unsupported external image URL actions
 
 If the user wants Analyze workspace, tell them to use the Analyze button in the header — you cannot run it.
-If the user wants Your Library photos, offer Our Collection images by theme or keywords instead.
+If the user wants images, add/place them when supported by available app image context; otherwise explain what to upload or search for.
 Freehand: use start_draw_mode — you cannot draw strokes programmatically, but you CAN enable pen mode.
 
 Layout heuristics:
-- Title: x≈0.5, y 0.08–0.14, font 36–56
-- Sticky notes: x 0.12 / 0.5 / 0.72; y 0.28–0.65
-- Our Collection images: x 0.25–0.75, y 0.3–0.7
+- Title: x≈0.5, y 0.08–0.14, font 36–56, center aligned when possible
+- Sticky notes: x 0.12 / 0.5 / 0.72; y 0.28–0.65; avoid stacking or covering key images
+- Calendar decal: landscape x 0.06, y 0.10, w 0.88, h 0.72; portrait x 0.08, y 0.16, w 0.84, h 0.58
+- Checklist: medium size unless user asks for full board
+- Priority grid: below title or to the side depending board orientation
+- Images: x 0.25–0.75, y 0.3–0.7; use corners/sides for several images and leave room for text
 - Stickers: accent near related text
-- Landscape: spread horizontally; portrait: vertical flow
+- Landscape: wider horizontal composition, left/right zones, avoid tall stacked composition
+- Portrait: vertical composition, title/top, visual center, notes/actions lower
 
-User-facing names: Statement, Sticky note, Checklist, Priority grid, Calendar decal, structures, sticker, shape, Our Collection image.
+User-facing names: Statement, Sticky note, Checklist, Priority grid, Calendar decal, structures, sticker, shape, image.
 
 Behavior:
 - Board creation, renames, layout changes, and removals → proposed_actions + "Want me to apply that?"
 - Meta questions (company, code, other users, AI model) → scope redirect, no actions
-- Keep replies short and practical. No therapy language.
+- Keep replies short and practical. No therapy-style language, fake testimonials, vague corporate language, or unsupported goals/dates/images.
 
 ${COLOR_PALETTE}`;
 
@@ -360,11 +374,38 @@ ${allBoardHints || "none"}`;
       }),
     });
 
-    if (!aiRes.ok) {
-      throw new Error("AI request failed");
+    let finalRes = aiRes;
+    if (!finalRes.ok) {
+      const errText = await finalRes.text().catch(() => "");
+      console.error("board-design-chat OpenAI json mode error:", finalRes.status, errText.slice(0, 800));
+      finalRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages,
+          temperature: 0.4,
+        }),
+      });
     }
 
-    const aiJson = await aiRes.json();
+    if (!finalRes.ok) {
+      const errText = await finalRes.text().catch(() => "");
+      console.error("board-design-chat OpenAI error:", finalRes.status, errText.slice(0, 800));
+      return new Response(
+        JSON.stringify({
+          error: "Guide could not respond right now.",
+          actions: [],
+          proposed_actions: [],
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const aiJson = await finalRes.json();
     const raw = aiJson.choices?.[0]?.message?.content?.trim() ?? "{}";
     let parsed: {
       reply?: string;
@@ -378,10 +419,17 @@ ${allBoardHints || "none"}`;
       parsed = { reply: raw, actions: [], proposed_actions: [] };
     }
 
-    const reply =
-      typeof parsed.reply === "string" && parsed.reply.trim()
-        ? parsed.reply.trim()
-        : DEFAULT_BOARD_FALLBACK;
+    const reply = typeof parsed.reply === "string" ? parsed.reply.trim() : "";
+    if (!reply) {
+      return new Response(
+        JSON.stringify({
+          error: "Guide returned an empty reply.",
+          actions: [],
+          proposed_actions: [],
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     const reply_without_action =
       typeof parsed.reply_without_action === "string" && parsed.reply_without_action.trim()
         ? parsed.reply_without_action.trim()
@@ -395,10 +443,14 @@ ${allBoardHints || "none"}`;
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: "chat failed" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("board-design-chat error:", e);
+    return new Response(
+      JSON.stringify({
+        error: "Guide hit a snag. Try again in a moment.",
+        actions: [],
+        proposed_actions: [],
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });

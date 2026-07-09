@@ -427,7 +427,14 @@ serve(async (req) => {
 
 
 
-    const email = profile?.email;
+    let email = typeof profile?.email === "string" && profile.email.trim() ? profile.email.trim() : null;
+    if (!email) {
+      const { data: authUser, error: authEmailErr } = await supabase.auth.admin.getUserById(reminder.user_id);
+      if (authEmailErr) {
+        console.warn("Could not load auth email for reminder:", reminder.id, authEmailErr);
+      }
+      email = authUser?.user?.email?.trim() || null;
+    }
 
     const phone =
 
@@ -471,6 +478,10 @@ serve(async (req) => {
     const isActionReminder = metadata?.source_page === "action";
     const channel = primaryReminderChannel(channels);
 
+    if (channel === "calendar") {
+      continue;
+    }
+
     const smsBody = buildSmsContent(reminder.title, reminder.body, reminder.sms_content);
 
     let emailDelivered = false;
@@ -479,8 +490,15 @@ serve(async (req) => {
 
     let smsLimitDeferred = false;
 
-    if (channel === "email" && email) {
-      if (isActionReminder) {
+    if (channel === "email") {
+      if (!email) {
+        await supabase.from("board_reminder_deliveries").insert({
+          reminder_id: reminder.id,
+          channel: "email",
+          status: "skipped_no_email",
+          error: "missing_profile_or_auth_email",
+        });
+      } else if (isActionReminder) {
         const result = await sendBrevoReminderEmail({
           to: email,
           actionTitle: reminder.title,
@@ -748,10 +766,6 @@ serve(async (req) => {
     const anyDelivered = emailDelivered || smsDelivered;
 
     if (!anyDelivered && !smsLimitDeferred) continue;
-
-
-
-    const metadata = (reminder.metadata ?? null) as Record<string, unknown> | null;
 
     if (isRecurringActionReminder(metadata)) {
 

@@ -144,7 +144,6 @@ function officeTemplate(
     startingSystem: "office_work",
     boards: [
       { title: primaryTitle, role: "focus", color_key: "white_opaque", sort_order: 0, layout_mode: mode },
-      { title: "The Plan", role: "plan", color_key: "white_opaque", sort_order: 1, layout_mode: "vision" },
     ],
   };
 }

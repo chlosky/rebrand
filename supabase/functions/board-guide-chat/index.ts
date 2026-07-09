@@ -7,8 +7,6 @@ import {
 } from "../_shared/requirePlottingPro.ts";
 import {
   BOARDS_AI_SAFETY_POLICY,
-  DEFAULT_BOARD_FALLBACK,
-  PALETTE_GUIDE_SCOPE_LOCK,
   screenBoardsUserInput,
 } from "../_shared/boardsAiGuardrails.ts";
 
@@ -48,11 +46,11 @@ Action operation types (use real ids from action_map context):
 
 1. add_action — { "type": "add_action", "plan_id": "...", "title": "...", "cadence": "weekly", "remind_day_of_week": "monday", "remind_time": "09:00", "reminder_type": "email", "channels": { "calendar": false, "email": true, "sms": false }, "sms_text": null }
 
-2. update_action — { "type": "update_action", "action_id": "...", "patch": { "title": "...", "cadence": "weekly", "reminder_type": "email", "channels": { "calendar": false, "email": true, "sms": false }, "sms_text": null } }
+2. update_action — patch may include: title, cadence (once|daily|weekly|monthly), remind_date (YYYY-MM-DD for once), remind_day_of_week, remind_day_of_month (1-31), remind_time (HH:mm), reminder_type, channels, sms_text
 
 3. delete_action — { "type": "delete_action", "action_id": "..." }
 
-4. update_plan — { "type": "update_plan", "plan_id": "...", "patch": { "title": "..." } }
+4. update_plan — patch may include: title, cadence, remind_day_of_month, remind_day_of_week, remind_time
 
 5. add_plan — { "type": "add_plan", "focus_id": "...", "title": "..." }
 
@@ -60,14 +58,15 @@ Action operation types (use real ids from action_map context):
 
 7. update_focus — { "type": "update_focus", "focus_id": "...", "patch": { "title": "..." } }
 
-8. set_channel — { "type": "set_channel", "action_id": "...", "reminder_type": "calendar" }
+8. set_channel — { "type": "set_channel", "action_id": "...", "reminder_type": "calendar"|"email"|"sms" }
 
-9. set_timing — { "type": "set_timing", "action_id": "...", "cadence": "once", "remind_date": "2026-07-10", "remind_time": "09:00" }
+9. set_timing — { "type": "set_timing", "action_id": "...", "cadence": "once"|"daily"|"weekly"|"monthly", "remind_date", "remind_day_of_week", "remind_day_of_month", "remind_time" }
 
-10. shorten_sms — { "type": "shorten_sms", "action_id": "...", "sms_text": "Send 5 applications today" }
+10. shorten_sms — { "type": "shorten_sms", "action_id": "...", "sms_text": "..." }
 
-Behavior:
-- Ask before changing the action map. Summarize proposed edits and ask "Want me to apply that?"
+Use exact ids from id_reference in context. You may also set plan_title, focus_title, or action_title instead of ids when the user names a row.
+
+When the user asks to add, edit, or delete plans/actions, always return proposed_actions that match their request — then ask "Want me to apply that?"
 - Do not finalize, export calendar, or send reminders. User uses header buttons for Calendar export and Finalize.
 - Do not run or offer Analyze workspace — tell the user to click Analyze in the header; you cannot run it.
 - If action_map is missing or empty, explain they can use Analyze workspace in the header, then ask what to add to the draft.
@@ -83,11 +82,153 @@ Behavior:
 
 User-facing names: Focus, Plan, Action, Calendar, Email, Text.`;
 
+const ACTION_SCOPE_LOCK = `
+SCOPE — Action page only (Focus / Plan / Action map and reminders).
+
+You may help with:
+- editing focus titles, plans, and actions in the current action map
+- reminder type (Calendar, Email, Text), timing, and SMS copy
+- explaining what to do next on the Action page
+
+You must NOT:
+- Run or offer Analyze workspace — user clicks Analyze in the header
+- Finalize, export calendar, or send reminders — user uses header buttons
+- Discuss other users, company internals, code, APIs, models, or how the app is built
+- Add Vision board content (stickies, images, structures on canvas)
+`.trim();
+
 const SYSTEM = `${ACTION_CAPABILITIES}
 
-${PALETTE_GUIDE_SCOPE_LOCK}
+${ACTION_SCOPE_LOCK}
 
 ${BOARDS_AI_SAFETY_POLICY}`;
+
+function summarizeActionMap(action_map: unknown): string {
+  if (!action_map || typeof action_map !== "object") {
+    return "No action map yet — user should Analyze workspace first.";
+  }
+  const map = action_map as Record<string, unknown>;
+  const focuses = Array.isArray(map.focuses) ? map.focuses : [];
+  const plans = Array.isArray(map.plans) ? map.plans : [];
+  const actions = Array.isArray(map.actions) ? map.actions : [];
+  if (!focuses.length && !plans.length && !actions.length) {
+    return "No action map yet — user should Analyze workspace first.";
+  }
+  try {
+    return JSON.stringify({
+      finalized: map.finalized === true,
+      id_reference: {
+        focuses: focuses.map((f) => {
+          const row = f as Record<string, unknown>;
+          return { focus_id: row.id, title: row.title };
+        }),
+        plans: plans.map((p) => {
+          const row = p as Record<string, unknown>;
+          return {
+            plan_id: row.id,
+            focus_id: row.focus_id,
+            title: row.title,
+            cadence: row.cadence,
+            remind_time: row.remind_time,
+          };
+        }),
+        actions: actions.map((a) => {
+          const row = a as Record<string, unknown>;
+          return {
+            action_id: row.id,
+            plan_id: row.plan_id,
+            title: row.title,
+            cadence: row.cadence,
+            reminder_type: row.reminder_type,
+            remind_date: row.remind_date,
+            remind_day_of_week: row.remind_day_of_week,
+            remind_day_of_month: row.remind_day_of_month,
+            remind_time: row.remind_time,
+          };
+        }),
+      },
+    }).slice(0, 4000);
+  } catch {
+    return "Action map present but could not be summarized.";
+  }
+}
+
+function buildChatMessages(context: string, history: ChatTurn[], message: string) {
+  const systemContent = `${SYSTEM}\n\n---\nLive action map context:\n${context}`;
+  const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
+    { role: "system", content: systemContent },
+  ];
+  for (const h of history.slice(-8)) {
+    if (!h || (h.role !== "user" && h.role !== "assistant")) continue;
+    const content = typeof h.content === "string" ? h.content.trim() : "";
+    if (!content) continue;
+    messages.push({ role: h.role, content });
+  }
+  messages.push({ role: "user", content: message });
+  return messages;
+}
+
+async function requestGuideCompletion(
+  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  openaiKey: string,
+): Promise<Response> {
+  const base = {
+    model: "gpt-4o-mini",
+    messages,
+    temperature: 0.35,
+    max_tokens: 1200,
+  };
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${openaiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...base,
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (res.ok) return res;
+
+  const errText = await res.text().catch(() => "");
+  console.error("board-guide-chat OpenAI json mode error:", res.status, errText.slice(0, 800));
+
+  return fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${openaiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(base),
+  });
+}
+
+function parseGuideJson(raw: string): {
+  reply?: string;
+  reply_without_action?: string;
+  actions?: unknown[];
+  proposed_actions?: unknown[];
+} {
+  try {
+    return JSON.parse(raw) as {
+      reply?: string;
+      reply_without_action?: string;
+      actions?: unknown[];
+      proposed_actions?: unknown[];
+    };
+  } catch {
+    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced?.[1]) {
+      try {
+        return JSON.parse(fenced[1].trim());
+      } catch {
+        /* fall through */
+      }
+    }
+    return { reply: raw.trim(), actions: [], proposed_actions: [] };
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -170,7 +311,7 @@ serve(async (req) => {
     if (!openaiKey) {
       return new Response(
         JSON.stringify({
-          reply: "What would you like to adjust in your action map?",
+          reply: "Guide AI is not configured. Try again later or edit the map directly.",
           actions: [],
           proposed_actions: [],
         }),
@@ -178,9 +319,7 @@ serve(async (req) => {
       );
     }
 
-    const mapSummary = action_map
-      ? JSON.stringify(action_map).slice(0, 6000)
-      : "No action map yet — user should Analyze workspace first.";
+    const mapSummary = summarizeActionMap(action_map);
 
     const orientation =
       (boards ?? []).some((b) => b.layout_mode === "landscape") || workspace?.preset_slug?.includes("landscape")
@@ -192,49 +331,41 @@ Boards: ${(boards ?? []).map((b) => `${b.title} [${b.role}]`).join(", ") || "non
 Action map JSON:
 ${mapSummary}`;
 
-    const messages = [
-      { role: "system", content: SYSTEM },
-      { role: "user", content: `Action context:\n${context}` },
-      ...history.slice(-8).map((h) => ({ role: h.role, content: h.content })),
-      { role: "user", content: message },
-    ];
+    const priorHistory = history
+      .filter((h) => h && (h.role === "user" || h.role === "assistant") && typeof h.content === "string");
 
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages,
-        temperature: 0.35,
-        response_format: { type: "json_object" },
-      }),
-    });
+    const messages = buildChatMessages(context, priorHistory, message);
+
+    const aiRes = await requestGuideCompletion(messages, openaiKey);
 
     if (!aiRes.ok) {
-      throw new Error("AI request failed");
+      const errText = await aiRes.text().catch(() => "");
+      console.error("board-guide-chat OpenAI error:", aiRes.status, errText.slice(0, 800));
+      return new Response(
+        JSON.stringify({
+          reply: "Guide couldn't plan that edit right now. Try again in a moment.",
+          actions: [],
+          proposed_actions: [],
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const aiJson = await aiRes.json();
     const raw = aiJson.choices?.[0]?.message?.content?.trim() ?? "{}";
-    let parsed: {
-      reply?: string;
-      reply_without_action?: string;
-      actions?: unknown[];
-      proposed_actions?: unknown[];
-    } = {};
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = { reply: raw, actions: [], proposed_actions: [] };
-    }
+    const parsed = parseGuideJson(raw);
 
-    const reply =
-      typeof parsed.reply === "string" && parsed.reply.trim()
-        ? parsed.reply.trim()
-        : DEFAULT_BOARD_FALLBACK;
+    const reply = typeof parsed.reply === "string" ? parsed.reply.trim() : "";
+    if (!reply) {
+      return new Response(
+        JSON.stringify({
+          error: "Guide returned an empty reply.",
+          actions: [],
+          proposed_actions: [],
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     const reply_without_action =
       typeof parsed.reply_without_action === "string" && parsed.reply_without_action.trim()
         ? parsed.reply_without_action.trim()
@@ -248,10 +379,14 @@ ${mapSummary}`;
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: "chat failed" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("board-guide-chat error:", e);
+    return new Response(
+      JSON.stringify({
+        reply: "Guide hit a snag. Try again in a moment.",
+        actions: [],
+        proposed_actions: [],
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { armIapPostPurchaseEntitlementLatch } from "@/lib/postPurchaseEntitlementGate";
 import { armWebGetAppPromptPending } from "@/lib/webFirstPurchaseGetAppPrompt";
 
 export default function PaymentProcessing() {
@@ -13,6 +12,7 @@ export default function PaymentProcessing() {
   const [searchParams] = useSearchParams();
   const sid = searchParams.get("sid") || "";
   const token = searchParams.get("token") || "";
+  const checkoutSessionId = searchParams.get("checkout_session_id") || "";
 
   /**
    * Use a ref instead of state so incrementing attempts doesn't tear down and
@@ -58,7 +58,7 @@ export default function PaymentProcessing() {
       try {
         const { data, error } = await supabase.functions.invoke(
           "get-onboarding-session",
-          { body: { sessionId: sid, resumeToken: token } },
+          { body: { sessionId: sid, resumeToken: token, checkoutSessionId } },
         );
         if (!active) return;
 
@@ -79,7 +79,15 @@ export default function PaymentProcessing() {
           } = await supabase.auth.getSession();
           const userId = authSession?.user?.id ?? null;
           if (userId) {
-            armIapPostPurchaseEntitlementLatch(userId);
+            const stripeCheckoutSessionId =
+              checkoutSessionId || (typeof session.stripe_checkout_session_id === "string" ? session.stripe_checkout_session_id : "");
+            if (stripeCheckoutSessionId) {
+              const { error: confirmError } = await supabase.functions.invoke(
+                "confirm-subscription",
+                { body: { sessionId: stripeCheckoutSessionId } },
+              );
+              if (confirmError) throw confirmError;
+            }
             armWebGetAppPromptPending();
             navigate("/onboarding/post-paywall", { replace: true });
             return;
@@ -115,7 +123,7 @@ export default function PaymentProcessing() {
       if (interval != null) window.clearInterval(interval);
       if (finishTimer != null) window.clearTimeout(finishTimer);
     };
-  }, [sid, token, navigate, t]);
+  }, [sid, token, checkoutSessionId, navigate, t]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 py-10">
