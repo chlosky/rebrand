@@ -105,7 +105,7 @@ export function PaletteLetterSignup({
         )}
       >
         {isWaiting
-          ? "One email when Palette Plotting opens. No spam."
+          ? "One email when Palette Plotting opens."
           : "Be the first to know about discounts. Board ideas, color inspo, and Palette Plot drops."}
       </p>
 

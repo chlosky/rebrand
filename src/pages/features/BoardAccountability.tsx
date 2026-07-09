@@ -5,7 +5,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Download,
-  ListChecks,
+  Route,
   LayoutGrid,
   Loader2,
   ScanSearch,
@@ -37,10 +37,12 @@ import {
 } from "@/lib/boards/api";
 import {
   buildRemindersFromMap,
+  channelsFromReminderType,
   finalizeAccountabilityMap,
   normalizeAccountabilityMap,
   reminderToIso,
   scrubMapTitles,
+  smsTextFromTitle,
   stripSmsText,
   type AccountabilityMap,
 } from "@/lib/boards/accountabilityMap";
@@ -106,6 +108,8 @@ export default function BoardAccountability() {
   const [showSmsConsentDialog, setShowSmsConsentDialog] = useState(false);
   const [smsConsentChecked, setSmsConsentChecked] = useState(false);
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
+  const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
+  const [pendingSmsActionId, setPendingSmsActionId] = useState<string | null>(null);
   const [showTrialUnlock, setShowTrialUnlock] = useState(false);
   const trialBlocksExports = hasPro && onTrial;
 
@@ -260,8 +264,12 @@ export default function BoardAccountability() {
     }
   };
 
-  const scheduleAllReminders = async (finalizedMap: AccountabilityMap) => {
-    if (!planBoard || !user?.id || !finalizedMap.reminders.length) return;
+  const scheduleAllReminders = async (
+    finalizedMap: AccountabilityMap,
+  ): Promise<{ email: number; sms: number; calendar: number; total: number }> => {
+    if (!planBoard || !user?.id || !finalizedMap.reminders.length) {
+      return { email: 0, sms: 0, calendar: 0, total: 0 };
+    }
 
     const { data: prefs } = await supabase
       .from("user_preferences")
@@ -304,9 +312,16 @@ export default function BoardAccountability() {
       .filter("metadata->>source_page", "eq", "action");
     if (deleteErr) throw deleteErr;
 
+    let email = 0;
+    let sms = 0;
+    let calendar = 0;
+
     for (const r of finalizedMap.reminders) {
       const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
-      if (reminderType === "calendar") continue;
+      if (reminderType === "calendar") {
+        calendar += 1;
+        continue;
+      }
       const channels = [reminderType];
       const smsContent =
         reminderType === "sms"
@@ -340,7 +355,12 @@ export default function BoardAccountability() {
         },
         ...(smsContent ? { sms_content: smsContent } : {}),
       } as Parameters<typeof createBoardReminder>[0]);
+
+      if (reminderType === "email") email += 1;
+      if (reminderType === "sms") sms += 1;
     }
+
+    return { email, sms, calendar, total: email + sms + calendar };
   };
 
   const runFinalize = async () => {
@@ -348,12 +368,19 @@ export default function BoardAccountability() {
     setFinalizing(true);
     try {
       const next = finalizeAccountabilityMap(map);
-      await scheduleAllReminders(next);
+      const scheduled = await scheduleAllReminders(next);
       persistMap(next);
+
+      const parts = [
+        scheduled.email ? `${scheduled.email} email` : null,
+        scheduled.sms ? `${scheduled.sms} text` : null,
+        scheduled.calendar ? `${scheduled.calendar} calendar` : null,
+      ].filter(Boolean);
+
       toast.success(
-        map?.finalized
-          ? "Your plan and reminders are updated."
-          : "Your action map is finalized. Your reminders are ready.",
+        parts.length
+          ? `Action Map finalized. ${parts.join(" · ")} reminder${scheduled.total === 1 ? "" : "s"} ready.`
+          : "Action Map finalized.",
       );
     } catch (e) {
       toast.error(actionErrorMessage(e, "Couldn't finalize your plan"));
@@ -428,6 +455,37 @@ export default function BoardAccountability() {
     };
   }, [loadSmsPrefs]);
 
+  const openSmsSetup = useCallback(
+    (actionId?: string) => {
+      if (actionId) {
+        setPendingSmsActionId(actionId);
+        setPendingFinalizeAfterSms(false);
+      }
+      if (!smsConsentOk) setSmsConsentChecked(false);
+      setShowSmsConsentDialog(true);
+    },
+    [smsConsentOk],
+  );
+
+  const applySmsToAction = useCallback(
+    (actionId: string) => {
+      if (!map) return;
+      applyMapChange({
+        ...map,
+        actions: map.actions.map((action) => {
+          if (action.id !== actionId) return action;
+          return {
+            ...action,
+            channels: channelsFromReminderType("sms"),
+            reminder_type: "sms",
+            sms_text: action.sms_text ?? smsTextFromTitle(action.title),
+          };
+        }),
+      });
+    },
+    [applyMapChange, map],
+  );
+
   const completeSmsOptIn = async (): Promise<boolean> => {
     if (!user?.id) return false;
     const e164 = normalizeToE164(smsPhoneInput);
@@ -461,6 +519,11 @@ export default function BoardAccountability() {
     setSmsConsentOk(true);
     trackReminderAnalytics("sms_consent_granted");
     setShowSmsConsentDialog(false);
+    const actionId = pendingSmsActionId;
+    setPendingSmsActionId(null);
+    if (actionId) {
+      applySmsToAction(actionId);
+    }
     if (pendingFinalizeAfterSms) {
       setPendingFinalizeAfterSms(false);
       await runFinalize();
@@ -514,7 +577,7 @@ export default function BoardAccountability() {
             >
               <ArrowLeft className="h-4 w-4 max-md:h-3.5 max-md:w-3.5" />
             </Button>
-            <ListChecks className="h-5 w-5 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
+            <Route className="h-5 w-5 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
             <h1 className="text-sm font-semibold text-neutral-900 max-md:text-xs max-md:font-medium">Action</h1>
           </div>
           <div className="hidden min-w-0 items-center gap-1.5 md:flex">
@@ -632,10 +695,7 @@ export default function BoardAccountability() {
                   smsReady={smsReady}
                   hasPro={hasPro}
                   compact
-                  onRequestSmsSetup={() => {
-                    setPendingFinalizeAfterSms(false);
-                    setShowSmsConsentDialog(true);
-                  }}
+                  onRequestSmsSetup={openSmsSetup}
                 />
                 <BoardActionKitTray
                   workspaceId={workspace.id}
@@ -661,10 +721,7 @@ export default function BoardAccountability() {
                 onChange={applyMapChange}
                 smsReady={smsReady}
                 hasPro={hasPro}
-                onRequestSmsSetup={() => {
-                  setPendingFinalizeAfterSms(false);
-                  setShowSmsConsentDialog(true);
-                }}
+                onRequestSmsSetup={openSmsSetup}
               />
             )}
           </div>
@@ -724,7 +781,7 @@ export default function BoardAccountability() {
                 className="mt-0.5"
               />
               <span className="text-xs leading-relaxed text-muted-foreground">
-                I agree to receive text reminders for dates, goals and actions I create in Palette. Message and data
+                I agree to receive text reminders for dates, goals and next steps I create in Palette. Message and data
                 rates may apply. I can turn text reminders off anytime.
               </span>
             </label>

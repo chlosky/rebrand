@@ -9,11 +9,7 @@ import {
   type BoardCanvasHandle,
 } from "@/components/boards/BoardCanvasEditor";
 
-import type { BoardZoomPreset } from "@/components/boards/BoardToolbar";
-
 import { boardFillForKey } from "@/lib/boards/colors";
-
-import { STANDARD_BOARD_COUNT } from "@/lib/boards/starterTemplates";
 
 import type { Board } from "@/lib/boards/types";
 
@@ -81,13 +77,13 @@ type BoardDesktopGridProps = {
 
   onRenameBoard: (boardId: string, title: string) => void | Promise<void>;
 
-  zoomPreset: BoardZoomPreset;
-
   presentationMode?: "row" | "matrix";
 
   onHistoryChange?: (state: { canUndo: boolean; canRedo: boolean }) => void;
 
   onReorderBoards?: (fromIndex: number, toIndex: number) => void;
+
+  onBoardColorChange?: (boardId: string, colorKey: string) => void | Promise<void>;
 
 };
 
@@ -109,13 +105,13 @@ export function BoardDesktopGrid({
 
   onRenameBoard,
 
-  zoomPreset,
-
   presentationMode = "row",
 
   onHistoryChange,
 
   onReorderBoards,
+
+  onBoardColorChange,
 
 }: BoardDesktopGridProps) {
 
@@ -182,18 +178,9 @@ export function BoardDesktopGrid({
 
 
     const measure = () => {
-
-      const availW = viewport.clientWidth - GRID_PAD_PX * 2;
-
-      const availH = grid.clientHeight - GRID_PAD_PX * 2;
-
-      const addReserve = !isMatrix && onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0;
-
-      const boardGaps = GRID_GAP_PX * Math.max(STANDARD_BOARD_COUNT - 1, 0);
-
-      const canvasAvailH = Math.max(availH - TITLE_BAR_PX, 160);
-
-      const multiplier = zoomPreset === "fit" ? 1 : zoomPreset;
+      const rowViewportH = Math.max(viewport.clientHeight - GRID_PAD_PX * 2, 0);
+      const availW = Math.max(viewport.clientWidth - (isMatrix ? GRID_PAD_PX * 2 : 0), 0);
+      const canvasAvailH = Math.max(rowViewportH - TITLE_BAR_PX, 160);
       const firstBoard = boards[0];
       const boardAspectHeight =
         firstBoard && firstBoard.artboard_width > 0
@@ -204,29 +191,42 @@ export function BoardDesktopGrid({
       let cellHeight: number;
 
       if (isMatrix) {
-        cellWidth = ((availW - GRID_GAP_PX) / 2) * multiplier;
-        cellHeight = Math.max(Math.round(cellWidth * boardAspectHeight), 220);
-      } else {
-        // Portrait row: use full vertical space, then derive width from artboard aspect.
-        cellHeight = canvasAvailH * multiplier;
-        cellWidth = cellHeight / boardAspectHeight;
-
-        const totalRowWidth = STANDARD_BOARD_COUNT * cellWidth + boardGaps + addReserve;
-        if (totalRowWidth > availW) {
-          const fitScale = availW / totalRowWidth;
-          cellWidth *= fitScale;
-          cellHeight *= fitScale;
+        const maxCellWidth = (availW - GRID_GAP_PX) / 2;
+        cellWidth = maxCellWidth;
+        cellHeight = cellWidth * boardAspectHeight;
+        const maxCellHeight = Math.max((rowViewportH - GRID_GAP_PX) / 2 - TITLE_BAR_PX, 220);
+        if (cellHeight > maxCellHeight) {
+          cellHeight = maxCellHeight;
+          cellWidth = cellHeight / boardAspectHeight;
         }
+      } else {
+        const activeBoard =
+          boards.find((b) => b.id === activeId) ??
+          boards[0];
+
+        const artboardW =
+          activeBoard?.artboard_width && activeBoard.artboard_width > 0
+            ? activeBoard.artboard_width
+            : ARTBOARD_WIDTH;
+
+        const artboardH =
+          activeBoard?.artboard_height && activeBoard.artboard_height > 0
+            ? activeBoard.artboard_height
+            : ARTBOARD_HEIGHT;
+
+        const aspectW = artboardW / artboardH;
+
+        cellHeight = canvasAvailH;
+        cellWidth = cellHeight * aspectW;
       }
 
       cellWidth = Math.max(MIN_CELL_WIDTH_PX, Math.round(cellWidth));
-      cellHeight = Math.max(220, Math.round(cellWidth * boardAspectHeight));
+      cellHeight = Math.max(220, Math.round(cellHeight));
 
       setCellSize({
         width: cellWidth,
         height: cellHeight,
       });
-
     };
 
 
@@ -255,7 +255,7 @@ export function BoardDesktopGrid({
 
     };
 
-  }, [boards, isMatrix, onAddBoard, updateScrollHints, zoomPreset]);
+  }, [activeId, boards, boards.length, isMatrix, updateScrollHints]);
 
 
 
@@ -294,16 +294,10 @@ export function BoardDesktopGrid({
 
 
   const rowHeight = cellSize.height + TITLE_BAR_PX;
-
   const rowScrollWidth =
-
     boards.length * cellSize.width +
-
     Math.max(boards.length - 1, 0) * GRID_GAP_PX +
-
     (onAddBoard ? ADD_BTN_WIDTH_PX + GRID_GAP_PX : 0);
-
-
 
   return (
 
@@ -341,7 +335,10 @@ export function BoardDesktopGrid({
 
             onClick={() => scrollByPage(1)}
 
-            className="absolute right-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 shadow-sm hover:bg-white"
+            className={cn(
+              "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white/95 shadow-sm hover:bg-white",
+              !isMatrix ? "right-[3.75rem]" : "right-1",
+            )}
 
           >
 
@@ -353,13 +350,15 @@ export function BoardDesktopGrid({
 
 
 
+        <div className={cn("flex h-full min-h-0", !isMatrix && "gap-2.5")}>
+
         <div
 
           ref={viewportRef}
 
           className={cn(
-            "board-row-scroll flex h-full flex-col scroll-smooth p-2",
-            isMatrix ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-auto",
+            "board-row-scroll flex h-full min-w-0 flex-1 flex-col scroll-smooth p-2",
+            isMatrix ? "overflow-x-hidden overflow-y-auto" : "overflow-x-auto overflow-y-hidden",
           )}
 
           onScroll={updateScrollHints}
@@ -386,13 +385,15 @@ export function BoardDesktopGrid({
 
             className={cn(
               "min-h-full gap-2.5",
-              isMatrix ? "grid grid-cols-2 content-start items-start" : "flex h-full min-h-full flex-row flex-nowrap items-stretch",
+              isMatrix
+                ? "grid grid-cols-2 content-start items-start"
+                : "flex h-full w-full min-h-full flex-row flex-nowrap items-stretch",
             )}
 
             style={
               isMatrix
                 ? { gridAutoRows: rowHeight, minHeight: rowHeight }
-                : { width: rowScrollWidth, minHeight: rowHeight, height: "100%" }
+                : { minHeight: rowHeight, height: rowHeight, width: rowScrollWidth }
             }
 
           >
@@ -463,11 +464,23 @@ export function BoardDesktopGrid({
                       : undefined
                   }
 
-                  style={{ width: isMatrix ? "100%" : cellSize.width, height: rowHeight }}
+                  style={
+                    isMatrix
+                      ? { width: "100%", height: rowHeight }
+                      : {
+                          width: cellSize.width,
+                          minWidth: cellSize.width,
+                          maxWidth: cellSize.width,
+                          height: rowHeight,
+                          flex: "0 0 auto",
+                        }
+                  }
 
                   className={cn(
 
-                    "board-grid-cell flex shrink-0 flex-col overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-shadow",
+                    "board-grid-cell flex flex-col overflow-hidden rounded-xl border-2 bg-white shadow-sm transition-shadow",
+
+                    isMatrix && "shrink-0",
 
                     active ? "border-neutral-900 ring-2 ring-neutral-900/10" : "border-neutral-200 hover:border-neutral-300",
 
@@ -546,10 +559,10 @@ export function BoardDesktopGrid({
                       artboardHeight={board.artboard_height}
                       onSave={getSaveHandler(board.id)}
                       onHistoryChange={board.id === activeId ? onHistoryChange : undefined}
+                      onBoardColorPick={(hex) => void onBoardColorChange?.(board.id, hex)}
                       isActive={board.id === activeId}
                       embedded
                       cellFit="contain"
-                      viewZoom="fit"
                     />
 
                   </div>
@@ -560,9 +573,7 @@ export function BoardDesktopGrid({
 
             })}
 
-
-
-            {onAddBoard && (
+            {onAddBoard && isMatrix && (
 
               <button
 
@@ -572,7 +583,7 @@ export function BoardDesktopGrid({
 
                 title="Add focus board"
 
-                style={{ width: isMatrix ? "100%" : ADD_BTN_WIDTH_PX, height: rowHeight }}
+                style={{ width: "100%", height: rowHeight }}
 
                 className="flex shrink-0 flex-col items-center justify-center self-stretch rounded-lg border border-dashed border-neutral-300 bg-white/40 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-white hover:text-neutral-900"
 
@@ -585,6 +596,34 @@ export function BoardDesktopGrid({
             )}
 
           </div>
+
+        </div>
+
+        {!isMatrix && onAddBoard && (
+
+          <div className="flex shrink-0 items-stretch py-2 pr-2">
+
+            <button
+
+              type="button"
+
+              onClick={onAddBoard}
+
+              title="Add focus board"
+
+              style={{ width: ADD_BTN_WIDTH_PX, height: rowHeight }}
+
+              className="flex flex-col items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-white/40 text-neutral-500 transition-colors hover:border-neutral-500 hover:bg-white hover:text-neutral-900"
+
+            >
+
+              <Plus className="h-5 w-5" />
+
+            </button>
+
+          </div>
+
+        )}
 
         </div>
 

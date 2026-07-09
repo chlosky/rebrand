@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { RefObject } from "react";
-import { BookImage, MessageCircleHeart, PenLine, Shapes, StickyNote, Type } from "lucide-react";
+import { BookImage, MessageCircleHeart, Palette, PenLine, StickyNote, Type } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
@@ -18,9 +18,16 @@ import { cn } from "@/lib/utils";
 const TAB_LABELS: Record<PlotDockTab, string> = {
   companion: "Guide",
   clippings: "Images",
-  structures: "Structures",
+  structures: "Color",
   marks: "Marks",
 };
+
+const PLOT_TABS = [
+  { id: "companion" as const, Icon: MessageCircleHeart },
+  { id: "clippings" as const, Icon: BookImage },
+  { id: "structures" as const, Icon: Palette },
+  { id: "marks" as const, Icon: PenLine },
+] as const;
 
 type BoardPlotKitTrayProps = {
   workspaceId: string;
@@ -78,14 +85,7 @@ export function BoardPlotKitTray({
         role="toolbar"
         aria-label="Plotting kit"
       >
-        {(
-          [
-            { id: "companion" as const, Icon: MessageCircleHeart },
-            { id: "clippings" as const, Icon: BookImage },
-            { id: "structures" as const, Icon: Shapes },
-            { id: "marks" as const, Icon: PenLine },
-          ] as const
-        ).map(({ id, Icon }) => (
+        {PLOT_TABS.map(({ id, Icon }) => (
           <button
             key={id}
             type="button"
@@ -95,7 +95,7 @@ export function BoardPlotKitTray({
               sheetTab === id ? "text-stone-900" : "text-stone-600",
             )}
           >
-            <Icon className="h-5 w-5" strokeWidth={1.75} />
+            <Icon className="h-5 w-5" strokeWidth={1.25} />
             <span className="truncate">{TAB_LABELS[id]}</span>
           </button>
         ))}
@@ -155,34 +155,36 @@ export function BoardPlotKitTray({
                   className="px-4 py-3"
                   swatchSize="md"
                 />
-                <div className="grid gap-2 p-3">
-                  {PLOT_STRUCTURES.map((s) => (
-                    <button
-                      key={s.type}
-                      type="button"
-                      onClick={() => {
-                        if (onPlaceStructure) {
-                          onPlaceStructure(s.type, s.items);
-                        } else {
-                          const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
-                          editor()?.addDiagramOverlay(
-                            s.type,
-                            placement.x,
-                            placement.y,
-                            placement.w,
-                            placement.h,
-                            s.items,
-                          );
-                        }
-                        close();
-                      }}
-                      className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
-                    >
-                      <span className="text-sm font-semibold text-stone-900">{s.title}</span>
-                      <StructureDecalPreview type={s.type} />
-                    </button>
-                  ))}
-                </div>
+                {PLOT_STRUCTURES.length > 0 ? (
+                  <div className="grid gap-2 p-3">
+                    {PLOT_STRUCTURES.map((s) => (
+                      <button
+                        key={s.type}
+                        type="button"
+                        onClick={() => {
+                          if (onPlaceStructure) {
+                            onPlaceStructure(s.type, s.items);
+                          } else {
+                            const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+                            editor()?.addDiagramOverlay(
+                              s.type,
+                              placement.x,
+                              placement.y,
+                              placement.w,
+                              placement.h,
+                              s.items,
+                            );
+                          }
+                          close();
+                        }}
+                        className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
+                      >
+                        <span className="text-sm font-semibold text-stone-900">{s.title}</span>
+                        <StructureDecalPreview type={s.type} />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </>
             )}
 

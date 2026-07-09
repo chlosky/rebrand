@@ -47,6 +47,12 @@ export type BoardReminder = {
   user_id: string;
   title: string;
   body: string | null;
+  sms_content?: string | null;
+  sms_attempt_count?: number | null;
+  sms_sent_at?: string | null;
+  sms_brevo_message_id?: string | null;
+  sms_send_status?: string | null;
+  sms_send_error?: string | null;
   remind_at: string;
   timezone: string | null;
   channels: string[];

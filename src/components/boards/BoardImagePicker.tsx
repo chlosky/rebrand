@@ -180,7 +180,7 @@ export function BoardImagePicker({
         ) : uploads.length === 0 ? (
           <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className={cn("grid gap-2", uploadsOnly ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5" : "grid-cols-2")}>
             {uploads.map((u) => (
               <button
                 key={u.path}

@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircleHeart,
+  Palette,
   PenLine,
   Shapes,
   StickyNote,
@@ -28,12 +29,7 @@ export const PLOT_STRUCTURES: {
   type: BoardDiagramType;
   title: string;
   items?: string[];
-}[] = [
-  { type: "checklist", title: "Checklist" },
-  { type: "calendar", title: "Calendar" },
-  { type: "divider", title: "Divider" },
-  { type: "eisenhower", title: "Priority grid" },
-];
+}[] = [];
 
 export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
   checklist: { x: 0.14, y: 0.2, w: 0.62, h: 0.34 },
@@ -145,15 +141,15 @@ export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
 const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
   { id: "companion", label: "Guide", Icon: MessageCircleHeart },
   { id: "clippings", label: "Images", Icon: BookImage },
-  { id: "structures", label: "Layouts", Icon: Shapes },
+  { id: "structures", label: "Color", Icon: Palette },
   { id: "marks", label: "Marks", Icon: PenLine },
 ];
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
   companion: "Colors, labels, Our Collection images, notes, structures, layout, and board names.",
   clippings: "Browse Our Collection or add photos to Your Library.",
-  structures: "Drop planning grids onto the board — mix freely on any board.",
-  marks: "Right-click empty board to add marks · right-click a note to edit.",
+  structures: "Pick board color and saved presets.",
+  marks: "Right-click empty board to add marks.",
 };
 
 type BoardPlottingWorkbenchProps = {
@@ -244,9 +240,9 @@ export function BoardPlottingWorkbench({
   );
 
   return (
-    <div className="flex h-full min-h-0 max-h-full shrink-0 self-stretch border-r border-stone-300/80 bg-[#f3f0eb]">
+    <div className="flex h-full min-h-0 max-h-full shrink-0 self-stretch border-r border-stone-200/80 bg-[#f3f0eb]">
       <nav
-        className="flex w-12 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-stone-300/60 py-1"
+        className="flex w-12 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-stone-200/80 py-1"
         aria-label="Plotting desk"
       >
         <button
@@ -255,7 +251,7 @@ export function BoardPlottingWorkbench({
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="flex h-5 w-5 items-center justify-center text-stone-500 hover:text-stone-900"
         >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.25} /> : <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.25} />}
         </button>
         {DOCK_TABS.map(({ id, label, Icon }) => {
           const active = !collapsed && openTab === id;
@@ -269,11 +265,11 @@ export function BoardPlottingWorkbench({
               className={cn(
                 "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                 active
-                  ? "bg-transparent text-stone-900 ring-1 ring-stone-900 ring-offset-1 ring-offset-[#f3f0eb]"
-                  : "text-stone-600 hover:bg-stone-200/70 hover:text-stone-900",
+                  ? "bg-white/70 text-stone-800 ring-1 ring-stone-300/70"
+                  : "text-stone-500 hover:bg-stone-200/60 hover:text-stone-800",
               )}
             >
-              <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.25 : 1.75} />
+              <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 1.5 : 1.25} />
             </button>
           );
         })}
@@ -316,21 +312,23 @@ export function BoardPlottingWorkbench({
             {openTab === "structures" && (
               <div className="flex-1 overflow-y-auto">
                 {boardColorStrip}
-                <div className="p-2">
-                  <div className="grid gap-1.5">
-                    {PLOT_STRUCTURES.map((s) => (
-                      <button
-                        key={s.type}
-                        type="button"
-                        onClick={() => placeStructure(s.type, s.items)}
-                        className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-2 text-left hover:border-stone-500/50 hover:bg-white"
-                      >
-                        <span className="text-xs font-semibold text-stone-900">{s.title}</span>
-                        <StructureDecalPreview type={s.type} />
-                      </button>
-                    ))}
+                {PLOT_STRUCTURES.length > 0 ? (
+                  <div className="p-2">
+                    <div className="grid gap-1.5">
+                      {PLOT_STRUCTURES.map((s) => (
+                        <button
+                          key={s.type}
+                          type="button"
+                          onClick={() => placeStructure(s.type, s.items)}
+                          className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-2 text-left hover:border-stone-500/50 hover:bg-white"
+                        >
+                          <span className="text-xs font-semibold text-stone-900">{s.title}</span>
+                          <StructureDecalPreview type={s.type} />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
             )}
 

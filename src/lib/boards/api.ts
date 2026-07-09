@@ -129,6 +129,11 @@ export async function updateWorkspaceName(workspaceId: string, name: string): Pr
   if (error) throw error;
 }
 
+export async function deleteWorkspace(workspaceId: string): Promise<void> {
+  const { error } = await supabase.from("board_workspaces").delete().eq("id", workspaceId);
+  if (error) throw error;
+}
+
 export async function saveBoardLayout(boardId: string, layoutJson: Record<string, unknown>): Promise<void> {
   const { error } = await supabase
     .from("boards")

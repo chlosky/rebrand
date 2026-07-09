@@ -107,7 +107,15 @@
       "renameLabel": "Set name",
       "renameSave": "Save",
       "renameCancel": "Cancel",
-      "renameError": "Could not rename set"
+      "renameError": "Could not rename set",
+      "delete": "Delete",
+      "deleteTitle": "Delete set?",
+      "deleteDescription": "“{{name}}” and all its boards will be removed. This can't be undone.",
+      "deleteConfirm": "Delete set",
+      "deleteCancel": "Cancel",
+      "deleting": "Deleting…",
+      "deleteSuccess": "Set deleted",
+      "deleteError": "Could not delete set"
     },
     "library": {
       "heading": "Library",

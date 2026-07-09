@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, ListChecks, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CopyPlus, Download, LayoutGrid, Loader2, Plus, Route, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BoardToolbar, type BoardZoomPreset } from "@/components/boards/BoardToolbar";
+import { BoardToolbar } from "@/components/boards/BoardToolbar";
 import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
 import { STRUCTURE_DECAL_SIZE } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardDesktopGrid } from "@/components/boards/BoardDesktopGrid";
@@ -51,7 +51,6 @@ export default function Boards() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [showTrialUnlock, setShowTrialUnlock] = useState(false);
   const trialBlocksExports = hasPro && onTrial;
-  const [boardZoom, setBoardZoom] = useState<BoardZoomPreset>("fit");
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
   const [isPortraitViewport, setIsPortraitViewport] = useState(() =>
     typeof window === "undefined" ? true : window.innerHeight > window.innerWidth,
@@ -298,7 +297,6 @@ export default function Boards() {
     async (title?: string) => {
       if (!workspace || !user?.id) return;
       const focusCount = workspace.boards.filter((b) => b.role === "focus").length;
-      if (focusCount >= 3) return;
       const n = workspace.boards.length;
       const boardTitle = title?.trim() || `Focus Board ${focusCount + 1}`;
       try {
@@ -449,8 +447,6 @@ export default function Boards() {
   if (!user) return null;
 
   const boards = workspace?.boards ?? [];
-  const focusBoardCount = boards.filter((b) => b.role === "focus").length;
-  const canAddFocusBoard = focusBoardCount < 3;
   const canRemoveBoard = activeBoard?.role !== "plan";
 
   return (
@@ -478,7 +474,6 @@ export default function Boards() {
               size="sm"
               className="gap-1 text-xs max-md:h-7 max-md:w-7 max-md:shrink-0 max-md:p-0"
               onClick={handleAddBoard}
-              disabled={!canAddFocusBoard}
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Add board</span>
@@ -519,7 +514,7 @@ export default function Boards() {
               <span className="hidden sm:inline">Download</span>
             </Button>
             <div className="ml-1 flex shrink-0 items-center gap-2 border-l border-neutral-200 pl-2 max-md:ml-0.5 max-md:gap-1 max-md:pl-1.5">
-              <ListChecks className="h-5 w-5 shrink-0 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
+              <Route className="h-5 w-5 shrink-0 text-neutral-700 max-md:h-3.5 max-md:w-3.5" />
               <h2 className="text-sm font-semibold text-neutral-900 max-md:text-xs max-md:font-medium">Action</h2>
               <Button
                 variant="ghost"
@@ -552,8 +547,6 @@ export default function Boards() {
             className="shrink-0"
             compact={isMobile}
             onDeleteBoard={isMobile && canRemoveBoard ? handleRemoveBoard : undefined}
-            zoomPreset={!isMobile ? boardZoom : undefined}
-            onZoomPresetChange={!isMobile ? setBoardZoom : undefined}
             canUndo={undoRedo.canUndo}
             canRedo={undoRedo.canRedo}
           />
@@ -600,7 +593,7 @@ export default function Boards() {
               onBoardColorChange={handleBoardColorFromAi}
               onRenameBoard={handleRenameBoard}
               onPickImage={handlePickImage}
-              onAddBoard={canAddFocusBoard ? handleAddBoardFromAi : undefined}
+              onAddBoard={handleAddBoardFromAi}
               onDeleteBoard={handleDeleteBoardFromAi}
               onDuplicateBoard={handleDuplicateBoardFromAi}
             />
@@ -621,7 +614,7 @@ export default function Boards() {
               onBoardColorChange={handleBoardColorFromAi}
               onRenameBoard={handleRenameBoard}
               onPickImage={handlePickImage}
-              onAddBoard={canAddFocusBoard ? handleAddBoardFromAi : undefined}
+              onAddBoard={handleAddBoardFromAi}
               onDeleteBoard={handleDeleteBoardFromAi}
               onDuplicateBoard={handleDuplicateBoardFromAi}
             />
@@ -633,12 +626,12 @@ export default function Boards() {
                 onSelect={selectBoard}
                 onSave={handleSaveLayoutFor}
                 registerEditor={registerEditor}
-                onAddBoard={canAddFocusBoard ? handleAddBoard : undefined}
+                onAddBoard={handleAddBoard}
                 onRenameBoard={handleRenameBoard}
-                zoomPreset={boardZoom}
                 presentationMode={workspacePresentation}
                 onHistoryChange={handleHistoryChange}
                 onReorderBoards={boards.length > 1 ? handleReorderBoards : undefined}
+                onBoardColorChange={handleBoardColorFromAi}
               />
             </div>
           </div>

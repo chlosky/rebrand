@@ -7,8 +7,6 @@ import {
   Trash2,
   Type,
   Undo2,
-  ZoomIn,
-  ZoomOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +28,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { BoardCanvasHandle } from "@/components/boards/BoardCanvasEditor";
 
-export type BoardZoomPreset = "fit" | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5;
-
 type BoardToolbarProps = {
   editorRef: React.RefObject<BoardCanvasHandle | null>;
   onUndo?: () => void;
@@ -39,8 +35,6 @@ type BoardToolbarProps = {
   onResetBoard?: () => void;
   className?: string;
   orientation?: "vertical" | "horizontal";
-  zoomPreset?: BoardZoomPreset;
-  onZoomPresetChange?: (preset: BoardZoomPreset) => void;
   canUndo?: boolean;
   canRedo?: boolean;
   /** Mobile: keep toolbar on one row; Reset + Delete stay paired. */
@@ -59,15 +53,13 @@ export function BoardToolbar({
   onResetBoard,
   className,
   orientation = "vertical",
-  zoomPreset,
-  onZoomPresetChange,
   canUndo = false,
   canRedo = false,
   compact = false,
   onDeleteBoard,
 }: BoardToolbarProps) {
   const horizontal = orientation === "horizontal";
-  const showZoom = horizontal && zoomPreset !== undefined && onZoomPresetChange !== undefined;
+
   const [resetOpen, setResetOpen] = useState(false);
 
   const runReset = () => {
@@ -196,89 +188,6 @@ export function BoardToolbar({
             <Layers className="h-3 w-3" />
             Right-click menu · Ctrl+C/V · Delete
           </div>
-        )}
-
-        {showZoom && (
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <span className="mr-1 hidden h-6 w-px bg-neutral-200 md:block" aria-hidden />
-            <span className="mr-1 text-[10px] font-medium uppercase tracking-wide text-neutral-500">Zoom</span>
-              {(
-                [
-                  { id: "fit" as const, label: "Fit all" },
-                  { id: 0.25 as const, label: "25%" },
-                  { id: 0.5 as const, label: "50%" },
-                  { id: 0.75 as const, label: "75%" },
-                  { id: 1 as const, label: "100%" },
-                  { id: 1.25 as const, label: "125%" },
-                  { id: 1.5 as const, label: "150%" },
-                ] as const
-              ).map(({ id, label }) => (
-                <button
-                  key={String(id)}
-                  type="button"
-                  onClick={() => onZoomPresetChange(id)}
-                  className={cn(
-                    "rounded px-2 py-0.5 text-[10px] font-medium",
-                    zoomPreset === id ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-              <button
-                type="button"
-                title="Zoom out"
-                onClick={() =>
-                  onZoomPresetChange(
-                    zoomPreset === 1.5
-                      ? 1.25
-                      : zoomPreset === 1.25
-                        ? 1
-                        : zoomPreset === 1
-                          ? 0.75
-                          : zoomPreset === 0.75
-                            ? 0.5
-                            : zoomPreset === 0.5
-                              ? 0.25
-                              : zoomPreset === 0.25
-                                ? "fit"
-                                : "fit",
-                  )
-                }
-                className="rounded p-1 text-neutral-500 hover:bg-neutral-100"
-              >
-                <ZoomOut className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                title="Zoom in"
-                onClick={() =>
-                  onZoomPresetChange(
-                    zoomPreset === "fit"
-                      ? 1
-                      : zoomPreset === 0.25
-                        ? 0.5
-                        : zoomPreset === 0.5
-                          ? 0.75
-                          : zoomPreset === 0.75
-                            ? 1
-                            : zoomPreset === 1
-                              ? 1.25
-                              : zoomPreset === 1.25
-                                ? 1.5
-                                : 1.5,
-                  )
-                }
-                className="rounded p-1 text-neutral-500 hover:bg-neutral-100"
-              >
-                <ZoomIn className="h-3.5 w-3.5" />
-              </button>
-            </div>
-        )}
-        {horizontal && !showZoom && (
-          <span className="ml-auto hidden text-[10px] text-neutral-400 sm:inline">
-            Right-click menu · Ctrl+C/V
-          </span>
         )}
       </div>
 

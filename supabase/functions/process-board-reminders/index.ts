@@ -417,7 +417,7 @@ serve(async (req) => {
 
       .select(
 
-        "phone_number_e164, sms_reminders_enabled, sms_reminder_consent_at, sms_reminder_opted_out_at, sms_daily_limit, timezone",
+        "sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at, sms_daily_limit, timezone",
 
       )
 
@@ -431,11 +431,11 @@ serve(async (req) => {
 
     const phone =
 
-      (typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()) ||
+      typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()
 
-      profile?.phone?.trim() ||
+        ? prefs.phone_number_e164.trim()
 
-      null;
+        : null;
 
     const userTimezone =
 
@@ -455,7 +455,7 @@ serve(async (req) => {
 
 
 
-    const smsConsentOk =
+    const smsAllowed =
 
       prefs?.sms_reminders_enabled === true &&
 
@@ -535,7 +535,7 @@ serve(async (req) => {
 
 
 
-      if (!smsConsentOk) {
+      if (!smsAllowed) {
 
         smsStatus = "skipped_no_consent";
 

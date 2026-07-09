@@ -148,9 +148,15 @@ export function BoardColorStrip({
     commitHex(hex);
   };
 
-  const markAsPreset = () => {
+  const togglePreset = () => {
     const hex = normalizeBoardColorHex(hexDraft);
     if (!hex) return;
+    if (presets.includes(hex)) {
+      const next = presets.filter((p) => p !== hex);
+      setPresets(next);
+      writeColorPresets(userId, next);
+      return;
+    }
     const next = [hex, ...presets.filter((p) => p !== hex)].slice(0, MAX_COLOR_PRESETS);
     setPresets(next);
     writeColorPresets(userId, next);
@@ -161,19 +167,6 @@ export function BoardColorStrip({
   return (
     <div className={cn("border-b border-stone-300/50", className)}>
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Board color</p>
-
-      <input
-        type="text"
-        value={hexDraft}
-        onChange={(e) => setHexDraft(e.target.value)}
-        onBlur={() => commitHex(hexDraft)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commitHex(hexDraft);
-        }}
-        spellCheck={false}
-        className="mb-2 w-full rounded-md border border-stone-300/80 bg-white px-2 py-1.5 font-mono text-[11px] uppercase text-stone-800"
-        aria-label="Board color hex code"
-      />
 
       <div className="mb-2 overflow-hidden rounded-lg border border-stone-300/80 bg-white">
         <button
@@ -235,12 +228,12 @@ export function BoardColorStrip({
               <span className="font-mono text-[11px] uppercase text-stone-700">{hexDraft}</span>
               <button
                 type="button"
-                onClick={markAsPreset}
+                onClick={togglePreset}
                 className={cn(
                   "flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-stone-600 transition-colors hover:bg-stone-100",
                   presetSaved && "text-stone-500",
                 )}
-                aria-label="Mark current color as preset"
+                aria-label={presetSaved ? "Remove from presets" : "Mark current color as preset"}
               >
                 <span
                   className="h-3.5 w-3.5 rounded-sm ring-1 ring-stone-300/70"

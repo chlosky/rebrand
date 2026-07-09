@@ -38,6 +38,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 
 import { cn } from "@/lib/utils";
@@ -47,7 +57,7 @@ import { useTranslation } from "react-i18next";
 import { MobileBottomInlet } from "@/components/MobileBottomInlet";
 
 import { supabase } from "@/integrations/supabase/client";
-import { fetchUserWorkspaces, createWorkspaceFromTemplate, updateWorkspaceName } from "@/lib/boards/api";
+import { fetchUserWorkspaces, createWorkspaceFromTemplate, updateWorkspaceName, deleteWorkspace } from "@/lib/boards/api";
 import { DEFAULT_FOUR_BOARD_TEMPLATE, type BoardStarterTemplate } from "@/lib/boards/starterTemplates";
 
 import type { BoardWorkspace } from "@/lib/boards/types";
@@ -273,6 +283,8 @@ export default function Workspace() {
   const [workspaces, setWorkspaces] = useState<BoardWorkspace[]>([]);
   const [creatingSet, setCreatingSet] = useState(false);
   const [renamingWorkspace, setRenamingWorkspace] = useState<BoardWorkspace | null>(null);
+  const [deletingWorkspace, setDeletingWorkspace] = useState<BoardWorkspace | null>(null);
+  const [deletingSet, setDeletingSet] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const [savingRename, setSavingRename] = useState(false);
 
@@ -436,6 +448,23 @@ export default function Workspace() {
       toast.error(t("workspace.projects.renameError"));
     } finally {
       setSavingRename(false);
+    }
+  };
+
+  const confirmDeleteSet = async () => {
+    if (!deletingWorkspace || deletingSet) return;
+    setDeletingSet(true);
+    try {
+      await deleteWorkspace(deletingWorkspace.id);
+      setWorkspaces((prev) => prev.filter((ws) => ws.id !== deletingWorkspace.id));
+      sessionStorage.removeItem("board-workspace-id");
+      sessionStorage.removeItem(`board-accountability-map:${deletingWorkspace.id}`);
+      setDeletingWorkspace(null);
+      toast.success(t("workspace.projects.deleteSuccess"));
+    } catch {
+      toast.error(t("workspace.projects.deleteError"));
+    } finally {
+      setDeletingSet(false);
     }
   };
 
@@ -625,13 +654,13 @@ export default function Workspace() {
 
           <div className="border-b px-5 py-4">
 
-            <h2 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
+            <h2 className={cn("font-welcome-serif text-base font-medium", dark ? "text-white" : "text-zinc-900")}>
 
               {t("workspace.imageLibrary.title")}
 
             </h2>
 
-            <p className={cn("mt-1 text-sm leading-relaxed", dark ? "text-white" : "text-zinc-500")}>
+            <p className={cn("mt-1 text-xs leading-relaxed", dark ? "text-white/70" : "text-zinc-500")}>
 
               {t("workspace.imageLibrary.subtitle")}
 
@@ -831,6 +860,13 @@ export default function Workspace() {
 
                           </DropdownMenuItem>
 
+                          <DropdownMenuItem
+                            className="text-red-600 focus:text-red-600"
+                            onClick={() => setDeletingWorkspace(ws)}
+                          >
+                            {t("workspace.projects.delete")}
+                          </DropdownMenuItem>
+
                         </DropdownMenuContent>
 
                       </DropdownMenu>
@@ -925,12 +961,6 @@ export default function Workspace() {
           </h1>
         ) : null}
 
-        {tab === "images" && hasPro ? (
-          <h1 className={cn("mb-2 font-welcome-serif text-2xl", dark ? "text-white" : "text-zinc-900")}>
-            {t("workspace.tabs.imageLibrary")}
-          </h1>
-        ) : null}
-
         {loading && tab !== "library" && tab !== "images" ? (
 
           <div
@@ -982,6 +1012,35 @@ export default function Workspace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!deletingWorkspace}
+        onOpenChange={(open) => {
+          if (!open && !deletingSet) setDeletingWorkspace(null);
+        }}
+      >
+        <AlertDialogContent className={dark ? "border-white bg-black text-white" : undefined}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("workspace.projects.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className={dark ? "text-white/70" : undefined}>
+              {t("workspace.projects.deleteDescription", { name: deletingWorkspace?.name ?? "" })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingSet}>{t("workspace.projects.deleteCancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deletingSet}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmDeleteSet();
+              }}
+            >
+              {deletingSet ? t("workspace.projects.deleting") : t("workspace.projects.deleteConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

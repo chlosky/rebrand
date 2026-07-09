@@ -31,7 +31,7 @@ type BoardAccountabilityFlowProps = {
   onChange: (map: AccountabilityMap) => void;
   smsReady?: boolean;
   hasPro?: boolean;
-  onRequestSmsSetup?: () => void;
+  onRequestSmsSetup?: (actionId: string) => void;
   compact?: boolean;
 };
 
@@ -240,7 +240,7 @@ function ActionNodeRow({
   locked: boolean;
   smsReady: boolean;
   hasPro: boolean;
-  onRequestSmsSetup?: () => void;
+  onRequestSmsSetup?: (actionId: string) => void;
   onPatch: (patch: Partial<AccountabilityAction>) => void;
   onReject: () => void;
   onDelete: () => void;
@@ -254,7 +254,7 @@ function ActionNodeRow({
     if (type === "sms") {
       if (!hasPro) return;
       if (!smsReady) {
-        onRequestSmsSetup?.();
+        onRequestSmsSetup?.(action.id);
         return;
       }
     }
@@ -295,12 +295,12 @@ function ActionNodeRow({
           disabled={locked}
           value={reminderType}
           onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
-          className={cn(PILL_SELECT, "w-[58px]")}
+          className={cn(PILL_SELECT, "w-[82px]")}
           title="Reminder type"
         >
-          <option value="calendar">Cal</option>
           <option value="email">Email</option>
-          <option value="sms" disabled={!hasPro || !smsReady}>
+          <option value="calendar">Calendar</option>
+          <option value="sms" disabled={!hasPro}>
             Text
           </option>
         </select>
@@ -552,7 +552,7 @@ export function BoardAccountabilityFlow({
       ref={viewportRef}
       className={cn(
         "min-h-0 min-w-0 flex-1 overscroll-contain",
-        compact && emptyMap ? "overflow-hidden" : "cursor-grab overflow-auto touch-pan-x touch-pan-y",
+        emptyMap && !compact ? "flex overflow-hidden" : compact && emptyMap ? "overflow-hidden" : "cursor-grab overflow-auto touch-pan-x touch-pan-y",
       )}
       onPointerDown={onPanStart}
       onPointerMove={onPanMove}
@@ -562,7 +562,11 @@ export function BoardAccountabilityFlow({
     >
       <div
         className={cn(
-          compact && emptyMap ? "flex h-full w-full min-w-0 flex-col p-4" : "inline-block min-w-[1180px] p-12",
+          emptyMap && !compact
+            ? "flex h-full w-full min-w-0 items-center justify-center p-12"
+            : compact && emptyMap
+              ? "flex h-full w-full min-w-0 flex-col p-4"
+              : "inline-block min-w-[1180px] p-12",
         )}
       >
         {emptyMap ? (
@@ -571,7 +575,7 @@ export function BoardAccountabilityFlow({
               "flex w-full flex-col",
               compact
                 ? "min-h-0 flex-1 items-start justify-start text-left"
-                : "min-h-[320px] max-w-lg items-center justify-center px-6 text-center",
+                : "max-w-lg items-center px-6 text-center",
             )}
           >
             <h2 className={cn("font-semibold text-neutral-900", compact ? "text-base" : "text-lg")}>

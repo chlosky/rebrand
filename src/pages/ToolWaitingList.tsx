@@ -48,7 +48,7 @@ export default function ToolWaitingList() {
           Palette Plotting
         </p>
         <h1 className="mt-3 font-welcome-serif text-3xl text-neutral-900 sm:text-4xl">
-          Opening soon
+          Launching Soon
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-neutral-600 sm:text-base">
           Vision boards, action plans, and reminders — in one workspace. Join the waitlist and

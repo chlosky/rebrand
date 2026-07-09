@@ -185,6 +185,7 @@ const VALID_SHAPES = new Set<BoardMarkShapeType>([
   "line",
   "hexagon",
   "pentagon",
+  "check",
   "star",
   "diamond",
   "arrow",
@@ -197,23 +198,12 @@ const VALID_COLOR_KEYS = new Set(Object.keys(BOARD_COLORS));
 
 const VALID_LIBRARY_THEMES = new Set<string>(BOARD_IMAGE_THEMES);
 
-const VALID_DIAGRAMS = new Set<BoardDiagramType>([
-  "eisenhower",
-  "checklist",
-  "calendar",
-  "zones",
-  "timeline",
-  "kanban",
-  "gantt",
-  "okrs",
-  "five_s",
-  "divider",
-]);
+const VALID_DIAGRAMS = new Set<BoardDiagramType>([]);
 
 
 
 const VISION_FALLBACK_ASK_REPLY =
-  "I can help with your boards — names, colors, stickies, labels, Our Collection images, notes, structures, and layout. Tell me what to add or change.";
+  "I can help with your boards — names, colors, stickies, labels, Our Collection images, notes, and layout. Tell me what to add or change.";
 
 const ACTION_FALLBACK_ASK_REPLY =
   "I can help with that. What would you like to adjust — actions, reminder channels, or timing?";
@@ -295,7 +285,7 @@ function isValidGuideAction(action: unknown): action is GuideAction {
     case "add_sticky":
       return true;
     case "add_diagram":
-      return typeof a.diagram === "string" && VALID_DIAGRAMS.has(a.diagram as BoardDiagramType);
+      return false;
     case "add_sticker":
       return typeof a.sticker === "string" && VALID_STICKERS.has(a.sticker as BoardMarkStickerId);
     case "add_shape":
@@ -313,9 +303,8 @@ function isValidGuideAction(action: unknown): action is GuideAction {
       if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
       return false;
     case "kanban_seed":
-      return Array.isArray(a.columns) && a.columns.length > 0;
     case "gantt_seed":
-      return Array.isArray(a.tasks) && a.tasks.length > 0;
+      return false;
     case "add_board":
     case "delete_board":
     case "duplicate_board":
@@ -336,11 +325,7 @@ function filterValidGuideActions(actions: unknown[]): GuideAction[] {
         return { ...raw, type: "add_sticky" };
       }
       if (raw.type === "add_structure" || raw.type === "add_decal") {
-        return {
-          ...raw,
-          type: "add_diagram",
-          diagram: raw.diagram ?? raw.structure,
-        };
+        return { ...raw, type: "__disabled_structure" };
       }
       if (raw.type === "add_statement") {
         return { ...raw, type: "add_text" };
@@ -441,11 +426,8 @@ const CANVAS_GUIDE_ACTIONS = new Set([
   "clear_board",
   "start_draw_mode",
   "delete_element",
-  "kanban_seed",
-  "gantt_seed",
   "add_text",
   "add_sticky",
-  "add_diagram",
   "add_sticker",
   "add_shape",
   "add_library_image",
