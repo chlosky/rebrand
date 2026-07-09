@@ -34,7 +34,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
         title: "Start Here",
         blocks: [
           { type: "paragraph", text: "A life rebrand gets easier when the pieces have a place to go. Images, notes, dates, goals, habits, screenshots and reminders should not all fight for attention in one crowded space." },
-          { type: "paragraph", text: "Palette Plotting starts with a simple split: focus areas hold the direction. The Plan holds the action." },
+          { type: "paragraph", text: "palette plotting starts with a simple split: focus areas hold the direction. The Plan holds the action." },
           { type: "paragraph", text: "Use this reader to set up your first life plotting workspace, choose your focus areas, add visuals and move the active pieces into The Plan." },
           { type: "bullets", items: [
             "Choose up to three focus areas.",
@@ -102,7 +102,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
             "Keep each focus area easy to scan.",
           ] },
           { type: "paragraph", text: "The full guide goes deeper into color roles, board layouts, weekly resets, monthly resets and the complete four-board method." },
-          { type: "textLink", label: "Get the full Palette Plotting Guide", href: FULL_GUIDE_HREF },
+          { type: "textLink", label: "Get the full palette plotting Guide", href: FULL_GUIDE_HREF },
         ],
       },
     ],

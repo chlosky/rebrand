@@ -54,20 +54,20 @@ export function SetupPage({
   const resolvedContinueText = continueText === "Continue" ? t("continue") : continueText;
 
   useEffect(() => {
-    document.title = "Onboarding | Palette Plotting";
+    document.title = "Onboarding | palette plotting";
     document.querySelector('meta[name="description"]')?.setAttribute(
       "content",
-      "Start your Palette Plotting onboarding — a private studio for your next chapter.",
+      "Start your palette plotting onboarding — a private studio for your next chapter.",
     );
-    document.querySelector('meta[property="og:title"]')?.setAttribute("content", "Onboarding | Palette Plotting");
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", "Onboarding | palette plotting");
     document.querySelector('meta[property="og:description"]')?.setAttribute(
       "content",
-      "Start your Palette Plotting onboarding — a private studio for your next chapter.",
+      "Start your palette plotting onboarding — a private studio for your next chapter.",
     );
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", "Onboarding | Palette Plotting");
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", "Onboarding | palette plotting");
     document.querySelector('meta[name="twitter:description"]')?.setAttribute(
       "content",
-      "Start your Palette Plotting onboarding — a private studio for your next chapter.",
+      "Start your palette plotting onboarding — a private studio for your next chapter.",
     );
   }, [pathname]);
 

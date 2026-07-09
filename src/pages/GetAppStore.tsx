@@ -29,7 +29,7 @@ const GetAppStore: React.FC = () => {
           Get the app
         </h1>
         <p className={cn("text-sm", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-          The mobile app is not publicly available yet. Use Palette Plotting on the web for now.
+          The mobile app is not publicly available yet. Use palette plotting on the web for now.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ const GetAppStore: React.FC = () => {
             Get the app
           </h1>
           <p className={cn("text-sm", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-            The mobile app is not publicly available yet. Use Palette Plotting on the web for now.
+            The mobile app is not publicly available yet. Use palette plotting on the web for now.
           </p>
           <Button
             size="lg"

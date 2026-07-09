@@ -225,10 +225,10 @@
     "phoneRequired": "Add a phone number before turning on text reminders.",
     "phoneInvalid": "Enter a valid U.S. phone number.",
     "consentRequired": "Please agree to receive text reminders.",
-    "smsConsent": "I agree to receive text reminders for dates, goals and next steps I create in Palette. Message and data rates may apply. I can turn text reminders off anytime.",
+    "smsConsent": "I agree to receive recurring text reminders from Palette Plotting about plans and tasks I choose. Message frequency may vary. Standard message and data rates may apply. Reply STOP to opt out. Reply HELP for assistance. Your mobile information will not be sold or shared with third parties for promotional or marketing purposes. See Terms and Privacy Policy.",
     "turnOffSms": "Turn off text reminders",
     "savePhone": "Save phone number",
-    "proRequired": "Text reminders require an active Palette Plotting plan.",
+    "proRequired": "Text reminders require an active palette plotting plan.",
     "smsCharNote": "Text reminders are short by design — {{max}} characters max per message.",
     "perStepNote": "Tip: Open Action to set Calendar, Email or Text on individual next steps before finalizing."
   }

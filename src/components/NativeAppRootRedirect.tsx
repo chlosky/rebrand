@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsNativeApp } from '@/hooks/use-native-app';
 import Home from '@/site/pages/Home';
-import ToolWaitingList from '@/pages/ToolWaitingList';
-import { isSiteAccessRequired } from '@/lib/toolSite';
+import Welcome from '@/pages/onboarding/Welcome';
+import { isToolSiteHost } from '@/lib/toolSite';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
 import { debugLog } from '@/debugLog';
@@ -191,9 +191,13 @@ export const NativeAppRootRedirect = () => {
     return <Navigate to="/workspace" replace />;
   }
 
-  // Web/PWA: tool site shows waitlist; shop homepage elsewhere.
-  if (isSiteAccessRequired()) {
-    return <ToolWaitingList />;
+  // Web/PWA: tool subdomain is the app — welcome for new users, workspace when signed in.
+  if (isToolSiteHost()) {
+    if (!isLoading && user) {
+      return <Navigate to="/workspace" replace />;
+    }
+    return <Welcome />;
   }
+
   return <Home />;
 };

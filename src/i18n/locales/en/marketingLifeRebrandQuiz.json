@@ -1,6 +1,6 @@
 {
   "intro": {
-    "eyebrow": "Palette Plotting Quiz",
+    "eyebrow": "palette plotting Quiz",
     "title": "What's Your Life Rebrand Style?",
     "subtitle": "A quick diagnostic to reveal how you're wired to reinvent your life — and the best place for you to start.",
     "meta": "Five questions · about two minutes · one clear next step",
@@ -17,7 +17,7 @@
     "firstNamePlaceholder": "First name (optional)",
     "submit": "Show My Result",
     "submitting": "Saving…",
-    "consent": "By continuing you agree to receive your quiz result and occasional tips from Palette Plotting. Unsubscribe anytime.",
+    "consent": "By continuing you agree to receive your quiz result and occasional tips from palette plotting. Unsubscribe anytime.",
     "emailRequired": "Please enter your email address.",
     "emailInvalid": "Please enter a valid email address.",
     "genericError": "Something went wrong. Please try again."
@@ -27,7 +27,7 @@
     "whatThisMeans": "What this means",
     "actionStepHeading": "One free first step",
     "recommended": "Recommended for you",
-    "buildPractice": "Start your rebrand in Palette Plotting.",
+    "buildPractice": "Start your rebrand in palette plotting.",
     "startTrial": "Start Free Trial",
     "retake": "Retake the quiz"
   },
@@ -83,31 +83,31 @@
       "title": "The Vision Dreamer",
       "explanation": "You can feel the life you want, but it lives in your head as a mood rather than a map. Without something visual to anchor it, the vision stays fuzzy — and fuzzy is hard to move toward.",
       "actionStep": "Pick the single clearest image of your future self and describe it in one sentence. Put that sentence somewhere you'll see it daily this week.",
-      "paletteplottingPitch": "Palette Plotting turns that fuzzy picture into a real Vision board you can see and refine — so your future finally has a place to live outside your head."
+      "paletteplottingPitch": "palette plotting turns that fuzzy picture into a real Vision board you can see and refine — so your future finally has a place to live outside your head."
     },
     "scattered_starter": {
       "title": "The Scattered Starter",
       "explanation": "You're not short on ambition — you're short on structure. Ideas pile up faster than you can organize them, so nothing gets a real foundation.",
       "actionStep": "List every direction you're being pulled toward, then circle just one to start this week. The rest can wait on the board.",
-      "paletteplottingPitch": "Palette Plotting gives you one four-board system — vision, home, office, and mood — so all your ideas finally have a home instead of ten half-started lists."
+      "paletteplottingPitch": "palette plotting gives you one four-board system — vision, home, office, and mood — so all your ideas finally have a home instead of ten half-started lists."
     },
     "stuck_resetter": {
       "title": "The Stuck Resetter",
       "explanation": "You want the change badly, but the size of it freezes you. You start, lose momentum, and restart from scratch — over and over.",
       "actionStep": "Shrink it. Choose one tiny piece of your rebrand and give yourself five minutes on it today. Momentum beats intensity.",
-      "paletteplottingPitch": "Palette Plotting lets you start with one small board and build from there — no all-or-nothing overhaul, just a first step you can actually keep."
+      "paletteplottingPitch": "palette plotting lets you start with one small board and build from there — no all-or-nothing overhaul, just a first step you can actually keep."
     },
     "aesthetic_curator": {
       "title": "The Aesthetic Curator",
       "explanation": "You commit through feeling. If it doesn't look and feel right, it won't stick — and a plain to-do list will never move you.",
       "actionStep": "Gather five images that capture the exact feeling of the life you want. Notice the thread between them — that's your direction.",
-      "paletteplottingPitch": "Palette Plotting is built for people who think in visuals — start with a Moodboard that captures the feeling, then let the rest of your rebrand grow from it."
+      "paletteplottingPitch": "palette plotting is built for people who think in visuals — start with a Moodboard that captures the feeling, then let the rest of your rebrand grow from it."
     },
     "space_builder": {
       "title": "The Space Builder",
       "explanation": "You put in the work, but your environment never caught up. Your space and routine don't reflect the life you're building — so it's a constant uphill push.",
       "actionStep": "Pick one corner of your home or workspace and change one thing today so it points at the life you want.",
-      "paletteplottingPitch": "Palette Plotting gives you Home and Office boards to design the spaces around your goals — so your environment finally works with you instead of against you."
+      "paletteplottingPitch": "palette plotting gives you Home and Office boards to design the spaces around your goals — so your environment finally works with you instead of against you."
     }
   }
 }

@@ -5,6 +5,6 @@ export const MARKETING_SMS_E164 = "+17085547041";
 export const MARKETING_SMS_DISPLAY = "(708) 554-7041";
 
 export const plottingSmsBody =
-  "Hi Palette Plotting —\n\nWhat I'm building toward:\n\nWhat keeps pulling me off track:\n\nBoard focus (vision / home / office / mood):\n";
+  "Hi palette plotting —\n\nWhat I'm building toward:\n\nWhat keeps pulling me off track:\n\nBoard focus (vision / home / office / mood):\n";
 
 export const plottingSmsHref = `sms:${MARKETING_SMS_E164}?body=${encodeURIComponent(plottingSmsBody)}`;

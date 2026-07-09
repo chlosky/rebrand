@@ -26,10 +26,10 @@ const PlottingHelp = () => {
 
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = "Text us for board help | Palette Plotting";
+    document.title = "Text us for board help | palette plotting";
     setMetaTag(
       "description",
-      "Text Palette Plotting for quick help organizing your life rebrand on boards — focus areas, plan steps, and where to start in the app.",
+      "Text palette plotting for quick help organizing your life rebrand on boards — focus areas, plan steps, and where to start in the app.",
     );
     return () => {
       document.title = prevTitle;
@@ -71,7 +71,7 @@ const PlottingHelp = () => {
         <div className="rounded-2xl border border-border/80 bg-muted/20 shadow-sm overflow-hidden mb-8">
           <div className="border-b border-border/60 bg-muted/50 px-4 py-3 flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-primary shrink-0" aria-hidden />
-            <span className="text-sm font-medium text-foreground/90">Text Palette Plotting</span>
+            <span className="text-sm font-medium text-foreground/90">Text palette plotting</span>
           </div>
           <div className="p-5 sm:p-6 space-y-5">
             <blockquote className="border-l-4 border-primary/40 pl-4 py-1 text-sm sm:text-base leading-relaxed text-foreground/95 italic">

@@ -68,6 +68,113 @@ function defaultAction(planId: string, title: string): AccountabilityAction {
   };
 }
 
+function normHint(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+plan$/, "");
+}
+
+function resolveFocusId(map: AccountabilityMap, raw: Record<string, unknown>): string | null {
+  if (typeof raw.focus_id === "string" && map.focuses.some((f) => f.id === raw.focus_id)) {
+    return raw.focus_id;
+  }
+  const hint =
+    typeof raw.focus_title === "string"
+      ? raw.focus_title
+      : typeof raw.focus_id === "string"
+        ? raw.focus_id
+        : "";
+  if (!hint.trim()) return null;
+  const h = normHint(hint);
+  const focus = map.focuses.find((f) => {
+    const t = normHint(f.title);
+    return t === h || t.includes(h) || h.includes(t);
+  });
+  return focus?.id ?? null;
+}
+
+function resolvePlanId(map: AccountabilityMap, raw: Record<string, unknown>): string | null {
+  if (typeof raw.plan_id === "string" && map.plans.some((p) => p.id === raw.plan_id)) {
+    return raw.plan_id;
+  }
+  const hint =
+    typeof raw.plan_title === "string"
+      ? raw.plan_title
+      : typeof raw.focus_title === "string"
+        ? raw.focus_title
+        : typeof raw.plan_id === "string"
+          ? raw.plan_id
+          : "";
+  if (!hint.trim()) return null;
+  const h = normHint(hint);
+  const plan = map.plans.find((p) => {
+    const pt = normHint(p.title);
+    const focus = map.focuses.find((f) => f.id === p.focus_id);
+    const ft = normHint(focus?.title ?? "");
+    return pt === h || pt.includes(h) || h.includes(pt) || ft === h || ft.includes(h) || h.includes(ft);
+  });
+  return plan?.id ?? null;
+}
+
+function resolveActionId(map: AccountabilityMap, raw: Record<string, unknown>): string | null {
+  if (typeof raw.action_id === "string" && map.actions.some((a) => a.id === raw.action_id)) {
+    return raw.action_id;
+  }
+  const hint = typeof raw.action_title === "string" ? raw.action_title : typeof raw.action_id === "string" ? raw.action_id : "";
+  if (!hint.trim()) return null;
+  const h = normHint(hint);
+  const planId = resolvePlanId(map, raw);
+  const candidates = planId ? map.actions.filter((a) => a.plan_id === planId) : map.actions;
+  const action = candidates.find((a) => {
+    const t = normHint(a.title);
+    return t === h || t.includes(h) || h.includes(t);
+  });
+  return action?.id ?? null;
+}
+
+function normalizeActionGuideOperation(op: unknown, map: AccountabilityMap): ActionGuideOperation | null {
+  if (!op || typeof op !== "object") return null;
+  const a = { ...(op as Record<string, unknown>) };
+  switch (a.type) {
+    case "add_action": {
+      const planId = resolvePlanId(map, a);
+      if (planId) a.plan_id = planId;
+      break;
+    }
+    case "update_action":
+    case "delete_action":
+    case "set_channel":
+    case "set_timing":
+    case "shorten_sms": {
+      const actionId = resolveActionId(map, a);
+      if (actionId) a.action_id = actionId;
+      break;
+    }
+    case "update_plan":
+    case "delete_plan": {
+      const planId = resolvePlanId(map, a);
+      if (planId) a.plan_id = planId;
+      break;
+    }
+    case "add_plan":
+    case "update_focus": {
+      const focusId = resolveFocusId(map, a);
+      if (focusId) a.focus_id = focusId;
+      break;
+    }
+    default:
+      break;
+  }
+  return a as ActionGuideOperation;
+}
+
+export function normalizeActionGuideOperations(
+  ops: unknown[],
+  map: AccountabilityMap,
+): ActionGuideOperation[] {
+  return ops
+    .map((op) => normalizeActionGuideOperation(op, map))
+    .filter((op): op is ActionGuideOperation => op != null);
+}
+
 export function isValidActionGuideOperation(op: unknown, map: AccountabilityMap | null): op is ActionGuideOperation {
   if (!op || typeof op !== "object" || !map) return false;
   const a = op as Record<string, unknown>;
@@ -96,7 +203,8 @@ export function filterValidActionGuideOperations(
   ops: unknown[],
   map: AccountabilityMap | null,
 ): ActionGuideOperation[] {
-  return ops.filter((op) => isValidActionGuideOperation(op, map));
+  if (!map) return [];
+  return normalizeActionGuideOperations(ops, map).filter((op) => isValidActionGuideOperation(op, map));
 }
 
 export function applyActionGuideOperations(
@@ -115,6 +223,8 @@ export function applyActionGuideOperations(
         const action = defaultAction(planId, title);
         if (typeof op.cadence === "string") action.cadence = asCadence(op.cadence);
         if (typeof op.remind_day_of_week === "string") action.remind_day_of_week = op.remind_day_of_week;
+        if (typeof op.remind_date === "string") action.remind_date = op.remind_date;
+        if (typeof op.remind_day_of_month === "number") action.remind_day_of_month = op.remind_day_of_month;
         if (typeof op.remind_time === "string") action.remind_time = op.remind_time;
         const reminderType = parseReminderType(op.reminder_type);
         const channels = reminderType
@@ -156,6 +266,12 @@ export function applyActionGuideOperations(
               ...a,
               ...p,
               cadence: p.cadence ? asCadence(p.cadence, a.cadence) : a.cadence,
+              remind_date: typeof p.remind_date === "string" ? p.remind_date : p.remind_date === null ? null : a.remind_date,
+              remind_day_of_month:
+                typeof p.remind_day_of_month === "number" ? p.remind_day_of_month : a.remind_day_of_month,
+              remind_day_of_week:
+                typeof p.remind_day_of_week === "string" ? p.remind_day_of_week : a.remind_day_of_week,
+              remind_time: typeof p.remind_time === "string" ? p.remind_time : a.remind_time,
               channels: reminderPatch?.channels ?? a.channels,
               reminder_type: reminderPatch?.reminder_type ?? a.reminder_type,
               sms_text,
@@ -259,6 +375,8 @@ export function applyActionGuideOperations(
               remind_time: typeof op.remind_time === "string" ? op.remind_time : a.remind_time,
               remind_day_of_week:
                 typeof op.remind_day_of_week === "string" ? op.remind_day_of_week : a.remind_day_of_week,
+              remind_day_of_month:
+                typeof op.remind_day_of_month === "number" ? op.remind_day_of_month : a.remind_day_of_month,
             };
           }),
         };

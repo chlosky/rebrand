@@ -219,38 +219,207 @@ function scrubMapTitles(map: Record<string, unknown>): Record<string, unknown> {
   return { ...map, plans, actions };
 }
 
-function buildFocusOnlyMap(focusList: BoardRow[]): Record<string, unknown> {
+function focusBoardTitle(board: BoardRow): string {
+  const cleaned = naturalizeTitle(board.title);
+  return cleaned || board.title.trim() || "Focus board";
+}
+
+type BoardPayloadRow = ReturnType<typeof collectBoardPayloadFromLayout> & {
+  board_id: string;
+  board_title: string;
+  role: string;
+  color_key: string;
+};
+
+function actionSeedsForBoard(boardId: string, boardPayload: BoardPayloadRow[]): string[] {
+  const board = boardPayload.find((b) => b.board_id === boardId);
+  if (!board) return [];
+  const seeds: string[] = [];
+  for (const raw of [
+    ...board.sticky_note_text,
+    ...board.checklist_rows,
+    ...board.text_elements,
+    ...board.structure_labels,
+  ]) {
+    const cleaned = naturalizeTitle(raw);
+    if (cleaned && !seeds.includes(cleaned)) seeds.push(cleaned);
+    if (seeds.length >= 3) break;
+  }
+  return seeds;
+}
+
+function buildStarterPlansAndActions(
+  focusList: BoardRow[],
+  boardPayload: BoardPayloadRow[],
+): { plans: Record<string, unknown>[]; actions: Record<string, unknown>[] } {
+  const plans: Record<string, unknown>[] = [];
+  const actions: Record<string, unknown>[] = [];
+
+  focusList.forEach((board, index) => {
+    const focusId = `focus-${index + 1}`;
+    const planId = `plan-${index + 1}-1`;
+    const boardTitle = focusBoardTitle(board);
+    const seeds = actionSeedsForBoard(board.id, boardPayload);
+    const actionTitles =
+      seeds.length > 0
+        ? seeds.slice(0, 2)
+        : [`${boardTitle} check-in`, `Plan one priority for ${boardTitle}`];
+
+    plans.push({
+      id: planId,
+      focus_id: focusId,
+      title: `${boardTitle} plan`,
+      cadence: "weekly",
+      remind_day_of_month: null,
+      remind_day_of_week: "monday",
+      remind_time: "09:00",
+      status: "suggested",
+    });
+
+    actionTitles.forEach((title, actionIndex) => {
+      const actionId = `action-${index + 1}-${actionIndex + 1}`;
+      actions.push({
+        id: actionId,
+        plan_id: planId,
+        title,
+        step_type: "task",
+        cadence: "weekly",
+        remind_date: null,
+        remind_day_of_month: null,
+        remind_day_of_week: "monday",
+        remind_time: "09:00",
+        status: "suggested",
+        kind: "action",
+        confidence: seeds.length > 0 ? 0.55 : 0.4,
+        source_evidence:
+          seeds.length > 0 ? `From board content: ${title}` : `From board title: ${boardTitle}`,
+        reminder_enabled: true,
+        reminder_type: "email",
+        channels: { calendar: false, email: true, sms: false },
+        sms_text: null,
+      });
+    });
+  });
+
+  return { plans, actions };
+}
+
+function focusesFromBoards(focusList: BoardRow[]): Record<string, unknown>[] {
+  return focusList.map((board, index) => ({
+    id: `focus-${index + 1}`,
+    board_id: board.id,
+    title: focusBoardTitle(board),
+  }));
+}
+
+function buildGuaranteedDraftMap(
+  focusList: BoardRow[],
+  boardPayload: BoardPayloadRow[],
+  partial?: Record<string, unknown>,
+): Record<string, unknown> {
   const now = new Date().toISOString();
+  const starter = buildStarterPlansAndActions(focusList, boardPayload);
+  const reviewRaw = (partial?.review_cycle ?? partial?.quarterly_reset) as Record<string, unknown> | undefined;
+
   return {
     version: 2 as const,
-    summary: "Palette drafted this from your workspace. Review before finalizing.",
+    summary:
+      typeof partial?.summary === "string" && partial.summary.trim()
+        ? partial.summary.trim()
+        : "Palette drafted this from your workspace. Review before finalizing.",
     analysis_status: "draft_ready",
     analyzed_at: now,
     edited_at: null,
     finalized_at: null,
-    meta_confidence: null,
+    meta_confidence: typeof partial?.meta_confidence === "number" ? partial.meta_confidence : null,
     finalized: false,
     review_cycle: {
-      title: "Review cycle",
-      remind_date: defaultReviewDate(),
-      remind_time: "09:00",
+      title: typeof reviewRaw?.title === "string" ? reviewRaw.title : "Review cycle",
+      remind_date:
+        typeof reviewRaw?.remind_date === "string" ? reviewRaw.remind_date : defaultReviewDate(),
+      remind_time: typeof reviewRaw?.remind_time === "string" ? reviewRaw.remind_time : "09:00",
     },
-    focuses: focusList.map((b, i) => ({
-      id: `focus-${i + 1}`,
-      board_id: b.id,
-      title: b.title,
-    })),
-    plans: [],
-    actions: [],
-    unmapped_items: [],
+    focuses: focusesFromBoards(focusList),
+    plans: starter.plans,
+    actions: starter.actions,
+    unmapped_items: Array.isArray(partial?.unmapped_items) ? partial.unmapped_items : [],
     reminders: [],
   };
 }
 
-function focusMapResponse(focusList: BoardRow[]) {
-  return new Response(JSON.stringify(buildFocusOnlyMap(focusList)), {
+function hasActivePlansAndActions(map: Record<string, unknown>): boolean {
+  const plans = Array.isArray(map.plans) ? (map.plans as Record<string, unknown>[]) : [];
+  const actions = Array.isArray(map.actions) ? (map.actions as Record<string, unknown>[]) : [];
+  const activePlans = plans.filter((p) => String(p.title ?? "").trim());
+  const activeActions = actions.filter((a) => {
+    const title = String(a.title ?? "").trim();
+    return title && a.status !== "rejected";
+  });
+  return activePlans.length > 0 && activeActions.length > 0;
+}
+
+function ensureDraftHasPlansAndActions(
+  map: Record<string, unknown>,
+  focusList: BoardRow[],
+  boardPayload: BoardPayloadRow[],
+): Record<string, unknown> {
+  map.focuses = focusesFromBoards(focusList);
+  if (hasActivePlansAndActions(map)) return map;
+  const starter = buildStarterPlansAndActions(focusList, boardPayload);
+  if (!hasActivePlansAndActions(map)) {
+    map.plans = starter.plans;
+    map.actions = starter.actions;
+  }
+  return map;
+}
+
+function draftMapResponse(
+  focusList: BoardRow[],
+  boardPayload: BoardPayloadRow[],
+  partial?: Record<string, unknown>,
+) {
+  const map = ensureDraftHasPlansAndActions(
+    scrubMapTitles(buildGuaranteedDraftMap(focusList, boardPayload, partial)),
+    focusList,
+    boardPayload,
+  );
+  return new Response(JSON.stringify(map), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function finalizeAiDraftMap(
+  parsed: Record<string, unknown>,
+  focusList: BoardRow[],
+  boardPayload: BoardPayloadRow[],
+): Record<string, unknown> {
+  const now = new Date().toISOString();
+  const reviewRaw = (parsed.review_cycle ?? parsed.quarterly_reset) as Record<string, unknown> | undefined;
+  const draft: Record<string, unknown> = {
+    version: 2 as const,
+    summary:
+      typeof parsed.summary === "string" && parsed.summary.trim()
+        ? parsed.summary.trim()
+        : "Palette drafted this from your workspace. Review before finalizing.",
+    analysis_status: "draft_ready",
+    analyzed_at: now,
+    edited_at: null,
+    finalized_at: null,
+    meta_confidence: typeof parsed.meta_confidence === "number" ? parsed.meta_confidence : null,
+    finalized: false,
+    review_cycle: {
+      title: typeof reviewRaw?.title === "string" ? reviewRaw.title : "Review cycle",
+      remind_date:
+        typeof reviewRaw?.remind_date === "string" ? reviewRaw.remind_date : defaultReviewDate(),
+      remind_time: typeof reviewRaw?.remind_time === "string" ? reviewRaw.remind_time : "09:00",
+    },
+    focuses: focusesFromBoards(focusList),
+    plans: Array.isArray(parsed.plans) ? parsed.plans : [],
+    actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+    unmapped_items: Array.isArray(parsed.unmapped_items) ? parsed.unmapped_items : [],
+    reminders: [],
+  };
+  return ensureDraftHasPlansAndActions(scrubMapTitles(draft), focusList, boardPayload);
 }
 
 serve(async (req) => {
@@ -361,7 +530,7 @@ serve(async (req) => {
     }
 
     if (!screenBoardsCorpus(corpus)) {
-      return focusMapResponse(focusList);
+      return draftMapResponse(focusList, boardPayload);
     }
 
     const focusIds = focusList.map((b, i) => ({
@@ -370,7 +539,7 @@ serve(async (req) => {
       board_title: b.title,
     }));
 
-    const prompt = `You are drafting a first-pass ACTION MAP for Palette Plotting from the user's actual Vision workspace.
+    const prompt = `You are drafting a first-pass ACTION MAP for palette plotting from the user's actual Vision workspace.
 
 The user will review and edit everything before any reminders go live. Do not auto-finalize.
 
@@ -398,6 +567,13 @@ SMS RULES (only when reminder_type is sms):
 
 AI BEHAVIOR — Action Map extraction:
 The Action page turns Vision boards into Focus / Plan / Action follow-through. Extract real next steps from board text, sticky notes, checklist/structure rows, dates and The Plan board (role "plan").
+
+MANDATORY OUTPUT:
+- Always return version 2 with non-empty plans and actions arrays.
+- Never return needs_more_content, blocked, or empty plans/actions.
+- focus titles must match board titles exactly (do not rename).
+- If content is thin, draft starter plans and actions from each focus board title and theme (confidence 0.35-0.55).
+- Each focus needs at least 1 plan and 1-2 actions — e.g. board "Beauty & Wellness" -> plan "Beauty & Wellness routine", actions "Weekly beauty reset", "Book one self-care slot".
 
 Do NOT invent generic accountability filler. Never create:
 - "Review [board title]" / "Review [board] board"
@@ -482,7 +658,7 @@ Return JSON only:
 
     if (!aiRes.ok) {
       console.error("OpenAI error:", await aiRes.text());
-      return focusMapResponse(focusList);
+      return draftMapResponse(focusList, boardPayload);
     }
 
     const aiJson = await aiRes.json();
@@ -491,48 +667,10 @@ Return JSON only:
     try {
       parsed = JSON.parse(raw);
     } catch {
-      return focusMapResponse(focusList);
+      return draftMapResponse(focusList, boardPayload);
     }
 
-    if (parsed.status === "needs_more_content" || parsed.version !== 2 || !Array.isArray(parsed.focuses)) {
-      return focusMapResponse(focusList);
-    }
-
-    const hasPlans = Array.isArray(parsed.plans);
-    const hasActions = Array.isArray(parsed.actions);
-    if (!hasPlans || !hasActions) {
-      return focusMapResponse(focusList);
-    }
-
-    const reviewRaw = (parsed.review_cycle ?? parsed.quarterly_reset) as Record<string, unknown> | undefined;
-    const now = new Date().toISOString();
-
-    const map = scrubMapTitles(
-      {
-        version: 2 as const,
-        summary:
-          typeof parsed.summary === "string" && parsed.summary.trim()
-            ? parsed.summary.trim()
-            : "Palette drafted this from your workspace. Review before finalizing.",
-        analysis_status: "draft_ready",
-        analyzed_at: now,
-        edited_at: null,
-        finalized_at: null,
-        meta_confidence: typeof parsed.meta_confidence === "number" ? parsed.meta_confidence : null,
-        finalized: false,
-        review_cycle: {
-          title: typeof reviewRaw?.title === "string" ? reviewRaw.title : "Review cycle",
-          remind_date:
-            typeof reviewRaw?.remind_date === "string" ? reviewRaw.remind_date : defaultReviewDate(),
-          remind_time: typeof reviewRaw?.remind_time === "string" ? reviewRaw.remind_time : "09:00",
-        },
-        focuses: parsed.focuses,
-        plans: parsed.plans,
-        actions: parsed.actions,
-        unmapped_items: Array.isArray(parsed.unmapped_items) ? parsed.unmapped_items : [],
-        reminders: [],
-      },
-    );
+    const map = finalizeAiDraftMap(parsed, focusList, boardPayload);
 
     return new Response(JSON.stringify(map), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

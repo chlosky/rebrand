@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 type SupabaseServiceClient = ReturnType<typeof createClient>;
 
-export const REVENUECAT_ENTITLEMENT_ID = "Palette Plotting Pro";
+export const REVENUECAT_ENTITLEMENT_ID = "palette plotting Pro";
 export const REVENUECAT_API = "https://api.revenuecat.com/v1/subscribers";
 
 /** Parse user_plans.current_period_end → ms, or NaN. */
@@ -84,7 +84,7 @@ function subscriptionExpiresMs(entry: RevenueCatSubscriptionEntry): number {
 }
 
 /**
- * True if the Palette Plotting entitlement is active and RC reports the current period is a free trial
+ * True if the palette plotting entitlement is active and RC reports the current period is a free trial
  * (entitlement.period_type or the linked subscription row).
  */
 export function revenueCatOnTrialNow(

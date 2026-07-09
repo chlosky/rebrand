@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { Canvas, Circle, FabricImage, FabricObject, FabricText, Group, IText, Line, Path, PencilBrush, Polygon, Rect, StaticCanvas, Textbox, Triangle, ActiveSelection, type FabricObject as FabricObjectType } from "fabric";
 import { artboardSizeForOrientation, withArtboardMeta } from "@/lib/boards/artboard";
 import { BOARD_QUICK_PICK_COLORS, boardFillForKey } from "@/lib/boards/colors";
@@ -27,6 +28,32 @@ import { PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE } from "@/components/boards/Board
 
 export const ARTBOARD_WIDTH = 1080;
 export const ARTBOARD_HEIGHT = 1350;
+
+type FabricCanvasInternals = Canvas & { destroyed?: boolean; contextTop?: CanvasRenderingContext2D };
+
+function fabricCanvasRenderable(canvas: Canvas | null | undefined): canvas is Canvas {
+  if (!canvas) return false;
+  const internals = canvas as FabricCanvasInternals;
+  if (internals.destroyed) return false;
+  if (!canvas.lowerCanvasEl?.getContext("2d") || !canvas.upperCanvasEl?.getContext("2d")) return false;
+  if (!internals.contextTop) return false;
+  return true;
+}
+
+function requestFabricRender(canvas: Canvas) {
+  if (!fabricCanvasRenderable(canvas)) return;
+  try {
+    canvas.requestRenderAll();
+  } catch (err) {
+    console.warn("fabric render skipped", err);
+  }
+}
+
+function boardLayoutLoadKey(boardId: string, colorKey: string, layoutJson: unknown): string {
+  const objects = (layoutJson as { objects?: unknown[] })?.objects;
+  const count = Array.isArray(objects) ? objects.length : 0;
+  return `${boardId}:${colorKey}:${count}`;
+}
 
 /** Nudge an object back inside the real artboard so it can reach the true edges without clipping. */
 function keepObjectFullyInsideArtboard(
@@ -1912,6 +1939,8 @@ export type ImageFitOptions = {
 type QuickSelectorState = {
   x: number;
   y: number;
+  clientX: number;
+  clientY: number;
   normX: number;
   normY: number;
   mode: "empty" | "object";
@@ -2153,9 +2182,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const h = historyRef.current;
         const json = h.snapshots[index];
         if (!canvas || !json) return;
+        if (!fabricCanvasRenderable(canvas)) return;
         restoringHistoryRef.current = true;
         const bg = boardFillForKey(colorKey);
-        await canvas.loadFromJSON(JSON.parse(json));
+        try {
+          await canvas.loadFromJSON(JSON.parse(json));
+        } catch (err) {
+          console.warn("fabric history restore skipped", err);
+          restoringHistoryRef.current = false;
+          return;
+        }
+        if (fabricRef.current !== canvas) return;
         canvas.backgroundColor = bg;
         restoreBoardLayoutAfterLoad(canvas);
         for (const obj of canvas.getObjects()) {
@@ -2267,6 +2304,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       setQuickSelector({
         x: clientX - rect.left,
         y: clientY - rect.top,
+        clientX,
+        clientY,
         normX: Math.min(1, Math.max(0, pointer.x / activeArtboardWidth)),
         normY: Math.min(1, Math.max(0, pointer.y / activeArtboardHeight)),
         mode: target ? "object" : "empty",
@@ -2562,7 +2601,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         fabricRef.current = null;
         loadedBoardRef.current = null;
       };
-    }, [colorKey, embedded, fitCanvas, readOnly]);
+    }, [colorKey, embedded, fitCanvas, readOnly, activeArtboardWidth, activeArtboardHeight]);
 
     useEffect(() => {
       const canvas = fabricRef.current;
@@ -2575,7 +2614,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         obj.evented = interactive;
       });
       if (!interactive) canvas.discardActiveObject();
-      canvas.requestRenderAll();
+      requestFabricRender(canvas);
     }, [isActive, readOnly]);
 
     useEffect(() => {
@@ -2584,49 +2623,82 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     }, [cellFit, fitCanvas]);
 
     useEffect(() => {
-      const canvas = fabricRef.current;
-      if (!canvas) return;
-      if (loadedBoardRef.current === boardId) return;
-      loadedBoardRef.current = boardId;
-      const bg = boardFillForKey(colorKey);
-      canvas.backgroundColor = bg;
+      let cancelled = false;
+      let frame = 0;
 
-      const hasObjects =
-        layoutJson &&
-        typeof layoutJson === "object" &&
-        Array.isArray((layoutJson as { objects?: unknown[] }).objects) &&
-        ((layoutJson as { objects: unknown[] }).objects?.length ?? 0) > 0;
+      const runLoad = () => {
+        if (cancelled) return;
+        const canvas = fabricRef.current;
+        if (!fabricCanvasRenderable(canvas)) return;
 
-      if (hasObjects) {
-        suppressHistoryRef.current = true;
-        canvas.loadFromJSON(layoutJson).then(() => {
-          canvas.backgroundColor = bg;
-          restoreBoardLayoutAfterLoad(canvas);
-          for (const obj of canvas.getObjects()) {
-            if (structureProp(obj, "structureId")) continue;
-            if (obj.get("markKind") || obj instanceof FabricImage) {
-              applyBoardFabricControls(obj);
-            }
-          }
-          if (fabricSelectionControls) {
-            for (const obj of canvas.getObjects()) {
-              if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
-                obj.set(FABRIC_CONTROL_STYLE);
-              }
-            }
-          }
-          canvas.requestRenderAll();
-          resetHistory(canvas);
-          suppressHistoryRef.current = false;
-          rebindStructureHandlersRef.current(canvas);
-        });
-      } else {
-        if (!canvas.contextContainer) return;
-        canvas.clear();
+        const loadKey = boardLayoutLoadKey(boardId, colorKey, layoutJson);
+        if (loadedBoardRef.current === loadKey) return;
+
+        loadedBoardRef.current = loadKey;
+        const bg = boardFillForKey(colorKey);
         canvas.backgroundColor = bg;
-        canvas.requestRenderAll();
+
+        const hasObjects =
+          layoutJson &&
+          typeof layoutJson === "object" &&
+          Array.isArray((layoutJson as { objects?: unknown[] }).objects) &&
+          ((layoutJson as { objects: unknown[] }).objects?.length ?? 0) > 0;
+
+        if (hasObjects) {
+          suppressHistoryRef.current = true;
+          void canvas
+            .loadFromJSON(layoutJson)
+            .then(() => {
+              if (cancelled || fabricRef.current !== canvas || loadedBoardRef.current !== loadKey) return;
+              if (!fabricCanvasRenderable(canvas)) return;
+              canvas.backgroundColor = bg;
+              restoreBoardLayoutAfterLoad(canvas);
+              for (const obj of canvas.getObjects()) {
+                if (structureProp(obj, "structureId")) continue;
+                if (obj.get("markKind") || obj instanceof FabricImage) {
+                  applyBoardFabricControls(obj);
+                }
+              }
+              if (fabricSelectionControls) {
+                for (const obj of canvas.getObjects()) {
+                  if (obj instanceof Group && obj.get("markKind") === "shape" && obj.get("textCapable")) {
+                    obj.set(FABRIC_CONTROL_STYLE);
+                  }
+                }
+              }
+              requestFabricRender(canvas);
+              resetHistory(canvas);
+              suppressHistoryRef.current = false;
+              rebindStructureHandlersRef.current(canvas);
+            })
+            .catch((err) => {
+              console.warn("fabric board load skipped", err);
+              if (loadedBoardRef.current === loadKey) {
+                loadedBoardRef.current = null;
+              }
+              suppressHistoryRef.current = false;
+            });
+          return;
+        }
+
+        suppressHistoryRef.current = true;
+        canvas.discardActiveObject();
+        for (const obj of [...canvas.getObjects()]) {
+          canvas.remove(obj);
+        }
+        canvas.backgroundColor = bg;
+        requestFabricRender(canvas);
         resetHistory(canvas);
-      }
+        suppressHistoryRef.current = false;
+        rebindStructureHandlersRef.current(canvas);
+      };
+
+      frame = requestAnimationFrame(runLoad);
+
+      return () => {
+        cancelled = true;
+        cancelAnimationFrame(frame);
+      };
     }, [boardId, colorKey, fabricSelectionControls, layoutJson, resetHistory]);
 
     const addText = useCallback((text = "") => {
@@ -3956,7 +4028,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     const resetBoard = useCallback(() => {
       const canvas = fabricRef.current;
-      if (!canvas || readOnly || !canvas.contextContainer) return;
+      if (!canvas || readOnly || !fabricCanvasRenderable(canvas)) return;
       const bg = boardFillForKey(colorKey);
 
       window.clearTimeout(saveTimerRef.current);
@@ -3968,7 +4040,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.remove(obj);
       }
       canvas.backgroundColor = bg;
-      canvas.requestRenderAll();
+      requestFabricRender(canvas);
       deleteTargetRef.current = null;
 
       resetHistory(canvas);
@@ -4566,32 +4638,36 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               </select>
             </div>
           ) : null}
-          {!readOnly && isActive && quickSelector && (
-            <BoardMarksQuickSelector
-              x={quickSelector.x}
-              y={quickSelector.y}
-              mode={quickSelector.mode}
-              textCapable={quickSelector.textCapable}
-              shapeCapable={quickSelector.shapeCapable}
-              stickerCapable={quickSelector.stickerCapable}
-              imageCapable={quickSelector.imageCapable}
-              canPaste={canPasteClipboard()}
-              onPick={handleQuickPick}
-              onClose={closeQuickSelector}
-              boardColorOptions={BOARD_QUICK_PICK_COLORS}
-              activeBoardFill={boardFillForKey(colorKey)}
-              onBoardColorPick={onBoardColorPick}
-              onElementColorPick={applyMarkColor}
-              onElementSizePick={applyMarkFontSize}
-              onElementTextAlignPick={applyMarkTextAlign}
-              onElementFontPick={applyMarkFontFamily}
-              onImageRoundPick={toggleImageRoundOnActive}
-              onImageFramePick={applyImageFrameToActive}
-              onShapePick={handleShapePick}
-              onStickerPick={handleStickerPick}
-              onStructurePick={handleStructurePick}
-            />
-          )}
+          {!readOnly && isActive && quickSelector && typeof document !== "undefined"
+            ? createPortal(
+                <BoardMarksQuickSelector
+                  x={quickSelector.clientX}
+                  y={quickSelector.clientY}
+                  fixed
+                  mode={quickSelector.mode}
+                  textCapable={quickSelector.textCapable}
+                  shapeCapable={quickSelector.shapeCapable}
+                  stickerCapable={quickSelector.stickerCapable}
+                  imageCapable={quickSelector.imageCapable}
+                  canPaste={canPasteClipboard()}
+                  onPick={handleQuickPick}
+                  onClose={closeQuickSelector}
+                  boardColorOptions={BOARD_QUICK_PICK_COLORS}
+                  activeBoardFill={boardFillForKey(colorKey)}
+                  onBoardColorPick={onBoardColorPick}
+                  onElementColorPick={applyMarkColor}
+                  onElementSizePick={applyMarkFontSize}
+                  onElementTextAlignPick={applyMarkTextAlign}
+                  onElementFontPick={applyMarkFontFamily}
+                  onImageRoundPick={toggleImageRoundOnActive}
+                  onImageFramePick={applyImageFrameToActive}
+                  onShapePick={handleShapePick}
+                  onStickerPick={handleStickerPick}
+                  onStructurePick={handleStructurePick}
+                />,
+                document.body,
+              )
+            : null}
         </div>
       </div>
     );

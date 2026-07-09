@@ -5,17 +5,17 @@ export const ROUTINE_PUSH_COPY: Record<
 > = {
   en: {
     heading: "Board check-in",
-    subtitle: "Open Palette Plotting",
+    subtitle: "Open palette plotting",
     body: "A few minutes on your boards keeps your plan moving. Jump back in when you're ready.",
   },
   "es-419": {
     heading: "Revisión de tableros",
-    subtitle: "Abre Palette Plotting",
+    subtitle: "Abre palette plotting",
     body: "Unos minutos en tus tableros mantienen tu plan en marcha. Vuelve cuando quieras.",
   },
   "pt-BR": {
     heading: "Revisão dos boards",
-    subtitle: "Abra o Palette Plotting",
+    subtitle: "Abra o palette plotting",
     body: "Alguns minutos nos seus boards mantêm o plano em movimento. Volte quando quiser.",
   },
 };
@@ -26,17 +26,17 @@ export const HELP_REPLY_PUSH_COPY: Record<
   { heading: string; subtitle: string; body: string }
 > = {
   en: {
-    heading: "Palette Plotting",
+    heading: "palette plotting",
     subtitle: "Check your inbox",
     body: "We replied to your help request.",
   },
   "es-419": {
-    heading: "Palette Plotting",
+    heading: "palette plotting",
     subtitle: "Revisa tu bandeja",
     body: "Respondimos a tu solicitud de ayuda.",
   },
   "pt-BR": {
-    heading: "Palette Plotting",
+    heading: "palette plotting",
     subtitle: "Confira sua caixa",
     body: "Respondemos ao seu pedido de ajuda.",
   },

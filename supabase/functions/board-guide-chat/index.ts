@@ -17,7 +17,7 @@ const corsHeaders = {
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
-const ACTION_CAPABILITIES = `You are the Palette Plotting Guide on the Action page.
+const ACTION_CAPABILITIES = `You are the palette plotting Guide on the Action page.
 
 Palette Action helps users turn their Vision workspace into Focus / Plan / Action rows and configure reminders.
 

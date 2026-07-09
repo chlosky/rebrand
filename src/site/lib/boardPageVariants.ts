@@ -1,4 +1,4 @@
-/** Shared catalog and copy for palette plot acrylic board product landing pages. */
+/** Shared catalog and copy for palette plotting acrylic board product landing pages. */
 
 import { BOARD_COLOR_CATALOG_IMAGES } from "@/site/lib/boardColorCatalog";
 import { BOARD_COLORS, type BoardColorId } from "@/site/lib/boardColors";
@@ -294,7 +294,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
         },
         {
           src: "/board/dry-erase/color-options.png",
-          alt: "palette plot acrylic color options including translucent and opaque finishes",
+          alt: "palette plotting acrylic color options including translucent and opaque finishes",
         },
         {
           src: "/board/dry-erase/standoffs.png",
@@ -315,7 +315,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
     giftNote:
       "Works beautifully as a gift — for a housewarming, a birthday, a new home, a new chapter. Ships safely packaged and ready to give.",
     trustLine:
-      "Ships in 5–7 business days · Carefully packaged · palette plot — beautiful tools for organized lives",
+      "Ships in 5–7 business days · Carefully packaged · palette plotting — beautiful tools for organized lives",
     productImages: {
       defaultHero: "/board/home-decor/hero-rose-gold-desk.png",
       heroByColor: {
@@ -349,7 +349,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
         },
         {
           src: "/board/home-decor/color-options.png",
-          alt: "palette plot acrylic color options including translucent and opaque finishes",
+          alt: "palette plotting acrylic color options including translucent and opaque finishes",
         },
         {
           src: "/board/home-decor/standoffs.png",
@@ -401,7 +401,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
         },
         {
           src: "/board/vision/color-options.png",
-          alt: "palette plot acrylic color options including translucent and opaque finishes",
+          alt: "palette plotting acrylic color options including translucent and opaque finishes",
         },
         {
           src: "/board/vision/standoffs.png",
@@ -452,7 +452,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
         },
         {
           src: "/board/neon/color-options.png",
-          alt: "palette plot acrylic color options including translucent and opaque finishes",
+          alt: "palette plotting acrylic color options including translucent and opaque finishes",
         },
         {
           src: "/board/home-decor/standoffs.png",

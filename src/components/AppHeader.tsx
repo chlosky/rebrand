@@ -16,7 +16,7 @@ type AppHeaderProps = {
 
 /**
  * Top header for sign-in and checkout screens.
- * Palette Plotting title links back to the welcome page; Login button links to sign-in.
+ * palette plotting title links back to the welcome page; Login button links to sign-in.
  */
 export const AppHeader = ({
   signOutInsteadOfLogin = false,
@@ -66,7 +66,7 @@ export const AppHeader = ({
                   : "text-lg font-bold bg-gradient-primary bg-clip-text text-transparent dark:bg-none dark:text-foreground hover:opacity-80 transition-opacity cursor-pointer"
               }
             >
-              Palette Plotting
+              palette plotting
             </button>
             {!hideAuthButton ? (
             signOutInsteadOfLogin ? (

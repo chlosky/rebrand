@@ -24,7 +24,7 @@
     "Health & Fitness": "Health & Fitness"
   },
   "boards": {
-    "pageTitle": "Vision | Palette Plotting",
+    "pageTitle": "Vision | palette plotting",
     "loading": "Loading your board system…",
     "saveFailed": "Could not save board layout",
     "trial": {
@@ -176,7 +176,7 @@
     }
   },
   "journey": {
-    "pageTitle": "Reminders | Palette Plotting",
+    "pageTitle": "Reminders | palette plotting",
     "title": "Reminders",
     "subtitle": "Dates, goals, and next steps from The Plan — with email reminders and calendar export.",
     "dailySnapshot": "Daily Snapshot",
@@ -188,7 +188,7 @@
     "remindersTitle": "The Plan Reminders",
     "remindersDescription": "Extract dates, goals, and next steps from The Plan, then send reminders by email or export them to your calendar.",
     "planEmptyTitle": "Turn The Plan into reminders",
-    "planEmptyBody": "Add dates, goals, and next steps here. Palette Plotting can extract action items and help schedule reminders.",
+    "planEmptyBody": "Add dates, goals, and next steps here. palette plotting can extract action items and help schedule reminders.",
     "extractDatesGoals": "Extract dates & goals",
     "addReminderManually": "Add reminder manually",
     "exportCalendar": "Export to calendar"

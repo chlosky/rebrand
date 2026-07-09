@@ -11,13 +11,13 @@ const DMCA = () => {
             <h1 className="text-4xl font-bold mb-6">DMCA Notice & Takedown Policy</h1>
             <p className="text-sm text-muted-foreground mb-8">
               Effective Date: Jan 13, 2025<br />
-              Company: Palette Plotting ("Palette Plotting," "we," "our," "us")
+              Company: palette plotting ("palette plotting," "we," "our," "us")
             </p>
 
             <div className="space-y-6 prose prose-sm max-w-none">
               <section>
                 <p className="text-muted-foreground mb-4">
-                  Palette Plotting respects the intellectual property rights of others and expects users of the Service to do the same.
+                  palette plotting respects the intellectual property rights of others and expects users of the Service to do the same.
                 </p>
                 <p className="text-muted-foreground mb-4">
                   This DMCA Notice & Takedown Policy explains how copyright owners may notify us of alleged infringement and how we will respond in accordance with the Digital Millennium Copyright Act ("DMCA").
@@ -86,7 +86,7 @@ const DMCA = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">3. Repeat Infringers</h2>
                 <p className="text-muted-foreground mb-4">
-                  Palette Plotting may terminate the accounts of users who receive multiple valid DMCA Notices or who repeatedly violate intellectual property laws or this policy.
+                  palette plotting may terminate the accounts of users who receive multiple valid DMCA Notices or who repeatedly violate intellectual property laws or this policy.
                 </p>
               </section>
 

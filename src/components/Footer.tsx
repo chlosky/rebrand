@@ -8,7 +8,7 @@ import {
 
 const FOOTER_LINK_ROWS = [
   [
-    { label: "What is Palette Plotting?", path: "/what-is-palette-plotting" },
+    { label: "What is palette plotting?", path: "/what-is-palette-plotting" },
     { label: "FAQ", path: "/faq" },
     { label: "Billing", path: "/billing" },
   ],
@@ -31,7 +31,7 @@ export const Footer = () => {
     <footer className="mt-auto border-t border-primary/20 bg-background py-12 px-6 text-foreground sm:py-14">
       <div className="mx-auto flex max-w-7xl flex-col items-center text-center">
         <p className="text-sm font-medium text-muted-foreground">PALETTE PLOTTING LLC</p>
-        <p className="mt-2 text-sm text-muted-foreground">© {year} Palette Plotting. All rights reserved.</p>
+        <p className="mt-2 text-sm text-muted-foreground">© {year} palette plotting. All rights reserved.</p>
 
         <nav className="mx-auto mt-8 flex w-full max-w-3xl flex-col items-center gap-4" aria-label="Footer">
           {FOOTER_LINK_ROWS.map((row) => (

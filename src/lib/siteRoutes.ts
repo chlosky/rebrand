@@ -1,4 +1,4 @@
-/** Public marketing/legal pages that share the bright palette plot chrome (not app shell). */
+/** Public marketing/legal pages that share the bright palette plotting chrome (not app shell). */
 
 const MARKETING_SITE_EXACT = new Set([
   "/",

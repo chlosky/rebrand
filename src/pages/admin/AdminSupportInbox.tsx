@@ -736,7 +736,7 @@ export default function AdminSupportInbox() {
                           >
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <p className={cn("text-[11px]", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                                {m.sender === "support" ? "Palette Plotting" : "User"} · {formatWhen(m.created_at)}
+                                {m.sender === "support" ? "palette plotting" : "User"} · {formatWhen(m.created_at)}
                                 {m.edited_at ? " · edited" : ""}
                               </p>
                               {m.sender === "support" ? (

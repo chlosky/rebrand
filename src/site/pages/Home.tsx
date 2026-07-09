@@ -49,7 +49,7 @@ export default function Home() {
               <span>Ready to mount on wall</span>
               <span>Standoffs and sticker sheet included</span>
               <span>
-                Digital Guide on Palette Plotting method free with Board
+                Digital Guide on palette plotting method free with Board
               </span>
             </p>
             <div className="mt-8 flex flex-wrap gap-3 md:mt-auto md:pt-6">

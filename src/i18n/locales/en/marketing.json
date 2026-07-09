@@ -1,7 +1,7 @@
 {
   "pricing": {
     "title": "Pricing",
-    "subtitle": "One membership with full access to every Palette Plotting tool on web and mobile.",
+    "subtitle": "One membership with full access to every palette plotting tool on web and mobile.",
     "planHeader": "Plan",
     "priceHeader": "Price",
     "plans": {
@@ -56,23 +56,23 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
-    "subtitle": "Find answers to common questions about Palette Plotting",
+    "subtitle": "Find answers to common questions about palette plotting",
     "items": {
       "whatIs": {
-        "question": "What is Palette Plotting?",
-        "answer": "Palette Plotting is a digital life-organization platform built around four boards — vision, home, office, and mood — plus The Plan. Use it to plot your rebrand visually, stay organized, and track progress over time. For a concise tour, read What is Palette Plotting?.",
-        "linkWhatIs": "What is Palette Plotting?"
+        "question": "What is palette plotting?",
+        "answer": "palette plotting is a digital life-organization platform built around four boards — vision, home, office, and mood — plus The Plan. Use it to plot your rebrand visually, stay organized, and track progress over time. For a concise tour, read What is palette plotting?.",
+        "linkWhatIs": "What is palette plotting?"
       },
       "notTherapy": {
-        "question": "Is Palette Plotting therapy or medical support?",
-        "answer": "No. Palette Plotting is not a provider of mental-health, medical, psychological, legal, or financial advice. If you need clinical or emergency support, contact appropriate services."
+        "question": "Is palette plotting therapy or medical support?",
+        "answer": "No. palette plotting is not a provider of mental-health, medical, psychological, legal, or financial advice. If you need clinical or emergency support, contact appropriate services."
       },
       "whoCanUse": {
-        "question": "Who can use Palette Plotting?",
+        "question": "Who can use palette plotting?",
         "answer": "Users must be 18 years or older."
       },
       "automated": {
-        "question": "Does Palette Plotting use automated features?",
+        "question": "Does palette plotting use automated features?",
         "answer": "Some features may use automated or system-generated responses to support your reflection, prompts, or audio creation. These are supplemental tools, not professional advice."
       },
       "privacy": {
@@ -81,7 +81,7 @@
       },
       "plans": {
         "question": "What subscription plans are available?",
-        "answer": "Palette Plotting offers monthly and annual subscription options. Refunds for iOS in-app purchases are at Apple's discretion. Refunds for all non-Apple purchases are at Palette Plotting's discretion. See Billing & Refund Policy for details.",
+        "answer": "palette plotting offers monthly and annual subscription options. Refunds for iOS in-app purchases are at Apple's discretion. Refunds for all non-Apple purchases are at palette plotting's discretion. See Billing & Refund Policy for details.",
         "linkBilling": "Billing & Refund Policy"
       },
       "cancel": {
@@ -112,8 +112,8 @@
   },
   "home": {
     "meta": {
-      "title": "Home | Palette Plotting",
-      "description": "Palette Plotting is your digital 4-board life system — three focus boards plus The Plan, with drag-and-drop editing, reminders, and more tools when you need them.",
+      "title": "Home | palette plotting",
+      "description": "palette plotting is your digital 4-board life system — three focus boards plus The Plan, with drag-and-drop editing, reminders, and more tools when you need them.",
       "ogDescription": "Organize your life on four boards. Digital companion to acrylic boards at paletteplot.com.",
       "twitterDescription": "Three focus boards + The Plan. Drag-and-drop editor, themed images, AI reminders, iCal export."
     },
@@ -182,7 +182,7 @@
     "practiceSection": {
       "headlineLine1": "Built for the",
       "headlineLine2": "4-board method",
-      "body": "Palette Plotting is a life-organization and moodboard system. Plot three focus areas, lock in The Plan, and keep journaling and progress tracking in the same membership.",
+      "body": "palette plotting is a life-organization and moodboard system. Plot three focus areas, lock in The Plan, and keep journaling and progress tracking in the same membership.",
       "focusAreasAria": "Board themes",
       "pills": [
         {
@@ -261,8 +261,8 @@
       "qrError": "QR codes unavailable. Use the store badges below.",
       "appleStore": "Apple App Store",
       "googlePlay": "Google Play",
-      "qrAltAppStore": "QR code to open Palette Plotting on the App Store",
-      "qrAltGooglePlay": "QR code to open Palette Plotting on Google Play"
+      "qrAltAppStore": "QR code to open palette plotting on the App Store",
+      "qrAltGooglePlay": "QR code to open palette plotting on Google Play"
     },
     "newsletter": {
       "heading": "Tips in your inbox",
@@ -272,15 +272,15 @@
       "subscribing": "Subscribing…",
       "successHeading": "You're on the list",
       "successBody": "Thanks for subscribing. Watch your inbox for board tips, new features, and special promotions.",
-      "consent": "By subscribing you agree to receive marketing emails from Palette Plotting. Unsubscribe anytime.",
+      "consent": "By subscribing you agree to receive marketing emails from palette plotting. Unsubscribe anytime.",
       "errorEmpty": "Please enter your email address.",
       "errorInvalid": "Please enter a valid email address.",
       "errorGeneric": "Something went wrong. Please try again."
     },
     "footer": {
       "company": "PALETTE PLOTTING LLC",
-      "copyright": "© {{year}} Palette Plotting. All rights reserved.",
-      "whatIs": "What is Palette Plotting?",
+      "copyright": "© {{year}} palette plotting. All rights reserved.",
+      "whatIs": "What is palette plotting?",
       "faq": "FAQ",
       "community": "Community",
       "billing": "Billing",
@@ -290,20 +290,20 @@
       "acceptableUse": "Acceptable Use Policy",
       "footerNav": "Footer"
     },
-    "stickyBarAria": "Download Palette Plotting"
+    "stickyBarAria": "Download palette plotting"
   },
   "community": {
     "eyebrow": "Community",
     "title": "Join the community",
-    "body": "Connect with Palette Plotting on Discord and TikTok — updates, board tips, and what we're building next.",
-    "discordTitle": "Official Palette Plotting Discord",
-    "tiktokTitle": "Official Palette Plotting TikTok"
+    "body": "Connect with palette plotting on Discord and TikTok — updates, board tips, and what we're building next.",
+    "discordTitle": "Official palette plotting Discord",
+    "tiktokTitle": "Official palette plotting TikTok"
   },
   "mobileLanding": {
     "cta": "Download now & start for free today",
     "meta": {
-      "title": "Download Palette Plotting",
-      "description": "Download Palette Plotting — your four-board life system on web and mobile."
+      "title": "Download palette plotting",
+      "description": "Download palette plotting — your four-board life system on web and mobile."
     }
   }
 }

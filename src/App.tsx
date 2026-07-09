@@ -99,7 +99,7 @@ const App = () => {
               <Route path="/demo" element={<Navigate to="/" replace />} />
               <Route path="/demo-access" element={<Navigate to="/" replace />} />
               <Route path="/login" element={<Auth />} />
-              {/* palette plot marketing + shop pages (copied from vel) */}
+              {/* palette plotting marketing + shop pages (copied from vel) */}
               <Route path="/contact" element={<SiteContact />} />
               <Route path="/about" element={<SiteAbout />} />
               <Route path="/policies/:slug" element={<SitePolicy />} />

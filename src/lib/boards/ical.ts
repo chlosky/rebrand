@@ -21,11 +21,11 @@ function escapeIcal(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
-export function buildIcalCalendar(reminders: BoardReminder[], calendarName = "Palette Plotting — The Plan"): string {
+export function buildIcalCalendar(reminders: BoardReminder[], calendarName = "palette plotting — The Plan"): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Palette Plotting//Board Reminders//EN",
+    "PRODID:-//palette plotting//Board Reminders//EN",
     `X-WR-CALNAME:${escapeIcal(calendarName)}`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
@@ -106,7 +106,7 @@ function rruleForAccountabilityReminder(reminder: AccountabilityReminder, until:
 
 export function buildAccountabilityIcalCalendar(
   reminders: AccountabilityReminder[],
-  calendarName = "Palette Plotting — Action Reminders",
+  calendarName = "palette plotting — Action Reminders",
   maxDateIso?: string | null,
 ): string {
   const now = new Date().toISOString();
@@ -115,7 +115,7 @@ export function buildAccountabilityIcalCalendar(
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Palette Plotting//Action Reminders//EN",
+    "PRODID:-//palette plotting//Action Reminders//EN",
     `X-WR-CALNAME:${escapeIcal(calendarName)}`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
@@ -146,7 +146,7 @@ export function downloadAccountabilityIcalFile(
   filename = "palette-plotting-action-reminders.ics",
   maxDateIso?: string | null,
 ): void {
-  const ics = buildAccountabilityIcalCalendar(reminders, "Palette Plotting — Action Reminders", maxDateIso);
+  const ics = buildAccountabilityIcalCalendar(reminders, "palette plotting — Action Reminders", maxDateIso);
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

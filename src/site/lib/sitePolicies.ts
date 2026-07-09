@@ -3,7 +3,7 @@ import { SUPPORT_EMAIL } from "@/site/lib/siteBrand";
 export { SUPPORT_EMAIL };
 
 export const CONTACT_INFO = {
-  businessName: "palette plot",
+  businessName: "Palette Plotting",
   email: SUPPORT_EMAIL,
   streetAddress: "1 N. State Street Suite 1500",
   addressLine1: "1 N. State Street Suite 1500",
@@ -46,12 +46,12 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     slug: "shipping",
     title: "Shipping Policy",
     metaDescription:
-      "palette plot ships acrylic wall boards to US addresses only. Processing in 1–3 business days, delivery in 5–7 business days after that.",
+      "Palette Plotting ships acrylic wall boards to US addresses only. Processing in 1–3 business days, delivery in 5–7 business days after that.",
     lastUpdated: "June 28, 2026",
     sections: [
       {
         paragraphs: [
-          "palette plot ships acrylic wall boards to addresses within the United States only. We do not ship internationally at this time.",
+          "Palette Plotting ships acrylic wall boards to addresses within the United States only. We do not ship internationally at this time.",
           "We do not ship to P.O. boxes if your carrier cannot deliver oversized packages to that address — use a physical street address where possible.",
         ],
       },
@@ -88,7 +88,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
       {
         heading: "Address accuracy",
         paragraphs: [
-          "Please double-check your shipping address at checkout. palette plot is not responsible for delays or failed delivery due to incorrect or incomplete addresses. If you notice an error right after ordering, contact us as soon as possible — we will try to update the address before the order ships, but we cannot guarantee changes once fulfillment has started.",
+          "Please double-check your shipping address at checkout. Palette Plotting is not responsible for delays or failed delivery due to incorrect or incomplete addresses. If you notice an error right after ordering, contact us as soon as possible — we will try to update the address before the order ships, but we cannot guarantee changes once fulfillment has started.",
         ],
       },
       {
@@ -102,7 +102,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         paragraphs: [
           "If your board arrives damaged, contact us within 14 days of delivery with your order number and photos of the packaging and product. We will work with you on a replacement or refund as appropriate.",
           "If tracking shows delivered but you did not receive the package, check with household members and neighbors, then contact the carrier. If the issue is not resolved, email us and we will help investigate.",
-          "palette plot is not responsible for delays caused by the shipping carrier, incorrect shipping addresses entered at checkout, or events outside our control.",
+          "Palette Plotting is not responsible for delays caused by the shipping carrier, incorrect shipping addresses entered at checkout, or events outside our control.",
         ],
       },
       {
@@ -118,12 +118,12 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     slug: "refunds",
     title: "Refund Policy",
     metaDescription:
-      "Request a refund within 14 days of delivery. Return shipping is paid by the buyer. Cancel an order within 1 hour of purchase by contacting palette plot support.",
+      "Request a refund within 14 days of delivery. Return shipping is paid by the buyer. Cancel an order within 1 hour of purchase by contacting Palette Plotting support.",
     lastUpdated: "June 28, 2026",
     sections: [
       {
         paragraphs: [
-          "We want you to love your palette plot board. If something is not right, contact us and we will work with you on a fair resolution.",
+          "We want you to love your Palette Plotting board. If something is not right, contact us and we will work with you on a fair resolution.",
         ],
       },
       {
@@ -160,12 +160,12 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     slug: "privacy",
     title: "Privacy Policy",
     metaDescription:
-      "How palette plot collects, uses, and shares personal information — including Meta (Facebook/Instagram), TikTok, and Google advertising and measurement tools.",
+      "How Palette Plotting collects, uses, and shares personal information — including Meta (Facebook/Instagram), TikTok, and Google advertising and measurement tools.",
     lastUpdated: "June 28, 2026",
     sections: [
       {
         paragraphs: [
-          "This Privacy Policy describes how palette plot (“we”, “us”, or “our”) collects, uses, discloses, and otherwise processes personal information when you visit paletteplot.com, interact with our ads on third-party platforms (including Meta/Facebook and Instagram), browse our products, or place an order.",
+          "This Privacy Policy describes how Palette Plotting (“we”, “us”, or “our”) collects, uses, discloses, and otherwise processes personal information when you visit paletteplot.com, interact with our ads on third-party platforms (including Meta/Facebook and Instagram), browse our products, or place an order.",
           "By using our website or purchasing from us, you acknowledge this policy. If you do not agree, please do not use the site.",
         ],
       },
@@ -174,8 +174,9 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         paragraphs: ["When you visit, purchase from, or interact with our store, we may collect:"],
         list: [
           "Contact details such as your name, email address, phone number, billing address, and shipping address",
+          "Text reminder opt-in records, phone numbers used for text reminders, opt-out status, and reminder delivery metadata when you choose SMS reminders",
           "Order information including products purchased, order value, currency, and transaction history",
-          "Payment information processed securely by Shopify and its payment providers — palette plot does not store full payment card numbers on our servers",
+          "Payment information processed securely by Shopify and its payment providers — Palette Plotting does not store full payment card numbers on our servers",
           "Device and usage information such as browser type, operating system, IP address, pages viewed, referring URLs, and approximate location derived from IP",
           "Advertising and analytics identifiers such as cookie IDs, session IDs, click IDs (for example fbclid/fbc from Meta ads), and similar technology used to measure marketing performance",
           "Hashed or unhashed customer information submitted at checkout or through forms, which may be used for advertising measurement and matching when permitted by law and our settings",
@@ -199,6 +200,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Sharing your information",
         paragraphs: [
           "We share personal information with service providers and advertising partners only as needed to operate our business, measure marketing, and deliver ads. We do not sell your personal information for money.",
+          "SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are not sold, rented, or shared with advertising partners for marketing or cross-context behavioral advertising. We use them only to provide and manage text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
           "Under some US state privacy laws, sharing data with advertising partners for cross-context behavioral advertising may be treated separately from a “sale.” See “US state privacy rights” below.",
         ],
         list: [
@@ -215,7 +217,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         paragraphs: [
           "We use Meta Business Tools to advertise on Meta platforms, measure ad performance, attribute purchases to ads, and improve campaign delivery. This includes browser-based tools (such as the Meta Pixel) and server-side tools (such as the Meta Conversions API), including through Shopify and other integrations.",
           "Depending on your interactions and our configuration, Meta may receive event data (for example PageView, ViewContent, AddToCart, InitiateCheckout, and Purchase), device and browser information (such as IP address, user agent, and cookie identifiers including _fbp and _fbc), page URLs, and order value/currency.",
-          "Advanced Matching / customer information parameters: When you provide contact or order details (such as email, phone, name, or address), we or our service providers may send that information to Meta in hashed form (typically SHA-256) to improve event matching, attribution, and ad optimization. This supports maximum data sharing and match quality when enabled in Meta Events Manager.",
+          "Advanced Matching / customer information parameters: When you provide contact or order details (such as email, name, or address), we or our service providers may send that information to Meta in hashed form (typically SHA-256) to improve event matching, attribution, and ad optimization. This does not include SMS opt-in consent or phone numbers collected specifically for text reminders.",
           "Advanced Aggregated Measurement (AAM) and related aggregated reporting: When individual-level tracking or attribution is limited (for example by browser or device settings), Meta may provide aggregated or modeled measurement so we can understand ad performance without receiving all individual-level details. We use these reports to measure return on ad spend and improve campaigns.",
           "Meta processes this information under its own terms and policies, including the Meta Business Tools Terms (https://www.facebook.com/legal/terms/businesstools) and Meta Privacy Policy (https://www.facebook.com/privacy/policy/).",
           "You can learn more about Meta ads and control some Meta uses of your information at https://www.facebook.com/settings?tab=ads. You may also use industry opt-out tools such as the Digital Advertising Alliance (https://optout.aboutads.info/) and the Network Advertising Initiative (https://optout.networkadvertising.org/).",
@@ -234,7 +236,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "US state privacy rights",
         paragraphs: [
           "If you reside in California, Colorado, Connecticut, Virginia, Texas, Oregon, or other US states with similar privacy laws, you may have the right to know what personal information we collect, request deletion or correction, and opt out of certain processing.",
-          "We do not sell personal information for monetary consideration. We may share personal information with advertising partners (including Meta, TikTok, and Google) for cross-context behavioral advertising and measurement when permitted by law and our settings.",
+          "We do not sell personal information for monetary consideration. We may share personal information with advertising partners (including Meta, TikTok, and Google) for cross-context behavioral advertising and measurement when permitted by law and our settings. SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are excluded from that advertising sharing.",
           "To submit a privacy request — including opt-out of sharing for cross-context behavioral advertising — email support@paletteplot.com with the subject line “Privacy Request” and your name, email, and the request type. We will verify and respond as required by applicable law.",
         ],
       },
@@ -278,18 +280,18 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
   terms: {
     slug: "terms",
     title: "Terms of Service",
-    metaDescription: "Terms and conditions for using the palette plot website and purchasing acrylic wall boards.",
+    metaDescription: "Terms and conditions for using the Palette Plotting website and purchasing acrylic wall boards.",
     lastUpdated: "June 28, 2026",
     sections: [
       {
         paragraphs: [
-          "These Terms of Service (“Terms”) govern your access to paletteplot.com and your purchase of products from palette plot. By accessing the site or placing an order, you agree to these Terms.",
+          "These Terms of Service (“Terms”) govern your access to paletteplot.com and your purchase of products from Palette Plotting. By accessing the site or placing an order, you agree to these Terms.",
         ],
       },
       {
         heading: "Online store",
         paragraphs: [
-          "You must be at least 18 years old, or the age of majority in your state, to purchase from palette plot. You agree to provide accurate checkout and shipping information.",
+          "You must be at least 18 years old, or the age of majority in your state, to purchase from Palette Plotting. You agree to provide accurate checkout and shipping information.",
           "We reserve the right to refuse or cancel any order, limit quantities, or correct pricing errors.",
         ],
       },
@@ -329,20 +331,20 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
       {
         heading: "Intellectual property",
         paragraphs: [
-          "All content on this website — including text, images, logos, and product designs — is owned by palette plot or its licensors and may not be copied or reused without permission.",
+          "All content on this website — including text, images, logos, and product designs — is owned by Palette Plotting or its licensors and may not be copied or reused without permission.",
         ],
       },
       {
         heading: "Disclaimer and limitation of liability",
         paragraphs: [
-          "Products are provided “as is” except as required by applicable law. To the fullest extent permitted by law, palette plot is not liable for indirect, incidental, or consequential damages arising from your use of the site or products.",
+          "Products are provided “as is” except as required by applicable law. To the fullest extent permitted by law, Palette Plotting is not liable for indirect, incidental, or consequential damages arising from your use of the site or products.",
           "Our total liability for any claim related to a product or order is limited to the amount you paid for that order.",
         ],
       },
       {
         heading: "Governing law",
         paragraphs: [
-          "These Terms are governed by the laws of the United States and the state in which palette plot operates, without regard to conflict-of-law rules.",
+          "These Terms are governed by the laws of the United States and the state in which Palette Plotting operates, without regard to conflict-of-law rules.",
         ],
       },
       {
@@ -926,6 +928,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
           "Device, app usage, and log information needed to secure and improve the Service",
           "Communications you send through support or feedback forms",
           "Reminder delivery metadata when you enable email, SMS, or calendar-related features",
+          "SMS opt-in consent, text reminder phone numbers, opt-out status, and related delivery records when you choose text reminders",
         ],
       },
       {
@@ -950,6 +953,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Sharing",
         paragraphs: [
           "We do not sell your personal information. We share information with service providers that help us operate the Service (hosting, authentication, billing, email, SMS, analytics, and support tools) under appropriate contractual protections, and when required by law.",
+          "SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are not sold, rented, or shared with advertising partners for marketing or cross-context behavioral advertising. We use them only to provide and manage text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
         ],
       },
       {

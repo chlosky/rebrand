@@ -97,7 +97,7 @@ function WelcomeBodyWeb() {
   return (
     <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-1 md:max-w-xl md:gap-6 md:pt-1.5 lg:max-w-2xl">
       <span className="mb-1 font-sans text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
-        Palette Plotting
+        palette plotting
       </span>
       <WelcomeTitle />
       <WelcomePitch />

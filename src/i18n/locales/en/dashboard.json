@@ -18,7 +18,7 @@
   },
   "home": {
     "subtitle": "Your four-board life system, in one place.",
-    "pageTitle": "Dashboard | Palette Plotting",
+    "pageTitle": "Dashboard | palette plotting",
     "defaultName": "there"
   },
   "inspiredActions": {
@@ -82,7 +82,7 @@
     "web": "Web (card / checkout)"
   },
   "workspace": {
-    "pageTitle": "Workspace | Palette Plotting",
+    "pageTitle": "Workspace | palette plotting",
     "tabs": {
       "library": "Library",
       "community": "Community",
@@ -128,8 +128,8 @@
       }
     },
     "community": {
-      "pageTitle": "Community | Palette Plotting",
-      "submitPageTitle": "Submit setup | Palette Plotting",
+      "pageTitle": "Community | palette plotting",
+      "submitPageTitle": "Submit setup | palette plotting",
       "title": "Community",
       "feedSubtitle": "Team updates, featured setups, and poll winners — curated here only.",
       "dailyPrompts": "Today's plot prompts",
@@ -171,7 +171,7 @@
         "office_organization": "Office organization"
       },
       "submitMediums": {
-        "in_app": "In the Palette Plotting app",
+        "in_app": "In the palette plotting app",
         "off_app": "Off-app (wall, acrylic, physical board)",
         "both": "Both app and physical"
       },
@@ -220,9 +220,9 @@
     },
     "locked": {
       "createTitle": "Create is for members",
-      "createBody": "Plotting boards, companion, structures, and clippings unlock with Palette Plotting Premium.",
+      "createBody": "Plotting boards, companion, structures, and clippings unlock with palette plotting Premium.",
       "journeyTitle": "Reminders are for members",
-      "journeyBody": "Plan reminders, progress tracking, and journal unlock with Palette Plotting Premium.",
+      "journeyBody": "Plan reminders, progress tracking, and journal unlock with palette plotting Premium.",
       "newBoardTitle": "Vision is for members",
       "newBoardBody": "Start a new board on the plotting desk once you are on Premium — Library stays free.",
       "imageLibraryTitle": "Your Images is for members",

@@ -31,7 +31,7 @@ set
   access_model = 'lifetime',
   delivery = 'reader',
   preview_path = '/palette-plotting-guide',
-  description = 'The Palette Plot 4-Board Rebrand & Vision Board Method'
+  description = 'The palette plotting 4-Board Rebrand & Vision Board Method'
 where slug = 'palette-plotting-guide';
 
 -- Stripe grant rules: buying a given Stripe Price grants a digital product.

@@ -1,4 +1,4 @@
--- Digital product catalog + entitlements for the server-side Palette Plotting Guide reader.
+-- Digital product catalog + entitlements for the server-side palette plotting Guide reader.
 -- Access is enforced in edge functions running as service_role; no public RLS policies.
 
 CREATE TABLE IF NOT EXISTS public.digital_products (
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.digital_products (
 INSERT INTO public.digital_products (slug, title, reader_path)
 VALUES (
   'palette-plotting-guide',
-  'Palette Plotting Guide',
+  'palette plotting Guide',
   '/palette-plotting-guide/read/start-here'
 )
 ON CONFLICT (slug) DO UPDATE SET

@@ -50,7 +50,7 @@ export function appendCatalogGalleryTail(base: CatalogGalleryImage[]): CatalogGa
 }
 
 export const BOARD_COLOR_CATALOG_README = `
-palette plot color catalog — one PNG per color (replace any file to update the site):
+palette plotting color catalog — one PNG per color (replace any file to update the site):
 
   rose-gold.png      Rose Gold
   light-pink.png     Light Pink

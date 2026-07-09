@@ -1,4 +1,4 @@
--- The Palette Letter — newsletter / email list subscribers (Palette Plot).
+-- The Palette Letter — newsletter / email list subscribers (palette plotting).
 
 CREATE TABLE IF NOT EXISTS public.palette_plot_letter_subscribers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,13 +32,13 @@ COMMENT ON COLUMN public.palette_plot_letter_subscribers.tag_palette_letter IS
   'Subscribed to The Palette Letter.';
 
 COMMENT ON COLUMN public.palette_plot_letter_subscribers.tag_palette_plotting_interest IS
-  'Interested in the Palette Plotting System / method.';
+  'Interested in the palette plotting System / method.';
 
 COMMENT ON COLUMN public.palette_plot_letter_subscribers.tag_board_interest IS
   'Signed up from a board product page.';
 
 COMMENT ON COLUMN public.palette_plot_letter_subscribers.tag_digital_system_interest IS
-  'Signed up from the digital guide / Palette Plotting System page.';
+  'Signed up from the digital guide / palette plotting System page.';
 
 COMMENT ON COLUMN public.palette_plot_letter_subscribers.tag_general_interest IS
   'Signed up from homepage or footer.';

@@ -87,7 +87,7 @@ export function MarketingHeader({
             onClick={() => navigate("/")}
             className="shrink-0 text-left transition-opacity hover:opacity-90"
           >
-            <span className={cn(MARKETING_LOGO_CLASS, "text-lg")}>Palette Plotting</span>
+            <span className={cn(MARKETING_LOGO_CLASS, "text-lg")}>palette plotting</span>
           </button>
 
           <nav className="hidden items-center gap-6 lg:flex" aria-label={t("home.header.mainNav")}>

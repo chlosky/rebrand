@@ -6,8 +6,7 @@ export function isToolSiteHost(): boolean {
 }
 
 export function isSiteAccessRequired(): boolean {
-  if (import.meta.env.VITE_SITE_LOCK_ENABLED === "true") return true;
-  return isToolSiteHost();
+  return import.meta.env.VITE_SITE_LOCK_ENABLED === "true";
 }
 
 export function hasSiteAccessGrant(): boolean {

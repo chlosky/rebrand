@@ -58,7 +58,7 @@ const Unsubscribe = () => {
     <>
       <SEO 
         title="Unsubscribe"
-        description="Unsubscribe from Palette Plotting email marketing communications"
+        description="Unsubscribe from palette plotting email marketing communications"
         noindex={true}
       />
       <main className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
@@ -83,7 +83,7 @@ const Unsubscribe = () => {
               <h1 className="text-2xl font-bold">Unsubscribed</h1>
               <p className="text-muted-foreground">{message}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                You will no longer receive marketing emails from Palette Plotting. Transactional emails (like account updates) will still be sent.
+                You will no longer receive marketing emails from palette plotting. Transactional emails (like account updates) will still be sent.
               </p>
               <Button onClick={() => navigate("/")} className="mt-4">
                 Return to Homepage

@@ -105,8 +105,8 @@ export function PaletteLetterSignup({
         )}
       >
         {isWaiting
-          ? "One email when Palette Plotting opens."
-          : "Be the first to know about discounts. Board ideas, color inspo, and Palette Plot drops."}
+          ? "One email when palette plotting opens."
+          : "Be the first to know about discounts. Board ideas, color inspo, and palette plotting drops."}
       </p>
 
       <form onSubmit={handleSubmit} className={cn("mt-5 space-y-3", isWaiting && "text-left")}>
@@ -133,7 +133,7 @@ export function PaletteLetterSignup({
           {status === "submitting" ? "Joining…" : isWaiting ? "Join waitlist" : "Join the list"}
         </Button>
         <p className="text-xs leading-relaxed text-neutral-500">
-          By joining, you agree to receive emails from Palette Plot. You can unsubscribe anytime.
+          By joining, you agree to receive emails from palette plotting. You can unsubscribe anytime.
         </p>
         {errorMessage ? (
           <p className="text-sm text-red-600" role="alert">

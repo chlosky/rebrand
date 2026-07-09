@@ -20,7 +20,7 @@ export type SetupDraft = {
     cadence: string;
     target_per_week: number;
   }[];
-  /** How the user found Palette Plotting (onboarding attribution step). */
+  /** How the user found palette plotting (onboarding attribution step). */
   attributionSource?: string;
   /** Pre-permission choice for iOS ATT prompt; actual permission remains `trackingAuthorizationStatus`. */
   trackingPrePermissionChoice?: "yes" | "no" | null;

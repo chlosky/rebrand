@@ -1,4 +1,4 @@
-// Feature gating — Palette Plotting (boards-forward). Monthly and annual have equal access.
+// Feature gating — palette plotting (boards-forward). Monthly and annual have equal access.
 
 export type Tier = 'monthly' | 'annual';
 

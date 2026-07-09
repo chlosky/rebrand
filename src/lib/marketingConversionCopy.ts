@@ -1,4 +1,4 @@
-/** Shared marketing copy — Palette Plotting (fresh names, full toolkit depth). */
+/** Shared marketing copy — palette plotting (fresh names, full toolkit depth). */
 
 /** White line, then pink accent line (see MarketingHeroCopy). */
 export const MARKETING_HEADLINE_LINE1 = "Plot the life you're";

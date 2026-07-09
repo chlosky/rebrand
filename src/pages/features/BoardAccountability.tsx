@@ -110,6 +110,17 @@ function openCalendarImportTarget(target?: CalendarImportTarget) {
   }
 }
 
+function calendarExportFilename(date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join("-");
+  const time = [pad(date.getHours()), pad(date.getMinutes())].join("-");
+  return `palette-plotting-action-reminders-${stamp}-${time}.ics`;
+}
+
 export default function BoardAccountability() {
   const { user } = useAuth();
   const { hasPro, currentPeriodEnd, loading: proLoading } = usePlottingPro();
@@ -235,7 +246,7 @@ export default function BoardAccountability() {
   }, [isMobile, navigate, workspace?.id, workspaceParam]);
 
   useEffect(() => {
-    document.title = "Action | Palette Plotting";
+    document.title = "Action | palette plotting";
   }, []);
 
   const runAnalyze = async (skipConfirm = false) => {
@@ -281,7 +292,7 @@ export default function BoardAccountability() {
       if (status === 401) {
         toast.error("Session expired — sign out and sign in again, then retry Analyze.");
       } else if (status === 403) {
-        toast.error("Palette Plotting Premium is required to analyze your boards.");
+        toast.error("palette plotting Premium is required to analyze your boards.");
       } else {
         toast.error("Couldn't analyze your boards. Try again in a moment.");
       }
@@ -580,7 +591,7 @@ export default function BoardAccountability() {
     try {
       downloadAccountabilityIcalFile(
         calendarExportReminders,
-        "palette-plotting-action-reminders.ics",
+        calendarExportFilename(),
         currentPeriodEnd,
       );
       openCalendarImportTarget(target);
@@ -839,8 +850,10 @@ export default function BoardAccountability() {
                 className="mt-0.5"
               />
               <span className="text-xs leading-relaxed text-muted-foreground">
-                I agree to receive text reminders for dates, goals and next steps I create in Palette. Message and data
-                rates may apply. I can turn text reminders off anytime.
+                I agree to receive recurring text reminders from Palette Plotting about plans and tasks I choose.
+                Message frequency may vary. Standard message and data rates may apply. Reply STOP to opt out. Reply
+                HELP for assistance. Your mobile information will not be sold or shared with third parties for
+                promotional or marketing purposes. See Terms and Privacy Policy.
               </span>
             </label>
           </div>

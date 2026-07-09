@@ -489,184 +489,12 @@ async function handleSubscriptionUpdate(supabase: any, subscription: any, stripe
   await attachAppUserIdToStripeSubscription(stripeSecretKey, subscription.id, userId);
   await postStripePurchaseToRevenueCat(userId, subscription.id);
 
-  // Send welcome-back email if resubscribing
   if (isResubscription) {
-    try {
-      // Get user email and profile info
-      const { data: user } = await supabase.auth.admin.getUserById(userId);
-      if (!user || !user.user?.email) {
-        console.warn('User not found or no email for welcome-back notification');
-      } else {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, username')
-          .eq('id', userId)
-          .single();
-
-        const userName = profile?.first_name || profile?.username || 'there';
-        const userEmail = user.user.email;
-
-        // Get site URL for links
-        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplot.com';
-        const appUrl = siteUrl;
-        const privacyPolicyUrl = `${siteUrl}/privacy`;
-
-        // Send welcome-back email via Postmark
-        const POSTMARK_SERVER_TOKEN = Deno.env.get('POSTMARK_SERVER_TOKEN');
-        const POSTMARK_FROM_EMAIL = Deno.env.get('POSTMARK_FROM_EMAIL');
-
-        if (!POSTMARK_SERVER_TOKEN) {
-          console.warn('POSTMARK_SERVER_TOKEN not configured, skipping welcome-back email');
-        } else {
-          const templateModel = {
-            name: userName,
-            app_url: appUrl,
-            privacy_policy_url: privacyPolicyUrl,
-            tiktok_url: 'https://www.tiktok.com/@paletteplotting',
-            youtube_url: 'https://www.youtube.com/@paletteplotting',
-            instagram_url: 'https://www.instagram.com/paletteplotting',
-          };
-
-          const emailResponse = await fetch('https://api.postmarkapp.com/email/withTemplate', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'X-Postmark-Server-Token': POSTMARK_SERVER_TOKEN,
-            },
-            body: JSON.stringify({
-              To: userEmail,
-              TemplateAlias: 'welcome-back',
-              TemplateModel: templateModel,
-              MessageStream: 'outbound',
-              Tag: 'welcome-back',
-              Metadata: { 
-                email_type: 'welcome_back',
-                user_id: userId,
-              },
-              From: POSTMARK_FROM_EMAIL || undefined,
-            }),
-          });
-
-          if (!emailResponse.ok) {
-            const errorText = await emailResponse.text();
-            console.error('Failed to send welcome-back email:', errorText);
-          } else {
-            const emailData = await emailResponse.json().catch(() => ({}));
-            console.log('Welcome-back email sent successfully:', emailData);
-          }
-        }
-      }
-    } catch (emailError) {
-      console.warn('Error sending welcome-back email (non-fatal):', emailError);
-      // Don't throw - email failure shouldn't break webhook
-    }
+    console.log('Skipping app welcome-back email; subscription emails are handled by Stripe.');
   }
 
-  // Send subscription change email if tier changed
   if (tierChanged && oldTier) {
-    try {
-      // Get user email and profile info
-      const { data: user } = await supabase.auth.admin.getUserById(userId);
-      if (!user || !user.user?.email) {
-        console.warn('User not found or no email for subscription change notification');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_name, username')
-        .eq('id', userId)
-        .single();
-
-      const userName = profile?.first_name || profile?.username || 'there';
-      const userEmail = user.user.email;
-
-      // Map tiers to plan names
-      const planNames: Record<string, string> = {
-        basic: 'Basic',
-        plus: 'Plus',
-        premium: 'Premium',
-      };
-      const oldPlanName = planNames[oldTier] || oldTier;
-      const newPlanName = planNames[tier] || tier;
-
-      // Determine if upgrade or downgrade
-      const tierOrder: Record<string, number> = { basic: 1, plus: 2, premium: 3 };
-      const isUpgrade = (tierOrder[tier] || 0) > (tierOrder[oldTier] || 0);
-      const subscriptionMessage = isUpgrade
-        ? `You've upgraded from ${oldPlanName} to ${newPlanName}. You now have access to all ${newPlanName} features.`
-        : `You've changed from ${oldPlanName} to ${newPlanName}. Your plan features have been updated accordingly.`;
-
-      // Calculate effective date (usually current period start or end)
-      const effectiveDate = subscription.current_period_start
-        ? new Date(subscription.current_period_start * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })
-        : 'immediately';
-
-      // Get site URL for links
-      const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplot.com';
-      const billingUrl = `${siteUrl}/settings`;
-      const privacyPolicyUrl = `${siteUrl}/privacy`;
-
-      // Send subscription change email via Postmark
-      const POSTMARK_SERVER_TOKEN = Deno.env.get('POSTMARK_SERVER_TOKEN');
-      const POSTMARK_FROM_EMAIL = Deno.env.get('POSTMARK_FROM_EMAIL');
-
-      if (!POSTMARK_SERVER_TOKEN) {
-        console.warn('POSTMARK_SERVER_TOKEN not configured, skipping subscription change email');
-        return;
-      }
-
-      const templateModel = {
-        name: userName,
-        new_plan_name: newPlanName,
-        effective_date: effectiveDate,
-        subscription_message: subscriptionMessage,
-        billing_url: billingUrl,
-        privacy_policy_url: privacyPolicyUrl,
-        tiktok_url: 'https://www.tiktok.com/@paletteplotting',
-        youtube_url: 'https://www.youtube.com/@paletteplotting',
-        instagram_url: 'https://www.instagram.com/paletteplotting',
-      };
-
-      const emailResponse = await fetch('https://api.postmarkapp.com/email/withTemplate', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-Postmark-Server-Token': POSTMARK_SERVER_TOKEN,
-        },
-        body: JSON.stringify({
-          To: userEmail,
-          TemplateAlias: 'subscription-change',
-          TemplateModel: templateModel,
-          MessageStream: 'outbound',
-          Tag: 'subscription-change',
-          Metadata: { 
-            email_type: 'subscription_change',
-            old_tier: oldTier,
-            new_tier: tier,
-            is_upgrade: isUpgrade.toString(),
-          },
-          From: POSTMARK_FROM_EMAIL || undefined,
-        }),
-      });
-
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error('Failed to send subscription change email:', errorText);
-      } else {
-        const emailData = await emailResponse.json().catch(() => ({}));
-        console.log('Subscription change email sent successfully:', emailData);
-      }
-    } catch (emailError) {
-      console.warn('Error sending subscription change email (non-fatal):', emailError);
-      // Don't throw - email failure shouldn't break webhook
-    }
+    console.log('Skipping app subscription-change email; subscription emails are handled by Stripe.');
   }
 }
 
@@ -712,87 +540,7 @@ async function handleSubscriptionCancellation(supabase: any, subscription: any) 
       }
     }
 
-  // Send cancellation email
-  try {
-    // Get user email and profile info
-    const { data: user } = await supabase.auth.admin.getUserById(finalUserId);
-    if (!user || !user.user?.email) {
-      console.warn('User not found or no email for cancellation notification');
-    return;
-  }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('first_name, username')
-      .eq('id', finalUserId)
-      .single();
-
-    const userName = profile?.first_name || profile?.username || 'there';
-    const userEmail = user.user.email;
-
-    // Get expiry date from the subscription item billing period when available.
-    const periodEndDate = getStripeSubscriptionPeriodEndDate(subscription);
-    const expiryDate = periodEndDate
-      ? periodEndDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })
-      : 'the end of your current billing period';
-
-    // Get site URL for reactivate link
-    const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplot.com';
-    const reactivateUrl = `${siteUrl}/resubscribe`;
-    const privacyPolicyUrl = `${siteUrl}/privacy`;
-
-    // Send cancellation email via Postmark
-    const POSTMARK_SERVER_TOKEN = Deno.env.get('POSTMARK_SERVER_TOKEN');
-    const POSTMARK_FROM_EMAIL = Deno.env.get('POSTMARK_FROM_EMAIL');
-
-    if (!POSTMARK_SERVER_TOKEN) {
-      console.warn('POSTMARK_SERVER_TOKEN not configured, skipping cancellation email');
-      return;
-    }
-
-    const templateModel = {
-      name: userName,
-      expiry_date: expiryDate,
-      reactivate_url: reactivateUrl,
-      privacy_policy_url: privacyPolicyUrl,
-      tiktok_url: 'https://www.tiktok.com/@paletteplotting',
-      youtube_url: 'https://www.youtube.com/@paletteplotting',
-      instagram_url: 'https://www.instagram.com/paletteplotting',
-    };
-
-    const emailResponse = await fetch('https://api.postmarkapp.com/email/withTemplate', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Postmark-Server-Token': POSTMARK_SERVER_TOKEN,
-      },
-      body: JSON.stringify({
-        To: userEmail,
-        TemplateAlias: 'cancellation',
-        TemplateModel: templateModel,
-        MessageStream: 'outbound',
-        Tag: 'cancellation',
-        Metadata: { email_type: 'cancellation' },
-        From: POSTMARK_FROM_EMAIL || undefined,
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error('Failed to send cancellation email:', errorText);
-    } else {
-      const emailData = await emailResponse.json().catch(() => ({}));
-      console.log('Cancellation email sent successfully:', emailData);
-    }
-  } catch (emailError) {
-    console.warn('Error sending cancellation email (non-fatal):', emailError);
-    // Don't throw - email failure shouldn't break webhook
-  }
+  console.log('Skipping app cancellation email; subscription emails are handled by Stripe.');
 }
 
 async function handleInvoicePaymentSucceeded(supabase: any, invoice: any) {
@@ -953,52 +701,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
       }
     }
 
-    // Notify fulfillment by email (best-effort).
-    try {
-      const POSTMARK_SERVER_TOKEN = Deno.env.get('POSTMARK_SERVER_TOKEN');
-      const POSTMARK_FROM_EMAIL = Deno.env.get('POSTMARK_FROM_EMAIL');
-      const notifyTo = Deno.env.get('ORDER_NOTIFY_EMAIL') || POSTMARK_FROM_EMAIL;
-      if (POSTMARK_SERVER_TOKEN && POSTMARK_FROM_EMAIL && notifyTo) {
-        const lines = Array.isArray(order?.lines) ? order.lines : [];
-        const itemsText = lines
-          .map((l: any) => `- ${l.title} × ${l.quantity} ($${((l.unit_amount * l.quantity) / 100).toFixed(2)})`)
-          .join('\n');
-        const addr = order?.shipping_address || {};
-        const shipText = [
-          order?.shipping_name || '',
-          addr.line1 || '',
-          addr.line2 || '',
-          [addr.city, addr.state, addr.postal_code].filter(Boolean).join(', '),
-          addr.country || '',
-        ].filter(Boolean).join('\n');
-        const total = typeof order?.amount_total === 'number' ? `$${(order.amount_total / 100).toFixed(2)}` : 'n/a';
-
-        const emailRes = await fetch('https://api.postmarkapp.com/email', {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-Postmark-Server-Token': POSTMARK_SERVER_TOKEN,
-          },
-          body: JSON.stringify({
-            From: POSTMARK_FROM_EMAIL,
-            To: notifyTo,
-            Subject: `New board order — ${total} (${orderId})`,
-            TextBody:
-              `New paid board order.\n\nOrder: ${orderId}\nEmail: ${boardEmail}\nTotal: ${total}\n\nItems:\n${itemsText}\n\nShip to:\n${shipText}\n`,
-            MessageStream: 'outbound',
-            Tag: 'board-order',
-          }),
-        });
-        if (!emailRes.ok) {
-          console.error('Board order notify email failed:', await emailRes.text());
-        }
-      } else {
-        console.warn('Postmark not fully configured, skipping board order notify email');
-      }
-    } catch (emailErr) {
-      console.warn('Board order notify email exception (non-fatal):', emailErr);
-    }
+    console.log('Skipping app board-order notification email; order emails are handled by Shopify/Stripe.');
 
     return;
   }
@@ -1334,33 +1037,22 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
         await postStripePurchaseToRevenueCat(finalUserId, rcToken);
       }
 
-      // Step 7: Send password reset email (must not depend on any upsert success)
-      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      
+      // Step 7: Send password setup email through Supabase Auth (non-blocking).
       try {
-        const resetResponse = await fetch(`${supabaseUrl}/functions/v1/send-password-reset`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            'apikey': `${SERVICE_ROLE_KEY}`,
+        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplot.com';
+        const { error: resetError } = await supabase.auth.admin.generateLink({
+          type: 'recovery',
+          email: updatedSession.email,
+          options: {
+            redirectTo: `${siteUrl}/reset-password`,
           },
-          body: JSON.stringify({ email: updatedSession.email }),
         });
-
-        const responseText = await resetResponse.text();
         console.log('STEP7_EMAIL_RESET_ATTEMPTED', {
           onboardingSessionId,
           finalUserId,
-          status: resetResponse.status,
-          statusText: resetResponse.statusText,
-          body: responseText
+          ok: !resetError,
+          error: resetError?.message ?? null,
         });
-
-        if (!resetResponse.ok) {
-          console.error('Password reset email failed:', responseText);
-        }
       } catch (emailError) {
         console.error('STEP7_EMAIL_RESET_EXCEPTION', {
           onboardingSessionId,

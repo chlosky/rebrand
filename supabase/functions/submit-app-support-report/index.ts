@@ -393,33 +393,14 @@ serve(async (req) => {
       </table>
     `.trim();
 
-    try {
-      const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${serviceKey}`,
-          apikey: serviceKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: SUPPORT_EMAIL,
-          subject:
-            messageType === "help_me_create"
-              ? "[Palette Plotting] Help Me Create"
-              : `[Palette Plotting] ${typeLabel} — ${toolLabel}`,
-          textBody,
-          htmlBody,
-          ...(userEmail.trim() ? { replyTo: userEmail.trim() } : {}),
-          tag: "app-support-report",
-        }),
-      });
-      if (!emailRes.ok) {
-        const errText = await emailRes.text();
-        console.error("[submit-app-support-report] email failed:", emailRes.status, errText);
-      }
-    } catch (e) {
-      console.error("[submit-app-support-report] email exception:", e);
-    }
+    console.log("[submit-app-support-report] saved support report; app email notification disabled", {
+      reportId: inserted.id,
+      supportEmail: SUPPORT_EMAIL,
+      subject:
+        messageType === "help_me_create"
+          ? "[palette plotting] Help Me Create"
+          : `[palette plotting] ${typeLabel} — ${toolLabel}`,
+    });
 
     return new Response(JSON.stringify({ success: true, id: inserted.id }), {
       status: 200,

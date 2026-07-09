@@ -14,11 +14,11 @@ export const SEO = ({ title, description, image, noindex = false }: SEOProps) =>
   const url = `${baseUrl}${location.pathname}`;
 
   useEffect(() => {
-    // Update title - if title is empty string, use just "Palette Plotting", if provided, append it
+    // Update title - if title is empty string, use just "palette plotting", if provided, append it
     if (title === '') {
-      document.title = 'Palette Plotting';
+      document.title = 'palette plotting';
     } else if (title) {
-      document.title = `${title} | Palette Plotting`;
+      document.title = `${title} | palette plotting`;
     }
 
     // Update or create meta tags
@@ -48,8 +48,8 @@ export const SEO = ({ title, description, image, noindex = false }: SEOProps) =>
 
     // Update OG tags
     if (title) {
-      updateMeta('og:title', `${title} | Palette Plotting`, true);
-      updateMeta('twitter:title', `${title} | Palette Plotting`);
+      updateMeta('og:title', `${title} | palette plotting`, true);
+      updateMeta('twitter:title', `${title} | palette plotting`);
     }
     updateMeta('og:url', url, true);
     if (image) {

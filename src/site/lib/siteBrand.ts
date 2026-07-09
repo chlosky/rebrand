@@ -1,9 +1,9 @@
 /** Public brand for paletteplot.com */
-export const SITE_NAME = "palette plot";
+export const SITE_NAME = "palette plotting";
 export const SITE_ORIGIN = "https://paletteplot.com";
 export const PRIVACY_POLICY_URL = `${SITE_ORIGIN}/policies/privacy`;
 export const SUPPORT_EMAIL = "support@paletteplot.com";
-export const BUSINESS_NAME = "palette plot";
+export const BUSINESS_NAME = "palette plotting";
 export const JSON_LD_SCRIPT_ID = "palette-plot-json-ld";
 
 /** Matches home/content grid — logo lines up with hero text, nav with hero image edge. */

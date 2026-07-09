@@ -1,4 +1,4 @@
--- Import existing Palette Plotting Guide customers from veligrid (production digital_entitlements).
+-- Import existing palette plotting Guide customers from veligrid (production digital_entitlements).
 -- Idempotent: only inserts an email/product if there is no active entitlement already.
 -- The two manual grants (susiebonner + support) are seeded separately; skipped here.
 

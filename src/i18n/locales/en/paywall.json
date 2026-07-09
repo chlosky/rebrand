@@ -51,7 +51,7 @@
     "nothingToRestore": "Nothing to restore."
   },
   "legacyAndroid": {
-    "title": "Unlock Palette Plotting Premium Today.",
+    "title": "Unlock palette plotting Premium Today.",
     "subtitle": "Tap Continue to confirm your plan.",
     "opening": "Opening…",
     "tryAgain": "Try again",
@@ -117,7 +117,7 @@
     "privacyPolicy": "Privacy Policy",
     "appNotificationsConsent": "I consent to app notifications (optional). New tools, promotions and app news. Opt out in Settings → Notification preferences.",
     "emailMarketingConsent": "I consent to email marketing communications (optional, separate from transactional emails minimally required). Opt out in settings.",
-    "smsMarketingConsent": "I consent to optional promotional texts from Palette Plotting (not plan reminders). Opt out in Settings. Message and data rates may apply."
+    "smsMarketingConsent": "I consent to optional promotional texts from palette plotting (not plan reminders). Opt out in Settings. Message and data rates may apply."
   },
   "errors": {
     "cancelled": "Cancelled",

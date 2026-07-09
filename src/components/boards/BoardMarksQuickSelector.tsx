@@ -186,6 +186,7 @@ const IMAGE_OBJECT_ACTIONS: WheelItem[] = [
 type BoardMarksQuickSelectorProps = {
   x: number;
   y: number;
+  fixed?: boolean;
   mode: "empty" | "object";
   textCapable?: boolean;
   shapeCapable?: boolean;
@@ -273,6 +274,7 @@ const OBJECT_ACTIONS: WheelItem[] = [
 export function BoardMarksQuickSelector({
   x,
   y,
+  fixed = false,
   mode,
   textCapable = false,
   shapeCapable = false,
@@ -554,11 +556,17 @@ export function BoardMarksQuickSelector({
       <button
         type="button"
         aria-label="Close marks selector"
-        className="absolute inset-0 z-30 cursor-default bg-black/10 backdrop-blur-[1px]"
+        className={cn(
+          "inset-0 z-50 cursor-default bg-black/10 backdrop-blur-[1px]",
+          fixed ? "fixed" : "absolute",
+        )}
         onClick={handleBackdropClick}
       />
       <div
-        className="board-marks-quick-selector pointer-events-none absolute z-40"
+        className={cn(
+          "board-marks-quick-selector pointer-events-none z-[51]",
+          fixed ? "fixed" : "absolute",
+        )}
         style={{ left: x, top: y }}
         role="menu"
         aria-label="Marks quick selector"

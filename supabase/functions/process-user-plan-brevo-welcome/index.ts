@@ -13,7 +13,7 @@ const corsHeaders = {
 };
 
 const BATCH_SIZE = 25;
-/** Brevo transactional template "Welcome to Palette Plotting" (#2). Override with BREVO_WELCOME_TEMPLATE_ID secret. */
+/** Brevo transactional template "Welcome to palette plotting" (#2). Override with BREVO_WELCOME_TEMPLATE_ID secret. */
 const BREVO_WELCOME_TEMPLATE_ID_DEFAULT = 2;
 /** Brevo paywall contacts list (#7). Override with BREVO_PAYWALL_LIST_ID secret. */
 const BREVO_PAYWALL_LIST_ID_DEFAULT = 7;

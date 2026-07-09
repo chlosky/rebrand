@@ -19,7 +19,7 @@ export function MarketingStoreBadges({ className, size = "sm", layout = "wrap", 
         size === "lg" ? "min-h-[52px]" : "min-h-[44px]",
         className,
       )}
-      aria-label="Palette Plotting mobile app status"
+      aria-label="palette plotting mobile app status"
     >
       <div className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white">
         Mobile app coming soon

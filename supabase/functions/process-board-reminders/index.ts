@@ -11,6 +11,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 import {
+  buildReminderSmsContent,
   sanitizeSmsReminder,
   sendBrevoReminderEmail,
   sendBrevoReminderSms,
@@ -113,9 +114,9 @@ function stripSmsContent(content: string): string {
 
 function buildSmsContent(title: string, body?: string | null, smsContent?: string | null): string {
   if (typeof smsContent === "string" && smsContent.trim()) {
-    return stripSmsContent(smsContent).slice(0, 70);
+    return buildReminderSmsContent(stripSmsContent(smsContent));
   }
-  return stripSmsContent(title).slice(0, 70);
+  return buildReminderSmsContent(stripSmsContent(title));
 }
 
 function primaryReminderChannel(channels: string[] | null | undefined): string {
@@ -475,7 +476,6 @@ serve(async (req) => {
     const channels: string[] = reminder.channels ?? ["email"];
 
     const metadata = (reminder.metadata ?? null) as Record<string, unknown> | null;
-    const isActionReminder = metadata?.source_page === "action";
     const channel = primaryReminderChannel(channels);
 
     if (channel === "calendar") {
@@ -498,7 +498,7 @@ serve(async (req) => {
           status: "skipped_no_email",
           error: "missing_profile_or_auth_email",
         });
-      } else if (isActionReminder) {
+      } else {
         const result = await sendBrevoReminderEmail({
           to: email,
           actionTitle: reminder.title,
@@ -511,32 +511,6 @@ serve(async (req) => {
           error: result.ok ? null : result.error ?? "brevo_email_failed",
         });
         if (result.ok) {
-          emailSent++;
-          emailDelivered = true;
-        }
-      } else {
-        const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email-notification`;
-        const res = await fetch(fnUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            to: email,
-            subject: reminder.title,
-            textBody: reminder.title,
-            htmlBody: `<p>${reminder.title}</p>`,
-            tag: "board-reminder",
-          }),
-        });
-        await supabase.from("board_reminder_deliveries").insert({
-          reminder_id: reminder.id,
-          channel: "email",
-          status: res.ok ? "sent" : "failed",
-          error: res.ok ? null : await res.text(),
-        });
-        if (res.ok) {
           emailSent++;
           emailDelivered = true;
         }
@@ -579,13 +553,13 @@ serve(async (req) => {
 
           smsLimitDeferred = true;
 
-        } else if (!smsBody || smsBody.length > 70 || /https?:\/\//i.test(smsBody)) {
+        } else if (!smsBody || smsBody.length > 160 || /https?:\/\//i.test(smsBody)) {
 
           smsStatus = "failed";
 
           smsError = "invalid_sms_content";
 
-        } else if (isActionReminder) {
+        } else {
           const result = await sendBrevoReminderSms({
             to: phone,
             smsText: smsBody,
@@ -603,80 +577,6 @@ serve(async (req) => {
             smsStatus = "failed";
             smsError = result.error ?? "sms_send_failed";
           }
-        } else {
-
-          const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms-notification`;
-
-          const res = await fetch(fnUrl, {
-
-            method: "POST",
-
-            headers: {
-
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-
-              "Content-Type": "application/json",
-
-            },
-
-            body: JSON.stringify({
-
-              phoneNumber: phone,
-
-              message: smsBody,
-
-              purpose: "board-reminder",
-
-            }),
-
-          });
-
-
-
-          let payload: Record<string, unknown> = {};
-
-          try {
-
-            payload = await res.json();
-
-          } catch {
-
-            payload = {};
-
-          }
-
-
-
-          if (res.ok && payload?.success === true) {
-
-            smsStatus = "sent";
-
-            providerMessageId =
-
-              typeof payload.messageId === "string" ? payload.messageId : null;
-
-            smsDelivered = true;
-
-            smsSent++;
-
-            const cacheKey = `${reminder.user_id}:${localDayKey(new Date(), userTimezone)}`;
-
-            smsCountCache.set(cacheKey, sentToday + 1);
-
-          } else {
-
-            smsStatus = "failed";
-
-            smsError =
-
-              typeof payload?.error === "string"
-
-                ? payload.error
-
-                : await res.text().catch(() => "sms_send_failed");
-
-          }
-
         }
 
       }

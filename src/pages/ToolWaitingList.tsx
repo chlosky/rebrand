@@ -11,8 +11,8 @@ export default function ToolWaitingList() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   usePageSeo({
-    title: "Palette Plotting — Join the waitlist",
-    description: "Palette Plotting is opening soon. Join the waitlist for early access.",
+    title: "palette plotting — Join the waitlist",
+    description: "palette plotting is opening soon. Join the waitlist for early access.",
     path: "/",
   });
 
@@ -45,7 +45,7 @@ export default function ToolWaitingList() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#faf8f5] px-4 py-12">
       <div className="w-full max-w-md text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          Palette Plotting
+          palette plotting
         </p>
         <h1 className="mt-3 font-welcome-serif text-3xl text-neutral-900 sm:text-4xl">
           Launching Soon

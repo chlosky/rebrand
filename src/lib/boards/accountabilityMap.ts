@@ -141,7 +141,7 @@ export type AccountabilityMap = {
   version: 2;
   summary: string;
   finalized: boolean;
-  analysis_status?: "draft" | "draft_ready" | "needs_more_content" | "finalized";
+  analysis_status?: "draft" | "draft_ready" | "finalized";
   analyzed_at?: string | null;
   edited_at?: string | null;
   finalized_at?: string | null;
@@ -288,7 +288,7 @@ export function sanitizeNodeTitle(title: string, fallback: string): string {
 export function scrubMapTitles(map: AccountabilityMap): AccountabilityMap {
   const plans = map.plans.map((p) => ({
     ...p,
-    title: sanitizeNodeTitle(p.title, ""),
+    title: sanitizeNodeTitle(p.title, p.title.trim() || "Plan"),
   }));
 
   const actions = map.actions.map((a) => {
@@ -297,11 +297,75 @@ export function scrubMapTitles(map: AccountabilityMap): AccountabilityMap {
     }
     return {
       ...a,
-      title: sanitizeNodeTitle(a.title, ""),
+      title: sanitizeNodeTitle(a.title, a.title.trim()),
     };
   });
 
   return { ...map, plans, actions };
+}
+
+function buildStarterPlansAndActions(focuses: AccountabilityFocus[]): {
+  plans: AccountabilityPlan[];
+  actions: AccountabilityAction[];
+} {
+  const plans: AccountabilityPlan[] = [];
+  const actions: AccountabilityAction[] = [];
+
+  focuses.forEach((focus, index) => {
+    const planId = `plan-${index + 1}-1`;
+    const boardTitle = focus.title.trim() || "Focus board";
+
+    plans.push({
+      id: planId,
+      focus_id: focus.id,
+      title: `${boardTitle} plan`,
+      cadence: "weekly",
+      remind_day_of_month: null,
+      remind_day_of_week: "monday",
+      remind_time: DEFAULT_TIME,
+      status: "suggested",
+    });
+
+    for (const [actionIndex, title] of [
+      `${boardTitle} check-in`,
+      `Plan one priority for ${boardTitle}`,
+    ].entries()) {
+      actions.push({
+        id: `action-${index + 1}-${actionIndex + 1}`,
+        plan_id: planId,
+        title,
+        cadence: "weekly",
+        remind_date: null,
+        remind_day_of_month: null,
+        remind_day_of_week: "monday",
+        remind_time: DEFAULT_TIME,
+        status: "suggested",
+        kind: "action",
+        step_type: "task",
+        reminder_enabled: true,
+        reminder_type: "email",
+        channels: { ...DEFAULT_REMINDER_CHANNELS },
+        sms_text: null,
+        source_evidence: `From board title: ${boardTitle}`,
+        confidence: 0.4,
+      });
+    }
+  });
+
+  return { plans, actions };
+}
+
+function ensureMapHasPlansAndActions(map: AccountabilityMap): AccountabilityMap {
+  const activePlans = map.plans.filter((p) => p.title.trim() && p.status !== "rejected");
+  const activeActions = map.actions.filter((a) => a.title.trim() && a.status !== "rejected");
+  if (activePlans.length > 0 && activeActions.length > 0) return map;
+
+  const starter = buildStarterPlansAndActions(map.focuses);
+  return {
+    ...map,
+    plans: activePlans.length > 0 ? map.plans : starter.plans,
+    actions: activeActions.length > 0 ? map.actions : starter.actions,
+  };
 }
 
 function timeFromIso(iso: string): string | null {
@@ -519,32 +583,33 @@ export function normalizeAccountabilityMap(raw: unknown): AccountabilityMap | nu
     actions = migrated.actions;
   }
 
-  return scrubMapTitles({
-    version: 2,
-    summary: asString(o.summary) ?? "",
-    finalized: Boolean(o.finalized),
-    analysis_status:
-      o.analysis_status === "draft_ready" ||
-      o.analysis_status === "needs_more_content" ||
-      o.analysis_status === "finalized" ||
-      o.analysis_status === "draft"
-        ? o.analysis_status
-        : "draft_ready",
-    analyzed_at: asString(o.analyzed_at),
-    edited_at: asString(o.edited_at),
-    finalized_at: asString(o.finalized_at),
-    meta_confidence: typeof o.meta_confidence === "number" ? o.meta_confidence : null,
-    unmapped_items: Array.isArray(o.unmapped_items)
-      ? (o.unmapped_items as { text: string; reason: string }[])
-      : [],
-    review_cycle: normalizeReviewCycle(
-      ((o.review_cycle ?? o.quarterly_reset) as Record<string, unknown>) ?? {},
-    ),
-    focuses,
-    plans,
-    actions,
-    reminders: Array.isArray(o.reminders) ? (o.reminders as AccountabilityReminder[]) : [],
-  });
+  return ensureMapHasPlansAndActions(
+    scrubMapTitles({
+      version: 2,
+      summary: asString(o.summary) ?? "",
+      finalized: Boolean(o.finalized),
+      analysis_status:
+        o.analysis_status === "draft_ready" ||
+        o.analysis_status === "finalized" ||
+        o.analysis_status === "draft"
+          ? o.analysis_status
+          : "draft_ready",
+      analyzed_at: asString(o.analyzed_at),
+      edited_at: asString(o.edited_at),
+      finalized_at: asString(o.finalized_at),
+      meta_confidence: typeof o.meta_confidence === "number" ? o.meta_confidence : null,
+      unmapped_items: Array.isArray(o.unmapped_items)
+        ? (o.unmapped_items as { text: string; reason: string }[])
+        : [],
+      review_cycle: normalizeReviewCycle(
+        ((o.review_cycle ?? o.quarterly_reset) as Record<string, unknown>) ?? {},
+      ),
+      focuses,
+      plans,
+      actions,
+      reminders: Array.isArray(o.reminders) ? (o.reminders as AccountabilityReminder[]) : [],
+    }),
+  );
 }
 
 export function buildRemindersFromMap(map: AccountabilityMap): AccountabilityReminder[] {

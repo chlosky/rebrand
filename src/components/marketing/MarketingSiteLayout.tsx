@@ -7,7 +7,7 @@ type MarketingSiteLayoutProps = {
   children: ReactNode;
 };
 
-/** Bright marketing shell — palette plot styling across FAQ, blog, legal, billing, contact. */
+/** Bright marketing shell — palette plotting styling across FAQ, blog, legal, billing, contact. */
 export function MarketingSiteLayout({ children }: MarketingSiteLayoutProps) {
   return (
     <main

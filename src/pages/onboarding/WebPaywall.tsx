@@ -56,7 +56,7 @@ function WebPaywallShell({
     <div className="relative min-h-screen bg-white font-sans text-zinc-900 antialiased">
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 md:flex-row md:items-stretch md:gap-10 md:px-8 md:py-12">
         <aside className="hidden md:flex md:w-[42%] md:flex-col md:justify-center md:pr-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Palette Plotting</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">palette plotting</p>
           {headline ? (
           <h1 className="font-welcome-serif mt-3 text-4xl font-normal leading-[1.08] tracking-[-0.02em] text-zinc-900">
             {headline}

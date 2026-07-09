@@ -18,7 +18,7 @@ export const GUIDE_PUBLIC_SECTIONS = [
 ] as const;
 
 export const GUIDE_PRODUCT_TITLE =
-  "Palette Plotting Guide: The 4-Board Rebrand & Vision Board Method";
+  "palette plotting Guide: The 4-Board Rebrand & Vision Board Method";
 
 /** Short line under the title on the product page. */
 export const GUIDE_PRODUCT_SUBTITLE =
@@ -50,7 +50,7 @@ export const GUIDE_TAGLINE = "Visualize. Organize. Lock In.";
 
 export const GUIDE_PRODUCT_BODY = [
   GUIDE_PRODUCT_SUBTITLE,
-  "The Palette Plotting Guide walks you through the method behind the 4-board setup: how to choose your focus areas, pick board colors, separate each category, add images, statements, stickers, notes, dates, numbers, and turn the final board into a plan.",
+  "The palette plotting Guide walks you through the method behind the 4-board setup: how to choose your focus areas, pick board colors, separate each category, add images, statements, stickers, notes, dates, numbers, and turn the final board into a plan.",
   "Use the method with whatever materials you already have, or use it alongside acrylic boards for a cleaner wall setup.",
   "This is a digital guide/reader on paletteplot.com. No physical board is included with this product.",
 ] as const;
@@ -89,6 +89,6 @@ export const GUIDE_FAQ = [
   },
   {
     q: "Is a physical board included?",
-    a: "No. This is a digital guide only. Use it with whatever you already have, or pair it with Palette Plot acrylic boards if you want a cleaner wall setup.",
+    a: "No. This is a digital guide only. Use it with whatever you already have, or pair it with palette plotting acrylic boards if you want a cleaner wall setup.",
   },
 ] as const;

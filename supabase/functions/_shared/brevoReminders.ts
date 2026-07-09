@@ -15,6 +15,19 @@ export function sanitizeSmsReminder(text: string): string {
     .trim();
 }
 
+export const SMS_OPT_OUT_TEXT = "Reply STOP to opt out";
+const SMS_PROVIDER_MAX_LENGTH = 160;
+
+export function buildReminderSmsContent(text: string): string {
+  const clean = sanitizeSmsReminder(text).replace(/\breply\s+stop\s+to\s+opt\s+out\.?$/i, "").trim();
+  if (!clean) return "";
+
+  const separator = " ";
+  const maxBodyLength = SMS_PROVIDER_MAX_LENGTH - SMS_OPT_OUT_TEXT.length - separator.length;
+  const body = clean.length > maxBodyLength ? clean.slice(0, maxBodyLength).trim() : clean;
+  return `${body}${separator}${SMS_OPT_OUT_TEXT}`;
+}
+
 export function formatReminderTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -50,7 +63,7 @@ export async function sendBrevoReminderEmail(input: {
     },
     body: JSON.stringify({
       sender: {
-        name: Deno.env.get("BREVO_REMINDER_FROM_NAME") || "Palette Plot Reminders",
+        name: Deno.env.get("BREVO_REMINDER_FROM_NAME") || "palette plotting Reminders",
         email: fromEmail,
       },
       to: [{ email: input.to }],
@@ -87,9 +100,11 @@ export async function sendBrevoReminderSms(input: {
     return { ok: false, error: "Brevo SMS not configured" };
   }
 
-  const content = sanitizeSmsReminder(input.smsText || input.actionTitle);
+  const content = buildReminderSmsContent(input.smsText || input.actionTitle);
   if (!content) return { ok: false, error: "SMS reminder text is required." };
-  if (content.length > 70) return { ok: false, error: "Text reminders must be 70 characters or less." };
+  if (content.length > SMS_PROVIDER_MAX_LENGTH) {
+    return { ok: false, error: "Text reminders must be 160 characters or less including opt-out text." };
+  }
   if (/https?:\/\//i.test(content)) return { ok: false, error: "Text reminders cannot include links." };
 
   const res = await fetch("https://api.brevo.com/v3/transactionalSMS/send", {

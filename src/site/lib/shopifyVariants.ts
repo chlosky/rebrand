@@ -196,7 +196,7 @@ export function isBoardVariantConfigured(
   return Boolean(shopifyVariantId(size, standoff, color));
 }
 
-/** Standalone Palette Plotting Guide — Shopify variant ID. */
+/** Standalone palette plotting Guide — Shopify variant ID. */
 export const SHOPIFY_GUIDE_VARIANT_ID =
   import.meta.env.VITE_SHOPIFY_GUIDE_VARIANT_ID?.trim() || "43995101003863";
 

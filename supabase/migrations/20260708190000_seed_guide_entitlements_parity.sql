@@ -5,11 +5,11 @@
 -- Match veligrid's final product title/description for the guide.
 UPDATE public.digital_products
 SET
-  title = 'Palette Plotting Guide: The 4-Board Rebrand & Vision Board Method',
+  title = 'palette plotting Guide: The 4-Board Rebrand & Vision Board Method',
   description = 'A mobile-first digital guide for setting up a color-coded vision board wall with three focus boards and one plan board.'
 WHERE slug = 'palette-plotting-guide';
 
--- Manual Palette Plotting Guide access for susiebonner23@gmail.com
+-- Manual palette plotting Guide access for susiebonner23@gmail.com
 INSERT INTO public.digital_entitlements (email, product_slug, source, notes)
 SELECT
   'susiebonner23@gmail.com',

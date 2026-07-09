@@ -87,20 +87,20 @@ export const OnboardingLayout = ({
   const isFormPageWeb = !isNative && nativeFormPage && !isWelcome;
 
   useEffect(() => {
-    document.title = "Onboarding | Palette Plotting";
+    document.title = "Onboarding | palette plotting";
     document.querySelector('meta[name="description"]')?.setAttribute(
       "content",
-      "Start your Palette Plotting onboarding — a private studio for your next chapter.",
+      "Start your palette plotting onboarding — a private studio for your next chapter.",
     );
-    document.querySelector('meta[property="og:title"]')?.setAttribute("content", "Onboarding | Palette Plotting");
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", "Onboarding | palette plotting");
     document.querySelector('meta[property="og:description"]')?.setAttribute(
       "content",
-      "Start your Palette Plotting onboarding — a private studio for your next chapter.",
+      "Start your palette plotting onboarding — a private studio for your next chapter.",
     );
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", "Onboarding | Palette Plotting");
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", "Onboarding | palette plotting");
     document.querySelector('meta[name="twitter:description"]')?.setAttribute(
       "content",
-      "Start your Palette Plotting onboarding — a private studio for your next chapter.",
+      "Start your palette plotting onboarding — a private studio for your next chapter.",
     );
   }, [pathname]);
 
@@ -187,7 +187,7 @@ export const OnboardingLayout = ({
         </div>
       ) : null}
 
-      {/* Desktop: Palette Plotting Header - hidden for native apps */}
+      {/* Desktop: palette plotting Header - hidden for native apps */}
       {!isNative && (
         <div className="hidden md:block">
           <header
@@ -198,7 +198,7 @@ export const OnboardingLayout = ({
             <div className="container mx-auto px-6 py-4">
               <button onClick={() => navigate("/")}>
                 <h1 className="font-sans text-sm font-semibold tracking-tight text-zinc-900 transition-opacity hover:opacity-80">
-                  Palette Plotting
+                  palette plotting
                 </h1>
               </button>
             </div>

@@ -220,7 +220,7 @@ export default function Boards() {
   }, [isMobile, navigate, workspace?.id, workspaceParam]);
 
   useEffect(() => {
-    document.title = "Vision | Palette Plotting";
+    document.title = "Vision | palette plotting";
   }, []);
 
   useEffect(() => {

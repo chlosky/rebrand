@@ -99,7 +99,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
           onClick={() => navigate("/workspace")}
           className={cn("font-welcome-serif text-lg", dark ? "text-white" : "text-zinc-900")}
         >
-          Palette Plotting
+          palette plotting
         </button>
 
         <div className="flex items-center gap-1">

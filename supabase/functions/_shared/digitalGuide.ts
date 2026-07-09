@@ -1,9 +1,9 @@
-// Server-only Palette Plotting Guide: paid content, HTML renderer, session tokens,
+// Server-only palette plotting Guide: paid content, HTML renderer, session tokens,
 // and entitlement helpers. Never import this from the client (src/).
 
 export const GUIDE_PRODUCT_SLUG = "palette-plotting-guide";
 export const GUIDE_PRODUCT_TITLE =
-  "Palette Plotting Guide: The 4-Board Rebrand & Vision Board Method";
+  "palette plotting Guide: The 4-Board Rebrand & Vision Board Method";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -135,7 +135,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     blocks: [
       { type: "paragraph", text: "Most vision boards and organizing boards fail because people try to place everything in one space, without clear delineation. Also, these goals are not kept in a position in the home that forces constant ambient interaction with your goals and plans." },
       { type: "paragraph", text: "Goals, photos, quotes, money ideas, work plans, routines, screenshots, magazine cutouts, reminders, dates, and notes all end up fighting for attention, or not top of mind at all." },
-      { type: "paragraph", text: "Palette Plotting fixes that by giving every board a job." },
+      { type: "paragraph", text: "palette plotting fixes that by giving every board a job." },
       { type: "paragraph", text: "Each board has a focus." },
       { type: "paragraph", text: "Each color has a role." },
       { type: "paragraph", text: "Each sticker, image, phrase, note, and number goes somewhere specific." },
@@ -150,7 +150,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     slug: "core-setup",
     title: "The Core Setup – 4 Vision Board Rebrand",
     blocks: [
-      { type: "paragraph", text: "The core Palette Plotting setup typically uses four boards:" },
+      { type: "paragraph", text: "The core palette plotting setup typically uses four boards:" },
       { type: "subheading", text: "Three Focus boards & one Plan Board" },
       { type: "paragraph", text: "These should be the main categories you want to build around. In the setup that you saw in the viral video, there were three boards: Becoming Her, Love, and Abundance. Each set to a specific color. However, you are free to choose your own categories." },
       { type: "paragraph", text: "This has the next steps, dates, tasks, deadlines, numbers, and decisions that need action." },
@@ -438,13 +438,13 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: "A Note on the Boards",
     blocks: [
       { type: "paragraph", text: "You can test the method with paper, poster boards, or whatever you already have." },
-      { type: "paragraph", text: "Palette Plot acrylic boards bring beauty and functionality to your organizing and vision boarding experience." },
+      { type: "paragraph", text: "palette plotting acrylic boards bring beauty and functionality to your organizing and vision boarding experience." },
       { type: "paragraph", text: "They mount on the wall for a sense of permanence, come in multiple colors, and are made to make the system feel fun enough to use, but flexible enough to update as plans evolve." },
       { type: "paragraph", text: "Use the board color to separate categories. Use stickers to separate content in the board." },
       { type: "paragraph", text: "Use the plan board to keep the wall from becoming decoration and toward being a driver of action." },
       { type: "paragraph", text: "Standoffs included." },
       { type: "paragraph", text: "Sticker sheet included." },
-      { type: "paragraph", text: "Palette Plot" },
+      { type: "paragraph", text: "palette plotting" },
       { type: "paragraph", text: "Visualize. Organize. Lock in." },
     ],
   },
@@ -731,12 +731,12 @@ export function renderGuideReaderPage(
   <div class="guide-shell">
     <header class="guide-header">
       <div class="guide-header-inner">
-        <a class="guide-brand" href="${escapeHtml(opts.homeOrigin)}/">Palette Plotting</a>
+        <a class="guide-brand" href="${escapeHtml(opts.homeOrigin)}/">palette plotting</a>
         <a class="guide-sign-out" href="${escapeHtml(signOutHref)}">Sign out</a>
         <button type="button" class="guide-toc-toggle" id="guide-toc-toggle" aria-expanded="false" aria-controls="guide-mobile-toc">Sections</button>
       </div>
       <div class="guide-header-meta">
-        <p class="guide-product-title">Palette Plotting Guide</p>
+        <p class="guide-product-title">palette plotting Guide</p>
       </div>
     </header>
     <div class="guide-layout">

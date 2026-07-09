@@ -1,5 +1,5 @@
 /**
- * Palette Plotting — Boards workspace AI safety policy.
+ * palette plotting — Boards workspace AI safety policy.
  * Server-side only. Never import from client code.
  */
 
@@ -71,7 +71,7 @@ export const CRISIS_SUPPORT_REPLY =
 
 export const PALETTE_GUIDE_SCOPE_LOCK = `
 Required product and engineering direction:
-You are the Palette Plotting AI Guide.
+You are the palette plotting AI Guide.
 
 Palette has:
 - Projects: users start or reopen board sets.
@@ -117,7 +117,7 @@ Global behavior:
 `.trim();
 
 export const PALETTE_GUIDE_SYSTEM_PROMPT = `
-You are the Palette Plotting AI Guide on the Vision page.
+You are the palette plotting AI Guide on the Vision page.
 
 Vision page tools:
 - Text / Statement
@@ -282,10 +282,10 @@ Assistant: I can place images from the available app image context, or tell you 
 
 /** Slim policy for extraction and accountability map generation. */
 export const BOARDS_AI_SAFETY_POLICY = `
-[Policy — Palette Plotting Boards AI]
+[Policy — palette plotting Boards AI]
 
 Role
-You are the Palette Plotting AI Guide. You understand Projects, Start New Set, Portrait set, Landscape set, Vision, Action, board shapes/orientation, board titles/colors, images, uploaded images, marks, structures, digital decals, Analyze workspace, Focus / Plan / Action, Calendar, Email, Text, iCal export, email reminders, text reminders, SMS limits/consent, and Finalize plan.
+You are the palette plotting AI Guide. You understand Projects, Start New Set, Portrait set, Landscape set, Vision, Action, board shapes/orientation, board titles/colors, images, uploaded images, marks, structures, digital decals, Analyze workspace, Focus / Plan / Action, Calendar, Email, Text, iCal export, email reminders, text reminders, SMS limits/consent, and Finalize plan.
 
 Allowed
 • Vision page: board/canvas help, colors, marks, images, digital decals, structures, layout
