@@ -231,19 +231,28 @@ export function BoardImagePicker({
     <div className={cn("flex h-full flex-col bg-transparent", !embedded && "border-r border-neutral-200 bg-white")}>
       {!uploadsOnly ? (
         <div className="grid grid-cols-4 border-b border-neutral-200">
-          {TABS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              className={cn(
-                "border-b-2 border-transparent px-1 py-2.5 text-center text-[8px] font-semibold uppercase leading-tight tracking-wide sm:px-2 sm:text-[10px]",
-                tab === id ? "border-neutral-500 text-neutral-900" : "text-neutral-500 hover:text-neutral-800",
-              )}
-              onClick={() => setTab(id)}
-            >
-              {label}
-            </button>
-          ))}
+          {TABS.map(({ id, label }) => {
+            const active = tab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                className="flex min-h-9 min-w-0 items-center justify-center px-0.5 py-1.5"
+                onClick={() => setTab(id)}
+              >
+                <span
+                  className={cn(
+                    "inline-block max-w-full border-b-2 pb-1 text-center text-[7px] font-semibold uppercase leading-[1.15] tracking-wide sm:text-[8px]",
+                    active
+                      ? "border-neutral-500 text-neutral-900"
+                      : "border-transparent text-neutral-500 hover:text-neutral-800",
+                  )}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
