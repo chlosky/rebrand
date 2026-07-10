@@ -244,7 +244,7 @@ export const OnboardingLayout = ({
             : isNative
               ? "min-h-screen justify-start pb-32 px-8"
               : isWelcomeMobileWeb
-                ? "max-md:min-h-[100dvh] max-md:justify-start max-md:px-8 max-md:pt-[calc(env(safe-area-inset-top,0px)+1.25rem)] max-md:pb-40 md:min-h-screen md:justify-center md:gap-6 md:p-8 md:pt-24 md:pb-12 md:bg-transparent"
+                ? "max-md:min-h-[100dvh] max-md:justify-start max-md:px-8 max-md:pt-[calc(env(safe-area-inset-top,0px)+5.5rem)] max-md:pb-40 md:min-h-screen md:justify-center md:gap-6 md:p-8 md:pt-24 md:pb-12 md:bg-transparent"
                 : isFormPageWeb
                   ? "max-md:h-full max-md:min-h-0 max-md:justify-start max-md:px-8 max-md:pb-40 max-md:pt-[calc(env(safe-area-inset-top,0px)+2.5rem)] md:justify-start md:p-8 md:pt-24"
                   : "min-h-screen justify-between pt-12 p-8 md:pt-24",
@@ -295,14 +295,15 @@ export const OnboardingLayout = ({
           className={cn(
             "w-full",
             nativeWelcomeSideBySide
-              ? "fixed inset-x-0 bottom-0 z-40 md:hidden"
+              ? "fixed inset-x-0 bottom-0 z-40 flex flex-col items-center md:hidden"
               :               isWelcomeMobileWeb
-                ? "relative z-50 shrink-0 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-40 md:space-y-2 md:pt-3"
+                ? "relative z-50 shrink-0 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-40 max-md:flex max-md:flex-col max-md:items-center md:space-y-2 md:pt-3"
                 : isWelcome
                   ? "relative z-50 shrink-0 space-y-2 pt-3"
                   : "md:hidden",
             !isWelcome && !isFormPageWeb && "space-y-6",
             !(isNative && !isWelcome) && !nativeWelcomeSideBySide && contentMaxWidthClass,
+            isWelcomeMobileWeb && "max-md:mx-auto",
             isNative && !isWelcome && "fixed inset-x-0 bottom-0 z-50 md:hidden",
             isFormPageWeb &&
               !isWelcome &&
@@ -430,7 +431,7 @@ export const OnboardingLayout = ({
               )}
             >
               {isWelcome && !welcomeSignInAsTextLink ? (
-                <div className="flex w-full items-center gap-3">
+                <div className="flex w-full max-w-md items-center justify-center gap-3 max-md:mx-auto">
                   <Button
                     variant="outline"
                     onClick={() => navigate("/login")}

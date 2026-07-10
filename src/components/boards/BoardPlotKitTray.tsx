@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { RefObject } from "react";
-import { BookImage, MessageCircleHeart, Palette, PenLine, StickyNote, Type } from "lucide-react";
+import { BookImage, MessageCircleHeart, Palette, PenLine, ScrollText, StickyNote, Type } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
@@ -11,14 +11,14 @@ import {
   BOARD_MARK_SHAPE_OPTIONS,
   BOARD_MARK_STICKER_OPTIONS,
 } from "@/components/boards/BoardMarksQuickSelector";
-import { PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE, StructureDecalPreview, type PlotDockTab } from "@/components/boards/BoardPlottingWorkbench";
+import { PLOT_STRUCTURE_COMPACT, PLOT_STRUCTURES, STRUCTURE_DECAL_SIZE, StructureDecalPreview, type PlotDockTab } from "@/components/boards/BoardPlottingWorkbench";
 import { BoardCompanionPanel } from "@/components/boards/BoardCompanionPanel";
 import { cn } from "@/lib/utils";
 
 const TAB_LABELS: Record<PlotDockTab, string> = {
   companion: "Guide",
   clippings: "Images",
-  structures: "Color",
+  structures: "Layout",
   marks: "Marks",
 };
 
@@ -156,33 +156,66 @@ export function BoardPlotKitTray({
                   swatchSize="md"
                 />
                 {PLOT_STRUCTURES.length > 0 ? (
-                  <div className="grid gap-2 p-3">
-                    {PLOT_STRUCTURES.map((s) => (
-                      <button
-                        key={s.type}
-                        type="button"
-                        onClick={() => {
-                          if (onPlaceStructure) {
-                            onPlaceStructure(s.type, s.items);
-                          } else {
-                            const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
-                            editor()?.addDiagramOverlay(
-                              s.type,
-                              placement.x,
-                              placement.y,
-                              placement.w,
-                              placement.h,
-                              s.items,
-                            );
-                          }
-                          close();
-                        }}
-                        className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
-                      >
-                        <span className="text-sm font-semibold text-stone-900">{s.title}</span>
-                        <StructureDecalPreview type={s.type} />
-                      </button>
-                    ))}
+                  <div className="p-3">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                      Digital decals
+                    </p>
+                    <div className="grid gap-2">
+                      {PLOT_STRUCTURES.filter((s) => !PLOT_STRUCTURE_COMPACT.some((c) => c.type === s.type)).map((s) => (
+                        <button
+                          key={s.type}
+                          type="button"
+                          onClick={() => {
+                            if (onPlaceStructure) {
+                              onPlaceStructure(s.type, s.items);
+                            } else {
+                              const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+                              editor()?.addDiagramOverlay(
+                                s.type,
+                                placement.x,
+                                placement.y,
+                                placement.w,
+                                placement.h,
+                                s.items,
+                              );
+                            }
+                            close();
+                          }}
+                          className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-3 py-3 text-left active:bg-white"
+                        >
+                          <span className="text-sm font-semibold text-stone-900">{s.title}</span>
+                          <StructureDecalPreview type={s.type} />
+                        </button>
+                      ))}
+                      <div className="grid grid-cols-2 gap-2">
+                        {PLOT_STRUCTURE_COMPACT.map((s) => (
+                          <button
+                            key={s.type}
+                            type="button"
+                            onClick={() => {
+                              if (onPlaceStructure) {
+                                onPlaceStructure(s.type, s.items);
+                              } else {
+                                const placement = STRUCTURE_DECAL_SIZE[s.type] ?? { x: 0.12, y: 0.28, w: 0.72, h: 0.22 };
+                                editor()?.addDiagramOverlay(
+                                  s.type,
+                                  placement.x,
+                                  placement.y,
+                                  placement.w,
+                                  placement.h,
+                                  s.items,
+                                );
+                              }
+                              close();
+                            }}
+                            className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-2 py-2 text-left active:bg-white"
+                          >
+                            <span className="text-xs font-semibold text-stone-900">{s.title}</span>
+                            <StructureDecalPreview type={s.type} compact />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : null}
               </>
@@ -212,6 +245,16 @@ export function BoardPlotKitTray({
                       }}
                     >
                       <StickyNote className="h-4 w-4" /> Sticky note
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-stone-700 active:bg-stone-200/60"
+                      onClick={() => {
+                        editor()?.addParchmentNote();
+                        window.setTimeout(() => close(), 0);
+                      }}
+                    >
+                      <ScrollText className="h-4 w-4" /> Parchment
                     </button>
                     <button
                       type="button"

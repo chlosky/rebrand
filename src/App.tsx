@@ -36,7 +36,6 @@ import {
   SetupEmail,
   SetupName,
   SetupAttribution,
-  SetupPlotLoading,
   SetupPlotSynthesis,
   SetupStartingSystem,
 } from "./pages/onboarding/setup";
@@ -138,7 +137,6 @@ const App = () => {
               <Route path="/onboarding/setup/moodboard-focus" element={<SetupMoodboardFocus />} />
               <Route path="/onboarding/setup/begin-journey" element={<SetupBeginJourney />} />
               <Route path="/onboarding/setup/attribution" element={<SetupAttribution />} />
-              <Route path="/onboarding/setup/plot-loading" element={<SetupPlotLoading />} />
               <Route path="/onboarding/setup/plot-synthesis" element={<SetupPlotSynthesis />} />
               <Route path="/onboarding/setup/email" element={<SetupEmail />} />
 

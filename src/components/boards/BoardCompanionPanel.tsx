@@ -199,15 +199,10 @@ const VALID_COLOR_KEYS = new Set(Object.keys(BOARD_COLORS));
 const VALID_LIBRARY_THEMES = new Set<string>(BOARD_IMAGE_THEMES);
 
 const VALID_DIAGRAMS = new Set<BoardDiagramType>([
-  "eisenhower",
-  "checklist",
+  "checkbox",
+  "numbered_list",
+  "bullet",
   "calendar",
-  "zones",
-  "timeline",
-  "kanban",
-  "gantt",
-  "okrs",
-  "five_s",
   "divider",
 ]);
 
@@ -305,10 +300,6 @@ function isValidGuideAction(action: unknown): action is GuideAction {
       if (typeof a.match_text === "string" && a.match_text.trim().length > 0) return true;
       if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
       return false;
-    case "kanban_seed":
-      return Array.isArray(a.columns) && a.columns.length > 0;
-    case "gantt_seed":
-      return Array.isArray(a.tasks) && a.tasks.length > 0;
     case "add_board":
     case "delete_board":
     case "duplicate_board":
@@ -738,24 +729,6 @@ export function BoardGuideChatPanel({
             continue;
           }
 
-          if (type === "kanban_seed" && Array.isArray(action.columns)) {
-            const titles = (action.columns as { title?: string }[])
-              .map((c) => (typeof c.title === "string" ? c.title : ""))
-              .filter(Boolean);
-            editor.addDiagramOverlay("kanban", 0.08, 0.42, 0.84, 0.5, titles.length ? titles : undefined);
-            applied += 1;
-            continue;
-          }
-
-          if (type === "gantt_seed" && Array.isArray(action.tasks)) {
-            const names = (action.tasks as { name?: string }[])
-              .map((t) => (typeof t.name === "string" ? t.name : ""))
-              .filter(Boolean);
-            editor.addDiagramOverlay("gantt", 0.1, 0.45, 0.8, 0.42, names.length ? names : undefined);
-            applied += 1;
-            continue;
-          }
-
           if (type === "add_text" && typeof action.text === "string") {
             editor.addTextNormalized(
               action.text,
@@ -770,7 +743,7 @@ export function BoardGuideChatPanel({
 
           if (type === "add_sticky") {
             editor.addStickyNoteAt(
-              "",
+              typeof action.text === "string" ? action.text : "",
               clamp01(typeof action.x === "number" ? action.x : 0.12),
               clamp01(typeof action.y === "number" ? action.y : 0.35),
               typeof action.fill === "string" ? action.fill : "#FFF9C4",

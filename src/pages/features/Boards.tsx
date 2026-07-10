@@ -456,7 +456,7 @@ export default function Boards() {
               variant="ghost"
               size="icon"
               className="h-8 w-8 max-md:h-7 max-md:w-7"
-              onClick={() => navigate("/workspace")}
+              onClick={() => navigate("/workspace?tab=projects")}
             >
               <ArrowLeft className="h-4 w-4 max-md:h-3.5 max-md:w-3.5" />
             </Button>

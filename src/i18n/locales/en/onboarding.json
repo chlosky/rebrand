@@ -6,7 +6,7 @@
     "freeTrialLine": "Start free",
     "nativeTitle": "Put your visions into motion",
     "nativeTitleTwo": "Start your 4-Vision Board Rebrand",
-    "tagline": "Vision · Plan · Accountability",
+    "tagline": "Envision · Plan · Act",
     "descriptionLines": [
       "Set your focus areas.",
       "Build boards around them,",
@@ -27,7 +27,7 @@
     },
     "startingSystem": {
       "title": "What are you setting up?",
-      "subtitle": "Let us know what you need the most help with right now. You'll be able to make boards for all of these areas in the tool.",
+      "subtitle": "You'll be able to make boards for all of these areas.",
       "options": {
         "life_rebranding": {
           "title": "Vision boards & life plotting",
@@ -35,15 +35,15 @@
         },
         "home_organization": {
           "title": "Home organization",
-          "description": "Organize your household's routines, zones, chores and meals."
+          "description": "Organize home routines, chores, zones, and meals."
         },
         "office_work": {
           "title": "Office & projects",
-          "description": "Optimize with Kanban, timelines, priorities and other boards."
+          "description": "Kanban, strategy sessions, brainstorm, checklists, etc."
         },
         "moodboarding": {
           "title": "Moodboarding",
-          "description": "Build aesthetic boards for interiors, style, travel, or brand direction."
+          "description": "Aesthetics across interiors, style, travel and brand."
         }
       }
     },
@@ -59,34 +59,34 @@
       }
     },
     "officePlanning": {
-      "title": "How do you like to optimize workflows?",
+      "title": "How do you want to optimize workflows?",
       "subtitle": "Tell us the areas you want to prioritize.",
       "systems": {
         "kanban": {
           "title": "Kanban",
-          "description": "Move tasks from To Do to Done."
+          "description": "Move work from To Do to Done."
         },
-        "gantt": {
-          "title": "Timeline",
-          "description": "Map tasks across a timeline."
+        "strategy_sessions": {
+          "title": "Strategy sessions",
+          "description": "Map priorities, goals, and next moves."
         },
-        "eisenhower": {
-          "title": "Priority grid",
-          "description": "Determine what matters now, next, later, or not at all."
+        "brainstorming": {
+          "title": "Brainstorm",
+          "description": "Capture ideas, options, and creative directions."
         },
-        "okrs": {
-          "title": "OKRs",
-          "description": "Set goals and metrics to track progress."
+        "checklists": {
+          "title": "Checklists",
+          "description": "Track tasks, routines, and recurring work."
         },
         "other": {
           "title": "Something else",
-          "description": "Tell us how you like to work.",
-          "placeholder": "Describe how you like to optimize workflows…"
+          "description": "Another workflow you want to optimize.",
+          "placeholder": "Describe how you want to optimize workflows…"
         }
       }
     },
     "moodboardFocus": {
-      "title": "What do you typically moodboards?",
+      "title": "What do you typically moodboard?",
       "subtitle": "Tell us the areas you want to prioritize.",
       "options": {
         "mood_aesthetic_style": "Aesthetics & style",
@@ -97,17 +97,17 @@
       }
     },
     "attribution": {
-      "title": "How did you find palette plotting?",
+      "titleLead": "How did you find",
+      "titleBrand": "palette plotting?",
       "subtitle": "This helps us understand what's working.",
       "options": {
         "tiktok": "TikTok",
-        "instagram": "Instagram",
-        "app_store": "Mobile app referral",
         "friend": "A friend told me",
         "youtube": "YouTube",
         "search": "Google / search",
         "other": "Somewhere else"
-      }
+      },
+      "otherPlaceholder": "Tell us where you found us…"
     },
     "email": {
       "title": "Create your account",
@@ -138,27 +138,34 @@
     },
     "plotSynthesis": {
       "title": "Your workspace is ready.",
-      "subtitle": "Your boards, your plan, and your reminders are set up.",
+      "subtitle": "Your boards, plan and reminders are waiting.",
       "general": [
-        "Workspace for all your home, office & life.",
-        "Organize your visions & plans beautifully.",
-        "Print out your boards as full-sized posters.",
-        "Save your boards as phone wallpapers.",
-        "Create an action plan that brings plans to life.",
-        "Set daily, weekly, and monthly reminders.",
-        "Reset boards and set new visions."
+        {
+          "short": "Workspace for home, office & life.",
+          "long": "Workspace for all your home, office & life."
+        },
+        {
+          "short": "Organize visions & action plans.",
+          "long": "Organize your visions and quickly create action plans that bring them to life."
+        },
+        {
+          "short": "Download & print boards as posters or phone wallpaper.",
+          "long": "Download & print your boards as full-sized posters and phone wallpaper."
+        },
+        {
+          "short": "Set email & calendar reminders. Text reminders incoming!",
+          "long": "Set email & calendar reminders. Text reminders incoming!"
+        },
+        {
+          "short": "Reset boards and set new visions.",
+          "long": "Reset boards and set new visions."
+        }
       ],
       "moodboard": [
         "Studio for all your moodboarding desires.",
         "Organize your visuals beautifully.",
         "Print out your moodboards."
       ]
-    },
-    "plotLoading": {
-      "title": "Building your workspace…",
-      "subtitle": "Setting up your boards and your plan.",
-      "loading": "Building",
-      "hint": "This usually takes a moment."
     },
     "beginJourney": {
       "lead": "Your boards are set.",

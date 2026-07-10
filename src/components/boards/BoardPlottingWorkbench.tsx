@@ -7,6 +7,7 @@ import {
   MessageCircleHeart,
   Palette,
   PenLine,
+  ScrollText,
   Shapes,
   StickyNote,
   Type,
@@ -25,14 +26,30 @@ import { cn } from "@/lib/utils";
 
 export type PlotDockTab = "companion" | "clippings" | "structures" | "marks";
 
+export const PLOT_STRUCTURE_COMPACT: {
+  type: BoardDiagramType;
+  title: string;
+  items?: string[];
+}[] = [
+  { type: "checkbox", title: "Checkbox" },
+  { type: "bullet", title: "Bullet" },
+];
+
 export const PLOT_STRUCTURES: {
   type: BoardDiagramType;
   title: string;
   items?: string[];
-}[] = [];
+}[] = [
+  { type: "calendar", title: "Calendar" },
+  { type: "numbered_list", title: "Numbered List" },
+  { type: "divider", title: "Divider" },
+  ...PLOT_STRUCTURE_COMPACT,
+];
 
 export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: number; w: number; h: number }> = {
-  checklist: { x: 0.14, y: 0.2, w: 0.62, h: 0.34 },
+  checkbox: { x: 0.44, y: 0.42, w: 0.12, h: 0.12 },
+  numbered_list: { x: 0.14, y: 0.2, w: 0.62, h: 0.34 },
+  bullet: { x: 0.46, y: 0.44, w: 0.06, h: 0.06 },
   calendar: { x: 0.06, y: 0.1, w: 0.88, h: 0.72 },
   divider: { x: 0.12, y: 0.46, w: 0.76, h: 0.02 },
   zones: { x: 0.12, y: 0.24, w: 0.68, h: 0.24 },
@@ -46,7 +63,7 @@ export const STRUCTURE_DECAL_SIZE: Record<BoardDiagramType, { x: number; y: numb
 
 const decalInk = "bg-neutral-900";
 
-export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
+export function StructureDecalPreview({ type, compact = false }: { type: BoardDiagramType; compact?: boolean }) {
   if (type === "kanban") {
     return (
       <div className="mt-2 flex h-8 items-end gap-0 border-b border-neutral-900/70 pb-0.5">
@@ -66,15 +83,29 @@ export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
       </div>
     );
   }
-  if (type === "checklist") {
+  if (type === "checkbox") {
+    return (
+      <div className={cn("flex items-center justify-center px-1", compact ? "mt-1 h-4" : "mt-3 h-6")}>
+        <span className={cn("border-2 border-neutral-900/80", compact ? "h-3 w-3" : "h-4 w-4")} />
+      </div>
+    );
+  }
+  if (type === "numbered_list") {
     return (
       <div className="mt-2 space-y-1.5">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 shrink-0 border border-neutral-900/80" />
+        {["1.", "2.", "3."].map((n) => (
+          <div key={n} className="flex items-center gap-1.5">
+            <span className="w-4 text-[10px] font-semibold text-neutral-900/80">{n}</span>
             <span className="h-px flex-1 border-b border-dashed border-neutral-400/70" />
           </div>
         ))}
+      </div>
+    );
+  }
+  if (type === "bullet") {
+    return (
+      <div className={cn("flex items-center justify-center px-1", compact ? "mt-1 h-4" : "mt-3 h-6")}>
+        <span className={cn("rounded-full bg-neutral-900/85", compact ? "h-2 w-2" : "h-2.5 w-2.5")} />
       </div>
     );
   }
@@ -141,14 +172,14 @@ export function StructureDecalPreview({ type }: { type: BoardDiagramType }) {
 const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
   { id: "companion", label: "Guide", Icon: MessageCircleHeart },
   { id: "clippings", label: "Images", Icon: BookImage },
-  { id: "structures", label: "Color", Icon: Palette },
+  { id: "structures", label: "Layout", Icon: Palette },
   { id: "marks", label: "Marks", Icon: PenLine },
 ];
 
 const TAB_INTROS: Record<PlotDockTab, string> = {
   companion: "Colors, labels, images, notes, structures, digital decals, layout, and board names.",
-  clippings: "Browse Our Collection or add photos to Your Library.",
-  structures: "Pick board color and saved presets.",
+  clippings: "Browse Our Collection for photos, found objects, and affixements, or add images to Your Library.",
+  structures: "Pick a board color, then add digital decals like calendar, checkbox, and divider.",
   marks: "Right-click empty board to add marks.",
 };
 
@@ -314,8 +345,11 @@ export function BoardPlottingWorkbench({
                 {boardColorStrip}
                 {PLOT_STRUCTURES.length > 0 ? (
                   <div className="p-2">
+                    <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                      Digital decals
+                    </p>
                     <div className="grid gap-1.5">
-                      {PLOT_STRUCTURES.map((s) => (
+                      {PLOT_STRUCTURES.filter((s) => !PLOT_STRUCTURE_COMPACT.some((c) => c.type === s.type)).map((s) => (
                         <button
                           key={s.type}
                           type="button"
@@ -326,6 +360,19 @@ export function BoardPlottingWorkbench({
                           <StructureDecalPreview type={s.type} />
                         </button>
                       ))}
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {PLOT_STRUCTURE_COMPACT.map((s) => (
+                          <button
+                            key={s.type}
+                            type="button"
+                            onClick={() => placeStructure(s.type, s.items)}
+                            className="rounded-lg border border-stone-300/70 bg-[#faf8f5] px-2 py-1.5 text-left hover:border-stone-500/50 hover:bg-white"
+                          >
+                            <span className="text-[10px] font-semibold text-stone-900">{s.title}</span>
+                            <StructureDecalPreview type={s.type} compact />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -342,6 +389,9 @@ export function BoardPlottingWorkbench({
                     </button>
                     <button type="button" className={markBtn} onClick={() => editorRef.current?.addStickyNote()}>
                       <StickyNote className="h-4 w-4" /> Sticky note
+                    </button>
+                    <button type="button" className={markBtn} onClick={() => editorRef.current?.addParchmentNote()}>
+                      <ScrollText className="h-4 w-4" /> Parchment
                     </button>
                     <button
                       type="button"

@@ -8,7 +8,9 @@
     "Travel & Adventure",
     "Organization & Plan",
     "Aesthetic & Mood",
-    "Self & Direction"
+    "Self & Direction",
+    "Found Objects",
+    "Affixements"
   ],
   "images": [
     {
@@ -1467,6 +1469,380 @@
       "description": "Starry milky way mountains",
       "tags": [
         "aesthetic-mood"
+      ]
+    },
+    {
+      "id": "found-objects-01-pressed-white-flowers",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/01-pressed-white-flowers.png",
+      "description": "Pressed white flowers",
+      "tags": [
+        "found-objects",
+        "flowers"
+      ]
+    },
+    {
+      "id": "found-objects-02-pressed-sunflower",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/02-pressed-sunflower.png",
+      "description": "Pressed sunflower",
+      "tags": [
+        "found-objects",
+        "flowers"
+      ]
+    },
+    {
+      "id": "found-objects-03-pressed-roses",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/03-pressed-roses.png",
+      "description": "Pressed roses",
+      "tags": [
+        "found-objects",
+        "flowers"
+      ]
+    },
+    {
+      "id": "found-objects-04-pressed-bay-leaf",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/04-pressed-bay-leaf.png",
+      "description": "Pressed bay leaf",
+      "tags": [
+        "found-objects",
+        "botanical"
+      ]
+    },
+    {
+      "id": "found-objects-05-dried-lavender",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/05-dried-lavender.png",
+      "description": "Dried lavender",
+      "tags": [
+        "found-objects",
+        "botanical"
+      ]
+    },
+    {
+      "id": "found-objects-06-blank-check",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/06-blank-check.png",
+      "description": "Blank check",
+      "tags": [
+        "found-objects",
+        "ephemera"
+      ]
+    },
+    {
+      "id": "found-objects-07-first-class-ticket",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/07-first-class-ticket.png",
+      "description": "First class ticket",
+      "tags": [
+        "found-objects",
+        "travel"
+      ]
+    },
+    {
+      "id": "found-objects-08-map-fragment",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/08-map-fragment.png",
+      "description": "Map fragment",
+      "tags": [
+        "found-objects",
+        "ephemera"
+      ]
+    },
+    {
+      "id": "found-objects-09-luxury-gift",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/09-luxury-gift.png",
+      "description": "Luxury gift",
+      "tags": [
+        "found-objects",
+        "luxury"
+      ]
+    },
+    {
+      "id": "found-objects-10-diamond",
+      "theme": "Found Objects",
+      "category": "Found Objects",
+      "url": "/boardimagelibrary/found-objects/10-diamond.png",
+      "description": "Diamond",
+      "tags": [
+        "found-objects",
+        "luxury"
+      ]
+    },
+    {
+      "id": "affixements-magnet-gold",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/magnet-gold.png",
+      "description": "Magnet Gold",
+      "tags": [
+        "affixements",
+        "magnet"
+      ]
+    },
+    {
+      "id": "affixements-magnet-silver",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/magnet-silver.png",
+      "description": "Magnet Silver",
+      "tags": [
+        "affixements",
+        "magnet"
+      ]
+    },
+    {
+      "id": "affixements-magnet-black",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/magnet-black.png",
+      "description": "Magnet Black",
+      "tags": [
+        "affixements",
+        "magnet"
+      ]
+    },
+    {
+      "id": "affixements-magnet-rose-gold",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/magnet-rose-gold.png",
+      "description": "Magnet Rose Gold",
+      "tags": [
+        "affixements",
+        "magnet"
+      ]
+    },
+    {
+      "id": "affixements-magnet-sage-green",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/magnet-sage-green.png",
+      "description": "Magnet Sage Green",
+      "tags": [
+        "affixements",
+        "magnet"
+      ]
+    },
+    {
+      "id": "affixements-magnet-red",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/magnet-red.png",
+      "description": "Magnet Red",
+      "tags": [
+        "affixements",
+        "magnet"
+      ]
+    },
+    {
+      "id": "affixements-binder-clip-gold",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/binder-clip-gold.png",
+      "description": "Binder Clip Gold",
+      "tags": [
+        "affixements",
+        "binder-clip"
+      ]
+    },
+    {
+      "id": "affixements-binder-clip-silver",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/binder-clip-silver.png",
+      "description": "Binder Clip Silver",
+      "tags": [
+        "affixements",
+        "binder-clip"
+      ]
+    },
+    {
+      "id": "affixements-binder-clip-black",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/binder-clip-black.png",
+      "description": "Binder Clip Black",
+      "tags": [
+        "affixements",
+        "binder-clip"
+      ]
+    },
+    {
+      "id": "affixements-binder-clip-rose-gold",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/binder-clip-rose-gold.png",
+      "description": "Binder Clip Rose Gold",
+      "tags": [
+        "affixements",
+        "binder-clip"
+      ]
+    },
+    {
+      "id": "affixements-binder-clip-sage-green",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/binder-clip-sage-green.png",
+      "description": "Binder Clip Sage Green",
+      "tags": [
+        "affixements",
+        "binder-clip"
+      ]
+    },
+    {
+      "id": "affixements-binder-clip-red",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/binder-clip-red.png",
+      "description": "Binder Clip Red",
+      "tags": [
+        "affixements",
+        "binder-clip"
+      ]
+    },
+    {
+      "id": "affixements-tape-red",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-red.png",
+      "description": "Tape Red",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-orange",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-orange.png",
+      "description": "Tape Orange",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-bold-yellow",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-bold-yellow.png",
+      "description": "Tape Bold Yellow",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-pale-yellow",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-pale-yellow.png",
+      "description": "Tape Pale Yellow",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-dark-green",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-dark-green.png",
+      "description": "Tape Dark Green",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-sage-green",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-sage-green.png",
+      "description": "Tape Sage Green",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-light-blue",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-light-blue.png",
+      "description": "Tape Light Blue",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-blue",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-blue.png",
+      "description": "Tape Blue",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-lavender",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-lavender.png",
+      "description": "Tape Lavender",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-purple",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-purple.png",
+      "description": "Tape Purple",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-light-pink",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-light-pink.png",
+      "description": "Tape Light Pink",
+      "tags": [
+        "affixements",
+        "tape"
+      ]
+    },
+    {
+      "id": "affixements-tape-pink",
+      "theme": "Affixements",
+      "category": "Affixements",
+      "url": "/boardimagelibrary/affixements/tape-pink.png",
+      "description": "Tape Pink",
+      "tags": [
+        "affixements",
+        "tape"
       ]
     }
   ]

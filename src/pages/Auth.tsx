@@ -128,9 +128,6 @@ const Auth = () => {
       <div className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-8 sm:px-6">
         <div className="w-full max-w-md">
           <div className="mb-8 flex flex-col items-center text-center">
-            <span className="mb-6 font-sans text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
-              palette plotting
-            </span>
             {resetSent ? (
               <h1 className={SETUP_HEADING_TITLE_CLASS}>{t("forgotPassword.checkEmailTitle")}</h1>
             ) : (

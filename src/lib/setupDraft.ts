@@ -22,6 +22,8 @@ export type SetupDraft = {
   }[];
   /** How the user found palette plotting (onboarding attribution step). */
   attributionSource?: string;
+  /** Free-text response when attribution "other" is selected. */
+  attributionOther?: string;
   /** Pre-permission choice for iOS ATT prompt; actual permission remains `trackingAuthorizationStatus`. */
   trackingPrePermissionChoice?: "yes" | "no" | null;
   trackingAuthorizationStatus?:

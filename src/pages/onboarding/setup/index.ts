@@ -6,6 +6,5 @@ export { default as SetupHomeFocus } from "./HomeFocus";
 export { default as SetupOfficePlanningSystem } from "./OfficePlanningSystem";
 export { default as SetupMoodboardFocus } from "./MoodboardFocus";
 export { default as SetupBeginJourney } from "./BeginJourney";
-export { default as SetupPlotLoading } from "./PlotLoading";
 export { default as SetupPlotSynthesis } from "./PlotSynthesis";
 export { default as SetupAttribution } from "./Attribution";

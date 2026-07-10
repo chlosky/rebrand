@@ -33,6 +33,8 @@ type Props = {
    * Mobile web: no inner scroll box; content flows flat above the fixed footer reserve.
    */
   contentFitsViewport?: boolean;
+  /** Mobile footer: solid white bar instead of gradient fade over content. */
+  plainMobileFooter?: boolean;
 };
 
 export function SetupPage({
@@ -46,6 +48,7 @@ export function SetupPage({
   disableNativeScrollViewport = false,
   hideProgress = false,
   contentFitsViewport = false,
+  plainMobileFooter = false,
 }: Props) {
   const { t } = useTranslation("common");
   const isNative = useIsNativeApp();
@@ -122,7 +125,11 @@ export function SetupPage({
   const mobileFooter = hasMobileFooter ? (
     <div
       className="fixed inset-x-0 bottom-0 z-40 md:hidden"
-      style={MOBILE_SETUP_FOOTER_STYLE}
+      style={
+        plainMobileFooter
+          ? { paddingBottom: MOBILE_SETUP_FOOTER_STYLE.paddingBottom, backgroundColor: WELCOME_LIGHT_BASE }
+          : MOBILE_SETUP_FOOTER_STYLE
+      }
     >
       <div className="mx-auto flex w-full max-w-md items-center gap-3 px-8">
         {onBack ? (

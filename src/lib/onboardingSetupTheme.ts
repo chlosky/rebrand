@@ -39,7 +39,7 @@ export const SETUP_FIELD_CLASS =
   "h-12 rounded-2xl border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400 scroll-mt-3 focus-visible:ring-zinc-300";
 
 export const SETUP_TEXTAREA_CLASS =
-  "min-h-[140px] rounded-2xl border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400 scroll-mt-3 focus-visible:ring-zinc-300 focus-visible:ring-offset-0";
+  "min-h-[120px] w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-900 placeholder:text-zinc-400 scroll-mt-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 focus-visible:ring-offset-0";
 
 export const SETUP_CHOICE_ICON_WRAP_CLASS =
   "inline-flex shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700";

@@ -84,11 +84,11 @@ function keepObjectFullyInsideArtboard(
 const DECAL_INK = "#111111";
 const DECAL_MUTED = "rgba(17,17,17,0.58)";
 const DECAL_LINE = "rgba(17,17,17,0.82)";
+const LINE_DASH_PATTERN = [16, 10];
 
 let boardObjectClipboard: Record<string, unknown>[] | null = null;
 
 const STRUCTURE_ROW_H = 38;
-const STRUCTURE_BOX = 20;
 const STRUCTURE_FONT = "system-ui, sans-serif";
 
 const CALENDAR_MONTHS = [
@@ -110,6 +110,10 @@ const CALENDAR_WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as c
 
 const CALENDAR_MIN_W = 520;
 const CALENDAR_MIN_H = 360;
+const NUMBERED_LIST_MIN_W = 280;
+const NUMBERED_LIST_MIN_H = 180;
+const EISENHOWER_MIN_W = 420;
+const EISENHOWER_MIN_H = 320;
 
 function daysInMonth(year: number, monthIndex: number): number {
   return new Date(year, monthIndex + 1, 0).getDate();
@@ -150,6 +154,16 @@ const STICKY_DEFAULT_H = 200;
 const STICKY_MIN_W = 140;
 const STICKY_MIN_H = 100;
 
+const PARCHMENT_PADDING = 18;
+const PARCHMENT_DEFAULT_W = 280;
+const PARCHMENT_DEFAULT_H = 200;
+const PARCHMENT_MIN_W = 140;
+const PARCHMENT_MIN_H = 100;
+const PARCHMENT_BASE_W = 280;
+const PARCHMENT_BASE_H = 200;
+const PARCHMENT_DEFAULT_FILL = "#EDE4D3";
+const PARCHMENT_FONT = "Georgia, 'Times New Roman', serif";
+
 /** Fabric default — blue border + square handles. */
 const FABRIC_CONTROL_STYLE = {
   cornerStyle: "rect" as const,
@@ -185,7 +199,6 @@ function applyStickyFabricControls(obj: Group | Rect) {
   });
 
   obj.setCoords();
-  obj.canvas?.requestRenderAll();
 
   return obj;
 }
@@ -198,6 +211,7 @@ for (const prop of [
   "structureRole",
   "structureWidth",
   "structureHeight",
+  "structureColor",
   "rowIndex",
   "columnIndex",
   "itemIndex",
@@ -208,6 +222,9 @@ for (const prop of [
   "textCapable",
   "stickyWidth",
   "stickyHeight",
+  "parchmentColor",
+  "parchmentWidth",
+  "parchmentHeight",
   "shapeWidth",
   "shapeHeight",
   "calendarMonth",
@@ -219,6 +236,11 @@ for (const prop of [
   "frameShapeType",
   "frameWidth",
   "frameHeight",
+  "framePhotoWidth",
+  "framePhotoHeight",
+  "lineDashed",
+  "quadrantColor",
+  "foundObjectType",
 ] as const) {
   if (!FabricObject.customProperties.includes(prop)) {
     FabricObject.customProperties.push(prop);
@@ -234,7 +256,160 @@ function findEditableTextInGroup(group: Group): Textbox | IText | null {
   return found instanceof Textbox || found instanceof IText ? found : null;
 }
 
-const IMAGE_FRAME_SHAPES = new Set<BoardMarkShapeType>(["rect", "circle", "heart", "star", "hexagon", "diamond"]);
+const IMAGE_CLIP_FRAME_SHAPES = new Set<BoardMarkShapeType>(["rect", "circle", "heart", "star", "hexagon", "diamond"]);
+const IMAGE_FRAME_SHAPES = new Set<BoardMarkShapeType>([...IMAGE_CLIP_FRAME_SHAPES, "photo"]);
+
+function polaroidMetrics(photoW: number, photoH: number) {
+  const border = Math.max(8, Math.min(photoW, photoH) * 0.08);
+  return {
+    photoW,
+    photoH,
+    border,
+    totalW: photoW + border * 2,
+    totalH: photoH + border * 2,
+  };
+}
+
+function imageFrameInnerSize(group: Group): { w: number; h: number } {
+  if (group.get("frameShapeType") === "photo") {
+    return {
+      w: Number(group.get("framePhotoWidth") ?? 200),
+      h: Number(group.get("framePhotoHeight") ?? 200),
+    };
+  }
+  return {
+    w: Number(group.get("frameWidth") ?? group.width ?? 200),
+    h: Number(group.get("frameHeight") ?? group.height ?? 200),
+  };
+}
+
+function prepareImageForPolaroidFrame(img: FabricImage, m: ReturnType<typeof polaroidMetrics>) {
+  const iw = img.width ?? 1;
+  const ih = img.height ?? 1;
+  const coverScale = Math.max(m.photoW / iw, m.photoH / ih);
+  const clip = new Rect({
+    width: m.photoW / coverScale,
+    height: m.photoH / coverScale,
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+  });
+  img.set({
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+    angle: 0,
+    scaleX: coverScale,
+    scaleY: coverScale,
+    clipPath: clip,
+    markKind: "frame-image",
+    selectable: false,
+    evented: false,
+    hasControls: false,
+    hasBorders: false,
+    imageCornerRadius: 0,
+  });
+}
+
+function createPolaroidImageFrameGroup(
+  image: FabricImage,
+  photoW: number,
+  photoH: number,
+  center: { x: number; y: number },
+  angle: number,
+): Group {
+  const m = polaroidMetrics(photoW, photoH);
+  prepareImageForPolaroidFrame(image, m);
+
+  const backing = new Rect({
+    width: m.totalW,
+    height: m.totalH,
+    fill: "#FFFFFF",
+    stroke: "rgba(17,17,17,0.08)",
+    strokeWidth: 1,
+    shadow: {
+      color: "rgba(0,0,0,0.14)",
+      blur: 12,
+      offsetX: 1,
+      offsetY: 4,
+    },
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+    markKind: "frame-backing",
+    selectable: false,
+    evented: false,
+    hasControls: false,
+    hasBorders: false,
+  });
+
+  const inset = new Rect({
+    width: m.photoW,
+    height: m.photoH,
+    fill: "transparent",
+    stroke: "rgba(0,0,0,0.09)",
+    strokeWidth: 1,
+    originX: "center",
+    originY: "center",
+    left: 0,
+    top: 0,
+    markKind: "frame-inset",
+    selectable: false,
+    evented: false,
+    hasControls: false,
+    hasBorders: false,
+  });
+
+  return new Group([backing, image, inset], {
+    left: center.x,
+    top: center.y,
+    originX: "center",
+    originY: "center",
+    width: m.totalW,
+    height: m.totalH,
+    angle,
+    markKind: "image-frame",
+    frameShapeType: "photo",
+    frameWidth: m.totalW,
+    frameHeight: m.totalH,
+    framePhotoWidth: m.photoW,
+    framePhotoHeight: m.photoH,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+  });
+}
+
+function createClipImageFrameGroup(
+  image: FabricImage,
+  frameW: number,
+  frameH: number,
+  shapeType: BoardMarkShapeType,
+  center: { x: number; y: number },
+  angle: number,
+): Group {
+  prepareImageForFrame(image, frameW, frameH);
+  return new Group([image], {
+    left: center.x,
+    top: center.y,
+    originX: "center",
+    originY: "center",
+    width: frameW,
+    height: frameH,
+    angle,
+    clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
+    markKind: "image-frame",
+    frameShapeType: shapeType,
+    frameWidth: frameW,
+    frameHeight: frameH,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+  });
+}
 
 function imageFrameGroupFromTarget(obj: FabricObject): Group | null {
   let current: FabricObject = obj;
@@ -397,7 +572,80 @@ function restoreImageFrameAfterLoad(group: Group) {
   const shapeType = group.get("frameShapeType") as BoardMarkShapeType | undefined;
   const frameW = Number(group.get("frameWidth") ?? group.width ?? 200);
   const frameH = Number(group.get("frameHeight") ?? group.height ?? 200);
-  if (shapeType && IMAGE_FRAME_SHAPES.has(shapeType)) {
+  if (shapeType === "photo") {
+    const photoW = Number(group.get("framePhotoWidth") ?? frameW * 0.84);
+    const photoH = Number(group.get("framePhotoHeight") ?? frameH * 0.84);
+    const m = polaroidMetrics(photoW, photoH);
+    group.set({
+      clipPath: undefined,
+      subTargetCheck: false,
+      interactive: true,
+      objectCaching: false,
+      markKind: "image-frame",
+      frameWidth: m.totalW,
+      frameHeight: m.totalH,
+      framePhotoWidth: m.photoW,
+      framePhotoHeight: m.photoH,
+    });
+    let backing = group.getObjects().find((o) => o.get("markKind") === "frame-backing");
+    if (!(backing instanceof Rect)) {
+      backing = new Rect({
+        width: m.totalW,
+        height: m.totalH,
+        fill: "#FFFFFF",
+        stroke: "rgba(17,17,17,0.08)",
+        strokeWidth: 1,
+        shadow: {
+          color: "rgba(0,0,0,0.14)",
+          blur: 12,
+          offsetX: 1,
+          offsetY: 4,
+        },
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+        markKind: "frame-backing",
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
+      });
+      group.insertAt(0, backing);
+    } else {
+      backing.set({ width: m.totalW, height: m.totalH });
+    }
+    let inset = group.getObjects().find((o) => o.get("markKind") === "frame-inset");
+    if (!(inset instanceof Rect)) {
+      inset = new Rect({
+        width: m.photoW,
+        height: m.photoH,
+        fill: "transparent",
+        stroke: "rgba(0,0,0,0.09)",
+        strokeWidth: 1,
+        originX: "center",
+        originY: "center",
+        left: 0,
+        top: 0,
+        markKind: "frame-inset",
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
+      });
+      group.add(inset);
+    } else {
+      inset.set({ width: m.photoW, height: m.photoH, top: 0 });
+    }
+    for (const child of group.getObjects()) {
+      if (child instanceof FabricImage && child.get("markKind") === "frame-image") {
+        prepareImageForPolaroidFrame(child, m);
+        child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
+      } else if (child.get("markKind") === "frame-backing" || child.get("markKind") === "frame-inset") {
+        child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
+      }
+    }
+  } else if (shapeType && IMAGE_CLIP_FRAME_SHAPES.has(shapeType)) {
     group.set({
       clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
       subTargetCheck: false,
@@ -405,10 +653,10 @@ function restoreImageFrameAfterLoad(group: Group) {
       objectCaching: false,
       markKind: "image-frame",
     });
-  }
-  for (const child of group.getObjects()) {
-    if (child instanceof FabricImage && child.get("markKind") === "frame-image") {
-      child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
+    for (const child of group.getObjects()) {
+      if (child instanceof FabricImage && child.get("markKind") === "frame-image") {
+        child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
+      }
     }
   }
   applyBoardFabricControls(group);
@@ -489,6 +737,18 @@ function stickyParts(group: Group) {
   return { rect, text };
 }
 
+function fitStickyText(group: Group, width: number, height: number) {
+  const { text } = stickyParts(group);
+  if (!text) return;
+
+  text.set({
+    width: Math.max(40, width - STICKY_PADDING * 2),
+    fontSize: Math.max(14, Math.sqrt(width * height) / 10),
+    lineHeight: 1.15,
+  });
+  text.initDimensions();
+}
+
 function getStickyStoredSize(group: Group) {
   const storedW = Number(group.get("stickyWidth"));
   const storedH = Number(group.get("stickyHeight"));
@@ -541,6 +801,7 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
     editable: true,
     markKind: "sticky-text",
   });
+  fitStickyText(group, nextW, nextH);
 
   group.set({
     width: nextW,
@@ -566,38 +827,25 @@ function updateStickyLayout(group: Group, width?: number, height?: number) {
   return group;
 }
 
-function restoreStickyAfterLoad(obj: FabricObject) {
-  if (isStickyRect(obj)) {
-    normalizeStickyResize(obj);
-    applyStickyFabricControls(obj);
-    return obj;
-  }
-  return obj;
-}
-
-function normalizeStickyResize(sticky: Rect) {
+function normalizeStickyResize(sticky: Group) {
   const sx = sticky.scaleX ?? 1;
   const sy = sticky.scaleY ?? 1;
-  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return sticky;
-
-  const storedW = Number(sticky.get("stickyWidth")) || STICKY_DEFAULT_W;
-  const storedH = Number(sticky.get("stickyHeight")) || STICKY_DEFAULT_H;
-  const nextW = Math.max(STICKY_MIN_W, storedW * sx);
-  const nextH = Math.max(STICKY_MIN_H, storedH * sy);
-
-  sticky.set({
-    width: nextW,
-    height: nextH,
-    scaleX: 1,
-    scaleY: 1,
-    stickyWidth: nextW,
-    stickyHeight: nextH,
-  });
-  sticky.setCoords();
+  const stored = getStickyStoredSize(sticky);
+  const nextW = Math.max(STICKY_MIN_W, stored.width * sx);
+  const nextH = Math.max(STICKY_MIN_H, stored.height * sy);
+  updateStickyLayout(sticky, nextW, nextH);
+  applyStickyFabricControls(sticky);
   return sticky;
 }
 
-function replaceStickyOnCanvas(canvas: Canvas, prev: FabricObject, sticky: Rect) {
+function restoreStickyAfterLoad(sticky: Group) {
+  normalizeStickyResize(sticky);
+  updateStickyLayout(sticky);
+  applyStickyFabricControls(sticky);
+  return sticky;
+}
+
+function replaceStickyOnCanvas(canvas: Canvas, prev: FabricObject, sticky: Group) {
   const index = canvas.getObjects().indexOf(prev);
   canvas.remove(prev);
   if (index >= 0) canvas.insertAt(index, sticky);
@@ -607,35 +855,29 @@ function replaceStickyOnCanvas(canvas: Canvas, prev: FabricObject, sticky: Rect)
   return sticky;
 }
 
-function flattenLegacyStickyGroup(canvas: Canvas, group: Group): Rect | null {
-  const { rect } = stickyParts(group);
-  const stored = getStickyStoredSize(group);
-  const fill = typeof rect?.fill === "string" ? rect.fill : "#FFF9C4";
-  const stroke = typeof rect?.stroke === "string" ? rect.stroke : stickyStrokeForFill(fill);
-  const centerX = group.left ?? 0;
-  const centerY = group.top ?? 0;
-
-  const sticky = createStickyNoteRect({
-    left: centerX - stored.width / 2,
-    top: centerY - stored.height / 2,
-    width: stored.width,
-    height: stored.height,
+function migrateStickyRectToGroup(canvas: Canvas, rect: Rect): Group {
+  const width = Math.max(STICKY_MIN_W, (rect.width ?? STICKY_DEFAULT_W) * (rect.scaleX ?? 1));
+  const height = Math.max(STICKY_MIN_H, (rect.height ?? STICKY_DEFAULT_H) * (rect.scaleY ?? 1));
+  const fill = typeof rect.fill === "string" ? rect.fill : "#FFF9C4";
+  const sticky = createStickyNoteGroup({
+    left: rect.left ?? 0,
+    top: rect.top ?? 0,
+    width,
+    height,
     fill,
-    stroke,
-    angle: group.angle ?? 0,
+    angle: rect.angle ?? 0,
   });
-
-  return replaceStickyOnCanvas(canvas, group, sticky);
+  return replaceStickyOnCanvas(canvas, rect, sticky);
 }
 
-function migrateTextboxStickyToRect(canvas: Canvas, textbox: Textbox): Rect {
+function migrateTextboxStickyToGroup(canvas: Canvas, textbox: Textbox): Group {
   const w = Number(textbox.get("stickyWidth")) || STICKY_DEFAULT_W;
   const h = Number(textbox.get("stickyHeight")) || STICKY_DEFAULT_H;
   const fill =
     (typeof textbox.backgroundColor === "string" && textbox.backgroundColor) ||
     (typeof textbox.fill === "string" && textbox.fill !== "#171717" ? textbox.fill : "#FFF9C4");
   const stroke = typeof textbox.stroke === "string" ? textbox.stroke : stickyStrokeForFill(fill);
-  const sticky = createStickyNoteRect({
+  const sticky = createStickyNoteGroup({
     left: (textbox.left ?? 0) as number,
     top: (textbox.top ?? 0) as number,
     width: w,
@@ -643,41 +885,9 @@ function migrateTextboxStickyToRect(canvas: Canvas, textbox: Textbox): Rect {
     fill: fill === "#171717" ? "#FFF9C4" : fill,
     stroke,
     angle: textbox.angle ?? 0,
+    text: textbox.text ?? "",
   });
   return replaceStickyOnCanvas(canvas, textbox, sticky);
-}
-
-function createStickyNoteRect(params: {
-  left: number;
-  top: number;
-  width?: number;
-  height?: number;
-  fill?: string;
-  stroke?: string;
-  angle?: number;
-}): Rect {
-  const w = Math.max(STICKY_MIN_W, params.width ?? STICKY_DEFAULT_W);
-  const h = Math.max(STICKY_MIN_H, params.height ?? STICKY_DEFAULT_H);
-  const fill = params.fill ?? "#FFF9C4";
-  const stroke = params.stroke ?? stickyStrokeForFill(fill);
-
-  return new Rect({
-    left: params.left,
-    top: params.top,
-    width: w,
-    height: h,
-    fill,
-    stroke,
-    strokeWidth: 1,
-    originX: "left",
-    originY: "top",
-    angle: params.angle ?? 0,
-    markKind: "sticky",
-    stickyWidth: w,
-    stickyHeight: h,
-    objectCaching: false,
-    lockScalingFlip: true,
-  });
 }
 
 function createStickyNoteGroup(params: {
@@ -686,16 +896,335 @@ function createStickyNoteGroup(params: {
   width?: number;
   height?: number;
   fill?: string;
-}): Rect {
+  stroke?: string;
+  angle?: number;
+  text?: string;
+}): Group {
   const w = Math.max(STICKY_MIN_W, params.width ?? STICKY_DEFAULT_W);
   const h = Math.max(STICKY_MIN_H, params.height ?? STICKY_DEFAULT_H);
-  return createStickyNoteRect({
-    left: params.left,
-    top: params.top,
+  const fill = params.fill ?? "#FFF9C4";
+  const stroke = params.stroke ?? stickyStrokeForFill(fill);
+  const box = stickyLocalBox(w, h);
+
+  const rect = new Rect({
+    left: box.rectLeft,
+    top: box.rectTop,
     width: w,
     height: h,
-    fill: params.fill,
+    fill,
+    stroke,
+    strokeWidth: 1,
+    originX: "left",
+    originY: "top",
+    selectable: false,
+    evented: false,
+    markKind: "sticky-bg",
   });
+  const text = new Textbox(params.text ?? "", {
+    left: box.textLeft,
+    top: box.textTop,
+    width: box.textWidth,
+    fontSize: 28,
+    fontFamily: "system-ui, sans-serif",
+    fill: "#171717",
+    lineHeight: 1.15,
+    originX: "left",
+    originY: "top",
+    editable: true,
+    selectable: false,
+    evented: false,
+    markKind: "sticky-text",
+  });
+  const sticky = new Group([rect, text], {
+    left: params.left + w / 2,
+    top: params.top + h / 2,
+    originX: "center",
+    originY: "center",
+    angle: params.angle ?? 0,
+    markKind: "sticky",
+    stickyWidth: w,
+    stickyHeight: h,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+    lockScalingFlip: true,
+  });
+  updateStickyLayout(sticky, w, h);
+  applyStickyFabricControls(sticky);
+  return sticky;
+}
+
+function parchmentStrokeForFill(fill: string) {
+  if (fill === PARCHMENT_DEFAULT_FILL) return "#C9B896";
+  return fill;
+}
+
+function buildParchmentPathData(width: number, height: number): string {
+  const x = (pct: number) => ((pct / 100) * width).toFixed(1);
+  const y = (pct: number) => ((pct / 100) * height).toFixed(1);
+  return [
+    `M ${x(2)} ${y(12)}`,
+    `L ${x(11)} ${y(5)} L ${x(21)} ${y(9)} L ${x(33)} ${y(4)} L ${x(45)} ${y(8)}`,
+    `L ${x(57)} ${y(3)} L ${x(69)} ${y(7)} L ${x(81)} ${y(4)} L ${x(93)} ${y(9)} L ${x(98)} ${y(6)}`,
+    `L ${x(99)} ${y(20)} L ${x(97)} ${y(34)} L ${x(99)} ${y(48)} L ${x(96)} ${y(62)} L ${x(98)} ${y(76)}`,
+    `L ${x(95)} ${y(90)} L ${x(98)} ${y(96)} L ${x(87)} ${y(98)} L ${x(75)} ${y(99)} L ${x(63)} ${y(96)}`,
+    `L ${x(51)} ${y(99)} L ${x(39)} ${y(95)} L ${x(27)} ${y(98)} L ${x(15)} ${y(94)} L ${x(4)} ${y(97)}`,
+    `L ${x(1)} ${y(91)} L ${x(3)} ${y(77)} L ${x(1)} ${y(63)} L ${x(4)} ${y(49)} L ${x(2)} ${y(35)} L ${x(5)} ${y(21)} Z`,
+  ].join(" ");
+}
+
+function parchmentGroupFromTarget(obj: FabricObject): Group | null {
+  let current: FabricObject = obj;
+  while (current.group) current = current.group as FabricObject;
+  return current instanceof Group && current.get("markKind") === "parchment" ? current : null;
+}
+
+function parchmentParts(group: Group) {
+  const body = group.getObjects().find((o) => o.get("markKind") === "parchment-bg") as Path | undefined;
+  const text = group.getObjects().find((o) => o.get("markKind") === "parchment-text") as Textbox | undefined;
+  return { body, text };
+}
+
+function parchmentLocalBox(width: number, height: number) {
+  return {
+    bodyLeft: -width / 2,
+    bodyTop: -height / 2,
+    textLeft: -width / 2 + PARCHMENT_PADDING,
+    textTop: -height / 2 + PARCHMENT_PADDING,
+    textWidth: Math.max(40, width - PARCHMENT_PADDING * 2),
+  };
+}
+
+function applyParchmentSurfaceColor(group: Group, fill: string) {
+  const stroke = parchmentStrokeForFill(fill);
+  group.set("parchmentColor", fill);
+  for (const child of group.getObjects()) {
+    const role = String(child.get("markKind") ?? "");
+    if (role === "parchment-bg" && child instanceof Path) {
+      child.set({ fill, stroke, strokeWidth: 1.2 });
+    } else if (role === "parchment-fiber" && child instanceof Path) {
+      child.set({ stroke: fill, opacity: 0.14 });
+    }
+  }
+}
+
+function fitParchmentText(group: Group, width: number, height: number) {
+  const { text } = parchmentParts(group);
+  if (!text) return;
+  text.set({
+    width: Math.max(40, width - PARCHMENT_PADDING * 2),
+    fontSize: Math.max(15, Math.sqrt(width * height) / 11),
+    lineHeight: 1.2,
+  });
+  text.initDimensions();
+}
+
+function getParchmentStoredSize(group: Group) {
+  const storedW = Number(group.get("parchmentWidth"));
+  const storedH = Number(group.get("parchmentHeight"));
+  return {
+    width:
+      Number.isFinite(storedW) && storedW > 0
+        ? storedW
+        : Math.max(PARCHMENT_MIN_W, group.width ?? PARCHMENT_DEFAULT_W),
+    height:
+      Number.isFinite(storedH) && storedH > 0
+        ? storedH
+        : Math.max(PARCHMENT_MIN_H, group.height ?? PARCHMENT_DEFAULT_H),
+  };
+}
+
+function updateParchmentLayout(group: Group, width?: number, height?: number) {
+  const { body, text } = parchmentParts(group);
+  if (!body || !text) return group;
+
+  const stored = getParchmentStoredSize(group);
+  const nextW = Math.max(PARCHMENT_MIN_W, width ?? stored.width);
+  const nextH = Math.max(PARCHMENT_MIN_H, height ?? stored.height);
+  const box = parchmentLocalBox(nextW, nextH);
+  const scaleX = nextW / PARCHMENT_BASE_W;
+  const scaleY = nextH / PARCHMENT_BASE_H;
+
+  body.set({
+    left: box.bodyLeft,
+    top: box.bodyTop,
+    scaleX,
+    scaleY,
+    originX: "left",
+    originY: "top",
+    selectable: false,
+    evented: false,
+    markKind: "parchment-bg",
+  });
+
+  for (const child of group.getObjects()) {
+    if (child.get("markKind") !== "parchment-fiber") continue;
+    child.set({
+      scaleX,
+      scaleY,
+      left: box.bodyLeft,
+      top: box.bodyTop,
+      originX: "left",
+      originY: "top",
+      selectable: false,
+      evented: false,
+    });
+  }
+
+  text.set({
+    left: box.textLeft,
+    top: box.textTop,
+    width: box.textWidth,
+    originX: "left",
+    originY: "top",
+    scaleX: 1,
+    scaleY: 1,
+    selectable: false,
+    evented: false,
+    editable: true,
+    markKind: "parchment-text",
+  });
+  fitParchmentText(group, nextW, nextH);
+
+  group.set({
+    width: nextW,
+    height: nextH,
+    originX: "center",
+    originY: "center",
+    scaleX: 1,
+    scaleY: 1,
+    parchmentWidth: nextW,
+    parchmentHeight: nextH,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+    selectable: true,
+    evented: true,
+    markKind: "parchment",
+  });
+
+  body.setCoords();
+  text.setCoords();
+  group.setCoords();
+  return group;
+}
+
+function normalizeParchmentResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  const stored = getParchmentStoredSize(group);
+  const nextW = Math.max(PARCHMENT_MIN_W, stored.width * sx);
+  const nextH = Math.max(PARCHMENT_MIN_H, stored.height * sy);
+  updateParchmentLayout(group, nextW, nextH);
+  applyParchmentFabricControls(group);
+  return group;
+}
+
+function restoreParchmentAfterLoad(group: Group) {
+  normalizeParchmentResize(group);
+  applyParchmentSurfaceColor(group, String(group.get("parchmentColor") ?? PARCHMENT_DEFAULT_FILL));
+  updateParchmentLayout(group);
+  applyParchmentFabricControls(group);
+  return group;
+}
+
+function applyParchmentFabricControls(obj: Group) {
+  applyBoardFabricControls(obj);
+  obj.set({
+    lockUniScaling: false,
+    objectCaching: false,
+    markKind: "parchment",
+  });
+  obj.setCoords();
+  return obj;
+}
+
+function createParchmentNoteGroup(params: {
+  left: number;
+  top: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  angle?: number;
+  text?: string;
+}): Group {
+  const w = Math.max(PARCHMENT_MIN_W, params.width ?? PARCHMENT_DEFAULT_W);
+  const h = Math.max(PARCHMENT_MIN_H, params.height ?? PARCHMENT_DEFAULT_H);
+  const fill = params.fill ?? PARCHMENT_DEFAULT_FILL;
+  const stroke = parchmentStrokeForFill(fill);
+  const box = parchmentLocalBox(w, h);
+
+  const body = new Path(buildParchmentPathData(PARCHMENT_BASE_W, PARCHMENT_BASE_H), {
+    left: box.bodyLeft,
+    top: box.bodyTop,
+    fill,
+    stroke,
+    strokeWidth: 1.2,
+    originX: "left",
+    originY: "top",
+    selectable: false,
+    evented: false,
+    markKind: "parchment-bg",
+  });
+
+  const fiberA = new Path("M 28 58 L 248 50", {
+    left: box.bodyLeft,
+    top: box.bodyTop,
+    fill: "transparent",
+    stroke: fill,
+    strokeWidth: 1.4,
+    opacity: 0.14,
+    selectable: false,
+    evented: false,
+    markKind: "parchment-fiber",
+  });
+  const fiberB = new Path("M 22 118 L 252 112", {
+    left: box.bodyLeft,
+    top: box.bodyTop,
+    fill: "transparent",
+    stroke: fill,
+    strokeWidth: 1.2,
+    opacity: 0.1,
+    selectable: false,
+    evented: false,
+    markKind: "parchment-fiber",
+  });
+
+  const text = new Textbox(params.text ?? "", {
+    left: box.textLeft,
+    top: box.textTop,
+    width: box.textWidth,
+    fontSize: 24,
+    fontFamily: PARCHMENT_FONT,
+    fill: "#3D3428",
+    lineHeight: 1.2,
+    textAlign: "center",
+    originX: "left",
+    originY: "top",
+    editable: true,
+    selectable: false,
+    evented: false,
+    markKind: "parchment-text",
+  });
+
+  const parchment = new Group([body, fiberA, fiberB, text], {
+    left: params.left + w / 2,
+    top: params.top + h / 2,
+    originX: "center",
+    originY: "center",
+    angle: params.angle ?? 0,
+    markKind: "parchment",
+    parchmentColor: fill,
+    parchmentWidth: w,
+    parchmentHeight: h,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+    lockScalingFlip: true,
+  });
+  updateParchmentLayout(parchment, w, h);
+  applyParchmentFabricControls(parchment);
+  return parchment;
 }
 
 function enterObjectTextEditing(
@@ -703,7 +1232,7 @@ function enterObjectTextEditing(
   obj: FabricObject,
   syncFocus = false,
 ): boolean {
-  if (isStickyRect(obj) || stickyGroupFromTarget(obj)) return false;
+  if (isStickyRect(obj)) return false;
 
   let textObj: Textbox | IText | null = null;
   let root: FabricObject = obj;
@@ -1064,40 +1593,35 @@ function createTextCapableShapeGroup(
   });
 }
 
-function createChecklistRowParts(
-  structureId: string,
-  rowIndex: number,
-  width: number,
-): FabricObjectType[] {
-  const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
+function createDynamicCheckboxDecal(left: number, top: number, size: number): Group {
+  const structureId = createStructureId();
+  const boxSize = Math.max(48, size);
   const box = new Rect({
     left: 0,
-    top: rowTop,
-    width: STRUCTURE_BOX,
-    height: STRUCTURE_BOX,
+    top: 0,
+    width: boxSize,
+    height: boxSize,
     fill: "transparent",
     stroke: DECAL_INK,
-    strokeWidth: 2,
-    rx: 2,
-    ry: 2,
+    strokeWidth: Math.max(3, boxSize * 0.06),
+    rx: Math.max(4, boxSize * 0.08),
+    ry: Math.max(4, boxSize * 0.08),
     selectable: false,
-    evented: true,
-    hoverCursor: "pointer",
+    evented: false,
   });
   box.set({
     structureId,
-    structureType: "checklist",
-    structureRole: "checkbox",
-    rowIndex,
+    structureType: "checkbox",
+    structureRole: "checkbox-toggle",
     checked: false,
   });
-
   const checkmark = new FabricText("✓", {
-    left: STRUCTURE_BOX / 2,
-    top: rowTop + STRUCTURE_BOX / 2,
-    fontSize: 14,
+    left: boxSize / 2,
+    top: boxSize / 2,
+    fontSize: boxSize * 0.72,
     fontFamily: STRUCTURE_FONT,
-    fill: "#ffffff",
+    fontWeight: 700,
+    fill: DECAL_INK,
     originX: "center",
     originY: "center",
     selectable: false,
@@ -1106,45 +1630,151 @@ function createChecklistRowParts(
   });
   checkmark.set({
     structureId,
-    structureType: "checklist",
-    structureRole: "checkmark",
+    structureType: "checkbox",
+    structureRole: "checkbox-toggle",
+    checked: false,
+  });
+  const group = new Group([box, checkmark], {
+    left,
+    top,
+    subTargetCheck: false,
+    interactive: true,
+    objectCaching: false,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+    lockUniScaling: true,
+  });
+  group.set({
+    structureId,
+    structureType: "checkbox",
+    structureWidth: boxSize,
+    structureHeight: boxSize,
+    structureColor: DECAL_INK,
+    checked: false,
+  });
+  return group;
+}
+
+function createDynamicBulletDecal(left: number, top: number, size: number): Circle {
+  const structureId = createStructureId();
+  const diameter = Math.max(12, size);
+  const bullet = new Circle({
+    left,
+    top,
+    radius: diameter / 2,
+    fill: DECAL_INK,
+    stroke: "transparent",
+    strokeWidth: 0,
+    originX: "center",
+    originY: "center",
+    lockUniScaling: true,
+  });
+  bullet.set({
+    structureId,
+    structureType: "bullet",
+    structureWidth: diameter,
+    structureHeight: diameter,
+    structureColor: DECAL_INK,
+  });
+  applyBoardFabricControls(bullet);
+  return bullet;
+}
+
+function numberedListMinHeight(rowCount: number): number {
+  return Math.max(NUMBERED_LIST_MIN_H, 28 + Math.max(1, rowCount) * STRUCTURE_ROW_H + 38);
+}
+
+function createNumberedListRowParts(
+  structureId: string,
+  rowIndex: number,
+  text = "",
+): FabricObjectType[] {
+  const number = new FabricText(`${rowIndex + 1}.`, {
+    left: 0,
+    top: 0,
+    fontSize: 22,
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    fontWeight: 700,
+    originX: "left",
+    originY: "center",
+    selectable: false,
+    evented: false,
+  });
+  number.set({
+    structureId,
+    structureType: "numbered_list",
+    structureRole: "numbered-list-index",
     rowIndex,
   });
 
-  const label = new IText("", {
-    left: STRUCTURE_BOX + 10,
-    top: rowTop - 2,
-    width: width - STRUCTURE_BOX - 40,
-    fontSize: 18,
+  const label = new IText(text, {
+    left: 0,
+    top: 0,
+    width: 180,
+    fontSize: 20,
     fontFamily: STRUCTURE_FONT,
     fill: DECAL_INK,
-    textAlign: "left",
     originX: "left",
-    originY: "top",
+    originY: "center",
     editable: true,
     selectable: false,
     evented: true,
   });
-  label.set({ structureId, structureType: "checklist", structureRole: "label", rowIndex });
+  label.set({
+    structureId,
+    structureType: "numbered_list",
+    structureRole: "numbered-list-label",
+    rowIndex,
+  });
 
-  return [box, checkmark, label];
+  return [number, label];
 }
 
-function createChecklistGroup(left: number, top: number, width: number): Group {
-  const structureId = createStructureId();
-  const rowCount = 4;
-  const parts: FabricObjectType[] = [];
+function createDynamicNumberedListDecal(params: {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  items?: string[];
+  structureId?: string;
+}): Group {
+  const structureId = params.structureId ?? createStructureId();
+  const seededItems = (params.items ?? [])
+    .filter((item) => typeof item === "string" && item.trim().length > 0)
+    .slice(0, 12);
+  const items = seededItems.length ? seededItems : ["First point", "Second point", "Third point"];
+  const width = Math.max(NUMBERED_LIST_MIN_W, params.width);
+  const height = Math.max(numberedListMinHeight(items.length), params.height);
 
-  for (let i = 0; i < rowCount; i++) {
-    parts.push(...createChecklistRowParts(structureId, i, width));
-  }
+  const bounds = new Rect({
+    left: 0,
+    top: 0,
+    width,
+    height,
+    fill: "transparent",
+    stroke: "transparent",
+    strokeWidth: 0,
+    selectable: false,
+    evented: false,
+  });
+  bounds.set({
+    structureId,
+    structureType: "numbered_list",
+    structureRole: "numbered-list-bounds",
+  });
 
-  const btnTop = 8 + rowCount * STRUCTURE_ROW_H + 16;
-  parts.push(...createStructureAddButton(structureId, "checklist", width - 14, btnTop));
+  const parts: FabricObjectType[] = [bounds];
+  items.forEach((item, index) => {
+    parts.push(...createNumberedListRowParts(structureId, index, item));
+  });
+  parts.push(...createStructureAddButton(structureId, "numbered_list", width - 18, height - 18));
 
   const group = new Group(parts, {
-    left,
-    top,
+    left: params.left,
+    top: params.top,
     subTargetCheck: true,
     interactive: true,
     objectCaching: false,
@@ -1153,7 +1783,190 @@ function createChecklistGroup(left: number, top: number, width: number): Group {
     cornerColor: "#111111",
     transparentCorners: false,
   });
-  group.set({ structureId, structureType: "checklist", structureWidth: width });
+  group.set({
+    structureId,
+    structureType: "numbered_list",
+    structureWidth: width,
+    structureHeight: height,
+    structureColor: DECAL_INK,
+  });
+  reflowNumberedList(group);
+  return group;
+}
+
+function createDynamicEisenhowerMatrixDecal(params: {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  structureId?: string;
+}): Group {
+  const structureId = params.structureId ?? createStructureId();
+  const width = Math.max(EISENHOWER_MIN_W, params.width);
+  const height = Math.max(EISENHOWER_MIN_H, params.height);
+  const quadrantColors = ["#D9F99D", "#BFDBFE", "#FDE68A", "#FCA5A5"] as const;
+
+  const bounds = new Rect({
+    left: 0,
+    top: 0,
+    width,
+    height,
+    fill: "transparent",
+    stroke: "transparent",
+    strokeWidth: 0,
+    selectable: false,
+    evented: false,
+  });
+  bounds.set({
+    structureId,
+    structureType: "eisenhower",
+    structureRole: "eisenhower-bounds",
+  });
+
+  const title = new FabricText("EISENHOWER MATRIX", {
+    left: 0,
+    top: 0,
+    fontSize: 28,
+    fontFamily: STRUCTURE_FONT,
+    fontWeight: 700,
+    fill: DECAL_INK,
+    originX: "center",
+    originY: "top",
+    selectable: false,
+    evented: false,
+  });
+  title.set({
+    structureId,
+    structureType: "eisenhower",
+    structureRole: "eisenhower-title",
+  });
+
+  const urgent = new FabricText("URGENT", {
+    left: 0,
+    top: 0,
+    fontSize: 20,
+    fontFamily: STRUCTURE_FONT,
+    fontWeight: 700,
+    fill: DECAL_INK,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+  });
+  urgent.set({
+    structureId,
+    structureType: "eisenhower",
+    structureRole: "eisenhower-top-left",
+  });
+
+  const notUrgent = new FabricText("NOT URGENT", {
+    left: 0,
+    top: 0,
+    fontSize: 20,
+    fontFamily: STRUCTURE_FONT,
+    fontWeight: 700,
+    fill: DECAL_INK,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+  });
+  notUrgent.set({
+    structureId,
+    structureType: "eisenhower",
+    structureRole: "eisenhower-top-right",
+  });
+
+  const important = new FabricText("IMPORTANT", {
+    left: 0,
+    top: 0,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fontWeight: 700,
+    fill: DECAL_INK,
+    angle: -90,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+  });
+  important.set({
+    structureId,
+    structureType: "eisenhower",
+    structureRole: "eisenhower-left-top",
+  });
+
+  const notImportant = new FabricText("NOT IMPORTANT", {
+    left: 0,
+    top: 0,
+    fontSize: 18,
+    fontFamily: STRUCTURE_FONT,
+    fontWeight: 700,
+    fill: DECAL_INK,
+    angle: -90,
+    originX: "center",
+    originY: "center",
+    selectable: false,
+    evented: false,
+  });
+  notImportant.set({
+    structureId,
+    structureType: "eisenhower",
+    structureRole: "eisenhower-left-bottom",
+  });
+
+  const quadrantKeys = [
+    "eisenhower-quadrant-do",
+    "eisenhower-quadrant-schedule",
+    "eisenhower-quadrant-delegate",
+    "eisenhower-quadrant-delete",
+  ] as const;
+  const quadrants = quadrantKeys.map((quadrantRole, index) => {
+    const rect = new Rect({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      rx: 4,
+      ry: 4,
+      fill: quadrantColors[index],
+      stroke: "transparent",
+      strokeWidth: 0,
+      selectable: false,
+      evented: true,
+      hoverCursor: "pointer",
+    });
+    rect.set({
+      structureId,
+      structureType: "eisenhower",
+      structureRole: quadrantRole,
+      quadrantColor: quadrantColors[index],
+    });
+    return rect;
+  });
+
+  const group = new Group(
+    [bounds, title, urgent, notUrgent, important, notImportant, ...quadrants],
+    {
+      left: params.left,
+      top: params.top,
+      subTargetCheck: true,
+      interactive: true,
+      objectCaching: false,
+      cornerStyle: "circle",
+      borderColor: "rgba(17,17,17,0.45)",
+      cornerColor: "#111111",
+      transparentCorners: false,
+    },
+  );
+  group.set({
+    structureId,
+    structureType: "eisenhower",
+    structureWidth: width,
+    structureHeight: height,
+    structureColor: DECAL_INK,
+  });
+  reflowEisenhowerMatrix(group);
   return group;
 }
 
@@ -1249,7 +2062,7 @@ function createPriorityGroup(left: number, top: number, width: number): Group {
   return group;
 }
 
-function createCalendarGroup(params: {
+function createDynamicCalendarDecal(params: {
   left: number;
   top: number;
   width: number;
@@ -1461,21 +2274,12 @@ function createCalendarGroup(params: {
     structureType: "calendar",
     structureWidth: width,
     structureHeight: height,
+    structureColor: DECAL_INK,
     calendarMonth: month,
     calendarYear: year,
   });
 
   return group;
-}
-
-function addChecklistRow(canvas: Canvas, group: Group) {
-  const structureId = structureProp(group, "structureId") as string;
-  const width = getStructureLayoutWidth(group);
-  const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "checkbox").length;
-  const parts = createChecklistRowParts(structureId, rowIndex, width);
-  group.add(...parts);
-  reflowChecklist(group);
-  canvas.requestRenderAll();
 }
 
 function addPriorityRow(canvas: Canvas, group: Group) {
@@ -1488,9 +2292,30 @@ function addPriorityRow(canvas: Canvas, group: Group) {
   canvas.requestRenderAll();
 }
 
+function addNumberedListRow(canvas: Canvas, group: Group) {
+  const structureId = structureProp(group, "structureId") as string;
+  const rowIndex = group.getObjects().filter((o) => structureProp(o, "structureRole") === "numbered-list-label").length;
+  const parts = createNumberedListRowParts(structureId, rowIndex);
+  group.add(...parts);
+  group.set({
+    structureHeight: Math.max(
+      getStructureLayoutHeight(group),
+      numberedListMinHeight(rowIndex + 1),
+    ),
+  });
+  reflowNumberedList(group);
+  canvas.requestRenderAll();
+}
+
 function enterStructureTextEditing(canvas: Canvas, target: FabricObject, syncFocus = false): boolean {
   const role = structureProp(target, "structureRole");
-  if (role !== "label" && role !== "priority-left" && role !== "priority-right") return false;
+  if (
+    role !== "label" &&
+    role !== "priority-left" &&
+    role !== "priority-right" &&
+    role !== "numbered-list-label"
+  )
+    return false;
   if (!(target instanceof IText) && !(target instanceof Textbox)) return false;
   return enterObjectTextEditing(canvas, target, syncFocus);
 }
@@ -1530,16 +2355,37 @@ function getStructureLayoutHeight(group: Group): number {
 function restoreAllGroupsAfterLoad(canvas: Canvas) {
   for (const obj of [...canvas.getObjects()]) {
     if (isLegacyFlatStickyTextbox(obj)) {
-      migrateTextboxStickyToRect(canvas, obj);
+      migrateTextboxStickyToGroup(canvas, obj);
       continue;
     }
     if (isStickyRect(obj)) {
-      restoreStickyAfterLoad(obj);
+      migrateStickyRectToGroup(canvas, obj);
+      continue;
+    }
+    if (obj instanceof Rect && structureProp(obj, "structureType") === "divider") {
+      const left = obj.left ?? 0;
+      const top = obj.top ?? 0;
+      const width = Math.max(80, (obj.width ?? 80) * (obj.scaleX ?? 1));
+      const color = String(obj.get("structureColor") ?? obj.fill ?? DECAL_LINE);
+      const structureId = String(obj.get("structureId") ?? createStructureId());
+      const angle = obj.angle ?? 0;
+      const dashed = !!obj.get("lineDashed");
+      const line = createDynamicDividerDecal(left - width / 2, top, width, dashed);
+      line.set({ structureId, structureColor: color, stroke: color, angle });
+      canvas.remove(obj);
+      canvas.add(line);
+      line.setCoords();
+      continue;
+    }
+    if (obj instanceof Line && structureProp(obj, "structureType") === "divider") {
+      normalizeDynamicDividerDecal(obj);
       continue;
     }
     if (!(obj instanceof Group)) continue;
     if (obj.get("markKind") === "sticky") {
-      flattenLegacyStickyGroup(canvas, obj);
+      restoreStickyAfterLoad(obj);
+    } else if (obj.get("markKind") === "parchment") {
+      restoreParchmentAfterLoad(obj);
     } else if (obj.get("markKind") === "shape" && obj.get("textCapable")) {
       restoreShapeGroupAfterLoad(obj);
     } else if (obj.get("markKind") === "image-frame") {
@@ -1566,33 +2412,60 @@ export function restoreBoardLayoutAfterLoad(canvas: Canvas) {
 function restoreStructureAfterLoad(group: Group) {
   group.set({ subTargetCheck: true, interactive: true, objectCaching: false });
   const structureType = structureProp(group, "structureType");
-  if (structureType === "checklist") {
+  if (structureType === "checkbox") {
+    group.set({ subTargetCheck: false });
+    const checked = !!structureProp(group, "checked");
     for (const child of group.getObjects()) {
-      if (structureProp(child, "structureRole") === "checkbox" && child instanceof Rect) {
-        const checked = !!structureProp(child, "checked");
-        child.set({ fill: "transparent" });
-        const rowIndex = structureProp(child, "rowIndex");
-        const checkmark = group
-          .getObjects()
-          .find(
-            (o) =>
-              structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
-          );
-        if (checkmark instanceof FabricText) {
-          checkmark.set({ visible: checked });
+      child.set({ evented: false, selectable: false, checked });
+      if (child instanceof FabricText) child.set({ visible: checked });
+    }
+    applyDynamicDecalColor(group, String(group.get("structureColor") ?? DECAL_INK));
+  }
+  if (structureType === "eisenhower") {
+    group.set({ subTargetCheck: true });
+    for (const child of group.getObjects()) {
+      const role = structureProp(child, "structureRole");
+      if (
+        role === "eisenhower-quadrant-do" ||
+        role === "eisenhower-quadrant-schedule" ||
+        role === "eisenhower-quadrant-delegate" ||
+        role === "eisenhower-quadrant-delete"
+      ) {
+        child.set({ evented: true, selectable: false, hoverCursor: "pointer" });
+        if (child instanceof Rect) {
+          child.set("fill", String(child.get("quadrantColor") ?? child.fill ?? "#E5E7EB"));
         }
-        const label = group
-          .getObjects()
-          .find(
-            (o) =>
-              structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
-          );
-        if (label instanceof IText || label instanceof Textbox) {
-          label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK, editable: true, evented: true });
-        }
+      } else {
+        child.set({ evented: false, selectable: false });
       }
     }
-    reflowChecklist(group);
+    const sx = group.scaleX ?? 1;
+    const sy = group.scaleY ?? 1;
+    if (Math.abs(sx - 1) >= 0.001 || Math.abs(sy - 1) >= 0.001) {
+      normalizeEisenhowerResize(group);
+    } else {
+      reflowEisenhowerMatrix(group);
+    }
+  }
+  if (structureType === "numbered_list") {
+    for (const child of group.getObjects()) {
+      const role = structureProp(child, "structureRole");
+      if (role === "numbered-list-index" || role === "numbered-list-bounds") {
+        child.set({ evented: false, selectable: false });
+      } else if (role === "numbered-list-label") {
+        child.set({ evented: true, selectable: false, editable: true });
+      } else if (role === "add-button") {
+        child.set({ evented: true, selectable: false });
+      }
+    }
+    const sx = group.scaleX ?? 1;
+    const sy = group.scaleY ?? 1;
+    if (Math.abs(sx - 1) >= 0.001 || Math.abs(sy - 1) >= 0.001) {
+      normalizeNumberedListResize(group);
+    } else {
+      reflowNumberedList(group);
+    }
+    applyDynamicDecalColor(group, String(group.get("structureColor") ?? DECAL_INK));
   }
   if (structureType === "priority") {
     reflowPriority(group);
@@ -1620,8 +2493,9 @@ function replaceCalendarGroup(
   const top = group.top ?? 0;
   const angle = group.angle ?? 0;
   const structureId = String(group.get("structureId") ?? createStructureId());
+  const structureColor = String(group.get("structureColor") ?? DECAL_INK);
 
-  const next = createCalendarGroup({
+  const next = createDynamicCalendarDecal({
     left,
     top,
     width: width ?? getStructureLayoutWidth(group),
@@ -1632,6 +2506,7 @@ function replaceCalendarGroup(
   });
 
   next.set({ angle });
+  applyDynamicDecalColor(next, structureColor);
 
   canvas.remove(group);
   canvas.add(next);
@@ -1701,18 +2576,13 @@ function normalizeStructureResize(group: Group) {
   group.set({ scaleX: 1, scaleY: 1, structureWidth: newWidth });
 }
 
-function positionStructureAddButton(group: Group, structureType: string) {
+function positionStructureAddButton(group: Group) {
   const width = getStructureLayoutWidth(group);
-  const boxes = group
-    .getObjects()
-    .filter((o) => structureProp(o, "structureRole") === "checkbox")
-    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
   const leftCells = group
     .getObjects()
     .filter((o) => structureProp(o, "structureRole") === "priority-left")
     .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
-  const rowCount = structureType === "checklist" ? boxes.length : leftCells.length;
-  const baseTop = structureType === "checklist" ? 8 + rowCount * STRUCTURE_ROW_H + 4 : 44 + rowCount * STRUCTURE_ROW_H + 6;
+  const baseTop = 44 + leftCells.length * STRUCTURE_ROW_H + 6;
   const btnLeft = width - 14;
   const btnTop = baseTop + 12;
 
@@ -1726,60 +2596,174 @@ function positionStructureAddButton(group: Group, structureType: string) {
   }
 }
 
-function reflowChecklist(group: Group) {
-  const width = getStructureLayoutWidth(group);
-  const boxes = group
+function reflowNumberedList(group: Group) {
+  const labels = group
     .getObjects()
-    .filter((o) => structureProp(o, "structureRole") === "checkbox")
-    .sort((a, b) => (structureProp(a, "rowIndex") as number) - (structureProp(b, "rowIndex") as number));
+    .filter((o) => structureProp(o, "structureRole") === "numbered-list-label")
+    .sort((a, b) => Number(structureProp(a, "rowIndex")) - Number(structureProp(b, "rowIndex")));
+  const numbers = group
+    .getObjects()
+    .filter((o) => structureProp(o, "structureRole") === "numbered-list-index")
+    .sort((a, b) => Number(structureProp(a, "rowIndex")) - Number(structureProp(b, "rowIndex")));
 
-  for (const box of boxes) {
-    if (!(box instanceof Rect)) continue;
-    const rowIndex = structureProp(box, "rowIndex") as number;
-    const rowTop = 8 + rowIndex * STRUCTURE_ROW_H;
-    const checked = !!structureProp(box, "checked");
-    box.set({ left: 0, top: rowTop, width: STRUCTURE_BOX, height: STRUCTURE_BOX, scaleX: 1, scaleY: 1 });
-    box.set({ fill: "transparent" });
+  const rowCount = Math.max(labels.length, 1);
+  const width = Math.max(NUMBERED_LIST_MIN_W, getStructureLayoutWidth(group));
+  const height = Math.max(numberedListMinHeight(rowCount), getStructureLayoutHeight(group));
+  const padX = Math.max(18, width * 0.06);
+  const topPad = Math.max(18, height * 0.1);
+  const bottomPad = Math.max(18, height * 0.1);
+  const addArea = 32;
+  const rowPitch = Math.max(STRUCTURE_ROW_H, (height - topPad - bottomPad - addArea) / rowCount);
+  const fontSize = Math.max(18, Math.min(34, rowPitch * 0.52));
+  const indexFontSize = Math.max(18, Math.min(36, rowPitch * 0.58));
+  const numberColumnW = Math.max(34, Math.max(String(rowCount).length, 2) * indexFontSize * 0.48 + 16);
+  const labelLeft = padX + numberColumnW;
+  const labelWidth = Math.max(120, width - labelLeft - padX);
 
-    const checkmark = group
-      .getObjects()
-      .find(
-        (o) =>
-          structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
-      );
-    if (checkmark instanceof FabricText) {
-      checkmark.set({
-        left: STRUCTURE_BOX / 2,
-        top: rowTop + STRUCTURE_BOX / 2,
-        visible: checked,
-        originX: "center",
-        originY: "center",
+  const bounds = group.getObjects().find((o) => structureProp(o, "structureRole") === "numbered-list-bounds");
+  if (bounds instanceof Rect) {
+    bounds.set({ width, height, scaleX: 1, scaleY: 1 });
+  }
+
+  labels.forEach((label, index) => {
+    const rowCenter = topPad + rowPitch * index + rowPitch / 2;
+    const number = numbers[index];
+
+    if (number instanceof FabricText) {
+      number.set({
+        text: `${index + 1}.`,
+        left: padX,
+        top: rowCenter,
+        fontSize: indexFontSize,
         scaleX: 1,
         scaleY: 1,
       });
+      number.set({ rowIndex: index });
     }
-
-    const label = group
-      .getObjects()
-      .find(
-        (o) =>
-          structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
-      );
     if (label instanceof IText || label instanceof Textbox) {
       label.set({
-        left: STRUCTURE_BOX + 10,
-        top: rowTop - 2,
-        width: width - STRUCTURE_BOX - 40,
+        left: labelLeft,
+        top: rowCenter,
+        width: labelWidth,
+        fontSize,
         scaleX: 1,
         scaleY: 1,
-        linethrough: checked,
-        fill: checked ? DECAL_MUTED : DECAL_INK,
       });
+      label.set({ rowIndex: index });
+    }
+  });
+
+  const btnLeft = width - padX;
+  const btnTop = height - Math.max(18, bottomPad * 0.75);
+  for (const obj of group.getObjects()) {
+    if (structureProp(obj, "structureRole") !== "add-button") continue;
+    if (obj instanceof Circle) {
+      obj.set({ left: btnLeft, top: btnTop, scaleX: 1, scaleY: 1 });
+    } else if (obj instanceof FabricText) {
+      obj.set({ left: btnLeft, top: btnTop, scaleX: 1, scaleY: 1 });
     }
   }
 
-  positionStructureAddButton(group, "checklist");
-  group.set({ structureWidth: width });
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    structureWidth: width,
+    structureHeight: height,
+  });
+  group.setCoords();
+}
+
+function reflowEisenhowerMatrix(group: Group) {
+  const width = Math.max(EISENHOWER_MIN_W, getStructureLayoutWidth(group));
+  const height = Math.max(EISENHOWER_MIN_H, getStructureLayoutHeight(group));
+  const leftPad = Math.max(52, width * 0.12);
+  const rightPad = Math.max(14, width * 0.04);
+  const titleTop = Math.max(10, height * 0.03);
+  const titleSize = Math.max(20, Math.min(36, width * 0.055));
+  const topLabelSize = Math.max(14, Math.min(24, width * 0.038));
+  const sideLabelSize = Math.max(13, Math.min(22, width * 0.032));
+  const axisGap = Math.max(10, height * 0.025);
+  const quadrantGap = Math.max(10, Math.min(width, height) * 0.025);
+  const titleH = titleSize + 8;
+  const topLabelH = topLabelSize + 10;
+  const gridTop = titleTop + titleH + axisGap + topLabelH;
+  const gridBottomPad = Math.max(14, height * 0.05);
+  const gridWidth = Math.max(220, width - leftPad - rightPad);
+  const gridHeight = Math.max(180, height - gridTop - gridBottomPad);
+  const quadW = (gridWidth - quadrantGap) / 2;
+  const quadH = (gridHeight - quadrantGap) / 2;
+  const rightColLeft = leftPad + quadW + quadrantGap;
+  const bottomRowTop = gridTop + quadH + quadrantGap;
+
+  for (const child of group.getObjects()) {
+    const role = structureProp(child, "structureRole");
+    if (role === "eisenhower-bounds" && child instanceof Rect) {
+      child.set({ width, height, scaleX: 1, scaleY: 1 });
+      continue;
+    }
+    if (role === "eisenhower-title" && child instanceof FabricText) {
+      child.set({ left: width / 2, top: titleTop, fontSize: titleSize, scaleX: 1, scaleY: 1 });
+      continue;
+    }
+    if (role === "eisenhower-top-left" && child instanceof FabricText) {
+      child.set({
+        left: leftPad + quadW / 2,
+        top: titleTop + titleH + axisGap + topLabelH / 2,
+        fontSize: topLabelSize,
+        scaleX: 1,
+        scaleY: 1,
+      });
+      continue;
+    }
+    if (role === "eisenhower-top-right" && child instanceof FabricText) {
+      child.set({
+        left: rightColLeft + quadW / 2,
+        top: titleTop + titleH + axisGap + topLabelH / 2,
+        fontSize: topLabelSize,
+        scaleX: 1,
+        scaleY: 1,
+      });
+      continue;
+    }
+    if (role === "eisenhower-left-top" && child instanceof FabricText) {
+      child.set({
+        left: leftPad * 0.42,
+        top: gridTop + quadH / 2,
+        fontSize: sideLabelSize,
+        scaleX: 1,
+        scaleY: 1,
+      });
+      continue;
+    }
+    if (role === "eisenhower-left-bottom" && child instanceof FabricText) {
+      child.set({
+        left: leftPad * 0.42,
+        top: bottomRowTop + quadH / 2,
+        fontSize: sideLabelSize,
+        scaleX: 1,
+        scaleY: 1,
+      });
+      continue;
+    }
+    if (!(child instanceof Rect)) continue;
+
+    if (role === "eisenhower-quadrant-do") {
+      child.set({ left: leftPad, top: gridTop, width: quadW, height: quadH, scaleX: 1, scaleY: 1 });
+    } else if (role === "eisenhower-quadrant-schedule") {
+      child.set({ left: rightColLeft, top: gridTop, width: quadW, height: quadH, scaleX: 1, scaleY: 1 });
+    } else if (role === "eisenhower-quadrant-delegate") {
+      child.set({ left: leftPad, top: bottomRowTop, width: quadW, height: quadH, scaleX: 1, scaleY: 1 });
+    } else if (role === "eisenhower-quadrant-delete") {
+      child.set({ left: rightColLeft, top: bottomRowTop, width: quadW, height: quadH, scaleX: 1, scaleY: 1 });
+    }
+  }
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    structureWidth: width,
+    structureHeight: height,
+  });
   group.setCoords();
 }
 
@@ -1821,15 +2805,16 @@ function reflowPriority(group: Group) {
     }
   }
 
-  positionStructureAddButton(group, "priority");
+  positionStructureAddButton(group);
   group.set({ structureWidth: width });
   group.setCoords();
 }
 
 function reflowInteractiveStructure(group: Group) {
   const structureType = structureProp(group, "structureType") as string | undefined;
-  if (structureType === "checklist") reflowChecklist(group);
-  else if (structureType === "priority") reflowPriority(group);
+  if (structureType === "priority") reflowPriority(group);
+  if (structureType === "numbered_list") reflowNumberedList(group);
+  if (structureType === "eisenhower") reflowEisenhowerMatrix(group);
 }
 
 const makeDecalLine = (
@@ -1870,9 +2855,274 @@ const makeDecalText = (
     evented: false,
   });
 
+function createDynamicDividerDecal(left: number, top: number, width: number, dashed = false): Line {
+  const structureId = createStructureId();
+  const lineWidth = Math.max(80, width);
+  const line = new Line([-lineWidth / 2, 0, lineWidth / 2, 0], {
+    left: left + lineWidth / 2,
+    top,
+    stroke: DECAL_LINE,
+    strokeWidth: 4,
+    strokeLineCap: "round",
+    originX: "center",
+    originY: "center",
+    fill: "transparent",
+    lockScalingY: true,
+    lockRotation: true,
+    strokeDashArray: dashed ? LINE_DASH_PATTERN : undefined,
+  });
+  line.set({
+    structureId,
+    structureType: "divider",
+    structureRole: "divider-line",
+    structureWidth: lineWidth,
+    structureColor: DECAL_LINE,
+    lineDashed: dashed,
+  });
+  applyBoardFabricControls(line);
+  line.setControlsVisibility({
+    mt: false,
+    mb: false,
+    tl: false,
+    tr: false,
+    bl: false,
+    br: false,
+    mtr: false,
+  });
+  return line;
+}
+
+function normalizeDynamicDividerDecal(divider: FabricObject) {
+  if (divider instanceof Line && structureProp(divider, "structureType") === "divider") {
+    const sx = divider.scaleX ?? 1;
+    const stored = structureProp(divider, "structureWidth");
+    const currentW = typeof stored === "number" && stored > 0 ? stored : Math.max(divider.width ?? 80, 80);
+    const width = Math.max(80, currentW * sx);
+    divider.set({
+      x1: -width / 2,
+      y1: 0,
+      x2: width / 2,
+      y2: 0,
+      scaleX: 1,
+      scaleY: 1,
+      structureWidth: width,
+      lockScalingY: true,
+      lockRotation: true,
+    });
+    divider.setControlsVisibility({
+      mt: false,
+      mb: false,
+      tl: false,
+      tr: false,
+      bl: false,
+      br: false,
+      mtr: false,
+    });
+    divider.setCoords();
+    return;
+  }
+
+  if (!(divider instanceof Rect) || structureProp(divider, "structureType") !== "divider") return;
+
+  const width = Math.max(80, (divider.width ?? 80) * (divider.scaleX ?? 1));
+  divider.set({
+    width,
+    height: 4,
+    scaleX: 1,
+    scaleY: 1,
+    structureWidth: width,
+    lockScalingY: true,
+    lockRotation: true,
+  });
+  divider.setControlsVisibility({
+    mt: false,
+    mb: false,
+    tl: false,
+    tr: false,
+    bl: false,
+    br: false,
+    mtr: false,
+  });
+  divider.setCoords();
+}
+
+function applyDynamicDecalColor(root: FabricObject, color: string) {
+  root.set("structureColor", color);
+
+  if (structureProp(root, "structureType") === "divider") {
+    if (root instanceof Line) {
+      root.set("stroke", color);
+    } else if (root instanceof Rect) {
+      root.set("fill", color);
+    }
+    return;
+  }
+  if (structureProp(root, "structureType") === "bullet" && root instanceof Circle) {
+    root.set("fill", color);
+    return;
+  }
+  if (!(root instanceof Group)) return;
+
+  const structureType = structureProp(root, "structureType");
+
+  for (const child of root.getObjects()) {
+    const role = structureProp(child, "structureRole");
+    if (structureType === "calendar") {
+      if (child instanceof FabricText || child instanceof IText || child instanceof Textbox) {
+        child.set("fill", color);
+      } else if (child instanceof Rect) {
+        if (role === "calendar-frame" || role === "calendar-corner-box") child.set("stroke", color);
+        else if (role === "calendar-line") child.set("fill", color);
+      }
+      continue;
+    }
+
+    if (structureType === "eisenhower") {
+      if (
+        (role === "eisenhower-quadrant-do" ||
+          role === "eisenhower-quadrant-schedule" ||
+          role === "eisenhower-quadrant-delegate" ||
+          role === "eisenhower-quadrant-delete") &&
+        child instanceof Rect
+      ) {
+        child.set({ fill: color, quadrantColor: color });
+      }
+      continue;
+    }
+
+    if (structureType === "checkbox") {
+      if (child instanceof Rect) {
+        child.set({
+          stroke: color,
+          fill: "transparent",
+        });
+      } else if (child instanceof FabricText) {
+        child.set({ fill: color, visible: !!structureProp(root, "checked") });
+      }
+      continue;
+    }
+
+    if (structureType === "numbered_list") {
+      if (role === "numbered-list-index" && child instanceof FabricText) {
+        child.set("fill", color);
+      } else if (role === "numbered-list-label" && (child instanceof IText || child instanceof Textbox)) {
+        child.set("fill", color);
+      } else if (role === "add-button" && child instanceof Circle) {
+        child.set("stroke", color);
+      } else if (role === "add-button" && child instanceof FabricText) {
+        child.set("fill", color);
+      }
+    }
+  }
+}
+
+function normalizeCheckboxResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  const currentSize = getStructureLayoutWidth(group);
+  const nextSize = Math.max(48, currentSize * Math.max(sx, sy));
+  const checked = !!structureProp(group, "checked");
+  const structureColor = String(group.get("structureColor") ?? DECAL_INK);
+
+  const box = group.getObjects().find((o) => o instanceof Rect);
+  const checkmark = group.getObjects().find((o) => o instanceof FabricText);
+  if (box instanceof Rect) {
+    box.set({
+      width: nextSize,
+      height: nextSize,
+      strokeWidth: Math.max(3, nextSize * 0.06),
+      rx: Math.max(4, nextSize * 0.08),
+      ry: Math.max(4, nextSize * 0.08),
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+  if (checkmark instanceof FabricText) {
+    checkmark.set({
+      left: nextSize / 2,
+      top: nextSize / 2,
+      fontSize: nextSize * 0.72,
+      visible: checked,
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+
+  group.set({ scaleX: 1, scaleY: 1, structureWidth: nextSize, structureHeight: nextSize });
+  applyDynamicDecalColor(group, structureColor);
+  group.setCoords();
+}
+
+function normalizeEisenhowerResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  for (const child of group.getObjects()) {
+    child.set({ scaleX: 1, scaleY: 1 });
+  }
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    structureWidth: Math.max(EISENHOWER_MIN_W, getStructureLayoutWidth(group) * sx),
+    structureHeight: Math.max(EISENHOWER_MIN_H, getStructureLayoutHeight(group) * sy),
+  });
+  reflowEisenhowerMatrix(group);
+}
+
+function normalizeNumberedListResize(group: Group) {
+  const sx = group.scaleX ?? 1;
+  const sy = group.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  const structureColor = String(group.get("structureColor") ?? DECAL_INK);
+  const width = Math.max(NUMBERED_LIST_MIN_W, getStructureLayoutWidth(group) * sx);
+  const height = Math.max(NUMBERED_LIST_MIN_H, getStructureLayoutHeight(group) * sy);
+
+  for (const child of group.getObjects()) {
+    child.set({ scaleX: 1, scaleY: 1 });
+  }
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    structureWidth: width,
+    structureHeight: height,
+  });
+  reflowNumberedList(group);
+  applyDynamicDecalColor(group, structureColor);
+}
+
+function normalizeBulletResize(bullet: Circle) {
+  const sx = bullet.scaleX ?? 1;
+  const sy = bullet.scaleY ?? 1;
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+  const stored = structureProp(bullet, "structureWidth");
+  const currentSize =
+    typeof stored === "number" && stored > 0 ? stored : Math.max(12, (bullet.radius ?? 6) * 2);
+  const nextSize = Math.max(12, currentSize * Math.max(sx, sy));
+  const structureColor = String(bullet.get("structureColor") ?? DECAL_INK);
+
+  bullet.set({
+    radius: nextSize / 2,
+    scaleX: 1,
+    scaleY: 1,
+    structureWidth: nextSize,
+    structureHeight: nextSize,
+  });
+  applyDynamicDecalColor(bullet, structureColor);
+  bullet.setCoords();
+}
+
 export type BoardDiagramType =
   | "eisenhower"
-  | "checklist"
+  | "checkbox"
+  | "numbered_list"
+  | "bullet"
   | "calendar"
   | "zones"
   | "timeline"
@@ -1889,6 +3139,8 @@ export type BoardCanvasHandle = {
   addTextNormalized: (text: string, x: number, y: number, fontSize?: number, fill?: string) => void;
   addStickyNote: () => void;
   addStickyNoteAt: (text: string, x: number, y: number, fill?: string) => void;
+  addParchmentNote: () => void;
+  addParchmentNoteAt: (text: string, x: number, y: number, fill?: string) => void;
   addDiagramOverlay: (
     diagram: BoardDiagramType,
     x: number,
@@ -1948,6 +3200,7 @@ type QuickSelectorState = {
   shapeCapable?: boolean;
   stickerCapable?: boolean;
   imageCapable?: boolean;
+  lineCapable?: boolean;
 };
 
 type CalendarControlState = {
@@ -2034,6 +3287,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const onHistoryChangeRef = useRef(onHistoryChange);
     const rebindStructureHandlersRef = useRef<(canvas: Canvas) => void>(() => {});
     const handleStructurePointerRef = useRef<(canvas: Canvas, target: FabricObjectType) => boolean>(() => false);
+    const toggleCheckboxRef = useRef<(canvas: Canvas, group: Group) => void>(() => {});
     const refreshCalendarControlRef = useRef<(canvas: Canvas | null) => void>(() => {});
     const [quickSelector, setQuickSelector] = useState<QuickSelectorState | null>(null);
     const [calendarControl, setCalendarControl] = useState<CalendarControlState | null>(null);
@@ -2273,7 +3527,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         while (root.group) {
           root = root.group;
         }
-        deleteTargetRef.current = root;
+        const role = structureProp(target as unknown as FabricObjectType, "structureRole");
+        const structureType = structureProp(target as unknown as FabricObjectType, "structureType");
+        if (
+          structureType === "eisenhower" &&
+          typeof role === "string" &&
+          role.startsWith("eisenhower-quadrant-")
+        ) {
+          // Keep the group selected for movement, but color operations should target this quadrant.
+          deleteTargetRef.current = target;
+        } else {
+          deleteTargetRef.current = root;
+        }
         canvas.setActiveObject(root);
         const objects = canvas.getObjects();
         if (objects[objects.length - 1] !== root) {
@@ -2286,6 +3551,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let shapeCapable = false;
       let stickerCapable = false;
       let imageCapable = false;
+      let lineCapable = false;
       if (target instanceof IText || target instanceof Textbox || target instanceof FabricText) {
         textCapable = true;
       } else if (target) {
@@ -2297,11 +3563,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           textCapable = root.getObjects().some((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
         }
         const markKind = typeof root.get === "function" ? root.get("markKind") : undefined;
+        const shapeType = typeof root.get === "function" ? root.get("shapeType") : undefined;
         shapeCapable = markKind === "shape";
         stickerCapable = markKind === "sticker";
         imageCapable =
           markKind === "image-frame" ||
           (root instanceof FabricImage && markKind !== "sticker" && markKind !== "frame-image");
+        lineCapable =
+          structureProp(root, "structureType") === "divider" ||
+          (markKind === "shape" && shapeType === "line" && root instanceof Line) ||
+          markKind === "draw";
       }
 
       setQuickSelector({
@@ -2316,6 +3587,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         shapeCapable,
         stickerCapable,
         imageCapable,
+        lineCapable,
       });
     }, [readOnly]);
 
@@ -2427,11 +3699,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.on("object:modified", (event) => {
           const target = event.target;
           if (isStickyRect(target)) {
-            normalizeStickyResize(target);
-            applyStickyFabricControls(target);
+            migrateStickyRectToGroup(canvas, target);
+          } else if (structureProp(target, "structureType") === "divider") {
+            normalizeDynamicDividerDecal(target);
+          } else if (structureProp(target, "structureType") === "bullet" && target instanceof Circle) {
+            normalizeBulletResize(target);
           } else if (target instanceof Group) {
             if (target.get("markKind") === "sticky") {
-              flattenLegacyStickyGroup(canvas, target);
+              normalizeStickyResize(target);
+            } else if (target.get("markKind") === "parchment") {
+              normalizeParchmentResize(target);
             } else if (target.get("markKind") === "shape" && target.get("textCapable")) {
               normalizeTextCapableShapeResize(target);
             } else if (target.get("structureId")) {
@@ -2439,7 +3716,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
               if (structureType === "calendar") {
                 normalizeCalendarResize(canvas, target);
-              } else if (structureType === "priority" || structureType === "checklist") {
+              } else if (structureType === "checkbox") {
+                normalizeCheckboxResize(target);
+              } else if (structureType === "eisenhower") {
+                normalizeEisenhowerResize(target);
+              } else if (structureType === "numbered_list") {
+                normalizeNumberedListResize(target);
+                rebindStructureHandlersRef.current(canvas);
+              } else if (structureType === "priority") {
                 normalizeStructureResize(target);
                 reflowInteractiveStructure(target);
                 rebindStructureHandlersRef.current(canvas);
@@ -2450,6 +3734,29 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         });
         canvas.on("object:added", onHistoryImmediate);
         canvas.on("object:removed", onHistoryImmediate);
+        canvas.on("text:changed", (event) => {
+          const target = event.target as FabricObject | undefined;
+          if (!target) return;
+          const sticky = stickyGroupFromTarget(target);
+          if (sticky) {
+            const stored = getStickyStoredSize(sticky);
+            fitStickyText(sticky, stored.width, stored.height);
+            sticky.setCoords();
+            canvas.requestRenderAll();
+            onHistoryDebounced();
+            return;
+          }
+          const parchment = parchmentGroupFromTarget(target);
+          if (parchment) {
+            const stored = getParchmentStoredSize(parchment);
+            fitParchmentText(parchment, stored.width, stored.height);
+            parchment.setCoords();
+            canvas.requestRenderAll();
+            onHistoryDebounced();
+            return;
+          }
+          onHistoryDebounced();
+        });
         const handleSelectionChanged = (event?: { selected?: FabricObject[] }) => {
           const obj = event?.selected?.[0];
           if (obj) {
@@ -2459,6 +3766,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             } else {
               const stickyGroup = stickyGroupFromTarget(obj);
               if (stickyGroup) {
+                if (obj.get("markKind") === "sticky-text") {
+                  canvas.requestRenderAll();
+                  return;
+                }
                 applyStickyFabricControls(stickyGroup);
                 if (canvas.getActiveObject() !== stickyGroup) {
                   canvas.discardActiveObject();
@@ -2466,7 +3777,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                 }
                 stickyGroup.setCoords();
                 canvas.requestRenderAll();
-              } else if (
+              } else {
+                const parchmentGroup = parchmentGroupFromTarget(obj);
+                if (parchmentGroup) {
+                  if (obj.get("markKind") === "parchment-text") {
+                    canvas.requestRenderAll();
+                    return;
+                  }
+                  applyParchmentFabricControls(parchmentGroup);
+                  if (canvas.getActiveObject() !== parchmentGroup) {
+                    canvas.discardActiveObject();
+                    canvas.setActiveObject(parchmentGroup);
+                  }
+                  parchmentGroup.setCoords();
+                  canvas.requestRenderAll();
+                } else if (
                 obj.get("markKind") ||
                 obj instanceof FabricImage ||
                 obj instanceof IText ||
@@ -2475,6 +3800,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               ) {
                 applyBoardFabricControls(obj);
                 canvas.requestRenderAll();
+              }
               }
             }
           }
@@ -2502,6 +3828,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               return;
             }
           }
+          let root: FabricObject = target as FabricObject;
+          while (root.group) root = root.group as FabricObject;
+          if (root instanceof Group && structureProp(root, "structureType") === "checkbox") {
+            toggleCheckboxRef.current(canvas, root);
+            opt.e.preventDefault?.();
+            opt.e.stopPropagation?.();
+            return;
+          }
           if (enterObjectTextEditing(canvas, target as FabricObject)) {
             opt.e.preventDefault?.();
             opt.e.stopPropagation?.();
@@ -2519,11 +3853,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               const role = structureProp(hit, "structureRole");
               if (
                 role &&
-                (role === "checkbox" ||
-                  role === "checkmark" ||
-                  role === "add-button" ||
+                (role === "add-button" ||
                   role === "add-row" ||
                   role === "label" ||
+                  role === "numbered-list-label" ||
                   role === "priority-left" ||
                   role === "priority-right")
               ) {
@@ -2539,12 +3872,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           }
 
           if (syncTextFocusRef.current && target) {
-            if (!isStickyRect(target as FabricObject) && !stickyGroupFromTarget(target as FabricObject)) {
+            if (!isStickyRect(target as FabricObject) && !stickyGroupFromTarget(target as FabricObject) && !parchmentGroupFromTarget(target as FabricObject)) {
               let root: FabricObject = target;
               while (root.group) root = root.group as FabricObject;
               if (
                 (root instanceof IText || root instanceof Textbox) &&
                 root.get("markKind") !== "sticky-text" &&
+                root.get("markKind") !== "parchment-text" &&
                 !structureProp(root, "structureRole")
               ) {
                 if (enterObjectTextEditing(canvas, root, true)) {
@@ -2763,6 +4097,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       scheduleSave();
     }, [commitHistorySnapshot, readOnly, scheduleSave, activeArtboardWidth, activeArtboardHeight]);
 
+    const addParchmentNote = useCallback(() => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return;
+      const parchment = createParchmentNoteGroup({
+        left: activeArtboardWidth / 2 - PARCHMENT_DEFAULT_W / 2,
+        top: activeArtboardHeight * 0.38 - PARCHMENT_DEFAULT_H / 2,
+      });
+      canvas.add(parchment);
+      canvas.setActiveObject(parchment);
+      applyParchmentFabricControls(parchment);
+      canvas.requestRenderAll();
+      commitHistorySnapshot();
+      scheduleSave();
+    }, [commitHistorySnapshot, readOnly, scheduleSave, activeArtboardWidth, activeArtboardHeight]);
+
     const addTextAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
@@ -2814,6 +4163,33 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       scheduleSave();
     }, [readOnly, scheduleSave, activeArtboardWidth, activeArtboardHeight]);
+
+    const addParchmentNoteAt = useCallback(
+      (text: string, x: number, y: number, fill = PARCHMENT_DEFAULT_FILL) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return;
+
+        const w = 260;
+        const h = 170;
+
+        const parchment = createParchmentNoteGroup({
+          left: x * activeArtboardWidth - w / 2,
+          top: y * activeArtboardHeight - h / 2,
+          width: w,
+          height: h,
+          fill,
+          text,
+        });
+        canvas.add(parchment);
+        canvas.setActiveObject(parchment);
+        applyParchmentFabricControls(parchment);
+        canvas.requestRenderAll();
+
+        recordHistory();
+        scheduleSave();
+      },
+      [activeArtboardWidth, activeArtboardHeight, readOnly, recordHistory, scheduleSave],
+    );
 
     const exitDrawMode = useCallback(() => {
       const canvas = fabricRef.current;
@@ -2941,6 +4317,67 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [readOnly, recordHistory, scheduleSave],
     );
 
+    const toggleLineDashOnActive = useCallback(
+      () => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return;
+        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
+        if (!selected) return;
+
+        let root: FabricObject = selected;
+        while (root.group) root = root.group as FabricObject;
+
+        if (structureProp(root, "structureType") === "divider" && root instanceof Rect) {
+          const left = root.left ?? 0;
+          const top = root.top ?? 0;
+          const width = Math.max(80, (root.width ?? 80) * (root.scaleX ?? 1));
+          const color = String(root.get("structureColor") ?? root.fill ?? DECAL_LINE);
+          const structureId = String(root.get("structureId") ?? createStructureId());
+          const angle = root.angle ?? 0;
+          const line = createDynamicDividerDecal(left - width / 2, top, width, true);
+          line.set({ structureId, structureColor: color, stroke: color, angle });
+          canvas.remove(root);
+          canvas.add(line);
+          canvas.setActiveObject(line);
+          line.setCoords();
+          deleteTargetRef.current = line;
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
+          return;
+        }
+
+        const dashed =
+          !!root.get("lineDashed") ||
+          (Array.isArray(root.get("strokeDashArray")) && (root.get("strokeDashArray") as number[]).length > 0);
+        const nextDashed = !dashed;
+
+        if (structureProp(root, "structureType") === "divider" && root instanceof Line) {
+          root.set({
+            strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+            lineDashed: nextDashed,
+          });
+        } else if (root.get("markKind") === "shape" && root.get("shapeType") === "line" && root instanceof Line) {
+          root.set({
+            strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+            lineDashed: nextDashed,
+          });
+        } else if (root.get("markKind") === "draw" || root.type === "path") {
+          root.set({
+            strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+            lineDashed: nextDashed,
+          });
+        } else {
+          return;
+        }
+
+        canvas.requestRenderAll();
+        recordHistory();
+        scheduleSave();
+      },
+      [readOnly, recordHistory, scheduleSave],
+    );
+
     const applyImageFrameToActive = useCallback(
       (shapeType: BoardMarkShapeType) => {
         const canvas = fabricRef.current;
@@ -2949,49 +4386,38 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!selected) return;
 
         const existingFrame = imageFrameGroupFromTarget(selected);
+        let image: FabricImage | null = null;
+        let center = { x: 0, y: 0 };
+        let angle = 0;
+        let photoW = 200;
+        let photoH = 200;
+
         if (existingFrame) {
-          const frameW = Number(existingFrame.get("frameWidth") ?? existingFrame.width ?? 200);
-          const frameH = Number(existingFrame.get("frameHeight") ?? existingFrame.height ?? 200);
-          existingFrame.set({
-            clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
-            frameShapeType: shapeType,
-          });
-          existingFrame.setCoords();
-          canvas.setActiveObject(existingFrame);
-          canvas.requestRenderAll();
-          recordHistory();
-          scheduleSave();
-          return;
+          const inner = existingFrame
+            .getObjects()
+            .find((o) => o instanceof FabricImage && o.get("markKind") === "frame-image");
+          if (!(inner instanceof FabricImage)) return;
+          center = existingFrame.getCenterPoint();
+          angle = existingFrame.angle ?? 0;
+          ({ w: photoW, h: photoH } = imageFrameInnerSize(existingFrame));
+          existingFrame.remove(inner);
+          canvas.remove(existingFrame);
+          image = inner;
+        } else {
+          image = boardImageFromTarget(selected);
+          if (!image) return;
+          center = image.getCenterPoint();
+          angle = image.angle ?? 0;
+          photoW = (image.width ?? 1) * Math.abs(image.scaleX ?? 1);
+          photoH = (image.height ?? 1) * Math.abs(image.scaleY ?? 1);
+          canvas.remove(image);
         }
 
-        const image = boardImageFromTarget(selected);
-        if (!image) return;
+        const group =
+          shapeType === "photo"
+            ? createPolaroidImageFrameGroup(image, photoW, photoH, center, angle)
+            : createClipImageFrameGroup(image, photoW, photoH, shapeType, center, angle);
 
-        const frameW = (image.width ?? 1) * Math.abs(image.scaleX ?? 1);
-        const frameH = (image.height ?? 1) * Math.abs(image.scaleY ?? 1);
-        const center = image.getCenterPoint();
-        const angle = image.angle ?? 0;
-
-        canvas.remove(image);
-        prepareImageForFrame(image, frameW, frameH);
-
-        const group = new Group([image], {
-          left: center.x,
-          top: center.y,
-          originX: "center",
-          originY: "center",
-          width: frameW,
-          height: frameH,
-          angle,
-          clipPath: createImageFrameClipShape(shapeType, frameW, frameH),
-          markKind: "image-frame",
-          frameShapeType: shapeType,
-          frameWidth: frameW,
-          frameHeight: frameH,
-          subTargetCheck: false,
-          interactive: true,
-          objectCaching: false,
-        });
         applyBoardFabricControls(group);
         canvas.add(group);
         canvas.setActiveObject(group);
@@ -3430,7 +4856,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     );
 
     const addStickyNoteAt = useCallback(
-      (_text: string, x: number, y: number, fill = "#FFF9C4") => {
+      (text: string, x: number, y: number, fill = "#FFF9C4") => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
 
@@ -3443,6 +4869,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           width: w,
           height: h,
           fill,
+          text,
         });
         canvas.add(sticky);
         canvas.setActiveObject(sticky);
@@ -3462,8 +4889,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const addRowForStructure = (structureId: string, structureType: string) => {
           const group = findStructureGroup(canvas, structureId, structureType);
           if (!group) return;
-          if (structureType === "checklist") addChecklistRow(canvas, group);
-          else if (structureType === "priority") addPriorityRow(canvas, group);
+          if (structureType === "priority") addPriorityRow(canvas, group);
+          if (structureType === "numbered_list") addNumberedListRow(canvas, group);
           group.setCoords();
           recordHistory();
           scheduleSave();
@@ -3473,7 +4900,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         walkStructureObjects(canvas, (obj) => {
           if (!(obj instanceof IText) && !(obj instanceof Textbox)) return;
           const role = structureProp(obj, "structureRole");
-          if (role !== "label" && role !== "priority-left" && role !== "priority-right") return;
+          if (
+            role !== "label" &&
+            role !== "priority-left" &&
+            role !== "priority-right" &&
+            role !== "numbered-list-label"
+          )
+            return;
           const structureId = structureProp(obj, "structureId") as string | undefined;
           const structureType = structureProp(obj, "structureType") as string | undefined;
           if (!structureId || !structureType) return;
@@ -3499,44 +4932,15 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const structureType = structureProp(target, "structureType") as string | undefined;
         if (!role || !structureId || !structureType) return false;
 
-        if (role === "label" || role === "priority-left" || role === "priority-right") {
+        if (role === "label" || role === "priority-left" || role === "priority-right" || role === "numbered-list-label") {
           return enterStructureTextEditing(canvas, target as FabricObject, fabricSelectionControls);
-        }
-
-        if (role === "checkbox" && target instanceof Rect) {
-          const checked = !structureProp(target, "checked");
-          target.set({ checked, fill: checked ? DECAL_INK : "transparent" });
-          const rowIndex = structureProp(target, "rowIndex") as number | undefined;
-          const group = findStructureGroup(canvas, structureId, structureType);
-          const checkmark = group
-            ?.getObjects()
-            .find(
-              (o) =>
-                structureProp(o, "structureRole") === "checkmark" && structureProp(o, "rowIndex") === rowIndex,
-            );
-          if (checkmark instanceof FabricText) {
-            checkmark.set({ visible: checked });
-          }
-          const label = group
-            ?.getObjects()
-            .find(
-              (o) =>
-                structureProp(o, "structureRole") === "label" && structureProp(o, "rowIndex") === rowIndex,
-            );
-          if (label instanceof IText || label instanceof Textbox) {
-            label.set({ linethrough: checked, fill: checked ? DECAL_MUTED : DECAL_INK });
-          }
-          canvas.requestRenderAll();
-          recordHistory();
-          scheduleSave();
-          return true;
         }
 
         if (isAddButtonHit(target)) {
           const group = findStructureGroup(canvas, structureId, structureType);
           if (!group) return true;
-          if (structureType === "checklist") addChecklistRow(canvas, group);
-          else if (structureType === "priority") addPriorityRow(canvas, group);
+          if (structureType === "priority") addPriorityRow(canvas, group);
+          if (structureType === "numbered_list") addNumberedListRow(canvas, group);
           recordHistory();
           scheduleSave();
           rebindStructureHandlersRef.current(canvas);
@@ -3550,10 +4954,35 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     handleStructurePointerRef.current = handleStructurePointer;
 
-    const placeInteractiveChecklist = (left: number, top: number, width: number) => {
+    toggleCheckboxRef.current = (canvas, group) => {
+      const checked = !structureProp(group, "checked");
+      group.set({ checked });
+      for (const child of group.getObjects()) {
+        child.set({ checked });
+        if (child instanceof FabricText) child.set({ visible: checked });
+      }
+      applyDynamicDecalColor(group, String(group.get("structureColor") ?? DECAL_INK));
+      canvas.requestRenderAll();
+      recordHistory();
+      scheduleSave();
+    };
+
+    const placeInteractiveBullet = (left: number, top: number, size: number) => {
       const canvas = fabricRef.current;
       if (!canvas) return;
-      const group = createChecklistGroup(left, top, width);
+      const bullet = createDynamicBulletDecal(left, top, size);
+      canvas.add(bullet);
+      bullet.setCoords();
+      canvas.setActiveObject(bullet);
+      canvas.requestRenderAll();
+      recordHistory();
+      scheduleSave();
+    };
+
+    const placeInteractiveCheckbox = (left: number, top: number, size: number) => {
+      const canvas = fabricRef.current;
+      if (!canvas) return;
+      const group = createDynamicCheckboxDecal(left, top, size);
       canvas.add(group);
       group.setCoords();
       canvas.setActiveObject(group);
@@ -3624,14 +5053,39 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           addLine(0, height - 3, width, 3, "rgba(17,17,17,0.35)");
         }
 
-        if (diagram === "checklist") {
-          placeInteractiveChecklist(left, top, width);
+        if (diagram === "checkbox" || (diagram as string) === "checklist") {
+          const size = Math.max(48, Math.min(width, height));
+          placeInteractiveCheckbox(left, top, size);
+          return;
+        }
+
+        if (diagram === "numbered_list") {
+          const group = createDynamicNumberedListDecal({
+            left,
+            top,
+            width,
+            height,
+            items,
+          });
+          canvas.add(group);
+          group.setCoords();
+          canvas.setActiveObject(group);
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
+          rebindStructureHandlersRef.current(canvas);
+          return;
+        }
+
+        if (diagram === "bullet") {
+          const size = Math.max(12, Math.min(width, height));
+          placeInteractiveBullet(left + width / 2, top + height / 2, size);
           return;
         }
 
         if (diagram === "calendar") {
           const now = new Date();
-          const group = createCalendarGroup({
+          const group = createDynamicCalendarDecal({
             left,
             top,
             width,
@@ -3667,7 +5121,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         }
 
         if (diagram === "eisenhower") {
-          placeInteractivePriority(left, top, width);
+          const group = createDynamicEisenhowerMatrixDecal({
+            left,
+            top,
+            width,
+            height,
+          });
+          canvas.add(group);
+          group.setCoords();
+          canvas.setActiveObject(group);
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
           return;
         }
 
@@ -3727,26 +5192,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         }
 
         if (diagram === "divider") {
-          const structureId = createStructureId();
-          const line = new Rect({
-            left: left + width / 2,
-            top: top + height / 2,
-            width,
-            height: 4,
-            fill: DECAL_LINE,
-            rx: 2,
-            ry: 2,
-            originX: "center",
-            originY: "center",
-          });
-          line.set({
-            structureId,
-            structureType: "divider",
-            structureRole: "divider-line",
-          });
-          canvas.add(line);
-          line.setCoords();
-          canvas.setActiveObject(line);
+          const divider = createDynamicDividerDecal(left, top + height / 2, width);
+          canvas.add(divider);
+          divider.setCoords();
+          canvas.setActiveObject(divider);
           canvas.requestRenderAll();
           recordHistory();
           scheduleSave();
@@ -3803,11 +5252,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const added = obj as FabricObject;
         canvas.add(added);
         if (isLegacyStickyGroup(added)) {
-          flattenLegacyStickyGroup(canvas, added);
+          restoreStickyAfterLoad(added);
         } else if (isLegacyFlatStickyTextbox(added)) {
-          migrateTextboxStickyToRect(canvas, added);
+          migrateTextboxStickyToGroup(canvas, added);
         } else if (isStickyRect(added)) {
-          applyStickyFabricControls(added);
+          migrateStickyRectToGroup(canvas, added);
         } else if (added instanceof Group) {
           if (added.get("markKind") === "shape" && added.get("textCapable")) restoreShapeGroupAfterLoad(added);
           else if (structureProp(added, "structureType") === "calendar") restoreCalendarAfterLoad(canvas, added);
@@ -3918,6 +5367,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           const markKind = (obj.get("markKind") as string | undefined)?.toLowerCase();
           if (markKind === "sticky") {
             return { kind: "sticky", text: textFromObject(obj).toLowerCase() };
+          }
+          if (markKind === "parchment") {
+            return { kind: "parchment", text: textFromObject(obj).toLowerCase() };
           }
           if (markKind === "sticker") {
             return {
@@ -4167,6 +5619,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const selected = deleteTargetRef.current ?? canvas.getActiveObject();
         if (!selected) return;
 
+        const selectedRole = structureProp(selected as unknown as FabricObjectType, "structureRole");
+        const selectedStructureType = structureProp(selected as unknown as FabricObjectType, "structureType");
+        if (
+          selectedStructureType === "eisenhower" &&
+          typeof selectedRole === "string" &&
+          selectedRole.startsWith("eisenhower-quadrant-") &&
+          selected instanceof Rect
+        ) {
+          selected.set({ fill: hex, quadrantColor: hex });
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
+          return;
+        }
+
         let root: FabricObject = selected;
         while (root.group) root = root.group;
 
@@ -4178,7 +5645,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           o.type === "textbox" ||
           o.type === "text";
 
-        if (isTextObject(root)) {
+        const structureType = structureProp(root, "structureType");
+        if (
+          structureType === "calendar" ||
+          structureType === "eisenhower" ||
+          structureType === "checkbox" ||
+          structureType === "numbered_list" ||
+          structureType === "bullet" ||
+          structureType === "divider"
+        ) {
+          applyDynamicDecalColor(root, hex);
+        } else if (isTextObject(root)) {
           root.set("fill", hex);
         } else if (isStickyRect(root)) {
           root.set({ fill: hex, stroke: stickyStrokeForFill(hex) });
@@ -4187,6 +5664,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           if (rect instanceof Rect) {
             rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
           }
+        } else if (root.get("markKind") === "parchment") {
+          applyParchmentSurfaceColor(root as Group, hex);
         } else if (root.get("markKind") === "shape" && root.get("textCapable")) {
           const shapeObj = root
             .getObjects()
@@ -4214,8 +5693,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
             } else if (shapeObj && root.get("textCapable")) {
               shapeObj.set({ stroke: hex, fill: `${hex}33` });
-            } else if (rect instanceof Rect && textbox instanceof Textbox) {
-              rect.set({ fill: hex, stroke: hex });
             } else {
               const text = root.getObjects().find(isTextObject);
               if (!text) return;
@@ -4421,12 +5898,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const isStatementTarget = (obj: FabricObject | undefined): boolean => {
         if (!obj) return false;
-        if (isStickyRect(obj) || stickyGroupFromTarget(obj)) return false;
+        if (isStickyRect(obj) || stickyGroupFromTarget(obj) || parchmentGroupFromTarget(obj)) return false;
         let root: FabricObject = obj;
         while (root.group) root = root.group as FabricObject;
         return (
           (root instanceof IText || root instanceof Textbox) &&
           root.get("markKind") !== "sticky-text" &&
+          root.get("markKind") !== "parchment-text" &&
           !structureProp(root, "structureRole")
         );
       };
@@ -4439,7 +5917,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const textEditTarget = (obj: FabricObject | undefined): FabricObject | null => {
         if (!obj) return null;
-        if (isStickyRect(obj) || stickyGroupFromTarget(obj)) return null;
+        const sticky = stickyGroupFromTarget(obj);
+        if (sticky) return sticky;
+        const parchment = parchmentGroupFromTarget(obj);
+        if (parchment) return parchment;
+        if (isStickyRect(obj)) return null;
         let root: FabricObject = obj;
         while (root.group) root = root.group as FabricObject;
         if (root instanceof IText || root instanceof Textbox) return root;
@@ -4559,6 +6041,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       addTextNormalized,
       addStickyNote,
       addStickyNoteAt,
+      addParchmentNote,
+      addParchmentNoteAt,
       addDiagramOverlay,
       addImageFromUrl,
       addImageFromFile,
@@ -4582,7 +6066,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       addSticker: (sticker) => addStickerAtPoint(sticker, 0.5, 0.5),
       addStickerAt: (sticker, x, y) => addStickerAtPoint(sticker, x, y),
       startDrawMode,
-    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, removeElements, resetBoard, startDrawMode, undo]);
+    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addParchmentNote, addParchmentNoteAt, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, removeElements, resetBoard, startDrawMode, undo]);
 
     return (
       <div
@@ -4665,6 +6149,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   shapeCapable={quickSelector.shapeCapable}
                   stickerCapable={quickSelector.stickerCapable}
                   imageCapable={quickSelector.imageCapable}
+                  lineCapable={quickSelector.lineCapable}
                   canPaste={canPasteClipboard()}
                   onPick={handleQuickPick}
                   onClose={closeQuickSelector}
@@ -4677,6 +6162,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   onElementFontPick={applyMarkFontFamily}
                   onImageRoundPick={toggleImageRoundOnActive}
                   onImageFramePick={applyImageFrameToActive}
+                  onLineDashPick={toggleLineDashOnActive}
                   onShapePick={handleShapePick}
                   onStickerPick={handleStickerPick}
                   onStructurePick={handleStructurePick}

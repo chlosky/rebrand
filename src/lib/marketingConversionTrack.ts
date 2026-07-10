@@ -161,11 +161,22 @@ function readTtpCookie(): string | undefined {
   }
 }
 
+function createMarketingEventId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return `pp_${crypto.randomUUID()}`;
+    }
+  } catch {
+    /* insecure context */
+  }
+  return `pp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
 function ensureEventId(detail?: EventDetail): EventDetail {
   if (detail?.event_id != null && String(detail.event_id).trim()) {
     return detail;
   }
-  return { ...(detail ?? {}), event_id: `pp_${crypto.randomUUID()}` };
+  return { ...(detail ?? {}), event_id: createMarketingEventId() };
 }
 
 function resolveContentId(detail?: EventDetail): string {

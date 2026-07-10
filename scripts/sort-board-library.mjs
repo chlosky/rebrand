@@ -12,6 +12,8 @@ const themes = [
   ["organization-plan", "Organization & Plan"],
   ["aesthetic-mood", "Aesthetic & Mood"],
   ["identity", "Self & Direction"],
+  ["found-objects", "Found Objects"],
+  ["affixements", "Affixements"],
 ];
 
 const rules = [
@@ -77,6 +79,7 @@ for (const file of all) {
 
 for (const slug of themes.map(([s]) => s)) {
   const dest = path.join(root, slug);
+  if (slug === "found-objects" || slug === "affixements") continue;
   for (const f of fs.readdirSync(dest)) {
     if (f.endsWith(".png")) fs.unlinkSync(path.join(dest, f));
   }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Image as ImageIcon,
   ImagePlus,
   ChevronLeft,
   ClipboardCopy,
@@ -31,6 +32,7 @@ import {
   MessageCircle,
   Database,
   Radius,
+  SquareDashed,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,7 +54,8 @@ export type BoardMarksQuickAction =
   | "paste"
   | "delete"
   | "round"
-  | "frame";
+  | "frame"
+  | "dash";
 
 export type BoardMarkTextSize = "S" | "M" | "L" | "XL";
 
@@ -84,7 +87,8 @@ export type BoardMarkShapeType =
   | "arrow"
   | "heart"
   | "bubble"
-  | "cylinder";
+  | "cylinder"
+  | "photo";
 
 export type BoardMarkStickerId =
   | "star"
@@ -168,6 +172,7 @@ export const BOARD_MARK_FRAME_OPTIONS: {
   label: string;
   Icon: LucideIcon;
 }[] = [
+  { id: "photo", label: "Photo", Icon: ImageIcon },
   { id: "rect", label: "Rect", Icon: Square },
   { id: "circle", label: "Circle", Icon: CircleIcon },
   { id: "heart", label: "Heart", Icon: Heart },
@@ -183,6 +188,13 @@ const IMAGE_OBJECT_ACTIONS: WheelItem[] = [
   { id: "delete", label: "Delete", Icon: Trash2, accent: "text-red-300" },
 ];
 
+const LINE_OBJECT_ACTIONS: WheelItem[] = [
+  { id: "dash", label: "Dash", Icon: SquareDashed },
+  { id: "color", label: "Recolor", Icon: Palette },
+  { id: "copy", label: "Copy", Icon: ClipboardCopy },
+  { id: "delete", label: "Delete", Icon: Trash2, accent: "text-red-300" },
+];
+
 type BoardMarksQuickSelectorProps = {
   x: number;
   y: number;
@@ -192,6 +204,7 @@ type BoardMarksQuickSelectorProps = {
   shapeCapable?: boolean;
   stickerCapable?: boolean;
   imageCapable?: boolean;
+  lineCapable?: boolean;
   canPaste?: boolean;
   onPick: (action: BoardMarksQuickAction) => void;
   onClose: () => void;
@@ -204,6 +217,7 @@ type BoardMarksQuickSelectorProps = {
   onElementFontPick?: (font: BoardMarkTextFont) => void;
   onImageRoundPick?: () => void;
   onImageFramePick?: (shape: BoardMarkShapeType) => void;
+  onLineDashPick?: () => void;
   onShapePick?: (shape: BoardMarkShapeType) => void;
   onStickerPick?: (sticker: BoardMarkStickerId) => void;
   onStructurePick?: (structure: BoardDiagramType) => void;
@@ -280,6 +294,7 @@ export function BoardMarksQuickSelector({
   shapeCapable = false,
   stickerCapable = false,
   imageCapable = false,
+  lineCapable = false,
   canPaste = false,
   onPick,
   onClose,
@@ -292,6 +307,7 @@ export function BoardMarksQuickSelector({
   onElementFontPick,
   onImageRoundPick,
   onImageFramePick,
+  onLineDashPick,
   onShapePick,
   onStickerPick,
   onStructurePick,
@@ -333,6 +349,10 @@ export function BoardMarksQuickSelector({
       if (imageCapable) {
         const angles = spreadAngles(IMAGE_OBJECT_ACTIONS.length);
         return IMAGE_OBJECT_ACTIONS.map((item, i) => ({ ...item, angle: angles[i] }));
+      }
+      if (lineCapable) {
+        const angles = spreadAngles(LINE_OBJECT_ACTIONS.length);
+        return LINE_OBJECT_ACTIONS.map((item, i) => ({ ...item, angle: angles[i] }));
       }
       const actions = OBJECT_ACTIONS.filter((item) => {
         if (item.id === "size" || item.id === "edit") return textCapable;
@@ -453,6 +473,11 @@ export function BoardMarksQuickSelector({
     }
     if (id === "round") {
       onImageRoundPick?.();
+      onClose();
+      return;
+    }
+    if (id === "dash") {
+      onLineDashPick?.();
       onClose();
       return;
     }

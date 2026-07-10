@@ -36,12 +36,10 @@ export function BoardImagePicker({
     uploadsOnly ? [] : (getCachedBoardImageLibrary() ?? []),
   );
   const [uploads, setUploads] = useState(() => uploadsCache.get(userId) ?? []);
-  const [loading, setLoading] = useState(() => {
-    if (uploadsOnly) return false;
-    const hasUploads = uploadsCache.has(userId);
-    const hasLibrary = getCachedBoardImageLibrary() !== null;
-    return !hasUploads && !hasLibrary;
-  });
+  const [libraryLoading, setLibraryLoading] = useState(
+    () => !uploadsOnly && getCachedBoardImageLibrary() === null,
+  );
+  const [uploadsLoading, setUploadsLoading] = useState(() => !uploadsCache.has(userId));
   const [uploading, setUploading] = useState(false);
 
   const refreshUploads = useCallback(async () => {
@@ -54,32 +52,46 @@ export function BoardImagePicker({
     let cancelled = false;
 
     if (uploadsOnly) {
-      void refreshUploads();
-      return;
+      const hadUploads = uploadsCache.has(userId);
+      setUploadsLoading(!hadUploads);
+      void refreshUploads()
+        .catch(() => undefined)
+        .finally(() => {
+          if (!cancelled) setUploadsLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
 
     const hadUploads = uploadsCache.has(userId);
-    const hadLibrary = !uploadsOnly && getCachedBoardImageLibrary() !== null;
-    const tasks: Promise<void>[] = [];
+    const hadLibrary = getCachedBoardImageLibrary() !== null;
 
-    if (!uploadsOnly && !hadLibrary) {
-      tasks.push(
-        loadBoardImageLibrary().then((imgs) => {
+    if (!hadLibrary) {
+      setLibraryLoading(true);
+      void loadBoardImageLibrary()
+        .then((imgs) => {
           if (!cancelled) setLibrary(imgs);
-        }),
-      );
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (!cancelled) setLibraryLoading(false);
+        });
+    } else {
+      setLibraryLoading(false);
     }
 
     if (!hadUploads) {
-      tasks.push(refreshUploads().then(() => undefined));
+      setUploadsLoading(true);
+      void refreshUploads()
+        .catch(() => undefined)
+        .finally(() => {
+          if (!cancelled) setUploadsLoading(false);
+        });
     } else {
-      void refreshUploads();
+      setUploadsLoading(false);
+      void refreshUploads().catch(() => undefined);
     }
-
-    if (tasks.length > 0) setLoading(true);
-    Promise.all(tasks).finally(() => {
-      if (!cancelled) setLoading(false);
-    });
 
     return () => {
       cancelled = true;
@@ -87,6 +99,10 @@ export function BoardImagePicker({
   }, [refreshUploads, uploadsOnly, userId]);
 
   const filtered = theme === "all" ? library : filterLibraryByTheme(library, theme);
+  const activeTabLoading =
+    tab === "library" && !uploadsOnly
+      ? libraryLoading && library.length === 0
+      : uploadsLoading && uploads.length === 0;
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,22 +176,33 @@ export function BoardImagePicker({
       )}
 
       <div className="flex-1 overflow-y-auto p-2">
-        {loading ? (
+        {activeTabLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
         ) : tab === "library" && !uploadsOnly ? (
           <div className="grid grid-cols-2 gap-2">
-            {filtered.map((img) => (
+            {filtered.map((img) => {
+              const cutout = img.theme === "Found Objects" || img.theme === "Affixements";
+              return (
               <button
                 key={img.id}
                 type="button"
                 className="group overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
                 onClick={() => onPickImage?.(img.url)}
               >
-                <img src={img.url} alt={img.description} className="aspect-square w-full object-cover" loading="lazy" decoding="async" />
+                <div className={cn("aspect-square w-full", cutout && "bg-white")}>
+                  <img
+                    src={img.url}
+                    alt={img.description}
+                    className={cn("h-full w-full", cutout ? "object-contain p-2" : "object-cover")}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
               </button>
-            ))}
+            );
+            })}
           </div>
         ) : uploads.length === 0 ? (
           <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>

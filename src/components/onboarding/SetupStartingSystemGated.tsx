@@ -59,7 +59,7 @@ export default function SetupStartingSystemGated() {
         navigate(nextRouteForStartingSystem(selected, setupBase));
       }}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 sm:gap-4">
         <SetupHeadingBlock
           centered
           className="shrink-0 [&_h1]:text-3xl [&_h1]:leading-[1.08] sm:[&_h1]:text-4xl sm:[&_h1]:leading-[1.05]"
@@ -69,7 +69,7 @@ export default function SetupStartingSystemGated() {
 
         <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden w-full">
           <div className="relative z-[1] min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-0.5 py-1 pb-2 [-webkit-overflow-scrolling:touch]">
-            <div className="flex flex-col gap-2.5 pt-0.5 sm:gap-3">
+            <div className="flex flex-col gap-4 pt-0.5 sm:gap-3">
               {STARTING_SYSTEMS.map((id) => {
                 const active = selected === id;
                 return (

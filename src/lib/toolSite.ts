@@ -1,8 +1,13 @@
 const ACCESS_STORAGE_KEY = "palette_site_access_granted";
 
+const TOOL_SITE_HOSTS = new Set([
+  "tool.paletteplotting.com",
+  "tool.paletteplot.com",
+]);
+
 export function isToolSiteHost(): boolean {
   if (typeof window === "undefined") return false;
-  return window.location.hostname.toLowerCase() === "tool.paletteplot.com";
+  return TOOL_SITE_HOSTS.has(window.location.hostname.toLowerCase());
 }
 
 export function isSiteAccessRequired(): boolean {

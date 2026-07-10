@@ -9,7 +9,6 @@ export const ONBOARDING_ROUTES = [
   "/onboarding/setup/office-planning-system",
   "/onboarding/setup/moodboard-focus",
   "/onboarding/setup/attribution",
-  "/onboarding/setup/plot-loading",
   "/onboarding/setup/plot-synthesis",
   "/onboarding/setup/email",
 ] as const;
@@ -21,7 +20,6 @@ export const SETUP_PROGRESS_STEP_GROUPS = [
   ["starting-system"],
   ["focus-categories", "home-focus", "office-planning-system", "moodboard-focus"],
   ["attribution"],
-  ["plot-loading"],
   ["plot-synthesis"],
   ["email"],
 ] as const;
@@ -51,7 +49,6 @@ export const ONBOARDING_STEP_LABELS = [
   "Starting system",
   "Focus boards",
   "Found us",
-  "Building room",
   "Your plot",
   "Account",
 ] as const;

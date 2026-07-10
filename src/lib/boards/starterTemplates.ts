@@ -164,6 +164,27 @@ const OFFICE_TEMPLATES: BoardStarterTemplate[] = [
     "gantt",
   ),
   officeTemplate(
+    "office-checklist",
+    "Checklist Flow",
+    "Tasks, routines, and recurring work in one clear list.",
+    "Project Checklist",
+    "checklist",
+  ),
+  officeTemplate(
+    "office-strategy",
+    "Strategy Session",
+    "Brainstorm ideas, priorities, and next moves on one board.",
+    "Strategy Board",
+    "gallery",
+  ),
+  officeTemplate(
+    "office-calendar",
+    "Calendar Planner",
+    "Dates, deadlines, and schedules on one board.",
+    "Project Calendar",
+    "gantt",
+  ),
+  officeTemplate(
     "office-eisenhower",
     "Eisenhower Matrix",
     "Urgent × Important — quadrant planning loved by executives.",
@@ -305,6 +326,13 @@ export const MOODBOARD_FOCUS_TO_TEMPLATE: Record<string, string> = {
 
 export const OFFICE_SYSTEM_TO_TEMPLATE: Record<string, string> = {
   kanban: "office-kanban",
+  strategy_sessions: "office-strategy",
+  brainstorming: "office-strategy",
+  checklists: "office-checklist",
+  strategy_brainstorm: "office-strategy",
+  general_checklist: "office-checklist",
+  checklist: "office-checklist",
+  calendar: "office-calendar",
   gantt: "office-gantt",
   eisenhower: "office-eisenhower",
   okrs: "office-okrs",

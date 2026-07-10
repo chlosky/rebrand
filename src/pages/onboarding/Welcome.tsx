@@ -85,7 +85,7 @@ function WelcomeBodyNative() {
   const isIosNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
   return (
-    <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-[calc(var(--app-safe-area-top)+1.25rem)] -translate-y-[0.32in]">
+    <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-14 md:pt-[calc(var(--app-safe-area-top)+2.75rem)]">
       <WelcomeTitle showFreeTrialLine={!isIosNative && !isAndroidNative} />
       <WelcomePitch />
     </div>
@@ -95,7 +95,7 @@ function WelcomeBodyNative() {
 function WelcomeBodyWeb() {
   const { t } = useTranslation("onboarding");
   return (
-    <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 pt-1 md:max-w-xl md:gap-6 md:pt-1.5 lg:max-w-2xl">
+    <div className="relative z-10 mx-auto flex w-full max-w-[26rem] flex-col items-center gap-5 max-md:pt-16 max-md:mt-[6vh] pt-1 md:max-w-xl md:gap-6 md:mt-0 md:pt-1.5 lg:max-w-2xl">
       <span className="mb-1 font-sans text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
         palette plotting
       </span>

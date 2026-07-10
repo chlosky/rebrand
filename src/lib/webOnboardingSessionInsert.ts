@@ -9,15 +9,26 @@ const CLIENT_VISIT_KEY = "pp_web_onboarding_client_visit_v1";
 
 let recordStartPromise: Promise<void> | null = null;
 
+function createClientVisitId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* insecure context (e.g. http://LAN-IP) — fall through */
+  }
+  return `pp_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
 function getOrCreateClientVisitId(): string {
   try {
     const existing = sessionStorage.getItem(CLIENT_VISIT_KEY);
     if (existing) return existing;
-    const id = crypto.randomUUID();
+    const id = createClientVisitId();
     sessionStorage.setItem(CLIENT_VISIT_KEY, id);
     return id;
   } catch {
-    return crypto.randomUUID();
+    return createClientVisitId();
   }
 }
 
