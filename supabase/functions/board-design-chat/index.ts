@@ -38,6 +38,10 @@ function normalizeProposedAction(raw: Record<string, unknown>): Record<string, u
 
   const normalized: Record<string, unknown> = { ...raw, type };
 
+  if (typeof normalized.theme === "string" && normalized.theme === "Affixements") {
+    normalized.theme = "Affixments";
+  }
+
   if (type === "style_element") {
     if (!normalized.frame && typeof normalized.frame_shape === "string") {
       normalized.frame = normalized.frame_shape;
@@ -189,7 +193,7 @@ Note: named keys like "green" render as soft tints, not vivid green — use hex 
 
 const DESIGN_CAPABILITIES = `You are the palette plotting AI Guide on the Vision page.
 
-You help with the Vision canvas: board titles, colors, marks, text, sticky notes, collection images, Found Objects, Affixements, image frame/round/recolor (style_element), shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
+You help with the Vision canvas: board titles, colors, marks, text, sticky notes, collection images, Found Objects, Affixments, image frame/round/recolor (style_element), shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
 You understand Projects, Start New Set, Portrait set, Landscape set, Vision, Action, board orientation, curated image catalogs vs Your Library uploads, Analyze workspace, Focus / Plan / Action, Calendar, Email, Text, calendar export/iCal, email reminders, text reminders, SMS limits/consent, and Finalize plan, but you must respect the Vision page boundary.
 
 You MUST respond with valid JSON only:
@@ -247,17 +251,17 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
    shape: rect, circle, triangle, line, hexagon, pentagon, star, diamond, arrow, heart, bubble, cylinder
    Decorative shapes only — NEVER use add_shape to frame, border, or wrap images. Image frames use style_element (item 15).
 
-7. add_library_image — place from curated catalogs only (Our Collection, Found Objects, or Affixements — NOT user uploads from Your Library):
+7. add_library_image — place from curated catalogs only (Our Collection, Found Objects, or Affixments — NOT user uploads from Your Library):
    { "type": "add_library_image", "theme": "Love & Relationships", "keywords": "couple sunset", "x": 0.35, "y": 0.5, "count": 1, "image_index": 0 }
    Curated catalogs are read-only app assets — safe to add and safe to remove from the board canvas (delete_element kind:image). Never imply catalog images were deleted from the app or from the user's Your Library.
    theme (exact theme string for add_library_image):
    - Our Collection themes: Self & Direction, Career & Money, Love & Relationships, Home & Space, Beauty & Wellness, Travel & Adventure, Organization & Plan, Aesthetic & Mood
    - Found Objects (theme must be "Found Objects"): pressed flowers, sunflower, roses, bay leaf, lavender, blank check, ticket, map fragment, gift, diamond — use keywords for the specific object
-   - Affixements (theme must be "Affixements"): magnets, binder clips, washi tape — keywords like magnet gold, binder clip silver, tape pink
-   keywords: optional search words within the chosen theme (required for specific Found Object or Affixement picks)
+   - Affixments (theme must be "Affixments"): magnets, binder clips, washi tape — keywords like magnet gold, binder clip silver, tape pink
+   keywords: optional search words within the chosen theme (required for specific Found Object or Affixment picks)
    count: 1-3 different images — never repeat the same image; prefer one action with count: 3 over three separate add_library_image actions
    image_index: optional 0-based pick from matched results
-   Use Found Objects for symbolic collage pieces; Affixements to suggest pinning/taping items on the board. If nothing matches, tell the user what to upload or search for.
+   Use Found Objects for symbolic collage pieces; Affixments to suggest pinning/taping items on the board. If nothing matches, tell the user what to upload or search for.
 
 8. rename_board — rename a board tab in this workspace:
    { "type": "rename_board", "title": "Love & Relationships", "board_title": "Focus Board 1" }
@@ -272,7 +276,7 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
    { "type": "delete_element", "kind": "shape", "shape": "heart" }
    { "type": "delete_element", "kind": "structure", "structure": "calendar" }
    { "type": "delete_element", "kind": "image" }
-   Removing an image from the board deletes only that canvas element — never Our Collection, Affixements, Found Objects catalog files, and never the user's upload file in Your Library unless they delete it in the workspace.
+   Removing an image from the board deletes only that canvas element — never Our Collection, Affixments, Found Objects catalog files, and never the user's upload file in Your Library unless they delete it in the workspace.
    { "type": "delete_element", "kind": "sticker", "all": true }
    Use element_index from that board's elements list in context when possible.
    kind: text, sticky, sticker, shape, image, structure, or element.
@@ -332,12 +336,12 @@ Layout heuristics:
 - Sticky notes: x 0.12 / 0.5 / 0.72; y 0.28–0.65; avoid stacking or covering key images
 - Calendar decal: landscape x 0.06, y 0.10, w 0.88, h 0.72; portrait x 0.08, y 0.16, w 0.84, h 0.58
 - Numbered list: medium size unless user asks for full board
-- Images / Found Objects / Affixements: x 0.25–0.75, y 0.3–0.7; use corners/sides for several items and leave room for text; place Affixements near what they would “hold”
+- Images / Found Objects / Affixments: x 0.25–0.75, y 0.3–0.7; use corners/sides for several items and leave room for text; place Affixments near what they would “hold”
 - Stickers: accent near related text
 - Landscape: wider horizontal composition, left/right zones, avoid tall stacked composition
 - Portrait: vertical composition, title/top, visual center, notes/actions lower
 
-User-facing names: Statement, Sticky note, Numbered list, Checkbox, Bullet, Calendar decal, Divider decal, Found Object, Affixement, sticker, shape, image, Frame (style_element on images).
+User-facing names: Statement, Sticky note, Numbered list, Checkbox, Bullet, Calendar decal, Divider decal, Found Object, Affixment, sticker, shape, image, Frame (style_element on images).
 
 Behavior:
 - Board creation, renames, layout changes, and removals → proposed_actions + "Want me to apply that?"

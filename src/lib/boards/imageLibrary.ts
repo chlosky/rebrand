@@ -10,7 +10,7 @@ export const BOARD_IMAGE_THEMES = [
   "Aesthetic & Mood",
   "Self & Direction",
   "Found Objects",
-  "Affixements",
+  "Affixments",
 ] as const;
 
 export type BoardImageTheme = (typeof BOARD_IMAGE_THEMES)[number];

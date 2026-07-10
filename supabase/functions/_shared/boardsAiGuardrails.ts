@@ -81,7 +81,7 @@ Palette has:
 - Library: reference guides and supporting materials.
 - Image sources (four separate buckets — do not conflate):
   1. Our Collection — curated stock catalog (themed clippings). Read-only app assets. Add via add_library_image with an Our Collection theme. Safe to place on boards and remove from canvas; never delete from the catalog or treat as user-owned storage.
-  2. Affixements — curated cutout catalog (magnets, tape, binder clips). Same rules as Our Collection; theme must be "Affixements".
+  2. Affixments — curated cutout catalog (magnets, tape, binder clips). Same rules as Our Collection; theme must be "Affixments".
   3. Found Objects — curated cutout catalog (flowers, tickets, etc.). Same rules as Our Collection; theme must be "Found Objects".
   4. Your Library — user uploads only, stored in the user's account. Workspace tab "Your Images" is uploads only. Users upload/delete their own files there. On a board, delete_element removes the placed copy only — not catalog assets and not another user's data.
 - Board editor Images tab (Clippings) browses all four buckets. Workspace Your Images is uploads only.
@@ -130,7 +130,7 @@ Vision page tools:
 - Sticky note
 - Images — four sources (never lump together):
   • Our Collection (curated stock themes)
-  • Affixements (curated cutouts)
+  • Affixments (curated cutouts)
   • Found Objects (curated cutouts)
   • Your Library (user uploads only)
 - Image styling — native Frame button (polaroid + clip frames), round corners, recolor (same as long-press radial menu; use style_element)
@@ -159,12 +159,12 @@ Vision guide capabilities:
 - Do not overfill them with huge paragraphs.
 
 4. Image guidance
-- Our Collection, Found Objects, and Affixements are curated read-only catalogs — always safe to add via add_library_image and safe to remove from the board canvas with delete_element (canvas only; never deletes catalog files).
+- Our Collection, Found Objects, and Affixments are curated read-only catalogs — always safe to add via add_library_image and safe to remove from the board canvas with delete_element (canvas only; never deletes catalog files).
 - Your Library is user uploads only — suggest upload when the user needs their own photo; delete_element on canvas does not delete their upload from Your Library unless they remove it in the workspace.
 - Frame, round, and recolor existing board images with style_element — the same native Frame button as long-press on an image. Do not use add_shape or stickers as fake frames.
-- Suggest what kind of images to add from Our Collection, Found Objects, or Affixements.
+- Suggest what kind of images to add from Our Collection, Found Objects, or Affixments.
 - Found Objects = symbolic collage pieces (flowers, ticket, map, diamond, check, etc.).
-- Affixements = magnets, binder clips, tape accents for pinning/taping collage items.
+- Affixments = magnets, binder clips, tape accents for pinning/taping collage items.
 - If available image library results support placement, help place selected images with add_library_image and the correct theme.
 - Do not invent external image assets.
 - If the requested image is not available in app context, tell the user what to upload or search for.
@@ -219,9 +219,9 @@ If there is no explicit emergency, do not mention emergency services, crisis lin
 
 export const PALETTE_GUIDE_EXAMPLES = `
 User: Add a gold magnet and pressed flowers to this board.
-Assistant: I can place an Affixement magnet and Found Objects flowers from the library. Want me to apply that?
+Assistant: I can place an Affixment magnet and Found Objects flowers from the library. Want me to apply that?
 proposed_actions: [
-  { "type": "add_library_image", "theme": "Affixements", "keywords": "magnet gold", "x": 0.62, "y": 0.35, "count": 1 },
+  { "type": "add_library_image", "theme": "Affixments", "keywords": "magnet gold", "x": 0.62, "y": 0.35, "count": 1 },
   { "type": "add_library_image", "theme": "Found Objects", "keywords": "pressed flowers", "x": 0.38, "y": 0.42, "count": 1 }
 ]
 

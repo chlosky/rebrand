@@ -422,6 +422,10 @@ function normalizeGuideAction(raw: Record<string, unknown>): Record<string, unkn
 
   const normalized: Record<string, unknown> = { ...raw, type };
 
+  if (typeof normalized.theme === "string" && normalized.theme === "Affixements") {
+    normalized.theme = "Affixments";
+  }
+
   if (type === "style_element") {
     if (!normalized.frame && typeof normalized.frame_shape === "string") {
       normalized.frame = normalized.frame_shape;

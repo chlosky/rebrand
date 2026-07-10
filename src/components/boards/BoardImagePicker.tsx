@@ -16,23 +16,23 @@ type BoardImagePickerProps = {
   userId: string;
   onPickImage?: (url: string) => void;
   embedded?: boolean;
-  /** Workspace Your Images: user uploads only — not Our Collection / Affixements / Found Objects. */
+  /** Workspace Your Images: user uploads only — not Our Collection / Affixments / Found Objects. */
   uploadsOnly?: boolean;
   /** Wider multi-column grid for full-width panels (e.g. Workspace uploads). Sidebar stays 2-up. */
   wideGrid?: boolean;
 };
 
-type Tab = "collection" | "uploads" | "affixements" | "foundObjects";
+type Tab = "collection" | "uploads" | "affixments" | "foundObjects";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "collection", label: "Collection" },
-  { id: "affixements", label: "Affixements" },
+  { id: "affixments", label: "Affixments" },
   { id: "foundObjects", label: "Objects" },
   { id: "uploads", label: "Uploads" },
 ];
 
 const COLLECTION_THEMES = BOARD_IMAGE_THEMES.filter(
-  (theme) => theme !== "Found Objects" && theme !== "Affixements",
+  (theme) => theme !== "Found Objects" && theme !== "Affixments",
 );
 
 const GRID_BATCH = 24;
@@ -40,7 +40,7 @@ const GRID_BATCH = 24;
 const uploadsCache = new Map<string, { path: string; signedUrl: string; thumbUrl: string }[]>();
 
 function isCutoutTheme(theme: string) {
-  return theme === "Found Objects" || theme === "Affixements";
+  return theme === "Found Objects" || theme === "Affixments";
 }
 
 function pickerThumbUrl(img: BoardImageAsset) {
@@ -175,8 +175,8 @@ export function BoardImagePicker({
       ? theme === "all"
         ? collectionLibrary
         : filterLibraryByTheme(collectionLibrary, theme)
-      : tab === "affixements"
-        ? library.filter((img) => img.theme === "Affixements")
+      : tab === "affixments"
+        ? library.filter((img) => img.theme === "Affixments")
         : tab === "foundObjects"
           ? library.filter((img) => img.theme === "Found Objects")
           : [];
