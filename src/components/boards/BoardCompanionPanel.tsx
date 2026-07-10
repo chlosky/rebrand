@@ -372,14 +372,27 @@ function normalizeFrameToken(frame: unknown): BoardMarkShapeType | undefined {
   return undefined;
 }
 
-function inferGuideActionsFromReply(userMessage: string, reply: string): GuideAction[] {
-  const offersApply = /want me to apply|want me to apply that|shall i apply|should i apply/i.test(reply);
+function guideInferHay(messages: ChatTurn[], currentText: string, reply = ""): string {
+  const lines: string[] = [];
+  for (const turn of messages.slice(-6)) {
+    if (turn.role === "user" || turn.role === "assistant") lines.push(turn.content);
+  }
+  if (currentText.trim()) lines.push(currentText);
+  if (reply.trim()) lines.push(reply);
+  return lines.join("\n").toLowerCase();
+}
+
+function inferGuideActionsFromReply(contextHay: string, reply: string): GuideAction[] {
+  const offersApply =
+    /want me to apply|want me to apply that|shall i apply|should i apply|i can apply|i'll apply|i will apply/i.test(
+      reply,
+    );
   if (!offersApply) return [];
 
-  const hay = `${userMessage}\n${reply}`.toLowerCase();
   const wantsFrame =
-    /\b(frame|framed|framing|polaroid|photo frame|photo style)\b/.test(hay) &&
-    /\b(image|images|photo|photos|picture|pictures)\b/.test(hay);
+    /\b(frame|framed|framing|polaroid|photo frame|photo style)\b/.test(contextHay) &&
+    (/\b(image|images|photo|photos|picture|pictures|them|these|those)\b/.test(contextHay) ||
+      /\bframe them\b/.test(contextHay));
   if (!wantsFrame) return [];
 
   const action: GuideAction = {
@@ -391,7 +404,8 @@ function inferGuideActionsFromReply(userMessage: string, reply: string): GuideAc
   const boardMatch =
     reply.match(/\bon the\s+(.+?)\s+board\b/i) ??
     reply.match(/\bto the\s+(.+?)\s+board\b/i) ??
-    reply.match(/\bfor the\s+(.+?)\s+board\b/i);
+    reply.match(/\bfor the\s+(.+?)\s+board\b/i) ??
+    contextHay.match(/\bon the\s+(.+?)\s+board\b/i);
   if (boardMatch?.[1]) action.board_title = boardMatch[1].trim();
 
   return filterValidGuideActions([action]);
@@ -1131,6 +1145,52 @@ export function BoardGuideChatPanel({
       return;
     }
 
+    if (CONFIRM_RE.test(text) && pendingGuideActions.length === 0 && mode === "vision") {
+      const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+      if (lastAssistant) {
+        const inferHay = guideInferHay(messages, text, lastAssistant.content);
+        const recovered = inferGuideActionsFromReply(inferHay, lastAssistant.content);
+        if (recovered.length > 0) {
+          setSending(true);
+          setGuideError(null);
+          setLastApplied(0);
+          try {
+            const currentActiveBoardId = getActiveBoardId?.() ?? activeBoardId;
+            const offTargetBoards = getPendingTargetBoards(recovered, currentActiveBoardId, workspaceBoards);
+            if (offTargetBoards.length === 1 && onSelectBoard && offTargetBoards[0].id !== currentActiveBoardId) {
+              onSelectBoard(offTargetBoards[0].id);
+              const deadline = Date.now() + 1200;
+              while (Date.now() < deadline) {
+                const editor = getEditorForBoard?.(offTargetBoards[0].id) ?? getEditor?.() ?? editorRef?.current ?? null;
+                if (editor) break;
+                await new Promise((resolve) => setTimeout(resolve, 50));
+              }
+            }
+            const appliedCount = await applyVisionActions(recovered);
+            setLastApplied(appliedCount);
+            if (appliedCount > 0) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: `Done — I applied ${appliedCount} ${appliedCount === 1 ? "change" : "changes"} to the board.`,
+                },
+              ]);
+            } else {
+              const boardHint =
+                offTargetBoards.length > 0 ? ` ${formatBoardSelectHint(offTargetBoards)}` : "";
+              setGuideError(
+                `I couldn't apply those changes.${boardHint || " Click the board you want to edit in the grid, then try Apply again."}`,
+              );
+            }
+          } finally {
+            setSending(false);
+          }
+          return;
+        }
+      }
+    }
+
     setSending(true);
 
     try {
@@ -1191,12 +1251,13 @@ export function BoardGuideChatPanel({
           : [...filterValidGuideActions(proposed), ...filterValidGuideActions(actions)];
 
       if (combined.length === 0 && mode === "vision") {
-        combined = inferGuideActionsFromReply(text, payload.reply ?? "");
+        const inferHay = guideInferHay(messages, text, payload.reply ?? "");
+        combined = inferGuideActionsFromReply(inferHay, payload.reply ?? "");
       }
 
       if (combined.length > 0) {
         setPendingGuideActions(combined);
-      } else {
+      } else if (!CONFIRM_RE.test(text)) {
         setPendingGuideActions([]);
       }
 
@@ -1240,13 +1301,20 @@ export function BoardGuideChatPanel({
     actionMap,
     activeBoardId,
     applyPendingGuideActions,
+    applyVisionActions,
     draft,
+    editorRef,
+    getActiveBoardId,
+    getEditor,
+    getEditorForBoard,
     listening,
     messages,
     mode,
+    onSelectBoard,
     pendingGuideActions,
     sending,
     stopListening,
+    workspaceBoards,
     workspaceId,
   ]);
 

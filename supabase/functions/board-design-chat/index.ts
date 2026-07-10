@@ -103,7 +103,12 @@ function styleElementLooksValid(a: Record<string, unknown>): boolean {
   return hasStyle && hasElementTargetFields(a);
 }
 
-function repairProposedActions(userMessage: string, reply: string, actions: unknown[]): unknown[] {
+function repairProposedActions(
+  userMessage: string,
+  reply: string,
+  actions: unknown[],
+  history: { role: string; content: string }[] = [],
+): unknown[] {
   const normalized = normalizeProposedActions(actions).map((action) => {
     const record = action as Record<string, unknown>;
     if (record.type === "style_element" && !hasElementTargetFields(record)) {
@@ -127,13 +132,24 @@ function repairProposedActions(userMessage: string, reply: string, actions: unkn
   });
   if (usable.length > 0) return usable;
 
-  const offersApply = /want me to apply|want me to apply that|shall i apply|should i apply/i.test(reply);
+  const contextHay = [
+    ...history.slice(-6).map((turn) => turn.content),
+    userMessage,
+    reply,
+  ]
+    .join("\n")
+    .toLowerCase();
+
+  const offersApply =
+    /want me to apply|want me to apply that|shall i apply|should i apply|i can apply|i'll apply|i will apply/i.test(
+      reply,
+    );
   if (!offersApply) return normalized;
 
-  const hay = `${userMessage}\n${reply}`.toLowerCase();
   const wantsFrame =
-    /\b(frame|framed|framing|polaroid|photo frame|photo style)\b/.test(hay) &&
-    /\b(image|images|photo|photos|picture|pictures)\b/.test(hay);
+    /\b(frame|framed|framing|polaroid|photo frame|photo style)\b/.test(contextHay) &&
+    (/\b(image|images|photo|photos|picture|pictures|them|these|those)\b/.test(contextHay) ||
+      /\bframe them\b/.test(contextHay));
 
   if (!wantsFrame) return normalized;
 
@@ -146,7 +162,8 @@ function repairProposedActions(userMessage: string, reply: string, actions: unkn
   const boardMatch =
     reply.match(/\bon the\s+(.+?)\s+board\b/i) ??
     reply.match(/\bto the\s+(.+?)\s+board\b/i) ??
-    reply.match(/\bfor the\s+(.+?)\s+board\b/i);
+    reply.match(/\bfor the\s+(.+?)\s+board\b/i) ??
+    contextHay.match(/\bon the\s+(.+?)\s+board\b/i);
   if (boardMatch?.[1]) action.board_title = boardMatch[1].trim();
 
   return [action];
@@ -590,7 +607,7 @@ ${allBoardHints || "none"}`;
       ...(Array.isArray(parsed.proposed_actions) ? parsed.proposed_actions.slice(0, 14) : []),
       ...(Array.isArray(parsed.actions) ? parsed.actions.slice(0, 14) : []),
     ];
-    const proposed_actions = repairProposedActions(message, reply, mergedActions);
+    const proposed_actions = repairProposedActions(message, reply, mergedActions, history);
     const actions: unknown[] = [];
 
     return new Response(JSON.stringify({ reply, reply_without_action, actions, proposed_actions }), {
