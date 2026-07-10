@@ -4,7 +4,6 @@ import { CartNavLink } from "@/site/components/layout/CartNavLink";
 import { OrganizationJsonLd } from "@/site/components/layout/OrganizationJsonLd";
 import { SiteFooter } from "@/site/components/layout/SiteFooter";
 import { UrgencyTicker } from "@/site/components/layout/UrgencyTicker";
-import { GUIDE_CATALOG } from "@/site/lib/guidePublicManifest";
 import { SITE_CONTAINER, SITE_NAME } from "@/site/lib/siteBrand";
 import { cn } from "@/site/lib/utils";
 
@@ -39,18 +38,12 @@ export function SiteLayout({ children }: SiteLayoutProps) {
             <NavLink to="/" end className={navLinkClass}>
               Shop
             </NavLink>
-            <NavLink to={GUIDE_CATALOG.path} className={navLinkClass}>
-              The Guide
-            </NavLink>
             <Link to="/onboarding/welcome" className={navItemClass}>
               The Tool
             </Link>
             <NavLink to="/about" className={navLinkClass}>
               About
             </NavLink>
-            <Link to="/login" className={navItemClass}>
-              Sign in
-            </Link>
             <CartNavLink />
           </nav>
         </div>
