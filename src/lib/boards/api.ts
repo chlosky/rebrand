@@ -258,7 +258,9 @@ export async function uploadBoardImage(userId: string, file: File): Promise<stri
   return signed.signedUrl;
 }
 
-export async function listUserUploads(userId: string): Promise<{ path: string; signedUrl: string }[]> {
+export async function listUserUploads(
+  userId: string,
+): Promise<{ path: string; signedUrl: string; thumbUrl: string }[]> {
   const { data, error } = await supabase.storage.from("board-uploads").list(userId, {
     limit: 100,
     sortBy: { column: "created_at", order: "desc" },
@@ -270,16 +272,37 @@ export async function listUserUploads(userId: string): Promise<{ path: string; s
     .map((f) => `${userId}/${f.name}`);
   if (paths.length === 0) return [];
 
+  const expiresIn = 60 * 60;
+
   const { data: signedRows, error: signErr } = await supabase.storage
     .from("board-uploads")
-    .createSignedUrls(paths, 60 * 60);
+    .createSignedUrls(paths, expiresIn);
   if (signErr) throw signErr;
+
+  const thumbRows = await Promise.all(
+    paths.map(async (path) => {
+      const { data: thumb, error: thumbErr } = await supabase.storage
+        .from("board-uploads")
+        .createSignedUrl(path, expiresIn, {
+          transform: { width: 240, height: 240, resize: "cover" },
+        });
+      if (thumbErr || !thumb?.signedUrl) return null;
+      return { path, thumbUrl: thumb.signedUrl };
+    }),
+  );
+  const thumbByPath = new Map(
+    thumbRows.filter((row): row is { path: string; thumbUrl: string } => row !== null).map((row) => [row.path, row.thumbUrl]),
+  );
 
   return paths
     .map((path, index) => {
       const row = signedRows?.[index];
       if (!row?.signedUrl || row.error) return null;
-      return { path, signedUrl: row.signedUrl };
+      return {
+        path,
+        signedUrl: row.signedUrl,
+        thumbUrl: thumbByPath.get(path) ?? row.signedUrl,
+      };
     })
-    .filter((item): item is { path: string; signedUrl: string } => item !== null);
+    .filter((item): item is { path: string; signedUrl: string; thumbUrl: string } => item !== null);
 }

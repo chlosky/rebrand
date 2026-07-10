@@ -16,6 +16,10 @@ type BoardImagePickerProps = {
   userId: string;
   onPickImage?: (url: string) => void;
   embedded?: boolean;
+  /** Workspace Your Images: user uploads only — not Our Collection / Affixements / Found Objects. */
+  uploadsOnly?: boolean;
+  /** Wider multi-column grid for full-width panels (e.g. Workspace uploads). Sidebar stays 2-up. */
+  wideGrid?: boolean;
 };
 
 type Tab = "collection" | "uploads" | "affixements" | "foundObjects";
@@ -33,7 +37,7 @@ const COLLECTION_THEMES = BOARD_IMAGE_THEMES.filter(
 
 const GRID_BATCH = 24;
 
-const uploadsCache = new Map<string, { path: string; signedUrl: string }[]>();
+const uploadsCache = new Map<string, { path: string; signedUrl: string; thumbUrl: string }[]>();
 
 function isCutoutTheme(theme: string) {
   return theme === "Found Objects" || theme === "Affixements";
@@ -48,16 +52,19 @@ function LazyPickerImage({
   alt,
   cutout,
   onClick,
+  eager = false,
 }: {
   src: string;
   alt: string;
   cutout?: boolean;
   onClick?: () => void;
+  eager?: boolean;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(eager);
 
   useEffect(() => {
+    if (eager) return;
     const node = ref.current;
     if (!node) return;
     const observer = new IntersectionObserver(
@@ -67,11 +74,11 @@ function LazyPickerImage({
           observer.disconnect();
         }
       },
-      { rootMargin: "160px" },
+      { rootMargin: "240px" },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [eager]);
 
   return (
     <button
@@ -87,7 +94,8 @@ function LazyPickerImage({
             alt={alt}
             className={cn("h-full w-full", cutout ? "object-contain p-2" : "object-cover")}
             decoding="async"
-            fetchPriority="low"
+            loading={eager ? "eager" : "lazy"}
+            fetchPriority={eager ? "high" : "low"}
           />
         ) : (
           <div className="h-full w-full animate-pulse bg-neutral-100" aria-hidden />
@@ -97,12 +105,22 @@ function LazyPickerImage({
   );
 }
 
-export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePickerProps) {
-  const [tab, setTab] = useState<Tab>("collection");
+export function BoardImagePicker({
+  userId,
+  onPickImage,
+  embedded,
+  uploadsOnly = false,
+  wideGrid = false,
+}: BoardImagePickerProps) {
+  const [tab, setTab] = useState<Tab>(uploadsOnly ? "uploads" : "collection");
   const [theme, setTheme] = useState<BoardImageTheme | "all">("all");
-  const [library, setLibrary] = useState<BoardImageAsset[]>(() => getCachedBoardImageLibrary() ?? []);
+  const [library, setLibrary] = useState<BoardImageAsset[]>(() =>
+    uploadsOnly ? [] : (getCachedBoardImageLibrary() ?? []),
+  );
   const [uploads, setUploads] = useState(() => uploadsCache.get(userId) ?? []);
-  const [libraryLoading, setLibraryLoading] = useState(() => getCachedBoardImageLibrary() === null);
+  const [libraryLoading, setLibraryLoading] = useState(
+    () => !uploadsOnly && getCachedBoardImageLibrary() === null,
+  );
   const [uploadsLoading, setUploadsLoading] = useState(() => !uploadsCache.has(userId));
   const [uploading, setUploading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(GRID_BATCH);
@@ -118,9 +136,9 @@ export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePi
     let cancelled = false;
 
     const hadUploads = uploadsCache.has(userId);
-    const hadLibrary = getCachedBoardImageLibrary() !== null;
+    const hadLibrary = !uploadsOnly && getCachedBoardImageLibrary() !== null;
 
-    if (!hadLibrary) {
+    if (!uploadsOnly && !hadLibrary) {
       setLibraryLoading(true);
       void loadBoardImageLibrary()
         .then((imgs) => {
@@ -130,7 +148,7 @@ export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePi
         .finally(() => {
           if (!cancelled) setLibraryLoading(false);
         });
-    } else {
+    } else if (!uploadsOnly) {
       setLibraryLoading(false);
     }
 
@@ -171,14 +189,15 @@ export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePi
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    const listLength = uploadsOnly || tab === "uploads" ? uploads.length : filtered.length;
     const onScroll = () => {
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 96) {
-        setVisibleCount((count) => Math.min(count + GRID_BATCH, filtered.length));
+        setVisibleCount((count) => Math.min(count + GRID_BATCH, listLength));
       }
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [filtered.length, tab, theme]);
+  }, [filtered.length, tab, theme, uploads.length, uploadsOnly]);
 
   const activeTabLoading =
     tab === "uploads"
@@ -203,27 +222,32 @@ export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePi
     }
   };
 
-  const gridClass = cn("grid gap-2", embedded ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5" : "grid-cols-2");
+  const gridClass = cn(
+    "grid gap-2",
+    wideGrid ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5" : "grid-cols-2",
+  );
 
   return (
     <div className={cn("flex h-full flex-col bg-transparent", !embedded && "border-r border-neutral-200 bg-white")}>
-      <div className="grid grid-cols-4 border-b border-neutral-200">
-        {TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            className={cn(
-              "border-b-2 border-transparent px-1 py-2.5 text-center text-[8px] font-semibold uppercase leading-tight tracking-wide sm:px-2 sm:text-[10px]",
-              tab === id ? "border-neutral-500 text-neutral-900" : "text-neutral-500 hover:text-neutral-800",
-            )}
-            onClick={() => setTab(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {!uploadsOnly ? (
+        <div className="grid grid-cols-4 border-b border-neutral-200">
+          {TABS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              className={cn(
+                "border-b-2 border-transparent px-1 py-2.5 text-center text-[8px] font-semibold uppercase leading-tight tracking-wide sm:px-2 sm:text-[10px]",
+                tab === id ? "border-neutral-500 text-neutral-900" : "text-neutral-500 hover:text-neutral-800",
+              )}
+              onClick={() => setTab(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
-      {tab === "collection" && (
+      {!uploadsOnly && tab === "collection" && (
         <div className="border-b border-neutral-100 p-2">
           <select
             className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-xs"
@@ -240,7 +264,7 @@ export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePi
         </div>
       )}
 
-      {tab === "uploads" && (
+      {(uploadsOnly || tab === "uploads") && (
         <div className="flex gap-2 border-b border-neutral-100 p-2">
           <Button
             variant="secondary"
@@ -263,13 +287,19 @@ export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePi
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
-        ) : tab === "uploads" ? (
+        ) : uploadsOnly || tab === "uploads" ? (
           uploads.length === 0 ? (
             <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>
           ) : (
             <div className={gridClass}>
-              {visibleUploads.map((u) => (
-                <LazyPickerImage key={u.path} src={u.signedUrl} alt="" onClick={() => onPickImage?.(u.signedUrl)} />
+              {visibleUploads.map((u, index) => (
+                <LazyPickerImage
+                  key={u.path}
+                  src={u.thumbUrl}
+                  alt=""
+                  eager={index < 18}
+                  onClick={() => onPickImage?.(u.signedUrl)}
+                />
               ))}
             </div>
           )

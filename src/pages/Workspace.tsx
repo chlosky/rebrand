@@ -6,8 +6,6 @@ import {
 
   ChevronRight,
 
-  FolderKanban,
-
   Lock,
 
   MoreVertical,
@@ -667,7 +665,7 @@ export default function Workspace() {
 
             <div className="h-[min(52vh,28rem)]">
 
-              <BoardImagePicker embedded userId={user.id} />
+              <BoardImagePicker embedded wideGrid uploadsOnly userId={user.id} />
 
             </div>
 
@@ -796,15 +794,19 @@ export default function Workspace() {
 
                       >
 
-                        <FolderKanban className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-500")} />
+                        <span
+                          className={cn(
+                            "inline-block h-4 w-3 shrink-0 rounded-[2px] border-[1.5px]",
+                            dark ? "border-white/90" : "border-zinc-500",
+                          )}
+                          aria-hidden
+                        />
 
                         <span className={cn("min-w-0 flex-1 truncate text-sm font-medium", dark ? "text-white" : "text-zinc-900")}>
 
                           {ws.name}
 
                         </span>
-
-                        <ChevronRight className={cn("h-4 w-4 shrink-0", dark ? "text-white" : "text-zinc-400")} />
 
                       </button>
 

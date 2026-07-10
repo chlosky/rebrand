@@ -112,6 +112,8 @@ const CALENDAR_MIN_W = 520;
 const CALENDAR_MIN_H = 360;
 const NUMBERED_LIST_MIN_W = 280;
 const NUMBERED_LIST_MIN_H = 180;
+const STRUCTURE_INLINE_LABEL_W = 200;
+const STRUCTURE_INLINE_LABEL_GAP = 10;
 const EISENHOWER_MIN_W = 420;
 const EISENHOWER_MIN_H = 320;
 
@@ -1690,6 +1692,125 @@ function createTextCapableShapeGroup(
   });
 }
 
+function getCheckboxBoxSize(group: Group): number {
+  const stored = structureProp(group, "structureBoxSize");
+  if (typeof stored === "number" && stored > 0) return stored;
+  const box = group.getObjects().find((o) => o instanceof Rect);
+  if (box instanceof Rect) return box.width ?? 48;
+  return 48;
+}
+
+function reflowCheckboxItem(group: Group) {
+  const boxSize = getCheckboxBoxSize(group);
+  const checked = !!structureProp(group, "checked");
+  const gap = STRUCTURE_INLINE_LABEL_GAP;
+  const labelWidth = Math.max(120, getStructureLayoutWidth(group) - boxSize - gap);
+  const rowH = Math.max(boxSize, 28);
+  const boxTop = (rowH - boxSize) / 2;
+  const fontSize = Math.max(16, Math.min(28, boxSize * 0.38));
+
+  const box = group.getObjects().find((o) => o instanceof Rect);
+  const checkmark = group
+    .getObjects()
+    .find((o) => o instanceof FabricText && structureProp(o, "structureRole") === "checkbox-toggle");
+  const label = group.getObjects().find((o) => structureProp(o, "structureRole") === "checkbox-label");
+
+  if (box instanceof Rect) {
+    box.set({
+      left: 0,
+      top: boxTop,
+      width: boxSize,
+      height: boxSize,
+      strokeWidth: Math.max(3, boxSize * 0.06),
+      rx: Math.max(4, boxSize * 0.08),
+      ry: Math.max(4, boxSize * 0.08),
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+  if (checkmark instanceof FabricText) {
+    checkmark.set({
+      left: boxSize / 2,
+      top: boxTop + boxSize / 2,
+      fontSize: boxSize * 0.72,
+      visible: checked,
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+  if (label instanceof IText || label instanceof Textbox) {
+    label.set({
+      left: boxSize + gap,
+      top: rowH / 2,
+      width: labelWidth,
+      fontSize,
+      originY: "center",
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    structureBoxSize: boxSize,
+    structureWidth: boxSize + gap + labelWidth,
+    structureHeight: rowH,
+  });
+  group.setCoords();
+}
+
+function getBulletDotSize(group: Group): number {
+  const stored = structureProp(group, "structureDotSize");
+  if (typeof stored === "number" && stored > 0) return stored;
+  const dot = group.getObjects().find((o) => structureProp(o, "structureRole") === "bullet-dot");
+  if (dot instanceof Circle) return Math.max(12, (dot.radius ?? 6) * 2);
+  return 12;
+}
+
+function reflowBulletItem(group: Group) {
+  const diameter = getBulletDotSize(group);
+  const gap = STRUCTURE_INLINE_LABEL_GAP;
+  const labelWidth = Math.max(120, getStructureLayoutWidth(group) - diameter - gap);
+  const rowH = Math.max(diameter, 28);
+  const fontSize = Math.max(16, Math.min(24, diameter * 0.85));
+
+  const dot = group.getObjects().find((o) => structureProp(o, "structureRole") === "bullet-dot");
+  const label = group.getObjects().find((o) => structureProp(o, "structureRole") === "bullet-label");
+
+  if (dot instanceof Circle) {
+    dot.set({
+      left: diameter / 2,
+      top: rowH / 2,
+      radius: diameter / 2,
+      originX: "center",
+      originY: "center",
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+  if (label instanceof IText || label instanceof Textbox) {
+    label.set({
+      left: diameter + gap,
+      top: rowH / 2,
+      width: labelWidth,
+      fontSize,
+      originY: "center",
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
+
+  group.set({
+    scaleX: 1,
+    scaleY: 1,
+    structureDotSize: diameter,
+    structureWidth: diameter + gap + labelWidth,
+    structureHeight: rowH,
+  });
+  group.setCoords();
+}
+
 function createDynamicCheckboxDecal(left: number, top: number, size: number): Group {
   const structureId = createStructureId();
   const boxSize = Math.max(48, size);
@@ -1731,10 +1852,28 @@ function createDynamicCheckboxDecal(left: number, top: number, size: number): Gr
     structureRole: "checkbox-toggle",
     checked: false,
   });
-  const group = new Group([box, checkmark], {
+  const label = new IText("", {
+    left: 0,
+    top: 0,
+    width: STRUCTURE_INLINE_LABEL_W,
+    fontSize: Math.max(16, Math.min(28, boxSize * 0.38)),
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    originX: "left",
+    originY: "center",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  label.set({
+    structureId,
+    structureType: "checkbox",
+    structureRole: "checkbox-label",
+  });
+  const group = new Group([box, checkmark, label], {
     left,
     top,
-    subTargetCheck: false,
+    subTargetCheck: true,
     interactive: true,
     objectCaching: false,
     cornerStyle: "circle",
@@ -1746,37 +1885,83 @@ function createDynamicCheckboxDecal(left: number, top: number, size: number): Gr
   group.set({
     structureId,
     structureType: "checkbox",
-    structureWidth: boxSize,
+    structureBoxSize: boxSize,
+    structureWidth: boxSize + STRUCTURE_INLINE_LABEL_GAP + STRUCTURE_INLINE_LABEL_W,
     structureHeight: boxSize,
     structureColor: DECAL_INK,
     checked: false,
   });
+  reflowCheckboxItem(group);
   return group;
 }
 
-function createDynamicBulletDecal(left: number, top: number, size: number): Circle {
+function createDynamicBulletDecal(centerLeft: number, centerTop: number, size: number): Group {
   const structureId = createStructureId();
   const diameter = Math.max(12, size);
-  const bullet = new Circle({
-    left,
-    top,
+  const gap = STRUCTURE_INLINE_LABEL_GAP;
+  const labelWidth = STRUCTURE_INLINE_LABEL_W;
+  const rowH = Math.max(diameter, 28);
+
+  const dot = new Circle({
+    left: diameter / 2,
+    top: rowH / 2,
     radius: diameter / 2,
     fill: DECAL_INK,
     stroke: "transparent",
     strokeWidth: 0,
     originX: "center",
     originY: "center",
-    lockUniScaling: true,
+    selectable: false,
+    evented: false,
   });
-  bullet.set({
+  dot.set({
     structureId,
     structureType: "bullet",
-    structureWidth: diameter,
-    structureHeight: diameter,
+    structureRole: "bullet-dot",
+  });
+
+  const label = new IText("", {
+    left: 0,
+    top: 0,
+    width: labelWidth,
+    fontSize: Math.max(16, Math.min(24, diameter * 0.85)),
+    fontFamily: STRUCTURE_FONT,
+    fill: DECAL_INK,
+    originX: "left",
+    originY: "center",
+    editable: true,
+    selectable: false,
+    evented: true,
+  });
+  label.set({
+    structureId,
+    structureType: "bullet",
+    structureRole: "bullet-label",
+  });
+
+  const group = new Group([dot, label], {
+    left: centerLeft - diameter / 2,
+    top: centerTop - rowH / 2,
+    subTargetCheck: true,
+    interactive: true,
+    objectCaching: false,
+    lockUniScaling: true,
+    cornerStyle: "circle",
+    borderColor: "rgba(17,17,17,0.45)",
+    cornerColor: "#111111",
+    transparentCorners: false,
+  });
+  group.set({
+    structureId,
+    structureType: "bullet",
+    structureDotSize: diameter,
+    structureWidth: diameter + gap + labelWidth,
+    structureHeight: rowH,
     structureColor: DECAL_INK,
   });
-  applyBoardFabricControls(bullet);
-  return bullet;
+  reflowBulletItem(group);
+  applyBoardFabricControls(group);
+  return group;
 }
 
 function numberedListMinHeight(rowCount: number): number {
@@ -2410,7 +2595,9 @@ function enterStructureTextEditing(canvas: Canvas, target: FabricObject, syncFoc
     role !== "label" &&
     role !== "priority-left" &&
     role !== "priority-right" &&
-    role !== "numbered-list-label"
+    role !== "numbered-list-label" &&
+    role !== "checkbox-label" &&
+    role !== "bullet-label"
   )
     return false;
   if (!(target instanceof IText) && !(target instanceof Textbox)) return false;
@@ -2478,6 +2665,22 @@ function restoreAllGroupsAfterLoad(canvas: Canvas) {
       normalizeDynamicDividerDecal(obj);
       continue;
     }
+    if (obj instanceof Circle && structureProp(obj, "structureType") === "bullet") {
+      const centerLeft = obj.left ?? 0;
+      const centerTop = obj.top ?? 0;
+      const stored = structureProp(obj, "structureWidth");
+      const dotSize =
+        typeof stored === "number" && stored > 0 ? stored : Math.max(12, (obj.radius ?? 6) * 2);
+      const color = String(obj.get("structureColor") ?? DECAL_INK);
+      const angle = obj.angle ?? 0;
+      const group = createDynamicBulletDecal(centerLeft, centerTop, dotSize);
+      group.set({ angle, structureColor: color });
+      applyDynamicDecalColor(group, color);
+      canvas.remove(obj);
+      canvas.add(group);
+      group.setCoords();
+      continue;
+    }
     if (!(obj instanceof Group)) continue;
     if (obj.get("markKind") === "sticky") {
       restoreStickyAfterLoad(obj);
@@ -2510,11 +2713,59 @@ function restoreStructureAfterLoad(group: Group) {
   group.set({ subTargetCheck: true, interactive: true, objectCaching: false });
   const structureType = structureProp(group, "structureType");
   if (structureType === "checkbox") {
-    group.set({ subTargetCheck: false });
+    group.set({ subTargetCheck: true });
     const checked = !!structureProp(group, "checked");
+    const structureId = String(group.get("structureId") ?? createStructureId());
+    const hasLabel = group.getObjects().some((o) => structureProp(o, "structureRole") === "checkbox-label");
+    if (!hasLabel) {
+      const boxSize = getCheckboxBoxSize(group);
+      const label = new IText("", {
+        left: 0,
+        top: 0,
+        width: STRUCTURE_INLINE_LABEL_W,
+        fontSize: Math.max(16, Math.min(28, boxSize * 0.38)),
+        fontFamily: STRUCTURE_FONT,
+        fill: DECAL_INK,
+        originX: "left",
+        originY: "center",
+        editable: true,
+        selectable: false,
+        evented: true,
+      });
+      label.set({
+        structureId,
+        structureType: "checkbox",
+        structureRole: "checkbox-label",
+      });
+      group.add(label);
+    }
     for (const child of group.getObjects()) {
+      const role = structureProp(child, "structureRole");
       child.set({ evented: false, selectable: false, checked });
-      if (child instanceof FabricText) child.set({ visible: checked });
+      if (role === "checkbox-label") {
+        child.set({ evented: true, editable: true });
+      } else if (child instanceof FabricText && role === "checkbox-toggle") {
+        child.set({ visible: checked });
+      }
+    }
+    reflowCheckboxItem(group);
+    applyDynamicDecalColor(group, String(group.get("structureColor") ?? DECAL_INK));
+  }
+  if (structureType === "bullet") {
+    for (const child of group.getObjects()) {
+      const role = structureProp(child, "structureRole");
+      if (role === "bullet-label") {
+        child.set({ evented: true, selectable: false, editable: true });
+      } else {
+        child.set({ evented: false, selectable: false });
+      }
+    }
+    const sx = group.scaleX ?? 1;
+    const sy = group.scaleY ?? 1;
+    if (Math.abs(sx - 1) >= 0.001 || Math.abs(sy - 1) >= 0.001) {
+      normalizeBulletResize(group);
+    } else {
+      reflowBulletItem(group);
     }
     applyDynamicDecalColor(group, String(group.get("structureColor") ?? DECAL_INK));
   }
@@ -3093,8 +3344,19 @@ function applyDynamicDecalColor(root: FabricObject, color: string) {
           stroke: color,
           fill: "transparent",
         });
-      } else if (child instanceof FabricText) {
+      } else if (child instanceof FabricText && role === "checkbox-toggle") {
         child.set({ fill: color, visible: !!structureProp(root, "checked") });
+      } else if ((child instanceof IText || child instanceof Textbox) && role === "checkbox-label") {
+        child.set("fill", color);
+      }
+      continue;
+    }
+
+    if (structureType === "bullet") {
+      if (role === "bullet-dot" && child instanceof Circle) {
+        child.set("fill", color);
+      } else if (role === "bullet-label" && (child instanceof IText || child instanceof Textbox)) {
+        child.set("fill", color);
       }
       continue;
     }
@@ -3118,36 +3380,12 @@ function normalizeCheckboxResize(group: Group) {
   const sy = group.scaleY ?? 1;
   if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
 
-  const currentSize = getStructureLayoutWidth(group);
+  const currentSize = getCheckboxBoxSize(group);
   const nextSize = Math.max(48, currentSize * Math.max(sx, sy));
-  const checked = !!structureProp(group, "checked");
   const structureColor = String(group.get("structureColor") ?? DECAL_INK);
 
-  const box = group.getObjects().find((o) => o instanceof Rect);
-  const checkmark = group.getObjects().find((o) => o instanceof FabricText);
-  if (box instanceof Rect) {
-    box.set({
-      width: nextSize,
-      height: nextSize,
-      strokeWidth: Math.max(3, nextSize * 0.06),
-      rx: Math.max(4, nextSize * 0.08),
-      ry: Math.max(4, nextSize * 0.08),
-      scaleX: 1,
-      scaleY: 1,
-    });
-  }
-  if (checkmark instanceof FabricText) {
-    checkmark.set({
-      left: nextSize / 2,
-      top: nextSize / 2,
-      fontSize: nextSize * 0.72,
-      visible: checked,
-      scaleX: 1,
-      scaleY: 1,
-    });
-  }
-
-  group.set({ scaleX: 1, scaleY: 1, structureWidth: nextSize, structureHeight: nextSize });
+  group.set({ structureBoxSize: nextSize, scaleX: 1, scaleY: 1 });
+  reflowCheckboxItem(group);
   applyDynamicDecalColor(group, structureColor);
   group.setCoords();
 }
@@ -3193,26 +3431,44 @@ function normalizeNumberedListResize(group: Group) {
   applyDynamicDecalColor(group, structureColor);
 }
 
-function normalizeBulletResize(bullet: Circle) {
-  const sx = bullet.scaleX ?? 1;
-  const sy = bullet.scaleY ?? 1;
+function normalizeBulletResize(target: FabricObject) {
+  if (target instanceof Circle && structureProp(target, "structureType") === "bullet") {
+    const sx = target.scaleX ?? 1;
+    const sy = target.scaleY ?? 1;
+    if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
+
+    const stored = structureProp(target, "structureWidth");
+    const currentSize =
+      typeof stored === "number" && stored > 0 ? stored : Math.max(12, (target.radius ?? 6) * 2);
+    const nextSize = Math.max(12, currentSize * Math.max(sx, sy));
+    const structureColor = String(target.get("structureColor") ?? DECAL_INK);
+
+    target.set({
+      radius: nextSize / 2,
+      scaleX: 1,
+      scaleY: 1,
+      structureWidth: nextSize,
+      structureHeight: nextSize,
+    });
+    applyDynamicDecalColor(target, structureColor);
+    target.setCoords();
+    return;
+  }
+
+  if (!(target instanceof Group) || structureProp(target, "structureType") !== "bullet") return;
+
+  const sx = target.scaleX ?? 1;
+  const sy = target.scaleY ?? 1;
   if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return;
 
-  const stored = structureProp(bullet, "structureWidth");
-  const currentSize =
-    typeof stored === "number" && stored > 0 ? stored : Math.max(12, (bullet.radius ?? 6) * 2);
+  const currentSize = getBulletDotSize(target);
   const nextSize = Math.max(12, currentSize * Math.max(sx, sy));
-  const structureColor = String(bullet.get("structureColor") ?? DECAL_INK);
+  const structureColor = String(target.get("structureColor") ?? DECAL_INK);
 
-  bullet.set({
-    radius: nextSize / 2,
-    scaleX: 1,
-    scaleY: 1,
-    structureWidth: nextSize,
-    structureHeight: nextSize,
-  });
-  applyDynamicDecalColor(bullet, structureColor);
-  bullet.setCoords();
+  target.set({ structureDotSize: nextSize, scaleX: 1, scaleY: 1 });
+  reflowBulletItem(target);
+  applyDynamicDecalColor(target, structureColor);
+  target.setCoords();
 }
 
 export type BoardDiagramType =
@@ -3866,7 +4122,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             migrateStickyRectToGroup(canvas, target);
           } else if (structureProp(target, "structureType") === "divider") {
             normalizeDynamicDividerDecal(target);
-          } else if (structureProp(target, "structureType") === "bullet" && target instanceof Circle) {
+          } else if (structureProp(target, "structureType") === "bullet") {
             normalizeBulletResize(target);
           } else if (target instanceof Group) {
             if (target.get("markKind") === "sticky") {
@@ -3995,6 +4251,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           let root: FabricObject = target as FabricObject;
           while (root.group) root = root.group as FabricObject;
           if (root instanceof Group && structureProp(root, "structureType") === "checkbox") {
+            if (structureProp(target, "structureRole") === "checkbox-label") {
+              enterObjectTextEditing(canvas, target as FabricObject);
+              opt.e.preventDefault?.();
+              opt.e.stopPropagation?.();
+              return;
+            }
             toggleCheckboxRef.current(canvas, root);
             opt.e.preventDefault?.();
             opt.e.stopPropagation?.();
@@ -4021,6 +4283,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   role === "add-row" ||
                   role === "label" ||
                   role === "numbered-list-label" ||
+                  role === "checkbox-label" ||
+                  role === "bullet-label" ||
                   role === "priority-left" ||
                   role === "priority-right")
               ) {
@@ -5086,7 +5350,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         const structureType = structureProp(target, "structureType") as string | undefined;
         if (!role || !structureId || !structureType) return false;
 
-        if (role === "label" || role === "priority-left" || role === "priority-right" || role === "numbered-list-label") {
+        if (role === "label" || role === "priority-left" || role === "priority-right" || role === "numbered-list-label" || role === "checkbox-label" || role === "bullet-label") {
           return enterStructureTextEditing(canvas, target as FabricObject, fabricSelectionControls);
         }
 
@@ -5113,7 +5377,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       group.set({ checked });
       for (const child of group.getObjects()) {
         child.set({ checked });
-        if (child instanceof FabricText) child.set({ visible: checked });
+        if (child instanceof FabricText && structureProp(child, "structureRole") === "checkbox-toggle") {
+          child.set({ visible: checked });
+        }
       }
       applyDynamicDecalColor(group, String(group.get("structureColor") ?? DECAL_INK));
       canvas.requestRenderAll();
@@ -5131,6 +5397,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.requestRenderAll();
       recordHistory();
       scheduleSave();
+      rebindStructureHandlersRef.current(canvas);
     };
 
     const placeInteractiveCheckbox = (left: number, top: number, size: number) => {
