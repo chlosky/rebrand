@@ -97,7 +97,7 @@
       "journalDescription": "Reflect and capture what shifted this week."
     },
     "projects": {
-      "title": "Your vision",
+      "title": "Your Projects",
       "subtitle": "Jump back into a set you've already started or start a new one.",
       "startNewSet": "Start a new set",
       "creating": "Starting…",
@@ -201,7 +201,7 @@
     },
     "imageLibrary": {
       "title": "Your Images",
-      "subtitle": "Upload clippings and photos here. They stay in your account and show up when you add images on boards."
+      "subtitle": "Browse Our Collection, Affixements, Found Objects, or upload to Your Library — each with its own tab."
     },
     "orders": {
       "title": "Orders",

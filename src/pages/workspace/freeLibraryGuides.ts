@@ -18,6 +18,7 @@ export type FreeLibraryGuide = {
   slug: string;
   title: string;
   subtitle: string;
+  coverImage: string;
   sections: LibrarySection[];
 };
 
@@ -28,6 +29,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
     slug: "life-rebrand",
     title: "Rebrand Your Life",
     subtitle: "A short starter reader for vision boards, life plotting and The Plan.",
+    coverImage: "/library/life-rebrand-cover.png",
     sections: [
       {
         slug: "start-here",
@@ -112,6 +114,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
     slug: "office-optimization",
     title: "Optimize Your Workstreams in New Ways",
     subtitle: "A short reader for project boards, planning structures and work that needs a better visual system.",
+    coverImage: "/library/office-cover.png",
     sections: [
       {
         slug: "start-here",
@@ -199,6 +202,7 @@ export const FREE_LIBRARY_GUIDES: FreeLibraryGuide[] = [
     slug: "home-organization",
     title: "Build an Organized Home, While Juggling Everything",
     subtitle: "A short reader for home routines, chores, meals, family planning and seasonal resets.",
+    coverImage: "/library/home-org-cover.png",
     sections: [
       {
         slug: "start-here",

@@ -4,8 +4,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
 
-  BookOpen,
-
   ChevronRight,
 
   FolderKanban,
@@ -581,19 +579,16 @@ export default function Workspace() {
             >
 
               <span
-
                 className={cn(
-
-                  "flex w-24 shrink-0 items-center justify-center sm:w-28",
-
-                  dark ? "border-r border-white bg-black text-white" : "bg-[#f3f0eb] text-zinc-600",
-
+                  "relative w-24 shrink-0 overflow-hidden sm:w-28",
+                  dark ? "border-r border-white" : "border-r border-zinc-200/80",
                 )}
-
               >
-
-                <BookOpen className="h-5 w-5" strokeWidth={1.75} />
-
+                <img
+                  src={guide.coverImage}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               </span>
 
               <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-4">
@@ -672,7 +667,7 @@ export default function Workspace() {
 
             <div className="h-[min(52vh,28rem)]">
 
-              <BoardImagePicker embedded uploadsOnly userId={user.id} />
+              <BoardImagePicker embedded userId={user.id} />
 
             </div>
 
@@ -724,48 +719,41 @@ export default function Workspace() {
 
         >
 
-          <div className="mb-4 flex items-center justify-between gap-3">
-
-            <div>
-
+          <div className="mb-4 space-y-1">
+            <div className="flex items-center justify-between gap-3">
               <h2 className={cn("font-welcome-serif text-xl", dark ? "text-white" : "text-zinc-900")}>
-
                 {t("workspace.projects.title")}
-
               </h2>
-
-              <p className={cn("mt-1 text-sm", dark ? "text-white" : "text-zinc-500")}>
-
-                {t("workspace.projects.subtitle")}
-
-              </p>
-
+              {hasPro ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "shrink-0 rounded-lg",
+                        dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200",
+                      )}
+                      disabled={creatingSet}
+                    >
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      {creatingSet ? t("workspace.projects.creating") : t("workspace.projects.startNewSet")}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className={dark ? "border-white bg-black text-white" : undefined}>
+                    <DropdownMenuItem onClick={() => void startNewSet("portrait")}>
+                      Portrait set
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => void startNewSet("landscape")}>
+                      Landscape set
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
             </div>
-
-            {hasPro ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn("rounded-lg", dark ? "border-white text-white hover:bg-white hover:text-black" : "border-zinc-200")}
-                    disabled={creatingSet}
-                  >
-                    <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    {creatingSet ? t("workspace.projects.creating") : t("workspace.projects.startNewSet")}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className={dark ? "border-white bg-black text-white" : undefined}>
-                  <DropdownMenuItem onClick={() => void startNewSet("portrait")}>
-                    Portrait set
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => void startNewSet("landscape")}>
-                    Landscape set
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-
+            <p className={cn("text-sm", dark ? "text-white" : "text-zinc-500")}>
+              {t("workspace.projects.subtitle")}
+            </p>
           </div>
 
           {hasPro ? (

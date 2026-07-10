@@ -3,7 +3,7 @@
  * White surfaces, neutral type, board-color pink accents.
  */
 
-import { SITE_CONTAINER } from "@/lib/siteBrand";
+import { SITE_CONTAINER, BRAND_LOGO_CLASS } from "@/lib/siteBrand";
 
 export { SITE_CONTAINER as MARKETING_SITE_CONTAINER };
 
@@ -28,8 +28,7 @@ export const MARKETING_DISPLAY_CLASS =
 export const MARKETING_HERO_HEADLINE_CLASS =
   "font-sans font-semibold leading-[1.08] tracking-[-0.02em] text-neutral-900";
 
-export const MARKETING_LOGO_CLASS =
-  "font-sans text-lg font-semibold tracking-tight text-neutral-900";
+export const MARKETING_LOGO_CLASS = `${BRAND_LOGO_CLASS} text-neutral-900`;
 
 export const MARKETING_CARD_TITLE_CLASS =
   "font-sans text-base font-medium leading-tight tracking-[-0.02em] text-neutral-900";

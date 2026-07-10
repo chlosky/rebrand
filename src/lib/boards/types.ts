@@ -71,6 +71,7 @@ export type BoardImageAsset = {
   theme: string;
   category: string;
   url: string;
+  thumbUrl?: string;
   description: string;
   tags?: string[];
 };

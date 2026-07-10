@@ -60,8 +60,6 @@ export function BoardMobileCarousel({
   const saveHandlers = useRef(new Map<string, (layout: Record<string, unknown>) => void>());
   const scrollingProgrammatically = useRef(false);
   const scrollResetTimer = useRef<number | undefined>(undefined);
-  const swipeRef = useRef({ startX: 0, startY: 0, tracking: false });
-  const activeIndexRef = useRef(0);
 
   const getSaveHandler = useCallback(
     (boardId: string) => {
@@ -74,7 +72,6 @@ export function BoardMobileCarousel({
   );
 
   const activeIndex = Math.max(0, boards.findIndex((b) => b.id === activeId));
-  activeIndexRef.current = activeIndex;
 
   const scrollToIndex = useCallback(
     (index: number, select = true) => {
@@ -111,79 +108,16 @@ export function BoardMobileCarousel({
     scrollToIndex(activeIndex, false);
   }, [activeIndex, boards.length, scrollToIndex]);
 
-  const handleScroll = useCallback(() => {
-    if (scrollingProgrammatically.current) return;
-    const el = scrollRef.current;
-    if (!el || boards.length === 0) return;
-    const center = el.scrollLeft + el.clientWidth / 2;
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < el.children.length; i++) {
-      const child = el.children[i] as HTMLElement;
-      const childCenter = child.offsetLeft + child.offsetWidth / 2;
-      const dist = Math.abs(center - childCenter);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIdx = i;
-      }
-    }
-    const next = boards[bestIdx];
-    if (next && next.id !== activeId) {
-      scrollingProgrammatically.current = true;
-      onSelect(next.id);
-      if (scrollResetTimer.current !== undefined) window.clearTimeout(scrollResetTimer.current);
-      scrollResetTimer.current = window.setTimeout(() => {
-        scrollingProgrammatically.current = false;
-        scrollResetTimer.current = undefined;
-      }, 450);
-    }
-  }, [activeId, boards, onSelect]);
-
-  useEffect(() => {
-    const root = scrollRef.current?.parentElement;
-    if (!root || boards.length <= 1) return;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      swipeRef.current.startX = e.touches[0].clientX;
-      swipeRef.current.startY = e.touches[0].clientY;
-      swipeRef.current.tracking = true;
-    };
-
-    const onTouchEnd = (e: TouchEvent) => {
-      if (!swipeRef.current.tracking) return;
-      swipeRef.current.tracking = false;
-      const touch = e.changedTouches[0];
-      if (!touch) return;
-      const dx = touch.clientX - swipeRef.current.startX;
-      const dy = touch.clientY - swipeRef.current.startY;
-      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.1) return;
-      const current = activeIndexRef.current;
-      goToIndex(current + (dx < 0 ? 1 : -1));
-    };
-
-    root.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
-    root.addEventListener("touchend", onTouchEnd, { capture: true, passive: true });
-    root.addEventListener("touchcancel", onTouchEnd, { capture: true, passive: true });
-    return () => {
-      root.removeEventListener("touchstart", onTouchStart, { capture: true });
-      root.removeEventListener("touchend", onTouchEnd, { capture: true });
-      root.removeEventListener("touchcancel", onTouchEnd, { capture: true });
-    };
-  }, [boards.length, goToIndex]);
-
   return (
     <div className="board-mobile-carousel relative flex h-0 min-h-0 flex-1 flex-col">
       <div
         ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex h-0 min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        className="flex h-0 min-h-0 flex-1 overflow-x-hidden overflow-y-hidden"
       >
         {boards.map((board) => (
           <div
             key={board.id}
-            className="flex h-full w-full shrink-0 snap-center flex-col"
+            className="flex h-full w-full shrink-0 flex-col"
           >
             <div
               className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-100 px-2 py-2"

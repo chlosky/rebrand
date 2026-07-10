@@ -13,6 +13,9 @@ export const JSON_LD_SCRIPT_ID = "palette-plotting-json-ld";
 /** Matches vel / palette plotting content grid. */
 export const SITE_CONTAINER = "mx-auto w-full max-w-5xl px-4 sm:px-6";
 
+/** Company wordmark in headers — sans semibold, not Georgia. */
+export const BRAND_LOGO_CLASS = "font-sans text-lg font-semibold tracking-tight";
+
 export function replaceLegacyBrandName(text: string): string {
   return text
     .replace(/\bpalette plotting\b/gi, SITE_NAME)

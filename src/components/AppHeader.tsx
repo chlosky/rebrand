@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogIn, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { BRAND_LOGO_CLASS } from "@/lib/siteBrand";
+import { cn } from "@/lib/utils";
 
 type AppHeaderProps = {
   /** When true, show Sign out instead of Login and return to welcome after signing out. */
@@ -60,11 +62,11 @@ export const AppHeader = ({
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/onboarding/welcome")}
-              className={
-                cosmicShell
-                  ? "font-sans text-sm font-semibold tracking-tight text-white/90 transition-opacity hover:opacity-80 cursor-pointer"
-                  : "text-lg font-bold bg-gradient-primary bg-clip-text text-transparent dark:bg-none dark:text-foreground hover:opacity-80 transition-opacity cursor-pointer"
-              }
+              className={cn(
+                BRAND_LOGO_CLASS,
+                "transition-opacity hover:opacity-80 cursor-pointer",
+                cosmicShell ? "text-white/90" : "text-neutral-900",
+              )}
             >
               palette plotting
             </button>

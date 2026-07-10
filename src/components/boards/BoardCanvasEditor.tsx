@@ -440,6 +440,103 @@ function boardImageFromTarget(obj: FabricObject): FabricImage | null {
   return null;
 }
 
+type RadialObjectKind = "image" | "line" | "shape" | "sticker" | "text" | "sticky" | "parchment" | "structure" | "generic";
+
+function topLevelBoardRoot(obj: FabricObject): FabricObject {
+  let root = obj;
+  while (root.group) root = root.group as FabricObject;
+  return root;
+}
+
+function radialKindForRoot(root: FabricObject): RadialObjectKind {
+  const structureType = structureProp(root, "structureType");
+  if (structureType) return "structure";
+
+  const markKind = root.get("markKind") as string | undefined;
+  const shapeType = root.get("shapeType") as string | undefined;
+
+  if (markKind === "image-frame") return "image";
+  if (root instanceof FabricImage && markKind !== "sticker" && markKind !== "frame-image") return "image";
+  if (markKind === "sticker") return "sticker";
+  if (structureProp(root, "structureType") === "divider") return "line";
+  if (markKind === "shape" && shapeType === "line" && root instanceof Line) return "line";
+  if (markKind === "draw" || root.type === "path") return "line";
+  if (markKind === "shape") return "shape";
+  if (markKind === "sticky") return "sticky";
+  if (markKind === "parchment") return "parchment";
+  if (root instanceof IText || root instanceof Textbox || root instanceof FabricText) return "text";
+  if (root instanceof Group) {
+    if (root.get("textCapable")) return "text";
+    if (root.getObjects().some((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText)) {
+      return "text";
+    }
+  }
+  return "generic";
+}
+
+function radialCapabilitiesForRoot(root: FabricObject) {
+  const kind = radialKindForRoot(root);
+  return {
+    textCapable: kind === "text",
+    shapeCapable: kind === "shape",
+    stickerCapable: kind === "sticker",
+    imageCapable: kind === "image",
+    lineCapable: kind === "line",
+  };
+}
+
+function homogeneousRadialKind(roots: FabricObject[]): RadialObjectKind | null {
+  if (!roots.length) return null;
+  const kinds = roots.map(radialKindForRoot);
+  const first = kinds[0];
+  return kinds.every((kind) => kind === first) ? first : null;
+}
+
+function applyImageFrameToRoot(
+  canvas: Canvas,
+  selected: FabricObject,
+  shapeType: BoardMarkShapeType,
+): Group | null {
+  if (!IMAGE_FRAME_SHAPES.has(shapeType)) return null;
+
+  const existingFrame = imageFrameGroupFromTarget(selected);
+  let image: FabricImage | null = null;
+  let center = { x: 0, y: 0 };
+  let angle = 0;
+  let photoW = 200;
+  let photoH = 200;
+
+  if (existingFrame) {
+    const inner = existingFrame
+      .getObjects()
+      .find((o) => o instanceof FabricImage && o.get("markKind") === "frame-image");
+    if (!(inner instanceof FabricImage)) return null;
+    center = existingFrame.getCenterPoint();
+    angle = existingFrame.angle ?? 0;
+    ({ w: photoW, h: photoH } = imageFrameInnerSize(existingFrame));
+    existingFrame.remove(inner);
+    canvas.remove(existingFrame);
+    image = inner;
+  } else {
+    image = boardImageFromTarget(selected);
+    if (!image) return null;
+    center = image.getCenterPoint();
+    angle = image.angle ?? 0;
+    photoW = (image.width ?? 1) * Math.abs(image.scaleX ?? 1);
+    photoH = (image.height ?? 1) * Math.abs(image.scaleY ?? 1);
+    canvas.remove(image);
+  }
+
+  const group =
+    shapeType === "photo"
+      ? createPolaroidImageFrameGroup(image, photoW, photoH, center, angle)
+      : createClipImageFrameGroup(image, photoW, photoH, shapeType, center, angle);
+
+  applyBoardFabricControls(group);
+  canvas.add(group);
+  return group;
+}
+
 function createImageFrameClipShape(shapeType: BoardMarkShapeType, width: number, height: number): FabricObject {
   const hw = width / 2;
   const hh = height / 2;
@@ -3201,6 +3298,7 @@ type QuickSelectorState = {
   stickerCapable?: boolean;
   imageCapable?: boolean;
   lineCapable?: boolean;
+  batchMixed?: boolean;
 };
 
 type CalendarControlState = {
@@ -3296,6 +3394,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const cropTargetRef = useRef<{ group: Group | null; image: FabricImage } | null>(null);
     const drawColorRef = useRef(MARK_SHAPE_STROKE);
     const deleteTargetRef = useRef<FabricObject | null>(null);
+    const radialTargetsRef = useRef<FabricObject[]>([]);
     const isActiveRef = useRef(isActive);
     isActiveRef.current = isActive;
     const syncTextFocusRef = useRef(fabricSelectionControls);
@@ -3495,6 +3594,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     const closeQuickSelector = useCallback(() => {
       deleteTargetRef.current = null;
+      radialTargetsRef.current = [];
       setQuickSelector(null);
     }, []);
 
@@ -3522,7 +3622,22 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const rect = wrap.getBoundingClientRect();
       const pointer = canvas.getScenePoint(e as MouseEvent);
 
-      if (target) {
+      const active = canvas.getActiveObject();
+      let batchRoots: FabricObject[] = [];
+      if (active instanceof ActiveSelection && active.getObjects().length > 1) {
+        batchRoots = [...new Set(active.getObjects().map(topLevelBoardRoot))];
+      }
+
+      const homogeneousKind = batchRoots.length > 1 ? homogeneousRadialKind(batchRoots) : null;
+      const batchMixed = batchRoots.length > 1 && !homogeneousKind;
+
+      radialTargetsRef.current = [];
+
+      if (batchRoots.length > 1 && homogeneousKind) {
+        radialTargetsRef.current = batchRoots;
+      } else if (batchRoots.length > 1 && batchMixed) {
+        radialTargetsRef.current = batchRoots;
+      } else if (target) {
         let root = target;
         while (root.group) {
           root = root.group;
@@ -3534,17 +3649,23 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           typeof role === "string" &&
           role.startsWith("eisenhower-quadrant-")
         ) {
-          // Keep the group selected for movement, but color operations should target this quadrant.
           deleteTargetRef.current = target;
         } else {
           deleteTargetRef.current = root;
         }
+        radialTargetsRef.current = [root];
         canvas.setActiveObject(root);
         const objects = canvas.getObjects();
         if (objects[objects.length - 1] !== root) {
           canvas.bringObjectToFront(root);
         }
         canvas.requestRenderAll();
+      } else if (active) {
+        const root = topLevelBoardRoot(active);
+        deleteTargetRef.current = root;
+        radialTargetsRef.current = [root];
+      } else {
+        deleteTargetRef.current = null;
       }
 
       let textCapable = false;
@@ -3552,7 +3673,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let stickerCapable = false;
       let imageCapable = false;
       let lineCapable = false;
-      if (target instanceof IText || target instanceof Textbox || target instanceof FabricText) {
+
+      if (batchRoots.length > 1 && homogeneousKind) {
+        const caps = radialCapabilitiesForRoot(batchRoots[0]);
+        textCapable = caps.textCapable;
+        shapeCapable = caps.shapeCapable;
+        stickerCapable = caps.stickerCapable;
+        imageCapable = caps.imageCapable;
+        lineCapable = caps.lineCapable;
+        if (homogeneousKind === "shape") {
+          textCapable = batchRoots.every((root) => Boolean(root.get("textCapable")));
+        }
+      } else if (target instanceof IText || target instanceof Textbox || target instanceof FabricText) {
         textCapable = true;
       } else if (target) {
         let root = target;
@@ -3573,6 +3705,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           structureProp(root, "structureType") === "divider" ||
           (markKind === "shape" && shapeType === "line" && root instanceof Line) ||
           markKind === "draw";
+      } else if (radialTargetsRef.current[0]) {
+        const caps = radialCapabilitiesForRoot(radialTargetsRef.current[0]);
+        textCapable = caps.textCapable;
+        shapeCapable = caps.shapeCapable;
+        stickerCapable = caps.stickerCapable;
+        imageCapable = caps.imageCapable;
+        lineCapable = caps.lineCapable;
       }
 
       setQuickSelector({
@@ -3582,14 +3721,37 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         clientY,
         normX: Math.min(1, Math.max(0, pointer.x / activeArtboardWidth)),
         normY: Math.min(1, Math.max(0, pointer.y / activeArtboardHeight)),
-        mode: target ? "object" : "empty",
+        mode: target || active || radialTargetsRef.current.length ? "object" : "empty",
         textCapable,
         shapeCapable,
         stickerCapable,
         imageCapable,
         lineCapable,
+        batchMixed,
       });
-    }, [readOnly]);
+    }, [readOnly, activeArtboardWidth, activeArtboardHeight]);
+
+    const getRadialActionTargets = useCallback((): FabricObject[] => {
+      if (radialTargetsRef.current.length) return [...radialTargetsRef.current];
+      const canvas = fabricRef.current;
+      if (!canvas) return [];
+      const selected = deleteTargetRef.current ?? canvas.getActiveObject();
+      if (!selected) return [];
+      if (selected instanceof ActiveSelection) {
+        return [...new Set(selected.getObjects().map(topLevelBoardRoot))];
+      }
+      return [topLevelBoardRoot(selected)];
+    }, []);
+
+    const restoreRadialSelection = useCallback((canvas: Canvas, objects: FabricObject[]) => {
+      const next = objects.filter((obj) => canvas.getObjects().includes(obj));
+      if (!next.length) return;
+      if (next.length === 1) {
+        canvas.setActiveObject(next[0]);
+      } else {
+        canvas.setActiveObject(new ActiveSelection(next, { canvas }));
+      }
+    }, []);
 
     const openQuickSelectorRef = useRef(openQuickSelectorFromEvent);
     openQuickSelectorRef.current = openQuickSelectorFromEvent;
@@ -4302,130 +4464,108 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       () => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
-        if (!selected) return;
-        const frame = imageFrameGroupFromTarget(selected);
-        if (frame) return;
-        const image = boardImageFromTarget(selected);
-        if (!image) return;
-        const current = Number(image.get("imageCornerRadius") ?? 0);
-        applyImageCornerRadius(image, current > 0 ? 0 : 32);
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
+        let changed = false;
+        for (const selected of targets) {
+          const frame = imageFrameGroupFromTarget(selected);
+          if (frame) continue;
+          const image = boardImageFromTarget(selected);
+          if (!image) continue;
+          const current = Number(image.get("imageCornerRadius") ?? 0);
+          applyImageCornerRadius(image, current > 0 ? 0 : 32);
+          changed = true;
+        }
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     const toggleLineDashOnActive = useCallback(
       () => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
-        if (!selected) return;
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
+        let changed = false;
 
-        let root: FabricObject = selected;
-        while (root.group) root = root.group as FabricObject;
+        for (const selected of targets) {
+          let root: FabricObject = selected;
+          while (root.group) root = root.group as FabricObject;
 
-        if (structureProp(root, "structureType") === "divider" && root instanceof Rect) {
-          const left = root.left ?? 0;
-          const top = root.top ?? 0;
-          const width = Math.max(80, (root.width ?? 80) * (root.scaleX ?? 1));
-          const color = String(root.get("structureColor") ?? root.fill ?? DECAL_LINE);
-          const structureId = String(root.get("structureId") ?? createStructureId());
-          const angle = root.angle ?? 0;
-          const line = createDynamicDividerDecal(left - width / 2, top, width, true);
-          line.set({ structureId, structureColor: color, stroke: color, angle });
-          canvas.remove(root);
-          canvas.add(line);
-          canvas.setActiveObject(line);
-          line.setCoords();
-          deleteTargetRef.current = line;
-          canvas.requestRenderAll();
-          recordHistory();
-          scheduleSave();
-          return;
+          if (structureProp(root, "structureType") === "divider" && root instanceof Rect) {
+            const left = root.left ?? 0;
+            const top = root.top ?? 0;
+            const width = Math.max(80, (root.width ?? 80) * (root.scaleX ?? 1));
+            const color = String(root.get("structureColor") ?? root.fill ?? DECAL_LINE);
+            const structureId = String(root.get("structureId") ?? createStructureId());
+            const angle = root.angle ?? 0;
+            const line = createDynamicDividerDecal(left - width / 2, top, width, true);
+            line.set({ structureId, structureColor: color, stroke: color, angle });
+            canvas.remove(root);
+            canvas.add(line);
+            line.setCoords();
+            changed = true;
+            continue;
+          }
+
+          const dashed =
+            !!root.get("lineDashed") ||
+            (Array.isArray(root.get("strokeDashArray")) && (root.get("strokeDashArray") as number[]).length > 0);
+          const nextDashed = !dashed;
+
+          if (structureProp(root, "structureType") === "divider" && root instanceof Line) {
+            root.set({
+              strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+              lineDashed: nextDashed,
+            });
+            changed = true;
+          } else if (root.get("markKind") === "shape" && root.get("shapeType") === "line" && root instanceof Line) {
+            root.set({
+              strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+              lineDashed: nextDashed,
+            });
+            changed = true;
+          } else if (root.get("markKind") === "draw" || root.type === "path") {
+            root.set({
+              strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+              lineDashed: nextDashed,
+            });
+            changed = true;
+          }
         }
 
-        const dashed =
-          !!root.get("lineDashed") ||
-          (Array.isArray(root.get("strokeDashArray")) && (root.get("strokeDashArray") as number[]).length > 0);
-        const nextDashed = !dashed;
-
-        if (structureProp(root, "structureType") === "divider" && root instanceof Line) {
-          root.set({
-            strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
-            lineDashed: nextDashed,
-          });
-        } else if (root.get("markKind") === "shape" && root.get("shapeType") === "line" && root instanceof Line) {
-          root.set({
-            strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
-            lineDashed: nextDashed,
-          });
-        } else if (root.get("markKind") === "draw" || root.type === "path") {
-          root.set({
-            strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
-            lineDashed: nextDashed,
-          });
-        } else {
-          return;
-        }
-
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     const applyImageFrameToActive = useCallback(
       (shapeType: BoardMarkShapeType) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly || !IMAGE_FRAME_SHAPES.has(shapeType)) return;
-        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
-        if (!selected) return;
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
 
-        const existingFrame = imageFrameGroupFromTarget(selected);
-        let image: FabricImage | null = null;
-        let center = { x: 0, y: 0 };
-        let angle = 0;
-        let photoW = 200;
-        let photoH = 200;
-
-        if (existingFrame) {
-          const inner = existingFrame
-            .getObjects()
-            .find((o) => o instanceof FabricImage && o.get("markKind") === "frame-image");
-          if (!(inner instanceof FabricImage)) return;
-          center = existingFrame.getCenterPoint();
-          angle = existingFrame.angle ?? 0;
-          ({ w: photoW, h: photoH } = imageFrameInnerSize(existingFrame));
-          existingFrame.remove(inner);
-          canvas.remove(existingFrame);
-          image = inner;
-        } else {
-          image = boardImageFromTarget(selected);
-          if (!image) return;
-          center = image.getCenterPoint();
-          angle = image.angle ?? 0;
-          photoW = (image.width ?? 1) * Math.abs(image.scaleX ?? 1);
-          photoH = (image.height ?? 1) * Math.abs(image.scaleY ?? 1);
-          canvas.remove(image);
+        const nextGroups: FabricObject[] = [];
+        for (const selected of targets) {
+          const group = applyImageFrameToRoot(canvas, selected, shapeType);
+          if (group) nextGroups.push(group);
         }
+        if (!nextGroups.length) return;
 
-        const group =
-          shapeType === "photo"
-            ? createPolaroidImageFrameGroup(image, photoW, photoH, center, angle)
-            : createClipImageFrameGroup(image, photoW, photoH, shapeType, center, angle);
-
-        applyBoardFabricControls(group);
-        canvas.add(group);
-        canvas.setActiveObject(group);
+        restoreRadialSelection(canvas, nextGroups);
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, restoreRadialSelection, scheduleSave],
     );
 
     const addShapeAtPoint = useCallback(
@@ -4670,51 +4810,63 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (shapeType: BoardMarkShapeType) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
-        if (!selected) return;
-        let root: FabricObject = selected;
-        while (root.group) root = root.group;
-        if (root.get("markKind") !== "shape") return;
-        const center = root.getCenterPoint();
-        const stroke = (root.stroke as string) || MARK_SHAPE_STROKE;
-        let existingText = "";
-        if (root instanceof Group && root.get("textCapable")) {
-          const textObj = findEditableTextInGroup(root);
-          existingText = textObj?.text ?? "";
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
+        const nextObjects: FabricObject[] = [];
+
+        for (const selected of targets) {
+          let root: FabricObject = selected;
+          while (root.group) root = root.group as FabricObject;
+          if (root.get("markKind") !== "shape") continue;
+          const center = root.getCenterPoint();
+          const stroke = (root.stroke as string) || MARK_SHAPE_STROKE;
+          let existingText = "";
+          if (root instanceof Group && root.get("textCapable")) {
+            const textObj = findEditableTextInGroup(root);
+            existingText = textObj?.text ?? "";
+          }
+          canvas.remove(root);
+          if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
+            const group = createTextCapableShapeGroup(shapeType, center.x, center.y, stroke);
+            const textObj = findEditableTextInGroup(group);
+            if (textObj && existingText) textObj.set("text", existingText);
+            applyBoardFabricControls(group);
+            canvas.add(group);
+            nextObjects.push(group);
+          } else {
+            addShapeAtPoint(shapeType, center.x / activeArtboardWidth, center.y / activeArtboardHeight, stroke);
+          }
         }
-        canvas.remove(root);
+
         deleteTargetRef.current = null;
-        if (TEXT_CAPABLE_SHAPES.has(shapeType)) {
-          const group = createTextCapableShapeGroup(shapeType, center.x, center.y, stroke);
-          const textObj = findEditableTextInGroup(group);
-          if (textObj && existingText) textObj.set("text", existingText);
-          applyBoardFabricControls(group);
-          canvas.add(group);
-          canvas.setActiveObject(group);
-          canvas.requestRenderAll();
-        } else {
-          addShapeAtPoint(shapeType, center.x / activeArtboardWidth, center.y / activeArtboardHeight, stroke);
-        }
+        radialTargetsRef.current = [];
+        if (nextObjects.length) restoreRadialSelection(canvas, nextObjects);
+        canvas.requestRenderAll();
         recordHistory();
       },
-      [addShapeAtPoint, readOnly, recordHistory],
+      [activeArtboardHeight, activeArtboardWidth, addShapeAtPoint, getRadialActionTargets, readOnly, recordHistory, restoreRadialSelection],
     );
 
     const swapMarkSticker = useCallback(
       (stickerId: BoardMarkStickerId) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
-        if (!selected) return;
-        let root: FabricObject = selected;
-        while (root.group) root = root.group;
-        if (root.get("markKind") !== "sticker" || !(root instanceof FabricText)) return;
-        root.set({ text: BOARD_MARK_STICKER_EMOJI[stickerId], stickerId });
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
+        let changed = false;
+        for (const selected of targets) {
+          let root: FabricObject = selected;
+          while (root.group) root = root.group as FabricObject;
+          if (root.get("markKind") !== "sticker" || !(root instanceof FabricText)) continue;
+          root.set({ text: BOARD_MARK_STICKER_EMOJI[stickerId], stickerId });
+          changed = true;
+        }
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     const placeImage = (canvas: Canvas, img: FabricImage, options?: ImageFitOptions) => {
@@ -5462,6 +5614,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!activeObject && deleteTargetRef.current) {
         activeObject = deleteTargetRef.current;
       }
+      if (!activeObject && radialTargetsRef.current.length) {
+        if (radialTargetsRef.current.length === 1) {
+          activeObject = radialTargetsRef.current[0];
+        } else {
+          activeObject = new ActiveSelection(radialTargetsRef.current, { canvas });
+        }
+      }
       if (!activeObject) {
         const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length) activeObject = activeObjects[0];
@@ -5484,6 +5643,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         canvas.remove(obj);
       }
       deleteTargetRef.current = null;
+      radialTargetsRef.current = [];
       canvas.requestRenderAll();
       recordHistory();
       scheduleSave();
@@ -5533,109 +5693,118 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       (size: BoardMarkTextSize) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const active = canvas.getActiveObject();
-        if (!active) return;
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
         const fontSize = MARK_TEXT_SIZES[size];
+        let changed = false;
 
-        if (active instanceof IText || active instanceof Textbox || active instanceof FabricText) {
-          active.set("fontSize", fontSize);
-        } else if (active instanceof Group) {
-          const text = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
-          if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
-            text.set("fontSize", fontSize);
-          } else {
-            return;
+        for (const selected of targets) {
+          const root = topLevelBoardRoot(selected);
+          if (root instanceof IText || root instanceof Textbox || root instanceof FabricText) {
+            root.set("fontSize", fontSize);
+            changed = true;
+          } else if (root instanceof Group) {
+            const text = root.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
+            if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
+              text.set("fontSize", fontSize);
+              changed = true;
+            }
           }
-        } else {
-          return;
         }
 
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     const applyMarkTextAlign = useCallback(
       (align: BoardMarkTextAlign) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const active = canvas.getActiveObject();
-        if (!active) return;
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
+        let changed = false;
 
-        if (active instanceof IText || active instanceof Textbox || active instanceof FabricText) {
-          active.set("textAlign", align);
-        } else if (active instanceof Group) {
-          const text = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
-          if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
-            text.set("textAlign", align);
-          } else {
-            return;
+        for (const selected of targets) {
+          const root = topLevelBoardRoot(selected);
+          if (root instanceof IText || root instanceof Textbox || root instanceof FabricText) {
+            root.set("textAlign", align);
+            changed = true;
+          } else if (root instanceof Group) {
+            const text = root.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
+            if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
+              text.set("textAlign", align);
+              changed = true;
+            }
           }
-        } else {
-          return;
         }
 
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     const applyMarkFontFamily = useCallback(
       (font: BoardMarkTextFont) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const active = canvas.getActiveObject();
-        if (!active) return;
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
         const fontFamily = MARK_TEXT_FONTS[font];
+        let changed = false;
 
-        if (active instanceof IText || active instanceof Textbox || active instanceof FabricText) {
-          active.set("fontFamily", fontFamily);
-        } else if (active instanceof Group) {
-          const text = active.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
-          if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
-            text.set("fontFamily", fontFamily);
-          } else {
-            return;
+        for (const selected of targets) {
+          const root = topLevelBoardRoot(selected);
+          if (root instanceof IText || root instanceof Textbox || root instanceof FabricText) {
+            root.set("fontFamily", fontFamily);
+            changed = true;
+          } else if (root instanceof Group) {
+            const text = root.getObjects().find((o) => o instanceof Textbox || o instanceof IText || o instanceof FabricText);
+            if (text instanceof Textbox || text instanceof IText || text instanceof FabricText) {
+              text.set("fontFamily", fontFamily);
+              changed = true;
+            }
           }
-        } else {
-          return;
         }
 
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     const applyMarkColor = useCallback(
       (hex: string) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return;
-        const selected = deleteTargetRef.current ?? canvas.getActiveObject();
-        if (!selected) return;
+        const targets = getRadialActionTargets();
+        if (!targets.length) return;
 
-        const selectedRole = structureProp(selected as unknown as FabricObjectType, "structureRole");
-        const selectedStructureType = structureProp(selected as unknown as FabricObjectType, "structureType");
-        if (
-          selectedStructureType === "eisenhower" &&
-          typeof selectedRole === "string" &&
-          selectedRole.startsWith("eisenhower-quadrant-") &&
-          selected instanceof Rect
-        ) {
-          selected.set({ fill: hex, quadrantColor: hex });
-          canvas.requestRenderAll();
-          recordHistory();
-          scheduleSave();
-          return;
+        if (targets.length === 1) {
+          const selected = deleteTargetRef.current ?? targets[0];
+          const selectedRole = structureProp(selected as unknown as FabricObjectType, "structureRole");
+          const selectedStructureType = structureProp(selected as unknown as FabricObjectType, "structureType");
+          if (
+            selectedStructureType === "eisenhower" &&
+            typeof selectedRole === "string" &&
+            selectedRole.startsWith("eisenhower-quadrant-") &&
+            selected instanceof Rect
+          ) {
+            selected.set({ fill: hex, quadrantColor: hex });
+            canvas.requestRenderAll();
+            recordHistory();
+            scheduleSave();
+            return;
+          }
         }
-
-        let root: FabricObject = selected;
-        while (root.group) root = root.group;
 
         const isTextObject = (o: FabricObject) =>
           o instanceof IText ||
@@ -5645,45 +5814,54 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           o.type === "textbox" ||
           o.type === "text";
 
-        const structureType = structureProp(root, "structureType");
-        if (
-          structureType === "calendar" ||
-          structureType === "eisenhower" ||
-          structureType === "checkbox" ||
-          structureType === "numbered_list" ||
-          structureType === "bullet" ||
-          structureType === "divider"
-        ) {
-          applyDynamicDecalColor(root, hex);
-        } else if (isTextObject(root)) {
-          root.set("fill", hex);
-        } else if (isStickyRect(root)) {
-          root.set({ fill: hex, stroke: stickyStrokeForFill(hex) });
-        } else if (root.get("markKind") === "sticky") {
-          const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
-          if (rect instanceof Rect) {
-            rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
-          }
-        } else if (root.get("markKind") === "parchment") {
-          applyParchmentSurfaceColor(root as Group, hex);
-        } else if (root.get("markKind") === "shape" && root.get("textCapable")) {
-          const shapeObj = root
-            .getObjects()
-            .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
-          if (shapeObj) shapeObj.set({ stroke: hex, fill: `${hex}33` });
-          drawColorRef.current = hex;
-        } else if (root.get("markKind") === "shape") {
-          root.set({ stroke: hex, fill: `${hex}33` });
-          drawColorRef.current = hex;
-        } else if (root.get("markKind") === "draw" || root.type === "path") {
-          root.set({ stroke: hex });
-          drawColorRef.current = hex;
-        } else if (root instanceof Group) {
-          if (root.type === "activeSelection") {
-            const text = root.getObjects().find(isTextObject);
-            if (!text) return;
-            text.set("fill", hex);
-          } else {
+        let changed = false;
+        for (const selected of targets) {
+          let root: FabricObject = topLevelBoardRoot(selected);
+
+          const structureType = structureProp(root, "structureType");
+          if (
+            structureType === "calendar" ||
+            structureType === "eisenhower" ||
+            structureType === "checkbox" ||
+            structureType === "numbered_list" ||
+            structureType === "bullet" ||
+            structureType === "divider"
+          ) {
+            applyDynamicDecalColor(root, hex);
+            changed = true;
+          } else if (isTextObject(root)) {
+            root.set("fill", hex);
+            changed = true;
+          } else if (isStickyRect(root)) {
+            root.set({ fill: hex, stroke: stickyStrokeForFill(hex) });
+            changed = true;
+          } else if (root.get("markKind") === "sticky") {
+            const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
+            if (rect instanceof Rect) {
+              rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
+              changed = true;
+            }
+          } else if (root.get("markKind") === "parchment") {
+            applyParchmentSurfaceColor(root as Group, hex);
+            changed = true;
+          } else if (root.get("markKind") === "shape" && root.get("textCapable")) {
+            const shapeObj = root
+              .getObjects()
+              .find((o) => o.get("markKind") !== "shape-text" && !(o instanceof Textbox) && !(o instanceof IText));
+            if (shapeObj) {
+              shapeObj.set({ stroke: hex, fill: `${hex}33` });
+              drawColorRef.current = hex;
+              changed = true;
+            }
+          } else if (root.get("markKind") === "shape") {
+            root.set({ stroke: hex, fill: `${hex}33` });
+            drawColorRef.current = hex;
+            changed = true;
+          } else if (root.get("markKind") === "draw" || root.type === "path") {
+            root.set({ stroke: hex });
+            drawColorRef.current = hex;
+            changed = true;
+          } else if (root instanceof Group) {
             const rect = root.getObjects().find((o) => o.get("markKind") === "sticky-bg");
             const shapeObj = root
               .getObjects()
@@ -5691,23 +5869,26 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             const textbox = root.getObjects().find((o) => o instanceof Textbox);
             if (rect instanceof Rect && textbox instanceof Textbox) {
               rect.set({ fill: hex, stroke: hex === "#FFF9C4" ? "#E8D44D" : hex });
+              changed = true;
             } else if (shapeObj && root.get("textCapable")) {
               shapeObj.set({ stroke: hex, fill: `${hex}33` });
+              changed = true;
             } else {
               const text = root.getObjects().find(isTextObject);
-              if (!text) return;
-              text.set("fill", hex);
+              if (text) {
+                text.set("fill", hex);
+                changed = true;
+              }
             }
           }
-        } else {
-          return;
         }
 
+        if (!changed) return;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
       },
-      [readOnly, recordHistory, scheduleSave],
+      [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
     );
 
     useEffect(() => {
@@ -6150,6 +6331,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   stickerCapable={quickSelector.stickerCapable}
                   imageCapable={quickSelector.imageCapable}
                   lineCapable={quickSelector.lineCapable}
+                  batchMixed={quickSelector.batchMixed}
                   canPaste={canPasteClipboard()}
                   onPick={handleQuickPick}
                   onClose={closeQuickSelector}

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Camera, Loader2, Upload } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -16,31 +16,97 @@ type BoardImagePickerProps = {
   userId: string;
   onPickImage?: (url: string) => void;
   embedded?: boolean;
-  /** Workspace Image Library: user uploads only (no stock collection). */
-  uploadsOnly?: boolean;
 };
 
-type Tab = "library" | "uploads";
+type Tab = "collection" | "uploads" | "affixements" | "foundObjects";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "collection", label: "Our Collection" },
+  { id: "affixements", label: "Affixements" },
+  { id: "foundObjects", label: "Found Objects" },
+  { id: "uploads", label: "Your Library" },
+];
+
+const COLLECTION_THEMES = BOARD_IMAGE_THEMES.filter(
+  (theme) => theme !== "Found Objects" && theme !== "Affixements",
+);
+
+const GRID_BATCH = 24;
 
 const uploadsCache = new Map<string, { path: string; signedUrl: string }[]>();
 
-export function BoardImagePicker({
-  userId,
-  onPickImage,
-  embedded,
-  uploadsOnly = false,
-}: BoardImagePickerProps) {
-  const [tab, setTab] = useState<Tab>(uploadsOnly ? "uploads" : "library");
+function isCutoutTheme(theme: string) {
+  return theme === "Found Objects" || theme === "Affixements";
+}
+
+function pickerThumbUrl(img: BoardImageAsset) {
+  return img.thumbUrl ?? img.url;
+}
+
+function LazyPickerImage({
+  src,
+  alt,
+  cutout,
+  onClick,
+}: {
+  src: string;
+  alt: string;
+  cutout?: boolean;
+  onClick?: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "160px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className="group overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
+      onClick={onClick}
+    >
+      <div className={cn("aspect-square w-full", cutout && "bg-white")}>
+        {visible ? (
+          <img
+            src={src}
+            alt={alt}
+            className={cn("h-full w-full", cutout ? "object-contain p-2" : "object-cover")}
+            decoding="async"
+            fetchPriority="low"
+          />
+        ) : (
+          <div className="h-full w-full animate-pulse bg-neutral-100" aria-hidden />
+        )}
+      </div>
+    </button>
+  );
+}
+
+export function BoardImagePicker({ userId, onPickImage, embedded }: BoardImagePickerProps) {
+  const [tab, setTab] = useState<Tab>("collection");
   const [theme, setTheme] = useState<BoardImageTheme | "all">("all");
-  const [library, setLibrary] = useState<BoardImageAsset[]>(() =>
-    uploadsOnly ? [] : (getCachedBoardImageLibrary() ?? []),
-  );
+  const [library, setLibrary] = useState<BoardImageAsset[]>(() => getCachedBoardImageLibrary() ?? []);
   const [uploads, setUploads] = useState(() => uploadsCache.get(userId) ?? []);
-  const [libraryLoading, setLibraryLoading] = useState(
-    () => !uploadsOnly && getCachedBoardImageLibrary() === null,
-  );
+  const [libraryLoading, setLibraryLoading] = useState(() => getCachedBoardImageLibrary() === null);
   const [uploadsLoading, setUploadsLoading] = useState(() => !uploadsCache.has(userId));
   const [uploading, setUploading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(GRID_BATCH);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const refreshUploads = useCallback(async () => {
     const list = await listUserUploads(userId);
@@ -50,19 +116,6 @@ export function BoardImagePicker({
 
   useEffect(() => {
     let cancelled = false;
-
-    if (uploadsOnly) {
-      const hadUploads = uploadsCache.has(userId);
-      setUploadsLoading(!hadUploads);
-      void refreshUploads()
-        .catch(() => undefined)
-        .finally(() => {
-          if (!cancelled) setUploadsLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
 
     const hadUploads = uploadsCache.has(userId);
     const hadLibrary = getCachedBoardImageLibrary() !== null;
@@ -96,13 +149,44 @@ export function BoardImagePicker({
     return () => {
       cancelled = true;
     };
-  }, [refreshUploads, uploadsOnly, userId]);
+  }, [refreshUploads, userId]);
 
-  const filtered = theme === "all" ? library : filterLibraryByTheme(library, theme);
+  const collectionLibrary = library.filter((img) => !isCutoutTheme(img.theme));
+  const filtered =
+    tab === "collection"
+      ? theme === "all"
+        ? collectionLibrary
+        : filterLibraryByTheme(collectionLibrary, theme)
+      : tab === "affixements"
+        ? library.filter((img) => img.theme === "Affixements")
+        : tab === "foundObjects"
+          ? library.filter((img) => img.theme === "Found Objects")
+          : [];
+
+  useEffect(() => {
+    setVisibleCount(GRID_BATCH);
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [tab, theme]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 96) {
+        setVisibleCount((count) => Math.min(count + GRID_BATCH, filtered.length));
+      }
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [filtered.length, tab, theme]);
+
   const activeTabLoading =
-    tab === "library" && !uploadsOnly
-      ? libraryLoading && library.length === 0
-      : uploadsLoading && uploads.length === 0;
+    tab === "uploads"
+      ? uploadsLoading && uploads.length === 0
+      : libraryLoading && library.length === 0;
+
+  const visibleLibrary = filtered.slice(0, visibleCount);
+  const visibleUploads = uploads.slice(0, visibleCount);
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,28 +203,27 @@ export function BoardImagePicker({
     }
   };
 
+  const gridClass = cn("grid gap-2", embedded ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5" : "grid-cols-2");
+
   return (
     <div className={cn("flex h-full flex-col bg-transparent", !embedded && "border-r border-neutral-200 bg-white")}>
-      {!uploadsOnly && (
-        <div className="flex items-center justify-center gap-4 border-b border-neutral-200 px-3 py-2">
-          {(["library", "uploads"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={cn(
-                "px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wide",
-                "border-b border-transparent",
-                tab === t ? "border-neutral-500 text-neutral-900" : "text-neutral-500 hover:text-neutral-800",
-              )}
-              onClick={() => setTab(t)}
-            >
-              {t === "library" ? "Our Collection" : "Your Library"}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-4 border-b border-neutral-200">
+        {TABS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            className={cn(
+              "border-b-2 border-transparent px-1 py-2.5 text-center text-[8px] font-semibold uppercase leading-tight tracking-wide sm:px-2 sm:text-[10px]",
+              tab === id ? "border-neutral-500 text-neutral-900" : "text-neutral-500 hover:text-neutral-800",
+            )}
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {tab === "library" && !uploadsOnly && (
+      {tab === "collection" && (
         <div className="border-b border-neutral-100 p-2">
           <select
             className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1.5 text-xs"
@@ -148,7 +231,7 @@ export function BoardImagePicker({
             onChange={(e) => setTheme(e.target.value as BoardImageTheme | "all")}
           >
             <option value="all">All themes</option>
-            {BOARD_IMAGE_THEMES.map((th) => (
+            {COLLECTION_THEMES.map((th) => (
               <option key={th} value={th}>
                 {th}
               </option>
@@ -157,7 +240,7 @@ export function BoardImagePicker({
         </div>
       )}
 
-      {(tab === "uploads" || uploadsOnly) && (
+      {tab === "uploads" && (
         <div className="flex gap-2 border-b border-neutral-100 p-2">
           <Button
             variant="secondary"
@@ -175,48 +258,33 @@ export function BoardImagePicker({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-2">
         {activeTabLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-neutral-400" />
           </div>
-        ) : tab === "library" && !uploadsOnly ? (
-          <div className="grid grid-cols-2 gap-2">
-            {filtered.map((img) => {
-              const cutout = img.theme === "Found Objects" || img.theme === "Affixements";
-              return (
-              <button
-                key={img.id}
-                type="button"
-                className="group overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
-                onClick={() => onPickImage?.(img.url)}
-              >
-                <div className={cn("aspect-square w-full", cutout && "bg-white")}>
-                  <img
-                    src={img.url}
-                    alt={img.description}
-                    className={cn("h-full w-full", cutout ? "object-contain p-2" : "object-cover")}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              </button>
-            );
-            })}
-          </div>
-        ) : uploads.length === 0 ? (
-          <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>
+        ) : tab === "uploads" ? (
+          uploads.length === 0 ? (
+            <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>
+          ) : (
+            <div className={gridClass}>
+              {visibleUploads.map((u) => (
+                <LazyPickerImage key={u.path} src={u.signedUrl} alt="" onClick={() => onPickImage?.(u.signedUrl)} />
+              ))}
+            </div>
+          )
+        ) : filtered.length === 0 ? (
+          <p className="px-1 py-4 text-center text-xs text-neutral-500">No images in this category yet.</p>
         ) : (
-          <div className={cn("grid gap-2", uploadsOnly ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5" : "grid-cols-2")}>
-            {uploads.map((u) => (
-              <button
-                key={u.path}
-                type="button"
-                className="overflow-hidden rounded-md border border-neutral-200 hover:ring-2 hover:ring-neutral-900/20"
-                onClick={() => onPickImage?.(u.signedUrl)}
-              >
-                <img src={u.signedUrl} alt="" className="aspect-square w-full object-cover" loading="lazy" decoding="async" />
-              </button>
+          <div className={gridClass}>
+            {visibleLibrary.map((img) => (
+              <LazyPickerImage
+                key={img.id}
+                src={pickerThumbUrl(img)}
+                alt={img.description}
+                cutout={isCutoutTheme(img.theme)}
+                onClick={() => onPickImage?.(img.url)}
+              />
             ))}
           </div>
         )}

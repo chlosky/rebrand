@@ -30,8 +30,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
+import { BRAND_LOGO_CLASS } from "@/lib/siteBrand";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 
@@ -97,7 +97,7 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
         <button
           type="button"
           onClick={() => navigate("/workspace")}
-          className={cn("font-welcome-serif text-lg", dark ? "text-white" : "text-zinc-900")}
+          className={cn(BRAND_LOGO_CLASS, dark ? "text-white" : "text-neutral-900")}
         >
           palette plotting
         </button>

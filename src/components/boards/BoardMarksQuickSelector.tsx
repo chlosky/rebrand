@@ -205,6 +205,7 @@ type BoardMarksQuickSelectorProps = {
   stickerCapable?: boolean;
   imageCapable?: boolean;
   lineCapable?: boolean;
+  batchMixed?: boolean;
   canPaste?: boolean;
   onPick: (action: BoardMarksQuickAction) => void;
   onClose: () => void;
@@ -295,6 +296,7 @@ export function BoardMarksQuickSelector({
   stickerCapable = false,
   imageCapable = false,
   lineCapable = false,
+  batchMixed = false,
   canPaste = false,
   onPick,
   onClose,
@@ -346,6 +348,11 @@ export function BoardMarksQuickSelector({
 
   const wheelItems = (() => {
     if (mode === "object") {
+      if (batchMixed) {
+        const actions = OBJECT_ACTIONS.filter((item) => item.id === "copy" || item.id === "delete");
+        const angles = spreadAngles(actions.length);
+        return actions.map((item, i) => ({ ...item, angle: angles[i] }));
+      }
       if (imageCapable) {
         const angles = spreadAngles(IMAGE_OBJECT_ACTIONS.length);
         return IMAGE_OBJECT_ACTIONS.map((item, i) => ({ ...item, angle: angles[i] }));

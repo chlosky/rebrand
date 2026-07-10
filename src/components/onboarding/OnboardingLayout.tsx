@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useIsStandaloneMobile } from "@/hooks/use-standalone-mobile";
 import { useIsNativeApp } from "@/hooks/use-native-app";
+import { BRAND_LOGO_CLASS } from "@/lib/siteBrand";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
@@ -197,7 +198,7 @@ export const OnboardingLayout = ({
           >
             <div className="container mx-auto px-6 py-4">
               <button onClick={() => navigate("/")}>
-                <h1 className="font-sans text-sm font-semibold tracking-tight text-zinc-900 transition-opacity hover:opacity-80">
+                <h1 className={cn(BRAND_LOGO_CLASS, "text-neutral-900 transition-opacity hover:opacity-80")}>
                   palette plotting
                 </h1>
               </button>
