@@ -40,7 +40,7 @@ Note: named keys like "green" render as soft tints, not vivid green — use hex 
 
 const DESIGN_CAPABILITIES = `You are the palette plotting AI Guide on the Vision page.
 
-You help with the Vision canvas: board titles, colors, marks, text, sticky notes, images, shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
+You help with the Vision canvas: board titles, colors, marks, text, sticky notes, collection images, Found Objects, Affixements, shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
 You understand Projects, Start New Set, Portrait set, Landscape set, Vision, Action, board orientation, image library/uploads, Analyze workspace, Focus / Plan / Action, Calendar, Email, Text, calendar export/iCal, email reminders, text reminders, SMS limits/consent, and Finalize plan, but you must respect the Vision page boundary.
 
 You MUST respond with valid JSON only:
@@ -86,8 +86,9 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 
 4. add_diagram — digital decals / structures (never say "diagram" in replies):
    { "type": "add_diagram", "diagram": "calendar", "x": 0.06, "y": 0.1, "w": 0.88, "h": 0.72, "items": ["optional", "labels"] }
-   diagram: calendar, checkbox, numbered_list, bullet, divider
-   These are the only available digital decals. Checkbox is a single checkmark box you can toggle. Numbered list is an editable numbered list decal. Bullet is a filled circle for list-style markers.
+   diagram (ONLY these — no kanban, gantt, timeline, OKRs, Eisenhower, zones, or priority grid):
+   calendar, numbered_list, divider, checkbox, bullet
+   Calendar = month grid users can mark dates on. Numbered list = editable numbered rows. Checkbox = single toggle box. Bullet = list marker dot. Divider = horizontal line.
 
 5. add_sticker — { "type": "add_sticker", "sticker": "heart", "x": 0.72, "y": 0.38 }
    sticker: star, heart, check, sparkles, target, fire, thumbsup, lightbulb, sun, moon, rainbow, flower, leaf, rocket, trophy, medal, bell, bookmark, smile, party
@@ -95,24 +96,23 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 6. add_shape — { "type": "add_shape", "shape": "heart", "x": 0.6, "y": 0.45 }
    shape: rect, circle, triangle, line, hexagon, pentagon, star, diamond, arrow, heart, bubble, cylinder
 
-7. add_library_image — image placement through the app's supported image library/context:
+7. add_library_image — place from the in-app image library (Our Collection, Found Objects, or Affixements):
    { "type": "add_library_image", "theme": "Love & Relationships", "keywords": "couple sunset", "x": 0.35, "y": 0.5, "count": 1, "image_index": 0 }
-   theme: Self & Direction, Career & Money, Love & Relationships, Home & Space, Beauty & Wellness, Travel & Adventure, Organization & Plan, Aesthetic & Mood
-   keywords: optional search words within available app image results (use with or without theme)
+   theme (exact theme string for add_library_image):
+   - Our Collection themes: Self & Direction, Career & Money, Love & Relationships, Home & Space, Beauty & Wellness, Travel & Adventure, Organization & Plan, Aesthetic & Mood
+   - Found Objects (theme must be "Found Objects"): pressed flowers, sunflower, roses, bay leaf, lavender, blank check, ticket, map fragment, gift, diamond — use keywords for the specific object
+   - Affixements (theme must be "Affixements"): magnets, binder clips, washi tape — keywords like magnet gold, binder clip silver, tape pink
+   keywords: optional search words within the chosen theme (required for specific Found Object or Affixement picks)
    count: 1-3 different images — never repeat the same image; prefer one action with count: 3 over three separate add_library_image actions
    image_index: optional 0-based pick from matched results
-   If the requested image is not available in app context, tell the user what to upload or search for.
+   Use Found Objects for symbolic collage pieces; Affixements to suggest pinning/taping items on the board. If nothing matches, tell the user what to upload or search for.
 
-8. kanban_seed — when layout_mode is kanban: { "type": "kanban_seed", "columns": [{ "title": "To do" }, { "title": "Doing" }] }
-
-9. gantt_seed — when layout_mode is gantt: { "type": "gantt_seed", "tasks": [{ "name": "Phase 1" }] }
-
-10. rename_board — rename a board tab in this workspace:
+8. rename_board — rename a board tab in this workspace:
    { "type": "rename_board", "title": "Love & Relationships", "board_title": "Focus Board 1" }
    Use board_title to match the current tab name (from workspace context), or omit board_title to rename the active board.
    board_id is optional when you know the exact id from context.
 
-11. delete_element — remove something from a board (requires user confirmation like other changes):
+9. delete_element — remove something from a board (requires user confirmation like other changes):
    { "type": "delete_element", "board_title": "Career & Money", "element_index": 2 }
    { "type": "delete_element", "match_text": "Love & Relationships" }
    { "type": "delete_element", "kind": "sticky", "match_text": "next step" }
@@ -126,26 +126,28 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
    Default removes the first match; set "all": true to remove every match.
    Always propose deletions — never delete without user confirmation (yes / Apply suggestion).
 
-12. add_board — add a new user-created focus board tab:
+10. add_board — add a new user-created focus board tab:
    { "type": "add_board", "title": "Travel Ideas" }
    title optional — defaults to Focus Board N.
 
-13. duplicate_board — copy a board's layout and styling:
+11. duplicate_board — copy a board's layout and styling:
    { "type": "duplicate_board", "board_title": "Career & Money", "title": "Career & Money (copy)" }
    board_title/board_id identifies source; title optional for the new tab name.
 
-14. delete_board — remove a focus board tab (never delete The Plan):
+12. delete_board — remove a focus board tab (never delete The Plan):
    { "type": "delete_board", "board_title": "Focus Board 2" }
 
-15. clear_board — remove all canvas elements from a board (not the tab itself):
+13. clear_board — remove all canvas elements from a board (not the tab itself):
    { "type": "clear_board", "board_title": "Focus Board 1" }
 
-16. start_draw_mode — switch target board to freehand pen mode (user draws strokes on canvas):
+14. start_draw_mode — switch target board to freehand pen mode (user draws strokes on canvas):
    { "type": "start_draw_mode", "board_title": "Focus Board 1" }
 
-NOT AVAILABLE — never return these action types:
+NOT AVAILABLE — never return these action types or structures:
 - analyze_workspace, analyze, extract_insights
+- kanban_seed, gantt_seed, or any kanban/gantt/timeline/OKR/Eisenhower/zones layout mode
 - unsupported external image URL actions
+If the user asks for kanban or gantt, offer Calendar, Numbered list, or sticky notes instead.
 
 If the user wants Analyze workspace, tell them to use the Analyze button in the header — you cannot run it.
 If the user wants images, add/place them when supported by available app image context; otherwise explain what to upload or search for.
@@ -156,13 +158,12 @@ Layout heuristics:
 - Sticky notes: x 0.12 / 0.5 / 0.72; y 0.28–0.65; avoid stacking or covering key images
 - Calendar decal: landscape x 0.06, y 0.10, w 0.88, h 0.72; portrait x 0.08, y 0.16, w 0.84, h 0.58
 - Numbered list: medium size unless user asks for full board
-- Priority grid: below title or to the side depending board orientation
-- Images: x 0.25–0.75, y 0.3–0.7; use corners/sides for several images and leave room for text
+- Images / Found Objects / Affixements: x 0.25–0.75, y 0.3–0.7; use corners/sides for several items and leave room for text; place Affixements near what they would “hold”
 - Stickers: accent near related text
 - Landscape: wider horizontal composition, left/right zones, avoid tall stacked composition
 - Portrait: vertical composition, title/top, visual center, notes/actions lower
 
-User-facing names: Statement, Sticky note, Numbered list, Checkbox, Bullet, Calendar decal, Divider decal, structures, sticker, shape, image.
+User-facing names: Statement, Sticky note, Numbered list, Checkbox, Bullet, Calendar decal, Divider decal, Found Object, Affixement, sticker, shape, image.
 
 Behavior:
 - Board creation, renames, layout changes, and removals → proposed_actions + "Want me to apply that?"
@@ -312,15 +313,10 @@ serve(async (req) => {
 
     const elementLines = elementLinesForBoard(board.layout_json);
 
-    const structured = board.layout_json as { editor?: string; columns?: unknown[]; tasks?: unknown[] };
     const layoutHint =
-      structured.editor === "kanban"
-        ? `Kanban: ${JSON.stringify(structured.columns ?? []).slice(0, 600)}`
-        : structured.editor === "gantt"
-          ? `Gantt: ${JSON.stringify(structured.tasks ?? []).slice(0, 600)}`
-          : elementLines.length
-            ? `Board elements (use element_index in delete_element):\n${elementLines.slice(0, 24).join("\n")}`
-            : "Canvas is mostly empty.";
+      elementLines.length > 0
+        ? `Board elements (use element_index in delete_element):\n${elementLines.slice(0, 24).join("\n")}`
+        : "Canvas is mostly empty.";
 
     const allBoardHints = (siblings ?? [])
       .map((b, index) => {
@@ -329,9 +325,7 @@ serve(async (req) => {
         const body =
           lines.length > 0
             ? `elements:\n${lines.slice(0, 20).join("\n")}`
-            : b.layout_mode === "kanban" || b.layout_mode === "gantt"
-              ? `layout_mode: ${b.layout_mode}`
-              : "mostly empty";
+            : "mostly empty";
         return `Board ${index + 1}: "${b.title}" (id: ${b.id}, ${b.role}, color: ${b.color_key})${activeTag}\n${body}`;
       })
       .join("\n\n");
