@@ -450,6 +450,133 @@ function topLevelBoardRoot(obj: FabricObject): FabricObject {
   return root;
 }
 
+function isStrayActiveSelectionObject(obj: FabricObject): boolean {
+  if (obj instanceof ActiveSelection) return true;
+  const type = String(obj.type ?? "").toLowerCase();
+  return type === "activeselection";
+}
+
+function stripStrayActiveSelectionsFromCanvas(canvas: Canvas): boolean {
+  let removed = false;
+  for (const obj of [...canvas.getObjects()]) {
+    if (!isStrayActiveSelectionObject(obj)) continue;
+    canvas.remove(obj);
+    removed = true;
+  }
+  if (removed) canvas.discardActiveObject();
+  return removed;
+}
+
+function stripActiveSelectionsFromLayoutJson(layout: Record<string, unknown>): Record<string, unknown> {
+  const objects = (layout as { objects?: Record<string, unknown>[] }).objects;
+  if (!Array.isArray(objects)) return layout;
+  const filtered = objects.filter((obj) => String(obj?.type ?? "").toLowerCase() !== "activeselection");
+  if (filtered.length === objects.length) return layout;
+  return { ...layout, objects: filtered };
+}
+
+export type GuideElementCriteria = {
+  element_index?: number;
+  match_text?: string;
+  kind?: string;
+  sticker?: string;
+  shape?: string;
+  structure?: string;
+  all?: boolean;
+};
+
+function guideTextFromObject(obj: FabricObject): string {
+  if (obj instanceof FabricText || obj instanceof Textbox || obj instanceof IText) {
+    return (obj.text ?? "").toString().trim();
+  }
+  if (obj instanceof Group) {
+    for (const child of obj.getObjects()) {
+      const nested = guideTextFromObject(child);
+      if (nested) return nested;
+    }
+  }
+  return "";
+}
+
+function describeGuideObject(obj: FabricObject) {
+  const structureType = structureProp(obj, "structureType") as string | undefined;
+  if (structureType) {
+    return { kind: "structure", structure: structureType.toLowerCase(), text: "" };
+  }
+  const markKind = (obj.get("markKind") as string | undefined)?.toLowerCase();
+  if (markKind === "sticky") {
+    return { kind: "sticky", text: guideTextFromObject(obj).toLowerCase() };
+  }
+  if (markKind === "parchment") {
+    return { kind: "parchment", text: guideTextFromObject(obj).toLowerCase() };
+  }
+  if (markKind === "sticker") {
+    return {
+      kind: "sticker",
+      sticker: String(obj.get("stickerId") ?? "").toLowerCase(),
+      text: guideTextFromObject(obj).toLowerCase(),
+    };
+  }
+  if (markKind === "shape") {
+    return {
+      kind: "shape",
+      shape: String(obj.get("shapeType") ?? "shape").toLowerCase(),
+      text: guideTextFromObject(obj).toLowerCase(),
+    };
+  }
+  if (markKind === "image" || markKind === "image-frame") {
+    return { kind: "image", text: "" };
+  }
+  if (obj instanceof FabricImage) {
+    return { kind: markKind === "sticker" ? "sticker" : "image", text: "" };
+  }
+  if (obj instanceof FabricText || obj instanceof Textbox || obj instanceof IText) {
+    return {
+      kind: markKind === "sticker" ? "sticker" : "text",
+      text: guideTextFromObject(obj).toLowerCase(),
+    };
+  }
+  return { kind: "element", text: guideTextFromObject(obj).toLowerCase() };
+}
+
+function findGuideElements(canvas: Canvas, criteria: GuideElementCriteria): FabricObject[] {
+  const matchText =
+    typeof criteria.match_text === "string" ? criteria.match_text.trim().toLowerCase() : "";
+  const kindFilter = typeof criteria.kind === "string" ? criteria.kind.trim().toLowerCase() : "";
+  const stickerFilter = typeof criteria.sticker === "string" ? criteria.sticker.trim().toLowerCase() : "";
+  const shapeFilter = typeof criteria.shape === "string" ? criteria.shape.trim().toLowerCase() : "";
+  const structureFilter =
+    typeof criteria.structure === "string" ? criteria.structure.trim().toLowerCase() : "";
+
+  const objects = canvas.getObjects();
+  const matchesIndex = (index: number) =>
+    typeof criteria.element_index === "number" &&
+    Number.isFinite(criteria.element_index) &&
+    Math.round(criteria.element_index) === index;
+
+  const matchesCriteria = (obj: FabricObject, index: number) => {
+    if (matchesIndex(index)) return true;
+    const desc = describeGuideObject(obj);
+    if (kindFilter && desc.kind !== kindFilter) return false;
+    if (stickerFilter && (!("sticker" in desc) || desc.sticker !== stickerFilter)) return false;
+    if (shapeFilter && (!("shape" in desc) || desc.shape !== shapeFilter)) return false;
+    if (structureFilter && (!("structure" in desc) || desc.structure !== structureFilter)) return false;
+    if (matchText && !desc.text.includes(matchText)) return false;
+    if (!kindFilter && !stickerFilter && !shapeFilter && !structureFilter && !matchText) return false;
+    return true;
+  };
+
+  const matched: FabricObject[] = [];
+  for (let index = 0; index < objects.length; index += 1) {
+    const obj = objects[index];
+    if (!matchesCriteria(obj, index)) continue;
+    matched.push(obj);
+    if (!criteria.all) break;
+  }
+  if (!criteria.all && matched.length > 1) matched.length = 1;
+  return matched;
+}
+
 function radialKindForRoot(root: FabricObject): RadialObjectKind {
   const structureType = structureProp(root, "structureType");
   if (structureType) return "structure";
@@ -2701,6 +2828,7 @@ function restoreAllGroupsAfterLoad(canvas: Canvas) {
 /** Rebuild clip paths and group layout after loadFromJSON (editor + export). */
 export function restoreBoardLayoutAfterLoad(canvas: Canvas) {
   restoreAllGroupsAfterLoad(canvas);
+  stripStrayActiveSelectionsFromCanvas(canvas);
   for (const obj of canvas.getObjects()) {
     if (structureProp(obj, "structureId")) continue;
     if (obj instanceof FabricImage && obj.get("markKind") !== "frame-image") {
@@ -3512,15 +3640,20 @@ export type BoardCanvasHandle = {
   canPasteClipboard: () => boolean;
   hasSelection: () => boolean;
   deleteSelected: () => void;
-  removeElements: (criteria: {
-    element_index?: number;
-    match_text?: string;
-    kind?: string;
-    sticker?: string;
-    shape?: string;
-    structure?: string;
-    all?: boolean;
-  }) => number;
+  removeElements: (criteria: GuideElementCriteria) => number;
+  styleElements: (
+    criteria: GuideElementCriteria,
+    style: {
+      round?: boolean | "toggle";
+      frame?: BoardMarkShapeType;
+      color?: string;
+      dash?: boolean | "toggle";
+      font_size?: BoardMarkTextSize;
+      text_align?: BoardMarkTextAlign;
+      font?: BoardMarkTextFont;
+    },
+  ) => number;
+  duplicateElements: (criteria: GuideElementCriteria, offset?: { x: number; y: number }) => Promise<number>;
   resetBoard: () => void;
   undo: () => void | Promise<void>;
   redo: () => void | Promise<void>;
@@ -3696,7 +3829,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!canvas || readOnly) return;
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => {
-        const layout = withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize);
+        stripStrayActiveSelectionsFromCanvas(canvas);
+        const layout = stripActiveSelectionsFromLayoutJson(
+          withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize),
+        );
         lastEmittedLayoutRef.current = { boardId, json: JSON.stringify(layout) };
         onSave(layout);
       }, 700);
@@ -3710,7 +3846,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       });
     }, []);
 
-    const snapshotCanvas = useCallback((canvas: Canvas) => JSON.stringify(canvas.toJSON()), []);
+    const snapshotCanvas = useCallback((canvas: Canvas) => {
+      stripStrayActiveSelectionsFromCanvas(canvas);
+      return JSON.stringify(
+        stripActiveSelectionsFromLayoutJson(canvas.toJSON() as Record<string, unknown>),
+      );
+    }, []);
 
     const resetHistory = useCallback(
       (canvas: Canvas) => {
@@ -3800,7 +3941,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         restoringHistoryRef.current = true;
         const bg = boardFillForKey(colorKey);
         try {
-          await canvas.loadFromJSON(JSON.parse(json));
+          await canvas.loadFromJSON(stripActiveSelectionsFromLayoutJson(JSON.parse(json)));
         } catch (err) {
           console.warn("fabric history restore skipped", err);
           restoringHistoryRef.current = false;
@@ -4118,6 +4259,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         };
         canvas.on("object:modified", (event) => {
           const target = event.target;
+          if (target instanceof ActiveSelection) {
+            onHistoryDebounced();
+            return;
+          }
           if (isStickyRect(target)) {
             migrateStickyRectToGroup(canvas, target);
           } else if (structureProp(target, "structureType") === "divider") {
@@ -4152,7 +4297,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           }
           onHistoryDebounced();
         });
-        canvas.on("object:added", onHistoryImmediate);
+        canvas.on("object:added", (event) => {
+          const target = event.target as FabricObject | undefined;
+          if (target && isStrayActiveSelectionObject(target)) {
+            suppressHistoryRef.current = true;
+            canvas.remove(target);
+            canvas.discardActiveObject();
+            suppressHistoryRef.current = false;
+            canvas.requestRenderAll();
+            return;
+          }
+          onHistoryImmediate();
+        });
         canvas.on("object:removed", onHistoryImmediate);
         canvas.on("text:changed", (event) => {
           const target = event.target as FabricObject | undefined;
@@ -4227,10 +4383,22 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           refreshCalendarControlRef.current(canvas);
         };
         onSelectionChanged = handleSelectionChanged;
-        onSelectionCleared = () => refreshCalendarControlRef.current(canvas);
+        onSelectionCleared = () => {
+          refreshCalendarControlRef.current(canvas);
+          if (stripStrayActiveSelectionsFromCanvas(canvas)) {
+            canvas.requestRenderAll();
+          }
+        };
         canvas.on("selection:created", onSelectionChanged);
         canvas.on("selection:updated", onSelectionChanged);
         canvas.on("selection:cleared", onSelectionCleared);
+        canvas.on("mouse:up", () => {
+          window.requestAnimationFrame(() => {
+            if (stripStrayActiveSelectionsFromCanvas(canvas)) {
+              canvas.requestRenderAll();
+            }
+          });
+        });
         canvas.on("path:created", (opt) => {
           const path = opt.path;
           if (path) {
@@ -4420,7 +4588,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (hasObjects) {
           suppressHistoryRef.current = true;
           void canvas
-            .loadFromJSON(layoutJson)
+            .loadFromJSON(stripActiveSelectionsFromLayoutJson(layoutJson as Record<string, unknown>))
             .then(() => {
               if (cancelled || fabricRef.current !== canvas || loadedBoardRef.current !== loadKey) return;
               if (!fabricCanvasRenderable(canvas)) return;
@@ -5747,110 +5915,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     );
 
     const removeElements = useCallback(
-      (criteria: {
-        element_index?: number;
-        match_text?: string;
-        kind?: string;
-        sticker?: string;
-        shape?: string;
-        structure?: string;
-        all?: boolean;
-      }) => {
+      (criteria: GuideElementCriteria) => {
         const canvas = fabricRef.current;
         if (!canvas || readOnly) return 0;
 
-        const matchText =
-          typeof criteria.match_text === "string" ? criteria.match_text.trim().toLowerCase() : "";
-        const kindFilter = typeof criteria.kind === "string" ? criteria.kind.trim().toLowerCase() : "";
-        const stickerFilter = typeof criteria.sticker === "string" ? criteria.sticker.trim().toLowerCase() : "";
-        const shapeFilter = typeof criteria.shape === "string" ? criteria.shape.trim().toLowerCase() : "";
-        const structureFilter =
-          typeof criteria.structure === "string" ? criteria.structure.trim().toLowerCase() : "";
-
-        const textFromObject = (obj: FabricObject): string => {
-          if (obj instanceof FabricText || obj instanceof Textbox || obj instanceof IText) {
-            return (obj.text ?? "").toString().trim();
-          }
-          if (obj instanceof Group) {
-            for (const child of obj.getObjects()) {
-              const nested = textFromObject(child);
-              if (nested) return nested;
-            }
-          }
-          return "";
-        };
-
-        const describeObject = (obj: FabricObject) => {
-          const structureType = structureProp(obj, "structureType") as string | undefined;
-          if (structureType) {
-            return { kind: "structure", structure: structureType.toLowerCase(), text: "" };
-          }
-          const markKind = (obj.get("markKind") as string | undefined)?.toLowerCase();
-          if (markKind === "sticky") {
-            return { kind: "sticky", text: textFromObject(obj).toLowerCase() };
-          }
-          if (markKind === "parchment") {
-            return { kind: "parchment", text: textFromObject(obj).toLowerCase() };
-          }
-          if (markKind === "sticker") {
-            return {
-              kind: "sticker",
-              sticker: String(obj.get("stickerId") ?? "").toLowerCase(),
-              text: textFromObject(obj).toLowerCase(),
-            };
-          }
-          if (markKind === "shape") {
-            return {
-              kind: "shape",
-              shape: String(obj.get("shapeType") ?? "shape").toLowerCase(),
-              text: textFromObject(obj).toLowerCase(),
-            };
-          }
-          if (markKind === "image" || markKind === "image-frame") {
-            return { kind: "image", text: "" };
-          }
-          if (obj instanceof FabricImage) {
-            return { kind: markKind === "sticker" ? "sticker" : "image", text: "" };
-          }
-          if (obj instanceof FabricText || obj instanceof Textbox || obj instanceof IText) {
-            return {
-              kind: markKind === "sticker" ? "sticker" : "text",
-              text: textFromObject(obj).toLowerCase(),
-            };
-          }
-          return { kind: "element", text: textFromObject(obj).toLowerCase() };
-        };
-
-        const objects = canvas.getObjects();
-        const matchesIndex = (index: number) =>
-          typeof criteria.element_index === "number" &&
-          Number.isFinite(criteria.element_index) &&
-          Math.round(criteria.element_index) === index;
-
-        const matchesCriteria = (obj: FabricObject, index: number) => {
-          if (matchesIndex(index)) return true;
-          const desc = describeObject(obj);
-          if (kindFilter && desc.kind !== kindFilter) return false;
-          if (stickerFilter && (!("sticker" in desc) || desc.sticker !== stickerFilter)) return false;
-          if (shapeFilter && (!("shape" in desc) || desc.shape !== shapeFilter)) return false;
-          if (structureFilter && (!("structure" in desc) || desc.structure !== structureFilter)) return false;
-          if (matchText && !desc.text.includes(matchText)) return false;
-          if (!kindFilter && !stickerFilter && !shapeFilter && !structureFilter && !matchText) return false;
-          return true;
-        };
-
-        const toRemove: FabricObject[] = [];
-        for (let index = 0; index < objects.length; index += 1) {
-          const obj = objects[index];
-          if (!matchesCriteria(obj, index)) continue;
-          toRemove.push(obj);
-          if (!criteria.all) break;
-        }
-
-        if (!criteria.all && toRemove.length > 1) {
-          toRemove.length = 1;
-        }
-
+        const toRemove = findGuideElements(canvas, criteria);
         if (!toRemove.length) return 0;
 
         canvas.discardActiveObject();
@@ -5886,8 +5955,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!activeObject && radialTargetsRef.current.length) {
         if (radialTargetsRef.current.length === 1) {
           activeObject = radialTargetsRef.current[0];
-        } else {
-          activeObject = new ActiveSelection(radialTargetsRef.current, { canvas });
         }
       }
       if (!activeObject) {
@@ -5901,9 +5968,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       }
 
       const toRemove =
-        activeObject instanceof ActiveSelection
-          ? [...new Set(activeObject.getObjects().map(topLevelRoot))]
-          : [topLevelRoot(activeObject)];
+        radialTargetsRef.current.length > 1
+          ? [...new Set(radialTargetsRef.current.map(topLevelRoot))]
+          : activeObject instanceof ActiveSelection
+            ? [...new Set(activeObject.getObjects().map(topLevelRoot))]
+            : [topLevelRoot(activeObject)];
 
       if (!toRemove.length) return;
 
@@ -5938,7 +6007,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       resetHistory(canvas);
       suppressHistoryRef.current = false;
 
-      onSave(withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize));
+      onSave(
+        stripActiveSelectionsFromLayoutJson(
+          withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize),
+        ),
+      );
     }, [artboardSize, colorKey, onSave, readOnly, resetHistory]);
 
     const selectAllObjects = useCallback(() => {
@@ -6158,6 +6231,166 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         scheduleSave();
       },
       [getRadialActionTargets, readOnly, recordHistory, scheduleSave],
+    );
+
+    const styleElements = useCallback(
+      (
+        criteria: GuideElementCriteria,
+        style: {
+          round?: boolean | "toggle";
+          frame?: BoardMarkShapeType;
+          color?: string;
+          dash?: boolean | "toggle";
+          font_size?: BoardMarkTextSize;
+          text_align?: BoardMarkTextAlign;
+          font?: BoardMarkTextFont;
+        },
+      ) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return 0;
+
+        const targets = findGuideElements(canvas, criteria).map(topLevelBoardRoot);
+        if (!targets.length) return 0;
+
+        const prevRadial = radialTargetsRef.current;
+        radialTargetsRef.current = targets;
+        let structuralChanged = false;
+
+        try {
+          if (style.round !== undefined) {
+            for (const selected of targets) {
+              if (imageFrameGroupFromTarget(selected)) continue;
+              const image = boardImageFromTarget(selected);
+              if (!image) continue;
+              const current = Number(image.get("imageCornerRadius") ?? 0);
+              let nextRadius = 32;
+              if (style.round === "toggle") nextRadius = current > 0 ? 0 : 32;
+              else if (style.round === true) nextRadius = 32;
+              else nextRadius = 0;
+              if ((current > 0) !== (nextRadius > 0)) {
+                applyImageCornerRadius(image, nextRadius);
+                structuralChanged = true;
+              }
+            }
+          }
+
+          if (style.frame && IMAGE_FRAME_SHAPES.has(style.frame)) {
+            const nextGroups: FabricObject[] = [];
+            for (const selected of targets) {
+              const group = applyImageFrameToRoot(canvas, selected, style.frame);
+              if (group) nextGroups.push(group);
+            }
+            if (nextGroups.length) {
+              restoreRadialSelection(canvas, nextGroups);
+              radialTargetsRef.current = nextGroups;
+              structuralChanged = true;
+            }
+          }
+
+          if (style.dash !== undefined) {
+            for (const selected of targets) {
+              let root: FabricObject = selected;
+              while (root.group) root = root.group as FabricObject;
+
+              const dashed =
+                !!root.get("lineDashed") ||
+                (Array.isArray(root.get("strokeDashArray")) &&
+                  (root.get("strokeDashArray") as number[]).length > 0);
+              let nextDashed = !dashed;
+              if (style.dash === "toggle") nextDashed = !dashed;
+              else if (style.dash === true) nextDashed = true;
+              else nextDashed = false;
+              if (nextDashed === dashed) continue;
+
+              if (structureProp(root, "structureType") === "divider" && root instanceof Rect) {
+                const left = root.left ?? 0;
+                const top = root.top ?? 0;
+                const width = Math.max(80, (root.width ?? 80) * (root.scaleX ?? 1));
+                const color = String(root.get("structureColor") ?? root.fill ?? DECAL_LINE);
+                const structureId = String(root.get("structureId") ?? createStructureId());
+                const angle = root.angle ?? 0;
+                const line = createDynamicDividerDecal(left - width / 2, top, width, true);
+                line.set({ structureId, structureColor: color, stroke: color, angle });
+                if (!nextDashed) {
+                  line.set({ strokeDashArray: undefined, lineDashed: false });
+                }
+                canvas.remove(root);
+                canvas.add(line);
+                line.setCoords();
+                structuralChanged = true;
+                continue;
+              }
+
+              if (structureProp(root, "structureType") === "divider" && root instanceof Line) {
+                root.set({
+                  strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+                  lineDashed: nextDashed,
+                });
+                structuralChanged = true;
+              } else if (root.get("markKind") === "shape" && root.get("shapeType") === "line" && root instanceof Line) {
+                root.set({
+                  strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+                  lineDashed: nextDashed,
+                });
+                structuralChanged = true;
+              } else if (root.get("markKind") === "draw" || root.type === "path") {
+                root.set({
+                  strokeDashArray: nextDashed ? LINE_DASH_PATTERN : undefined,
+                  lineDashed: nextDashed,
+                });
+                structuralChanged = true;
+              }
+            }
+          }
+
+          if (style.color) applyMarkColor(style.color);
+          if (style.font_size) applyMarkFontSize(style.font_size);
+          if (style.text_align) applyMarkTextAlign(style.text_align);
+          if (style.font) applyMarkFontFamily(style.font);
+        } finally {
+          radialTargetsRef.current = prevRadial;
+        }
+
+        if (structuralChanged) {
+          canvas.requestRenderAll();
+          recordHistory();
+          scheduleSave();
+        }
+
+        const styled =
+          structuralChanged || style.color || style.font_size || style.text_align || style.font;
+        return styled ? targets.length : 0;
+      },
+      [
+        applyMarkColor,
+        applyMarkFontFamily,
+        applyMarkFontSize,
+        applyMarkTextAlign,
+        readOnly,
+        recordHistory,
+        restoreRadialSelection,
+        scheduleSave,
+      ],
+    );
+
+    const duplicateElements = useCallback(
+      async (criteria: GuideElementCriteria, offset = { x: 40, y: 40 }) => {
+        const canvas = fabricRef.current;
+        if (!canvas || readOnly) return 0;
+
+        const targets = findGuideElements(canvas, criteria);
+        if (!targets.length) return 0;
+
+        const serialized = await Promise.all(
+          targets.map(async (obj) => {
+            const clone = await obj.clone();
+            return clone.toObject() as Record<string, unknown>;
+          }),
+        );
+        await mergeLayoutObjects({ objects: serialized }, offset);
+        return targets.length;
+      },
+      [mergeLayoutObjects, readOnly],
     );
 
     useEffect(() => {
@@ -6609,6 +6842,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       hasSelection,
       deleteSelected,
       removeElements,
+      styleElements,
+      duplicateElements,
       resetBoard,
       undo,
       redo,
@@ -6621,7 +6856,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       addSticker: (sticker) => addStickerAtPoint(sticker, 0.5, 0.5),
       addStickerAt: (sticker, x, y) => addStickerAtPoint(sticker, x, y),
       startDrawMode,
-    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addParchmentNote, addParchmentNoteAt, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, removeElements, resetBoard, startDrawMode, undo]);
+    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addParchmentNote, addParchmentNoteAt, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, duplicateElements, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, removeElements, resetBoard, startDrawMode, styleElements, undo]);
 
     return (
       <div

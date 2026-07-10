@@ -25,10 +25,10 @@ type BoardImagePickerProps = {
 type Tab = "collection" | "uploads" | "affixements" | "foundObjects";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "collection", label: "Our Collection" },
+  { id: "collection", label: "Collection" },
   { id: "affixements", label: "Affixements" },
-  { id: "foundObjects", label: "Found Objects" },
-  { id: "uploads", label: "Your Library" },
+  { id: "foundObjects", label: "Objects" },
+  { id: "uploads", label: "Uploads" },
 ];
 
 const COLLECTION_THEMES = BOARD_IMAGE_THEMES.filter(
@@ -289,7 +289,7 @@ export function BoardImagePicker({
           </div>
         ) : uploadsOnly || tab === "uploads" ? (
           uploads.length === 0 ? (
-            <p className="px-1 py-4 text-center text-xs text-neutral-500">Nothing in Your Library yet.</p>
+            <p className="px-1 py-4 text-center text-xs text-neutral-500">No uploads yet.</p>
           ) : (
             <div className={gridClass}>
               {visibleUploads.map((u, index) => (

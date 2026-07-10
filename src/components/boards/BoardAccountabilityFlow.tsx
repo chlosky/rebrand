@@ -110,7 +110,11 @@ function CadenceTimingControls({
       <div
         className={cn(
           "shrink-0",
-          cadence === "daily" ? "w-0 overflow-hidden" : cadence === "once" ? "w-[96px]" : "w-[40px]",
+          cadence === "daily"
+            ? "w-0 overflow-hidden"
+            : cadence === "once"
+              ? "w-[96px] max-md:w-[5.25rem]"
+              : "w-[40px]",
         )}
       >
         {cadence === "once" ? (
@@ -119,7 +123,17 @@ function CadenceTimingControls({
             disabled={locked}
             value={remind_date ?? ""}
             onChange={(e) => onRemindDate(e.target.value)}
-            className={cn(PILL_SELECT, "w-full")}
+            className={cn(
+              PILL_SELECT,
+              "w-full max-md:h-6 max-md:min-h-6 max-md:max-h-6 max-md:px-0.5 max-md:leading-none",
+              "[&::-webkit-datetime-edit-fields-wrapper]:p-0",
+              "[&::-webkit-datetime-edit]:p-0",
+              "[&::-webkit-datetime-edit-text]:px-0",
+              "[&::-webkit-datetime-edit-month-field]:min-w-0 [&::-webkit-datetime-edit-month-field]:px-0",
+              "[&::-webkit-datetime-edit-day-field]:min-w-0 [&::-webkit-datetime-edit-day-field]:px-0",
+              "[&::-webkit-datetime-edit-year-field]:min-w-0 [&::-webkit-datetime-edit-year-field]:px-0",
+              "[&::-webkit-calendar-picker-indicator]:hidden",
+            )}
           />
         ) : cadence === "monthly" ? (
           <input

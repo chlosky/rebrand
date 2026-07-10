@@ -17,7 +17,7 @@ import {
 } from "@/lib/boards/applyActionGuideOperations";
 
 import type { BoardCanvasHandle, BoardDiagramType } from "@/components/boards/BoardCanvasEditor";
-import type { BoardMarkShapeType, BoardMarkStickerId } from "@/components/boards/BoardMarksQuickSelector";
+import type { BoardMarkShapeType, BoardMarkStickerId, BoardMarkTextAlign, BoardMarkTextFont, BoardMarkTextSize } from "@/components/boards/BoardMarksQuickSelector";
 import { BOARD_MARK_STICKER_OPTIONS } from "@/components/boards/BoardMarksQuickSelector";
 import { BOARD_IMAGE_THEMES, loadBoardImageLibrary, filterLibraryByTheme } from "@/lib/boards/imageLibrary";
 
@@ -198,6 +198,50 @@ const VALID_COLOR_KEYS = new Set(Object.keys(BOARD_COLORS));
 
 const VALID_LIBRARY_THEMES = new Set<string>(BOARD_IMAGE_THEMES);
 
+const VALID_FRAME_SHAPES = new Set<BoardMarkShapeType>([
+  "rect",
+  "circle",
+  "heart",
+  "star",
+  "hexagon",
+  "diamond",
+  "photo",
+]);
+
+const VALID_TEXT_SIZES = new Set<BoardMarkTextSize>(["S", "M", "L", "XL"]);
+const VALID_TEXT_ALIGNS = new Set<BoardMarkTextAlign>(["left", "center", "right"]);
+const VALID_TEXT_FONTS = new Set<BoardMarkTextFont>(["sans", "serif", "display", "script"]);
+
+function hasElementTarget(a: Record<string, unknown>): boolean {
+  if (typeof a.element_index === "number" && Number.isFinite(a.element_index)) return true;
+  if (typeof a.match_text === "string" && a.match_text.trim().length > 0) return true;
+  if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
+  return false;
+}
+
+function hasStyleProps(a: Record<string, unknown>): boolean {
+  if (a.round === true || a.round === false || a.round === "toggle") return true;
+  if (typeof a.frame === "string" && VALID_FRAME_SHAPES.has(a.frame as BoardMarkShapeType)) return true;
+  if (typeof a.color === "string" && a.color.trim().length > 0) return true;
+  if (a.dash === true || a.dash === false || a.dash === "toggle") return true;
+  if (typeof a.font_size === "string" && VALID_TEXT_SIZES.has(a.font_size as BoardMarkTextSize)) return true;
+  if (typeof a.text_align === "string" && VALID_TEXT_ALIGNS.has(a.text_align as BoardMarkTextAlign)) return true;
+  if (typeof a.font === "string" && VALID_TEXT_FONTS.has(a.font as BoardMarkTextFont)) return true;
+  return false;
+}
+
+function elementCriteriaFromAction(action: GuideAction) {
+  return {
+    element_index: typeof action.element_index === "number" ? action.element_index : undefined,
+    match_text: typeof action.match_text === "string" ? action.match_text : undefined,
+    kind: typeof action.kind === "string" ? action.kind : undefined,
+    sticker: typeof action.sticker === "string" ? action.sticker : undefined,
+    shape: typeof action.shape === "string" ? action.shape : undefined,
+    structure: typeof action.structure === "string" ? action.structure : undefined,
+    all: action.all === true,
+  };
+}
+
 const VALID_DIAGRAMS = new Set<BoardDiagramType>([
   "checkbox",
   "numbered_list",
@@ -300,6 +344,10 @@ function isValidGuideAction(action: unknown): action is GuideAction {
       if (typeof a.match_text === "string" && a.match_text.trim().length > 0) return true;
       if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
       return false;
+    case "style_element":
+      return hasElementTarget(a) && hasStyleProps(a);
+    case "copy_element":
+      return hasElementTarget(a);
     case "add_board":
     case "delete_board":
     case "duplicate_board":
@@ -309,6 +357,91 @@ function isValidGuideAction(action: unknown): action is GuideAction {
     default:
       return false;
   }
+}
+
+function normalizeFrameToken(frame: unknown): BoardMarkShapeType | undefined {
+  if (typeof frame !== "string") return undefined;
+  const raw = frame.trim().toLowerCase();
+  if (!raw) return undefined;
+  if (raw.includes("polaroid") || raw.includes("photo")) return "photo";
+  if (raw.includes("square") || raw.includes("rectangle")) return "rect";
+  if (VALID_FRAME_SHAPES.has(raw as BoardMarkShapeType)) return raw as BoardMarkShapeType;
+  for (const token of VALID_FRAME_SHAPES) {
+    if (raw.includes(token)) return token;
+  }
+  return undefined;
+}
+
+function inferGuideActionsFromReply(userMessage: string, reply: string): GuideAction[] {
+  const offersApply = /want me to apply|want me to apply that|shall i apply|should i apply/i.test(reply);
+  if (!offersApply) return [];
+
+  const hay = `${userMessage}\n${reply}`.toLowerCase();
+  const wantsFrame =
+    /\b(frame|framed|framing|polaroid|photo frame|photo style)\b/.test(hay) &&
+    /\b(image|images|photo|photos|picture|pictures)\b/.test(hay);
+  if (!wantsFrame) return [];
+
+  const action: GuideAction = {
+    type: "style_element",
+    kind: "image",
+    frame: "photo",
+    all: true,
+  };
+  const boardMatch =
+    reply.match(/\bon the\s+(.+?)\s+board\b/i) ??
+    reply.match(/\bto the\s+(.+?)\s+board\b/i) ??
+    reply.match(/\bfor the\s+(.+?)\s+board\b/i);
+  if (boardMatch?.[1]) action.board_title = boardMatch[1].trim();
+
+  return filterValidGuideActions([action]);
+}
+
+function normalizeGuideAction(raw: Record<string, unknown>): Record<string, unknown> {
+  let type = raw.type;
+  if (type === "frame_image" || type === "frame_element" || type === "apply_frame" || type === "image_frame") {
+    type = "style_element";
+  }
+  if (type === "duplicate_element" || type === "copy") {
+    type = "copy_element";
+  }
+
+  const normalized: Record<string, unknown> = { ...raw, type };
+
+  if (type === "style_element") {
+    if (!normalized.frame && typeof normalized.frame_shape === "string") {
+      normalized.frame = normalized.frame_shape;
+    }
+    if (!normalized.frame && typeof normalized.frame_type === "string") {
+      normalized.frame = normalized.frame_type;
+    }
+    const frameToken = normalizeFrameToken(normalized.frame);
+    if (frameToken) normalized.frame = frameToken;
+    else if (normalized.frame) delete normalized.frame;
+
+    const imageStyle =
+      typeof normalized.frame === "string" ||
+      normalized.round === true ||
+      normalized.round === false ||
+      normalized.round === "toggle";
+
+    if (imageStyle && !hasElementTarget(normalized)) {
+      normalized.kind = "image";
+    }
+    if (normalized.all === true || normalized.target_all === true) {
+      normalized.all = true;
+    }
+    if (imageStyle && normalized.kind === "image" && !normalized.element_index && !normalized.match_text) {
+      normalized.all = true;
+    }
+  }
+
+  const boardTitle = raw.board_title ?? raw.board ?? raw.board_name ?? raw.target_board;
+  if (typeof boardTitle === "string" && boardTitle.trim() && type !== "rename_board") {
+    normalized.board_title = boardTitle;
+  }
+
+  return normalized;
 }
 
 function filterValidGuideActions(actions: unknown[]): GuideAction[] {
@@ -329,12 +462,7 @@ function filterValidGuideActions(actions: unknown[]): GuideAction[] {
       if (raw.type === "add_statement") {
         return { ...raw, type: "add_text" };
       }
-      const boardTitle =
-        raw.board_title ?? raw.board ?? raw.board_name ?? raw.target_board;
-      if (typeof boardTitle === "string" && boardTitle.trim() && raw.type !== "rename_board") {
-        return { ...raw, board_title: boardTitle };
-      }
-      return action;
+      return normalizeGuideAction(raw);
     })
     .filter(isValidGuideAction);
 }
@@ -425,6 +553,8 @@ const CANVAS_GUIDE_ACTIONS = new Set([
   "clear_board",
   "start_draw_mode",
   "delete_element",
+  "style_element",
+  "copy_element",
   "add_text",
   "add_sticky",
   "add_sticker",
@@ -716,16 +846,43 @@ export function BoardGuideChatPanel({
           }
 
           if (type === "delete_element") {
-            const removed = editor.removeElements({
-              element_index: typeof action.element_index === "number" ? action.element_index : undefined,
-              match_text: typeof action.match_text === "string" ? action.match_text : undefined,
-              kind: typeof action.kind === "string" ? action.kind : undefined,
-              sticker: typeof action.sticker === "string" ? action.sticker : undefined,
-              shape: typeof action.shape === "string" ? action.shape : undefined,
-              structure: typeof action.structure === "string" ? action.structure : undefined,
-              all: action.all === true,
-            });
+            const removed = editor.removeElements(elementCriteriaFromAction(action));
             applied += removed;
+            continue;
+          }
+
+          if (type === "style_element") {
+            const criteria = elementCriteriaFromAction(action);
+            const round =
+              action.round === true ? true : action.round === false ? false : action.round === "toggle" ? "toggle" : undefined;
+            const dash =
+              action.dash === true ? true : action.dash === false ? false : action.dash === "toggle" ? "toggle" : undefined;
+            const frame =
+              typeof action.frame === "string" && VALID_FRAME_SHAPES.has(action.frame as BoardMarkShapeType)
+                ? (action.frame as BoardMarkShapeType)
+                : undefined;
+            const colorRaw = typeof action.color === "string" ? action.color.trim() : "";
+            const color = colorRaw ? normalizeBoardColorHex(colorRaw) ?? colorRaw : undefined;
+            const font_size =
+              typeof action.font_size === "string" && VALID_TEXT_SIZES.has(action.font_size as BoardMarkTextSize)
+                ? (action.font_size as BoardMarkTextSize)
+                : undefined;
+            const text_align =
+              typeof action.text_align === "string" && VALID_TEXT_ALIGNS.has(action.text_align as BoardMarkTextAlign)
+                ? (action.text_align as BoardMarkTextAlign)
+                : undefined;
+            const font =
+              typeof action.font === "string" && VALID_TEXT_FONTS.has(action.font as BoardMarkTextFont)
+                ? (action.font as BoardMarkTextFont)
+                : undefined;
+            const styled = editor.styleElements(criteria, { round, frame, color, dash, font_size, text_align, font });
+            applied += styled;
+            continue;
+          }
+
+          if (type === "copy_element") {
+            const copied = await editor.duplicateElements(elementCriteriaFromAction(action));
+            applied += copied;
             continue;
           }
 
@@ -1028,10 +1185,14 @@ export function BoardGuideChatPanel({
       const actions = Array.isArray(payload.actions) ? payload.actions : [];
       const proposed = Array.isArray(payload.proposed_actions) ? payload.proposed_actions : [];
 
-      const combined =
+      let combined =
         mode === "action"
           ? filterValidActionGuideOperations([...proposed, ...actions], actionMap)
           : [...filterValidGuideActions(proposed), ...filterValidGuideActions(actions)];
+
+      if (combined.length === 0 && mode === "vision") {
+        combined = inferGuideActionsFromReply(text, payload.reply ?? "");
+      }
 
       if (combined.length > 0) {
         setPendingGuideActions(combined);

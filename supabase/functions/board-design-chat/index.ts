@@ -20,6 +20,138 @@ const corsHeaders = {
 
 type ChatTurn = { role: "user" | "assistant"; content: string };
 
+function hasElementTargetFields(a: Record<string, unknown>): boolean {
+  if (typeof a.element_index === "number" && Number.isFinite(a.element_index)) return true;
+  if (typeof a.match_text === "string" && a.match_text.trim().length > 0) return true;
+  if (typeof a.kind === "string" && a.kind.trim().length > 0) return true;
+  return false;
+}
+
+function normalizeProposedAction(raw: Record<string, unknown>): Record<string, unknown> {
+  let type = raw.type;
+  if (type === "frame_image" || type === "frame_element" || type === "apply_frame" || type === "image_frame") {
+    type = "style_element";
+  }
+  if (type === "duplicate_element" || type === "copy") {
+    type = "copy_element";
+  }
+
+  const normalized: Record<string, unknown> = { ...raw, type };
+
+  if (type === "style_element") {
+    if (!normalized.frame && typeof normalized.frame_shape === "string") {
+      normalized.frame = normalized.frame_shape;
+    }
+    if (!normalized.frame && typeof normalized.frame_type === "string") {
+      normalized.frame = normalized.frame_type;
+    }
+    const frameRaw = typeof normalized.frame === "string" ? normalized.frame.trim().toLowerCase() : "";
+    const frameToken = normalizeFrameToken(frameRaw || normalized.frame);
+    if (frameToken) normalized.frame = frameToken;
+    else if (normalized.frame) delete normalized.frame;
+
+    const imageStyle =
+      typeof normalized.frame === "string" ||
+      normalized.round === true ||
+      normalized.round === false ||
+      normalized.round === "toggle";
+
+    if (imageStyle && !hasElementTargetFields(normalized)) {
+      normalized.kind = "image";
+    }
+    if (normalized.all === true || normalized.target_all === true) {
+      normalized.all = true;
+    }
+  }
+
+  return normalized;
+}
+
+function normalizeProposedActions(actions: unknown[]): unknown[] {
+  return actions
+    .filter((action) => action && typeof action === "object")
+    .map((action) => normalizeProposedAction(action as Record<string, unknown>));
+}
+
+const IMAGE_FRAME_TOKENS = new Set(["photo", "rect", "circle", "heart", "star", "hexagon", "diamond"]);
+
+function normalizeFrameToken(frame: unknown): string | undefined {
+  if (typeof frame !== "string") return undefined;
+  const raw = frame.trim().toLowerCase();
+  if (!raw) return undefined;
+  if (raw.includes("polaroid") || raw.includes("photo")) return "photo";
+  if (raw.includes("square") || raw.includes("rectangle")) return "rect";
+  if (IMAGE_FRAME_TOKENS.has(raw)) return raw;
+  for (const token of IMAGE_FRAME_TOKENS) {
+    if (raw.includes(token)) return token;
+  }
+  return undefined;
+}
+
+function styleElementLooksValid(a: Record<string, unknown>): boolean {
+  const frame = normalizeFrameToken(a.frame);
+  if (frame) a.frame = frame;
+  const hasStyle =
+    !!frame ||
+    a.round === true ||
+    a.round === false ||
+    a.round === "toggle" ||
+    (typeof a.color === "string" && a.color.trim().length > 0) ||
+    a.dash === true ||
+    a.dash === false ||
+    a.dash === "toggle";
+  return hasStyle && hasElementTargetFields(a);
+}
+
+function repairProposedActions(userMessage: string, reply: string, actions: unknown[]): unknown[] {
+  const normalized = normalizeProposedActions(actions).map((action) => {
+    const record = action as Record<string, unknown>;
+    if (record.type === "style_element" && !hasElementTargetFields(record)) {
+      record.kind = "image";
+    }
+    if (record.type === "style_element") {
+      normalizeFrameToken(record.frame);
+      if (typeof record.frame === "string") {
+        const frame = normalizeFrameToken(record.frame);
+        if (frame) record.frame = frame;
+        else delete record.frame;
+      }
+    }
+    return record;
+  });
+
+  const usable = normalized.filter((action) => {
+    const record = action as Record<string, unknown>;
+    if (record.type !== "style_element") return true;
+    return styleElementLooksValid(record);
+  });
+  if (usable.length > 0) return usable;
+
+  const offersApply = /want me to apply|want me to apply that|shall i apply|should i apply/i.test(reply);
+  if (!offersApply) return normalized;
+
+  const hay = `${userMessage}\n${reply}`.toLowerCase();
+  const wantsFrame =
+    /\b(frame|framed|framing|polaroid|photo frame|photo style)\b/.test(hay) &&
+    /\b(image|images|photo|photos|picture|pictures)\b/.test(hay);
+
+  if (!wantsFrame) return normalized;
+
+  const action: Record<string, unknown> = {
+    type: "style_element",
+    kind: "image",
+    frame: "photo",
+    all: true,
+  };
+  const boardMatch =
+    reply.match(/\bon the\s+(.+?)\s+board\b/i) ??
+    reply.match(/\bto the\s+(.+?)\s+board\b/i) ??
+    reply.match(/\bfor the\s+(.+?)\s+board\b/i);
+  if (boardMatch?.[1]) action.board_title = boardMatch[1].trim();
+
+  return [action];
+}
+
 const COLOR_PALETTE = `Board background colors — same picker the user sees in the app.
 
 COLOR RULES (important):
@@ -40,7 +172,7 @@ Note: named keys like "green" render as soft tints, not vivid green — use hex 
 
 const DESIGN_CAPABILITIES = `You are the palette plotting AI Guide on the Vision page.
 
-You help with the Vision canvas: board titles, colors, marks, text, sticky notes, collection images, Found Objects, Affixements, shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
+You help with the Vision canvas: board titles, colors, marks, text, sticky notes, collection images, Found Objects, Affixements, image frame/round/recolor (style_element), shapes, stickers, freehand drawing, digital decals/structures, layout composition, and removing elements.
 You understand Projects, Start New Set, Portrait set, Landscape set, Vision, Action, board orientation, curated image catalogs vs Your Library uploads, Analyze workspace, Focus / Plan / Action, Calendar, Email, Text, calendar export/iCal, email reminders, text reminders, SMS limits/consent, and Finalize plan, but you must respect the Vision page boundary.
 
 You MUST respond with valid JSON only:
@@ -54,6 +186,7 @@ You MUST respond with valid JSON only:
 DEFAULT BEHAVIOR:
 - Put almost all board changes in "proposed_actions", NOT "actions".
 - Return "actions": [] unless the user's latest message clearly confirms a pending proposal (yes, okay, do it, apply it, etc.).
+- If your reply offers to apply a change ("Want me to apply that?"), proposed_actions MUST contain the matching action objects — never an empty proposed_actions array.
 - Summarize what you plan to do and ask "Want me to apply that?"
 - Never say you added, placed, changed, or created something unless actions were actually applied.
 - For category requests (love, career, home, etc.), propose concrete board content and insert actions when possible.
@@ -95,6 +228,7 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 
 6. add_shape — { "type": "add_shape", "shape": "heart", "x": 0.6, "y": 0.45 }
    shape: rect, circle, triangle, line, hexagon, pentagon, star, diamond, arrow, heart, bubble, cylinder
+   Decorative shapes only — NEVER use add_shape to frame, border, or wrap images. Image frames use style_element (item 15).
 
 7. add_library_image — place from curated catalogs only (Our Collection, Found Objects, or Affixements — NOT user uploads from Your Library):
    { "type": "add_library_image", "theme": "Love & Relationships", "keywords": "couple sunset", "x": 0.35, "y": 0.5, "count": 1, "image_index": 0 }
@@ -145,6 +279,27 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
 14. start_draw_mode — switch target board to freehand pen mode (user draws strokes on canvas):
    { "type": "start_draw_mode", "board_title": "Focus Board 1" }
 
+15. style_element — same radial-menu styling as long-press on an element (frame, round corners, recolor, dash, text size/font/align):
+   Target with element_index, match_text, and/or kind (same as delete_element). Default first match; "all": true for every match.
+   For image frame/round requests, ALWAYS include kind:"image" plus frame or round in proposed_actions.
+   { "type": "style_element", "kind": "image", "frame": "photo" }
+   { "type": "style_element", "kind": "image", "all": true, "frame": "photo" }
+   { "type": "style_element", "kind": "image", "round": true }
+   { "type": "style_element", "element_index": 3, "frame": "heart" }
+   frame (images only): photo, rect, circle, heart, star, hexagon, diamond
+   round: true (rounded corners), false (square), or "toggle"
+   color: hex fill/stroke recolor (text, sticky, shape, line, structure accents)
+   dash: true, false, or "toggle" (lines, dividers, freehand strokes)
+   font_size: S, M, L, XL (text elements)
+   text_align: left, center, right
+   font: sans, serif, display, script
+   Image frame requests → style_element with frame (photo, rect, circle, heart, star, hexagon, diamond). Same native Frame button as long-press on an image.
+   NEVER use add_shape or add_sticker for framing. NEVER say "shapes around the images" or similar workarounds in reply text.
+
+16. copy_element — duplicate a matched element (same targeting as delete_element):
+   { "type": "copy_element", "kind": "sticky", "match_text": "next step" }
+   { "type": "copy_element", "element_index": 2 }
+
 NOT AVAILABLE — never return these action types or structures:
 - analyze_workspace, analyze, extract_insights
 - kanban_seed, gantt_seed, or any kanban/gantt/timeline/OKR/Eisenhower/zones layout mode
@@ -165,7 +320,7 @@ Layout heuristics:
 - Landscape: wider horizontal composition, left/right zones, avoid tall stacked composition
 - Portrait: vertical composition, title/top, visual center, notes/actions lower
 
-User-facing names: Statement, Sticky note, Numbered list, Checkbox, Bullet, Calendar decal, Divider decal, Found Object, Affixement, sticker, shape, image.
+User-facing names: Statement, Sticky note, Numbered list, Checkbox, Bullet, Calendar decal, Divider decal, Found Object, Affixement, sticker, shape, image, Frame (style_element on images).
 
 Behavior:
 - Board creation, renames, layout changes, and removals → proposed_actions + "Want me to apply that?"
@@ -317,7 +472,7 @@ serve(async (req) => {
 
     const layoutHint =
       elementLines.length > 0
-        ? `Board elements (use element_index in delete_element):\n${elementLines.slice(0, 24).join("\n")}`
+        ? `Board elements (use element_index in delete_element, style_element, copy_element):\n${elementLines.slice(0, 24).join("\n")}`
         : "Canvas is mostly empty.";
 
     const allBoardHints = (siblings ?? [])
@@ -431,10 +586,12 @@ ${allBoardHints || "none"}`;
       typeof parsed.reply_without_action === "string" && parsed.reply_without_action.trim()
         ? parsed.reply_without_action.trim()
         : undefined;
-    const actions = Array.isArray(parsed.actions) ? parsed.actions.slice(0, 14) : [];
-    const proposed_actions = Array.isArray(parsed.proposed_actions)
-      ? parsed.proposed_actions.slice(0, 14)
-      : [];
+    const mergedActions = [
+      ...(Array.isArray(parsed.proposed_actions) ? parsed.proposed_actions.slice(0, 14) : []),
+      ...(Array.isArray(parsed.actions) ? parsed.actions.slice(0, 14) : []),
+    ];
+    const proposed_actions = repairProposedActions(message, reply, mergedActions);
+    const actions: unknown[] = [];
 
     return new Response(JSON.stringify({ reply, reply_without_action, actions, proposed_actions }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
