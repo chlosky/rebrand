@@ -32,7 +32,7 @@ export function buildIcalCalendar(reminders: BoardReminder[], calendarName = "pa
   ];
 
   for (const r of reminders) {
-    const uid = r.ical_uid || `board-reminder-${r.id}@paletteplot.com`;
+    const uid = r.ical_uid || `board-reminder-${r.id}@paletteplotting.com`;
     lines.push(
       "BEGIN:VEVENT",
       `UID:${uid}`,

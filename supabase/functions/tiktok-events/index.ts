@@ -11,7 +11,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SITE_ORIGIN = "https://paletteplot.com";
+const SITE_ORIGIN = "https://paletteplotting.com";
 
 type RequestBody = {
   event?: string;

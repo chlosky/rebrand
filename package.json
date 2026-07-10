@@ -42,7 +42,6 @@
     "@capgo/capacitor-facebook-analytics": "^8.1.7",
     "@capgo/native-purchases": "^8.1.1",
     "@hookform/resolvers": "^3.10.0",
-    "@huggingface/transformers": "^3.7.6",
     "@mediapipe/hands": "^0.4.1675469240",
     "@onesignal/capacitor-plugin": "^1.0.5",
     "@radix-ui/react-accordion": "^1.2.11",

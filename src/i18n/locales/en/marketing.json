@@ -94,7 +94,7 @@
       },
       "deleteAccount": {
         "question": "How do I delete my account?",
-        "answer": "You may request deletion through the app or by contacting: support@paletteplot.com"
+        "answer": "You may request deletion through the app or by contacting: support@paletteplotting.com"
       },
       "acceptableUse": {
         "question": "What happens if I violate the Acceptable Use Policy?",
@@ -114,7 +114,7 @@
     "meta": {
       "title": "Home | palette plotting",
       "description": "palette plotting is your digital 4-board life system — three focus boards plus The Plan, with drag-and-drop editing, reminders, and more tools when you need them.",
-      "ogDescription": "Organize your life on four boards. Digital companion to acrylic boards at paletteplot.com.",
+      "ogDescription": "Organize your life on four boards. Digital companion to acrylic boards at paletteplotting.com.",
       "twitterDescription": "Three focus boards + The Plan. Drag-and-drop editor, themed images, AI reminders, iCal export."
     },
     "header": {
@@ -136,7 +136,7 @@
       "headline3Prefix": "Three focus boards",
       "headline3Connector": "+",
       "headline3Accent": "The Plan",
-      "freeTrialLine": "Free on the web · pairs with acrylic boards at paletteplot.com",
+      "freeTrialLine": "Free on the web · pairs with acrylic boards at paletteplotting.com",
       "subhead1": "Drag-and-drop board editor",
       "subhead2": "Themed image library + your private photos",
       "subhead3": "AI action reminders · email · SMS · iCal export",

@@ -10,7 +10,7 @@ interface SEOProps {
 
 export const SEO = ({ title, description, image, noindex = false }: SEOProps) => {
   const location = useLocation();
-  const baseUrl = 'https://paletteplot.com';
+  const baseUrl = 'https://paletteplotting.com';
   const url = `${baseUrl}${location.pathname}`;
 
   useEffect(() => {

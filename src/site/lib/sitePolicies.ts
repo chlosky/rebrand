@@ -1,4 +1,4 @@
-import { SUPPORT_EMAIL } from "@/site/lib/siteBrand";
+import { SITE_ORIGIN, SUPPORT_EMAIL } from "@/site/lib/siteBrand";
 
 export { SUPPORT_EMAIL };
 
@@ -39,6 +39,26 @@ export type SitePolicy = {
   metaDescription: string;
   lastUpdated: string;
   sections: PolicySection[];
+};
+
+const APP_TERMS_URL = `${SITE_ORIGIN}/policies/app-terms`;
+const APP_PRIVACY_URL = `${SITE_ORIGIN}/policies/app-privacy`;
+
+const SMS_TEXT_REMINDER_POLICY_SECTION: PolicySection = {
+  heading: "Text reminders (SMS)",
+  paragraphs: [
+    "If you opt in to Palette Plotting plan text reminders, you agree to receive recurring transactional text messages about plans and tasks you choose in the Service. These messages are reminders you request — they are not marketing or promotional texts.",
+    "Message frequency may vary based on the reminders you schedule. We currently send up to 5 text reminders per day per account. Individual messages are short by design.",
+    "Standard message and data rates may apply.",
+    "Reply STOP to opt out of text reminders. After you opt out, we will send no further text reminders unless you opt in again. Reply HELP for assistance.",
+    "Your mobile information will not be sold or shared with third parties for promotional or marketing purposes.",
+    `See our Terms of Service (${APP_TERMS_URL}) and Privacy Policy (${APP_PRIVACY_URL}) for more information about how we handle phone numbers and SMS consent.`,
+  ],
+  list: [
+    "You must provide affirmative consent before we send plan text reminders. You can turn text reminders off in Plan reminder settings or by replying STOP.",
+    "We use phone numbers, opt-in records, opt-out status, and delivery metadata only to provide text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
+    `For help with text reminders, email ${CONTACT_INFO.email} or call ${CONTACT_INFO.phone}.`,
+  ],
 };
 
 export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
@@ -129,7 +149,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
       {
         heading: "Order cancellation",
         paragraphs: [
-          "You may request cancellation within 1 hour of placing your order by emailing support@paletteplot.com with your order number.",
+          "You may request cancellation within 1 hour of placing your order by emailing support@paletteplotting.com with your order number.",
           "After 1 hour, your order may already be in processing and cannot be guaranteed cancelled. Once an order has shipped, cancellation is no longer available — please see returns below.",
         ],
       },
@@ -138,7 +158,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         paragraphs: [
           "You may request a refund within 14 days of delivery for items that are unused, undamaged, and in their original packaging.",
           "Return shipping costs are paid by the buyer. We will provide return instructions after your return request is approved.",
-          "To start a return or refund request, email support@paletteplot.com with your order number and a brief description of the issue. We will reply with next steps.",
+          "To start a return or refund request, email support@paletteplotting.com with your order number and a brief description of the issue. We will reply with next steps.",
           "Approved refunds are issued to your original payment method. Please allow 5–10 business days for your bank or card issuer to post the credit after we process the refund.",
         ],
       },
@@ -151,7 +171,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
       {
         heading: "Damaged or incorrect orders",
         paragraphs: [
-          "If your board arrives damaged or you received the wrong item, contact us at support@paletteplot.com within 14 days of delivery with photos. We will replace or refund eligible orders at no additional shipping cost to you.",
+          "If your board arrives damaged or you received the wrong item, contact us at support@paletteplotting.com within 14 days of delivery with photos. We will replace or refund eligible orders at no additional shipping cost to you.",
         ],
       },
     ],
@@ -161,11 +181,11 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     title: "Privacy Policy",
     metaDescription:
       "How Palette Plotting collects, uses, and shares personal information — including Meta (Facebook/Instagram), TikTok, and Google advertising and measurement tools.",
-    lastUpdated: "June 28, 2026",
+    lastUpdated: "July 7, 2026",
     sections: [
       {
         paragraphs: [
-          "This Privacy Policy describes how Palette Plotting (“we”, “us”, or “our”) collects, uses, discloses, and otherwise processes personal information when you visit paletteplot.com, interact with our ads on third-party platforms (including Meta/Facebook and Instagram), browse our products, or place an order.",
+          "This Privacy Policy describes how Palette Plotting (“we”, “us”, or “our”) collects, uses, discloses, and otherwise processes personal information when you visit paletteplotting.com, interact with our ads on third-party platforms (including Meta/Facebook and Instagram), browse our products, or place an order.",
           "By using our website or purchasing from us, you acknowledge this policy. If you do not agree, please do not use the site.",
         ],
       },
@@ -200,7 +220,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Sharing your information",
         paragraphs: [
           "We share personal information with service providers and advertising partners only as needed to operate our business, measure marketing, and deliver ads. We do not sell your personal information for money.",
-          "SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are not sold, rented, or shared with advertising partners for marketing or cross-context behavioral advertising. We use them only to provide and manage text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
+          "SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are not sold, rented, or shared with third parties for promotional or marketing purposes, including for advertising partners, cross-context behavioral advertising, or marketing lists. We use them only to provide and manage text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
           "Under some US state privacy laws, sharing data with advertising partners for cross-context behavioral advertising may be treated separately from a “sale.” See “US state privacy rights” below.",
         ],
         list: [
@@ -236,8 +256,8 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "US state privacy rights",
         paragraphs: [
           "If you reside in California, Colorado, Connecticut, Virginia, Texas, Oregon, or other US states with similar privacy laws, you may have the right to know what personal information we collect, request deletion or correction, and opt out of certain processing.",
-          "We do not sell personal information for monetary consideration. We may share personal information with advertising partners (including Meta, TikTok, and Google) for cross-context behavioral advertising and measurement when permitted by law and our settings. SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are excluded from that advertising sharing.",
-          "To submit a privacy request — including opt-out of sharing for cross-context behavioral advertising — email support@paletteplot.com with the subject line “Privacy Request” and your name, email, and the request type. We will verify and respond as required by applicable law.",
+          "We do not sell personal information for monetary consideration. We may share personal information with advertising partners (including Meta, TikTok, and Google) for cross-context behavioral advertising and measurement when permitted by law and our settings. SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are excluded from that advertising sharing and are not sold or shared with third parties for promotional or marketing purposes.",
+          "To submit a privacy request — including opt-out of sharing for cross-context behavioral advertising — email support@paletteplotting.com with the subject line “Privacy Request” and your name, email, and the request type. We will verify and respond as required by applicable law.",
         ],
       },
       {
@@ -249,11 +269,12 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
       {
         heading: "Your choices",
         paragraphs: [
-          "You may request access to, correction of, or deletion of personal information we hold about you by contacting support@paletteplot.com. We may need to retain certain records for legal, accounting, or fraud-prevention purposes.",
+          "You may request access to, correction of, or deletion of personal information we hold about you by contacting support@paletteplotting.com. We may need to retain certain records for legal, accounting, or fraud-prevention purposes.",
           "You may opt out of marketing emails at any time using the unsubscribe link in those messages.",
           "For Meta-related data, you may also adjust ad preferences in your Meta account settings and contact us if you want us to stop sharing your information with Meta for advertising measurement, subject to legal and technical limits.",
         ],
       },
+      SMS_TEXT_REMINDER_POLICY_SECTION,
       {
         heading: "Children",
         paragraphs: [
@@ -272,7 +293,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
           "Questions about this Privacy Policy, Meta data sharing, or your personal information:",
           `${CONTACT_INFO.businessName} · ${CONTACT_INFO.email} · ${CONTACT_INFO.phone}`,
           `${CONTACT_INFO.addressLine1}, ${CONTACT_INFO.addressLine2}`,
-          "Privacy policy URL for advertising platform verification: https://paletteplot.com/policies/privacy",
+          `Privacy policy URL for advertising platform verification: ${SITE_ORIGIN}/policies/privacy`,
         ],
       },
     ],
@@ -281,11 +302,11 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     slug: "terms",
     title: "Terms of Service",
     metaDescription: "Terms and conditions for using the Palette Plotting website and purchasing acrylic wall boards.",
-    lastUpdated: "June 28, 2026",
+    lastUpdated: "July 7, 2026",
     sections: [
       {
         paragraphs: [
-          "These Terms of Service (“Terms”) govern your access to paletteplot.com and your purchase of products from Palette Plotting. By accessing the site or placing an order, you agree to these Terms.",
+          "These Terms of Service (“Terms”) govern your access to paletteplotting.com and your purchase of products from Palette Plotting. By accessing the site or placing an order, you agree to these Terms.",
         ],
       },
       {
@@ -306,7 +327,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Orders, payment, and cancellation",
         paragraphs: [
           "Orders are processed through Shopify. Payment is due at checkout.",
-          "You may request order cancellation within 1 hour of placing your order by emailing support@paletteplot.com. After that window, your order may enter processing and cannot be guaranteed cancelled.",
+          "You may request order cancellation within 1 hour of placing your order by emailing support@paletteplotting.com. After that window, your order may enter processing and cannot be guaranteed cancelled.",
         ],
       },
       {
@@ -325,7 +346,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Third-party services and advertising",
         paragraphs: [
           "Our website integrates with third-party services including Shopify (orders and checkout), Meta (Facebook/Instagram advertising and measurement), TikTok, and Google Analytics. Your use of the site is also subject to those providers’ terms and privacy policies where applicable.",
-          "See our Privacy Policy at https://paletteplot.com/policies/privacy for how we collect, share, and use personal information for advertising, including Meta Advanced Matching and aggregated measurement.",
+          `See our Privacy Policy at ${SITE_ORIGIN}/policies/privacy for how we collect, share, and use personal information for advertising, including Meta Advanced Matching and aggregated measurement.`,
         ],
       },
       {
@@ -353,6 +374,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
           "We may update these Terms at any time by posting a revised version on this page. Your continued use of the site after changes constitutes acceptance.",
         ],
       },
+      SMS_TEXT_REMINDER_POLICY_SECTION,
       {
         heading: "Contact",
         paragraphs: [
@@ -367,12 +389,12 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
     title: "Terms of Service",
     metaDescription:
       "Terms of Service for Palette Plotting — a web-based visual planning workspace with boards, notes, AI assistance, reminders, and Stripe subscription billing.",
-    lastUpdated: "July 8, 2026",
+    lastUpdated: "July 7, 2026",
     sections: [
       {
         paragraphs: [
           "Effective Date: July 8, 2026",
-          "Last Updated: July 8, 2026",
+          "Last Updated: July 7, 2026",
           "These Terms of Service (“Terms”) govern your access to and use of Palette Plotting, including our website, web app, desktop-browser experience, mobile-browser experience, account features, visual workspace tools, planning tools, AI-assisted tools, extraction tools, reminder features, paid subscriptions and related services (collectively, the “Service”).",
           "These Terms are a legal agreement between you and [Legal Company Name] (“Palette Plotting,” “we,” “us,” or “our”). By accessing or using the Service, creating an account, starting a trial, purchasing a subscription, or clicking to accept these Terms, you agree to be bound by these Terms.",
           "If you do not agree to these Terms, do not use the Service.",
@@ -711,7 +733,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "25. Privacy",
         paragraphs: [
           "Your use of the Service is also governed by our Privacy Policy, which explains how we collect, use and share information.",
-          "Please review our Privacy Policy at: [Privacy Policy URL].",
+          `Please review our Privacy Policy at: ${APP_PRIVACY_URL}.`,
           "By using the Service, you acknowledge that we may collect and process information as described in the Privacy Policy.",
         ],
       },
@@ -723,6 +745,7 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
           "Transactional and service-related messages are not marketing messages, and you may continue to receive them as long as you maintain an account or active relationship with us.",
         ],
       },
+      SMS_TEXT_REMINDER_POLICY_SECTION,
       {
         heading: "27. No Professional Advice",
         paragraphs: [
@@ -953,15 +976,16 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Sharing",
         paragraphs: [
           "We do not sell your personal information. We share information with service providers that help us operate the Service (hosting, authentication, billing, email, SMS, analytics, and support tools) under appropriate contractual protections, and when required by law.",
-          "SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are not sold, rented, or shared with advertising partners for marketing or cross-context behavioral advertising. We use them only to provide and manage text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
+          "SMS opt-in consent, text reminder phone numbers, and text reminder delivery data are not sold, rented, or shared with third parties for promotional or marketing purposes, including for advertising partners, cross-context behavioral advertising, or marketing lists. We use them only to provide and manage text reminders you choose, process STOP/HELP requests, maintain consent records, and work with SMS service providers under contract.",
         ],
       },
+      SMS_TEXT_REMINDER_POLICY_SECTION,
       {
         heading: "Retention and your choices",
         paragraphs: [
           "We retain information while your account is active and as needed for billing, support, security, and legal obligations.",
           "You may update profile information in Your Account, manage marketing and reminder preferences in settings, and request account deletion in settings. Deletion is scheduled according to the in-app flow.",
-          `Privacy requests: ${CONTACT_INFO.email}`,
+          `Privacy requests: ${CONTACT_INFO.email} · ${CONTACT_INFO.phone}`,
         ],
       },
       {
@@ -994,8 +1018,10 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
           "Use the Service for spam, fraud, or impersonation",
           "Use automated features to generate harmful, illegal, or abusive material",
           "Share account access in a way that violates these rules",
+          "Use text reminders to send unlawful content, harass others, or bypass SMS consent or opt-out requirements",
         ],
       },
+      SMS_TEXT_REMINDER_POLICY_SECTION,
       {
         heading: "Enforcement",
         paragraphs: [
@@ -1027,10 +1053,11 @@ export const SITE_POLICIES: Record<PolicySlug, SitePolicy> = {
         heading: "Refunds",
         paragraphs: [
           "Apple App Store and Google Play purchases are subject to each platform's refund policies and billing terms.",
-          "For web purchases, refund requests are considered at Palette Plotting's discretion. Contact support@paletteplot.com with your account email and purchase details.",
+          "For web purchases, refund requests are considered at Palette Plotting's discretion. Contact support@paletteplotting.com with your account email and purchase details.",
           "Nothing in this policy limits any non-waivable consumer rights that apply where you live.",
         ],
       },
+      SMS_TEXT_REMINDER_POLICY_SECTION,
       {
         heading: "Contact",
         paragraphs: [`Billing questions: ${CONTACT_INFO.email}`],

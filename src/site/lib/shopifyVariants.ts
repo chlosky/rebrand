@@ -5,7 +5,7 @@ export const SHOPIFY_STORE = "paletteplot.myshopify.com";
 /** Empty cart page — always myshopify.com (never a custom subdomain without DNS). */
 export const SHOPIFY_CART_URL = `https://${SHOPIFY_STORE}/cart`;
 
-/** Shopify customer account — use myshopify.com so paletteplot.com/account does not hit the SPA. */
+/** Shopify customer account — use myshopify.com so paletteplotting.com/account does not hit the SPA. */
 export const SHOPIFY_ACCOUNT_LOGIN_URL = `https://${SHOPIFY_STORE}/account/login`;
 export const SHOPIFY_ACCOUNT_URL = `https://${SHOPIFY_STORE}/account`;
 

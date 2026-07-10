@@ -1,5 +1,5 @@
 /**
- * Marketing visual tokens — bright palette plotting styling (vel / paletteplot.com).
+ * Marketing visual tokens — bright palette plotting styling (paletteplotting.com).
  * White surfaces, neutral type, board-color pink accents.
  */
 

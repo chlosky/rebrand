@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   ArrowRight,
@@ -57,6 +58,7 @@ import { downloadAccountabilityIcalFile } from "@/lib/boards/ical";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { trackReminderAnalytics } from "@/lib/marketingConversionTrack";
+import { legalPrivacyPath, legalTermsPath } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 import "@/styles/board-editor.css";
 
@@ -122,6 +124,7 @@ function calendarExportFilename(date = new Date()): string {
 }
 
 export default function BoardAccountability() {
+  const { t } = useTranslation("settings");
   const { user } = useAuth();
   const { hasPro, currentPeriodEnd, loading: proLoading } = usePlottingPro();
   const navigate = useNavigate();
@@ -843,19 +846,25 @@ export default function BoardAccountability() {
               />
               <p className="text-xs text-muted-foreground">Used only for text reminders you choose.</p>
             </div>
-            <label className="flex items-start gap-2">
+            <div className="flex items-start gap-2">
               <Checkbox
+                id="action-sms-consent"
                 checked={smsConsentChecked}
                 onCheckedChange={(v) => setSmsConsentChecked(v === true)}
-                className="mt-0.5"
+                className="mt-0.5 shrink-0"
               />
-              <span className="text-xs leading-relaxed text-muted-foreground">
-                I agree to receive recurring text reminders from Palette Plotting about plans and tasks I choose.
-                Message frequency may vary. Standard message and data rates may apply. Reply STOP to opt out. Reply
-                HELP for assistance. Your mobile information will not be sold or shared with third parties for
-                promotional or marketing purposes. See Terms and Privacy Policy.
-              </span>
-            </label>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {t("planReminders.smsConsentPrefix")}{" "}
+                <Link to={legalTermsPath()} className="underline underline-offset-2 text-foreground/80 hover:text-foreground">
+                  {t("planReminders.smsConsentTerms")}
+                </Link>{" "}
+                {t("planReminders.smsConsentAnd")}{" "}
+                <Link to={legalPrivacyPath()} className="underline underline-offset-2 text-foreground/80 hover:text-foreground">
+                  {t("planReminders.smsConsentPrivacy")}
+                </Link>
+                .
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSmsConsentDialog(false)}>

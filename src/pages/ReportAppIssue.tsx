@@ -521,8 +521,8 @@ const ReportAppIssue = ({ workspaceMode = false }: ReportAppIssueProps) => {
                     <p className="text-base font-semibold text-foreground">{t("supportForm.successTitle")}</p>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {t("supportForm.successBody")}{" "}
-                      <a className="underline text-foreground" href="mailto:support@paletteplot.com">
-                        support@paletteplot.com
+                      <a className="underline text-foreground" href="mailto:support@paletteplotting.com">
+                        support@paletteplotting.com
                       </a>
                       {t("supportForm.successBodySuffix")}
                     </p>

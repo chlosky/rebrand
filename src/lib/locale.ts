@@ -44,7 +44,7 @@ export function oneSignalLanguageForApp(_locale: AppLocale): string {
   return "en";
 }
 
-export const LEGAL_SITE_ORIGIN = "https://paletteplot.com";
+export const LEGAL_SITE_ORIGIN = "https://paletteplotting.com";
 
 export function legalTermsPath(): string {
   return "/policies/app-terms";

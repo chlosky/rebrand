@@ -147,7 +147,7 @@ serve(async (req) => {
     }
 
     const siteUrl =
-      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplot.com";
+      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplotting.com";
     const privacyPolicyUrl = `${siteUrl.replace(/\/$/, "")}/privacy`;
 
     let processed = 0;

@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SUPPORT_EMAIL = "support@paletteplot.com";
+const SUPPORT_EMAIL = "support@paletteplotting.com";
 const DESCRIPTION_MIN = 10;
 const HELP_ME_CREATE_DESCRIPTION_MAX = 1000;
 const MAX_ATTACHMENTS = 3;

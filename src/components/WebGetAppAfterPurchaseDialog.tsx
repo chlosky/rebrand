@@ -1,3 +1,3 @@
-﻿export function WebGetAppAfterPurchaseDialog() {
+export function WebGetAppAfterPurchaseDialog() {
   return null;
 }

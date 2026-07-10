@@ -122,7 +122,7 @@ export function isUsableCheckoutUrl(urlString: string): boolean {
 
 /**
  * Storefront checkout URLs must land on Shopify-hosted domains.
- * paletteplot.com / checkout.paletteplot.com are not Shopify — rewrite to myshopify.com.
+ * paletteplotting.com (and legacy paletteplot.com aliases) are not Shopify — rewrite to myshopify.com.
  */
 export function resolveCheckoutUrl(checkoutUrl: string): string {
   const trimmed = checkoutUrl.trim();
@@ -391,7 +391,7 @@ function formatCartError(error: unknown): Error {
   const lower = message.toLowerCase();
   if (lower.includes("sold out") || lower.includes("out of stock")) {
     return new Error(
-      "Shopify reported this item as unavailable. Refresh the page and try again — if it keeps happening, clear site data for paletteplot.com in your browser settings.",
+      "Shopify reported this item as unavailable. Refresh the page and try again — if it keeps happening, clear site data for paletteplotting.com in your browser settings.",
     );
   }
   if (lower.includes("not configured")) {

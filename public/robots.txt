@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://paletteplot.com/sitemap.xml
+Sitemap: https://paletteplotting.com/sitemap.xml

@@ -146,7 +146,7 @@ serve(async (req) => {
     const listIdRaw = Deno.env.get("BREVO_PAYWALL_LIST_ID");
     const paywallListId = listIdRaw ? Number(listIdRaw) : BREVO_PAYWALL_LIST_ID_DEFAULT;
     const siteUrl =
-      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplot.com";
+      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplotting.com";
     const privacyPolicyUrl = `${siteUrl.replace(/\/$/, "")}/privacy`;
 
     let processed = 0;

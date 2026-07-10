@@ -52,7 +52,7 @@ export const GUIDE_PRODUCT_BODY = [
   GUIDE_PRODUCT_SUBTITLE,
   "The palette plotting Guide walks you through the method behind the 4-board setup: how to choose your focus areas, pick board colors, separate each category, add images, statements, stickers, notes, dates, numbers, and turn the final board into a plan.",
   "Use the method with whatever materials you already have, or use it alongside acrylic boards for a cleaner wall setup.",
-  "This is a digital guide/reader on paletteplot.com. No physical board is included with this product.",
+  "This is a digital guide/reader on paletteplotting.com. No physical board is included with this product.",
 ] as const;
 
 export const GUIDE_INCLUDED = [

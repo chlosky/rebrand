@@ -1039,7 +1039,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
 
       // Step 7: Send password setup email through Supabase Auth (non-blocking).
       try {
-        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplot.com';
+        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplotting.com';
         const { error: resetError } = await supabase.auth.admin.generateLink({
           type: 'recovery',
           email: updatedSession.email,

@@ -118,7 +118,7 @@ function resolvePortalReturnUrl(req: Request, bodyReturnUrl?: unknown): string {
     Deno.env.get("SITE_URL") ||
     Deno.env.get("APP_URL") ||
     Deno.env.get("VITE_APP_URL") ||
-    "https://paletteplot.com"
+    "https://paletteplotting.com"
   ).replace(/\/$/, "");
   candidates.push(`${siteUrl}/dashboard/settings`);
 
@@ -126,7 +126,7 @@ function resolvePortalReturnUrl(req: Request, bodyReturnUrl?: unknown): string {
     if (isHttpUrl(candidate)) return candidate;
   }
 
-  return "https://paletteplot.com/dashboard/settings";
+  return "https://paletteplotting.com/dashboard/settings";
 }
 
 async function findStripeCustomerId(

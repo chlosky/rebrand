@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => {
               if (id.includes('wasm-media-encoders') || id.includes('lamejs')) {
                 return 'audio-encoders';
               }
-              if (id.includes('@huggingface') || id.includes('@mediapipe')) {
+              if (id.includes('@mediapipe')) {
                 return 'ml-libs';
               }
               return 'vendor';

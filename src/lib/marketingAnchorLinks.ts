@@ -3,4 +3,4 @@ export const HOMEPAGE_NEWSLETTER_PATH = "/newsletter";
 
 export const HOMEPAGE_NEWSLETTER_HASH = "#newsletter";
 
-export const HOMEPAGE_NEWSLETTER_URL = `https://paletteplot.com${HOMEPAGE_NEWSLETTER_PATH}`;
+export const HOMEPAGE_NEWSLETTER_URL = `https://paletteplotting.com${HOMEPAGE_NEWSLETTER_PATH}`;

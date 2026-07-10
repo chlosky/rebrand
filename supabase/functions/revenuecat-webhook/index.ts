@@ -182,7 +182,7 @@ async function maybeSendTikTokCompletePayment(
     email,
     externalId: appUserId,
     ttclid,
-    url: "https://paletteplot.com/onboarding/web-paywall",
+    url: "https://paletteplotting.com/onboarding/web-paywall",
     contentId: "/onboarding/web-paywall",
     contentName: "web_revenuecat_paywall",
     value: price,

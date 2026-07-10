@@ -8,7 +8,7 @@ function isStaleShopifyCheckoutPath(pathname: string): boolean {
 
 /**
  * Returning from Shopify checkout often restores a blank/stale SPA from bfcache.
- * Also clear headless cart if Shopify sends shoppers to checkout-style paths on paletteplot.com.
+ * Also clear headless cart if Shopify sends shoppers to checkout-style paths on paletteplotting.com.
  */
 export function CheckoutReturnHandler() {
   const { pathname } = useLocation();

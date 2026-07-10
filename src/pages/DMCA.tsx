@@ -44,7 +44,7 @@ const DMCA = () => {
                   Submit DMCA Notices to:
                 </p>
                 <p className="text-muted-foreground mb-2">
-                  Email: support@paletteplot.com
+                  Email: support@paletteplotting.com
                 </p>
                 <p className="text-muted-foreground mb-4">
                   Subject Line: "DMCA Notice"
@@ -73,7 +73,7 @@ const DMCA = () => {
                   Submit Counter-Notifications to:
                 </p>
                 <p className="text-muted-foreground mb-2">
-                  Email: support@paletteplot.com
+                  Email: support@paletteplotting.com
                 </p>
                 <p className="text-muted-foreground mb-4">
                   Subject Line: "DMCA Counter-Notification"
@@ -103,7 +103,7 @@ const DMCA = () => {
                   For any questions regarding this policy, email us at:
                 </p>
                 <p className="text-muted-foreground">
-                  support@paletteplot.com
+                  support@paletteplotting.com
                 </p>
               </section>
             </div>

@@ -6076,32 +6076,44 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let drawTapStartX = 0;
       let drawTapStartY = 0;
       let drawTapHadMove = false;
-      let pinchRotateActive = false;
+      let pinchGestureActive = false;
       let pinchStartFingerAngle = 0;
+      let pinchStartFingerDist = 0;
       let pinchStartObjectAngle = 0;
-      let pinchRotateTarget: FabricObject | null = null;
+      let pinchStartScaleX = 1;
+      let pinchStartScaleY = 1;
+      let pinchGestureTarget: FabricObject | null = null;
       const lastTapRef = { time: 0, target: null as FabricObject | null };
       const lastDrawTapRef = { time: 0 };
 
       const fingerAngle = (t1: Touch, t2: Touch) =>
         (Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * 180) / Math.PI;
 
+      const fingerDistance = (t1: Touch, t2: Touch) =>
+        Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+      const clampPinchScale = (value: number) => {
+        const sign = Math.sign(value) || 1;
+        const magnitude = Math.min(20, Math.max(0.05, Math.abs(value)));
+        return sign * magnitude;
+      };
+
       const touchScenePoint = (canvas: Canvas, touch: Touch) =>
         canvas.getScenePoint({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
 
-      const isPinchRotatable = (obj: FabricObject | null | undefined): obj is FabricObject => {
-        if (!obj || obj.lockRotation) return false;
+      const isPinchGestureTarget = (obj: FabricObject | null | undefined): obj is FabricObject => {
+        if (!obj) return false;
         if (obj instanceof IText || obj instanceof Textbox) {
           if (obj.isEditing) return false;
         }
         const root = topLevelBoardRoot(obj);
         if (structureProp(root, "structureType")) return false;
-        return true;
+        return !obj.lockRotation || !obj.lockScaling;
       };
 
       const pinchTargetForTouches = (canvas: Canvas, t1: Touch, t2: Touch): FabricObject | null => {
         const active = canvas.getActiveObject();
-        if (!isPinchRotatable(active)) return null;
+        if (!isPinchGestureTarget(active)) return null;
         const root = topLevelBoardRoot(active);
         root.setCoords();
         const rect = root.getBoundingRect();
@@ -6161,10 +6173,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           if (!activeCanvas || activeCanvas.isDrawingMode || cropModeRef.current) return;
           const target = pinchTargetForTouches(activeCanvas, e.touches[0], e.touches[1]);
           if (!target) return;
-          pinchRotateActive = true;
-          pinchRotateTarget = target;
+          pinchGestureActive = true;
+          pinchGestureTarget = target;
           pinchStartFingerAngle = fingerAngle(e.touches[0], e.touches[1]);
+          pinchStartFingerDist = fingerDistance(e.touches[0], e.touches[1]);
           pinchStartObjectAngle = target.angle ?? 0;
+          pinchStartScaleX = target.scaleX ?? 1;
+          pinchStartScaleY = target.scaleY ?? 1;
           return;
         }
         if (e.touches.length !== 1) return;
@@ -6186,12 +6201,31 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       };
 
       const onTouchMove = (e: TouchEvent) => {
-        if (pinchRotateActive && e.touches.length === 2 && pinchRotateTarget && fabricRef.current) {
+        if (pinchGestureActive && e.touches.length === 2 && pinchGestureTarget && fabricRef.current) {
           e.preventDefault();
-          const angle = fingerAngle(e.touches[0], e.touches[1]);
-          pinchRotateTarget.set({ angle: pinchStartObjectAngle + (angle - pinchStartFingerAngle) });
-          pinchRotateTarget.setCoords();
-          fabricRef.current.requestRenderAll();
+          const target = pinchGestureTarget;
+          const updates: Partial<FabricObject> = {};
+
+          if (!target.lockScaling && pinchStartFingerDist > 0) {
+            const ratio = fingerDistance(e.touches[0], e.touches[1]) / pinchStartFingerDist;
+            updates.scaleX = clampPinchScale(pinchStartScaleX * ratio);
+            if (target.lockScalingY) {
+              updates.scaleY = pinchStartScaleY;
+            } else {
+              updates.scaleY = clampPinchScale(pinchStartScaleY * ratio);
+            }
+          }
+
+          if (!target.lockRotation) {
+            const angle = fingerAngle(e.touches[0], e.touches[1]);
+            updates.angle = pinchStartObjectAngle + (angle - pinchStartFingerAngle);
+          }
+
+          if (Object.keys(updates).length) {
+            target.set(updates);
+            target.setCoords();
+            fabricRef.current.requestRenderAll();
+          }
           return;
         }
         if (fabricRef.current?.isDrawingMode && e.touches[0]) {
@@ -6213,13 +6247,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (longPressTimer) window.clearTimeout(longPressTimer);
         longPressTimer = undefined;
 
-        if (pinchRotateActive && e.touches.length < 2) {
-          if (pinchRotateTarget) {
+        if (pinchGestureActive && e.touches.length < 2) {
+          if (pinchGestureTarget) {
             recordHistoryRef.current();
             scheduleSaveRef.current();
           }
-          pinchRotateActive = false;
-          pinchRotateTarget = null;
+          pinchGestureActive = false;
+          pinchGestureTarget = null;
           return;
         }
 

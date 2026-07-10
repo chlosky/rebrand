@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import { SMS_MAX_LENGTH } from "@/lib/boards/accountabilityMap";
 import { trackReminderAnalytics } from "@/lib/marketingConversionTrack";
+import { legalPrivacyPath, legalTermsPath } from "@/lib/locale";
 
 function normalizeToE164(phone: string): string | null {
   const trimmed = phone.trim();
@@ -357,16 +358,42 @@ export default function PlanReminderSettings() {
                   </div>
 
                   {!smsEnabled ? (
-                    <label className="flex cursor-pointer items-start gap-2 pt-2">
+                    <div className="flex items-start gap-2 pt-2">
                       <Checkbox
+                        id="plan-sms-consent"
                         checked={smsConsentChecked}
                         onCheckedChange={(v) => setSmsConsentChecked(v === true)}
-                        className="mt-0.5"
+                        className="mt-0.5 shrink-0"
                       />
-                      <span className={cn("text-xs leading-relaxed", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                        {t("planReminders.smsConsent")}
-                      </span>
-                    </label>
+                      <p
+                        className={cn(
+                          "text-xs leading-relaxed",
+                          theme === "dark" ? "text-white/55" : "text-muted-foreground",
+                        )}
+                      >
+                        {t("planReminders.smsConsentPrefix")}{" "}
+                        <Link
+                          to={legalTermsPath()}
+                          className={cn(
+                            "underline underline-offset-2",
+                            theme === "dark" ? "text-white/80 hover:text-white" : "text-foreground/80 hover:text-foreground",
+                          )}
+                        >
+                          {t("planReminders.smsConsentTerms")}
+                        </Link>{" "}
+                        {t("planReminders.smsConsentAnd")}{" "}
+                        <Link
+                          to={legalPrivacyPath()}
+                          className={cn(
+                            "underline underline-offset-2",
+                            theme === "dark" ? "text-white/80 hover:text-white" : "text-foreground/80 hover:text-foreground",
+                          )}
+                        >
+                          {t("planReminders.smsConsentPrivacy")}
+                        </Link>
+                        .
+                      </p>
+                    </div>
                   ) : (
                     <Button
                       type="button"

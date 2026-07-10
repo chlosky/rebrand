@@ -1,5 +1,5 @@
 /** Shown on marketing footer and Contact page (same as primary support inbox). */
-export const MARKETING_SUPPORT_EMAIL = "support@paletteplot.com";
+export const MARKETING_SUPPORT_EMAIL = "support@paletteplotting.com";
 
 export const MARKETING_SMS_E164 = "+17085547041";
 export const MARKETING_SMS_DISPLAY = "(708) 554-7041";

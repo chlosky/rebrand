@@ -12,6 +12,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function readAllowedHosts(): string[] {
   const base = [
+    "paletteplotting.com",
+    "www.paletteplotting.com",
+    "tool.paletteplotting.com",
     "paletteplot.com",
     "www.paletteplot.com",
     "tool.paletteplot.com",

@@ -23,7 +23,7 @@
     "focusPlaceholder": "Tell us what you're plotting and where you're stuck.",
     "helpTypeLabel": "What do you need help with?",
     "chooseOne": "Choose one",
-    "footer": "Please submit what feels most relevant. palette plotting will aim to reply within 24 to 48 hours of your request. You may also reach out to us at support@paletteplot.com.",
+    "footer": "Please submit what feels most relevant. palette plotting will aim to reply within 24 to 48 hours of your request. You may also reach out to us at support@paletteplotting.com.",
     "submit": "Submit",
     "submitting": "Submitting…"
   },
@@ -59,7 +59,7 @@
     "filesSelected_other": "{{count}} files selected",
     "noFilesSelected": "No files selected",
     "removeFileAria": "Remove {{name}}",
-    "contactFooter": "You may also reach out to us at support@paletteplot.com."
+    "contactFooter": "You may also reach out to us at support@paletteplotting.com."
   },
   "inbox": {
     "title": "Inbox",

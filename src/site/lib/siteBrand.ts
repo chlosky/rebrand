@@ -1,8 +1,8 @@
-/** Public brand for paletteplot.com */
+/** Public brand for paletteplotting.com */
 export const SITE_NAME = "palette plotting";
-export const SITE_ORIGIN = "https://paletteplot.com";
+export const SITE_ORIGIN = "https://paletteplotting.com";
 export const PRIVACY_POLICY_URL = `${SITE_ORIGIN}/policies/privacy`;
-export const SUPPORT_EMAIL = "support@paletteplot.com";
+export const SUPPORT_EMAIL = "support@paletteplotting.com";
 export const BUSINESS_NAME = "palette plotting";
 export const JSON_LD_SCRIPT_ID = "palette-plot-json-ld";
 
@@ -14,7 +14,9 @@ export function replaceLegacyBrandName(text: string): string {
   return text
     .replace(/\bVeligrid\b/gi, SITE_NAME)
     .replace(/support@veligrid\.com/gi, SUPPORT_EMAIL)
-    .replace(/\bveligrid\.com\b/gi, "paletteplot.com");
+    .replace(/support@paletteplot\.com/gi, SUPPORT_EMAIL)
+    .replace(/\bveligrid\.com\b/gi, "paletteplotting.com")
+    .replace(/\bpaletteplot\.com\b/gi, "paletteplotting.com");
 }
 
 export function pageTitle(suffix: string): string {

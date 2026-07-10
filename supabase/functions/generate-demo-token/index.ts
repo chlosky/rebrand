@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     // Generate demo access URL
-    const baseUrl = Deno.env.get('SITE_URL') || 'https://paletteplot.com';
+    const baseUrl = Deno.env.get('SITE_URL') || 'https://paletteplotting.com';
     const demoUrl = `${baseUrl}/demo-access?token=${token}`;
 
     return new Response(

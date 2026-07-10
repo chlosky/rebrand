@@ -26,7 +26,7 @@ function redirect(location: string): Response {
 serve(async (req) => {
   const url = new URL(req.url);
   const readerBase = `${url.origin}${url.pathname}`;
-  const homeOrigin = (Deno.env.get("DIGITAL_SITE_ORIGIN") || "https://paletteplot.com").replace(/\/$/, "");
+  const homeOrigin = (Deno.env.get("DIGITAL_SITE_ORIGIN") || "https://paletteplotting.com").replace(/\/$/, "");
   const productUrl = `${homeOrigin}/palette-plotting-guide`;
 
   try {
