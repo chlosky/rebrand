@@ -3,8 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type EmailCaptureSource =
   | "homepage_newsletter"
   | "homepage_demo_popup"
-  | "demo_feedback"
-  | "life_rebrand_quiz";
+  | "demo_feedback";
 
 export type EmailCaptureInsert = {
   first_name?: string | null;

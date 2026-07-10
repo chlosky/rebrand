@@ -11,12 +11,10 @@ import enPaywall from "./locales/en/paywall.json";
 import enTools from "./locales/en/tools.json";
 import enSupport from "./locales/en/support.json";
 import enMarketingBase from "./locales/en/marketing.json";
-import enMarketingLifeRebrandQuiz from "./locales/en/marketingLifeRebrandQuiz.json";
 import enMarketingWhatIs from "./locales/en/marketingWhatIs.json";
 
 const enMarketing = {
   ...enMarketingBase,
-  lifeRebrandQuiz: enMarketingLifeRebrandQuiz,
   whatIsPalettePlotting: enMarketingWhatIs,
 };
 

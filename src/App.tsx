@@ -56,7 +56,6 @@ import GetAppStore from "./pages/GetAppStore";
 import GetNewsletter from "./pages/GetNewsletter";
 import WhatIsPalettePlotting from "./pages/WhatIsPalettePlotting";
 import PlottingHelp from "./pages/PlottingHelp";
-import LifeRebrandQuiz from "./pages/LifeRebrandQuiz";
 import Community from "./pages/Community";
 import Unsubscribe from "./pages/Unsubscribe";
 import { SiteAccessGate } from "@/components/SiteAccessGate";
@@ -214,8 +213,6 @@ const App = () => {
               <Route path="/billing" element={<Navigate to="/policies/billing" replace />} />
               <Route path="/pricingplans" element={<PricingPlans />} />
               <Route path="/eula" element={<Navigate to="/policies/app-terms" replace />} />
-              <Route path="/quiz/blocking-manifestation" element={<Navigate to="/quiz/life-rebrand" replace />} />
-              <Route path="/quiz/life-rebrand" element={<LifeRebrandQuiz />} />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -19,7 +19,6 @@ const MARKETING_SITE_EXACT = new Set([
   "/billing",
   "/pricingplans",
   "/dmca",
-  "/quiz/life-rebrand",
   "/help/plotting",
 ]);
 
