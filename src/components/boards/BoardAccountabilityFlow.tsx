@@ -35,8 +35,8 @@ type BoardAccountabilityFlowProps = {
   compact?: boolean;
 };
 
-const MAP_GRID = "grid-cols-[240px_minmax(220px,280px)_minmax(460px,1fr)]";
-const PLAN_ACTION_GRID = "grid-cols-[minmax(220px,280px)_32px_minmax(460px,1fr)]";
+const MAP_GRID = "grid-cols-[240px_minmax(220px,280px)_minmax(440px,520px)]";
+const PLAN_ACTION_GRID = "grid-cols-[minmax(220px,280px)_32px_minmax(440px,520px)]";
 
 function newId(prefix: string) {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -315,7 +315,7 @@ function ActionNodeRow({
   const backLink = (
     <button
       type="button"
-      className="shrink-0 text-[10px] font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+      className="shrink-0 text-[10px] font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline max-md:text-[9px]"
       onClick={(e) => {
         e.stopPropagation();
         setFlipped(false);
@@ -382,34 +382,36 @@ function ActionNodeRow({
                 !flipped && "pointer-events-none",
               )}
             >
-              <div className="flex min-w-0 flex-1 touch-pan-x items-center gap-1 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {backLink}
-                <select
-                  disabled={locked}
-                  value={reminderType}
-                  onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
-                  className={cn(PILL_SELECT, "w-[82px] max-md:w-[72px]")}
-                  title="Reminder type"
-                >
-                  <option value="email">Email</option>
-                  <option value="calendar">Calendar</option>
-                  <option value="sms" disabled={!hasPro}>
-                    Text
-                  </option>
-                </select>
-                <CadenceTimingControls
-                  cadence={action.cadence}
-                  remind_date={action.remind_date}
-                  remind_day_of_month={action.remind_day_of_month}
-                  remind_day_of_week={action.remind_day_of_week}
-                  remind_time={action.remind_time}
-                  locked={locked}
-                  onCadence={(c) => onPatch({ cadence: c, ...applyCadenceFields(c) })}
-                  onRemindDate={(d) => onPatch({ remind_date: d })}
-                  onDayOfMonth={(d) => onPatch({ remind_day_of_month: d })}
-                  onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
-                  onTime={(t) => onPatch({ remind_time: t })}
-                />
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <div className="flex min-w-0 flex-1 touch-pan-x items-center gap-1 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <select
+                    disabled={locked}
+                    value={reminderType}
+                    onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
+                    className={cn(PILL_SELECT, "w-[82px] max-md:w-[72px]")}
+                    title="Reminder type"
+                  >
+                    <option value="email">Email</option>
+                    <option value="calendar">Calendar</option>
+                    <option value="sms" disabled={!hasPro}>
+                      Text
+                    </option>
+                  </select>
+                  <CadenceTimingControls
+                    cadence={action.cadence}
+                    remind_date={action.remind_date}
+                    remind_day_of_month={action.remind_day_of_month}
+                    remind_day_of_week={action.remind_day_of_week}
+                    remind_time={action.remind_time}
+                    locked={locked}
+                    onCadence={(c) => onPatch({ cadence: c, ...applyCadenceFields(c) })}
+                    onRemindDate={(d) => onPatch({ remind_date: d })}
+                    onDayOfMonth={(d) => onPatch({ remind_day_of_month: d })}
+                    onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
+                    onTime={(t) => onPatch({ remind_time: t })}
+                  />
+                </div>
+                {!locked ? backLink : null}
               </div>
               <div className={DELETE_SLOT_CLASS}>
                 <RejectOrDeleteButton
@@ -666,8 +668,8 @@ export function BoardAccountabilityFlow({
             : compact && emptyMap
               ? "flex h-full w-full min-w-0 flex-col p-4"
               : compact
-                ? "inline-block min-w-[1180px] p-4"
-                : "inline-block min-w-[1180px] p-12",
+                ? "inline-block min-w-[1100px] p-4"
+                : "inline-block min-w-[1100px] p-12",
         )}
       >
         {emptyMap ? (
