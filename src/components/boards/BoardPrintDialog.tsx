@@ -63,17 +63,13 @@ export function BoardPrintDialog({
 
   useEffect(() => {
     if (!open) return;
-    setSelectedBoardIds(boards.map((b) => b.id));
-  }, [open, boards]);
-
-  useEffect(() => {
-    if (!isPhoneWallpaper) return;
-    setSelectedBoardIds((prev) => {
-      if (prev.length === 1) return prev;
+    if (optionId === "phone-wallpaper") {
       const pick = boards.some((b) => b.id === activeBoardId) ? activeBoardId : boards[0]?.id;
-      return pick ? [pick] : [];
-    });
-  }, [isPhoneWallpaper, activeBoardId, boards]);
+      setSelectedBoardIds(pick ? [pick] : []);
+      return;
+    }
+    setSelectedBoardIds(boards.map((b) => b.id));
+  }, [open, boards, optionId, activeBoardId]);
 
   const selectedBoards = useMemo(
     () => boards.filter((b) => selectedBoardIds.includes(b.id)),
