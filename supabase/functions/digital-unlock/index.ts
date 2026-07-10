@@ -4,6 +4,7 @@ import {
   GUIDE_SECTIONS,
   corsHeaders,
   createSessionToken,
+  getDigitalSessionSecret,
   hasGuideEntitlement,
   isValidEmail,
   normalizeEmail,
@@ -25,10 +26,10 @@ serve(async (req) => {
   }
 
   try {
-    const secret = Deno.env.get("DIGITAL_SESSION_SECRET");
+    const secret = getDigitalSessionSecret();
     if (!secret) {
-      console.error("DIGITAL_SESSION_SECRET is not configured");
-      return json({ error: "Server not configured" }, 500);
+      console.error("Guide session secret is not configured");
+      return json({ error: "Guide access is unavailable right now. Please try again later." }, 500);
     }
 
     const { email } = await req.json().catch(() => ({ email: "" }));

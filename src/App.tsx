@@ -51,6 +51,7 @@ import SiteContact from "@/site/pages/ContactPage";
 import SiteBoardProduct from "@/site/pages/BoardProduct";
 import SiteCart from "@/site/pages/CartPage";
 import SiteGuidePreview from "@/site/pages/PalettePlottingGuidePreviewPage";
+import PalettePlottingGuideReaderPage from "@/site/pages/PalettePlottingGuideReaderPage";
 import PricingPlans from "./pages/PricingPlans";
 import GetAppStore from "./pages/GetAppStore";
 import GetNewsletter from "./pages/GetNewsletter";
@@ -102,6 +103,7 @@ const App = () => {
               <Route path="/about" element={<SiteAbout />} />
               <Route path="/policies/:slug" element={<SitePolicy />} />
               <Route path="/cart" element={<SiteCart />} />
+              <Route path="/palette-plotting-guide/read/:sectionSlug" element={<PalettePlottingGuideReaderPage />} />
               <Route path="/palette-plotting-guide" element={<SiteGuidePreview />} />
               <Route path="/library" element={<Navigate to="/palette-plotting-guide" replace />} />
               <Route path="/palette-plotting-system" element={<Navigate to="/palette-plotting-guide" replace />} />

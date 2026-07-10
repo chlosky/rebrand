@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import {
   GUIDE_SECTIONS,
   corsHeaders,
+  getDigitalSessionSecret,
   hasGuideEntitlement,
   readSessionEmail,
 } from "../_shared/digitalGuide.ts";
@@ -20,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const secret = Deno.env.get("DIGITAL_SESSION_SECRET");
+    const secret = getDigitalSessionSecret();
     if (!secret) return json({ authenticated: false, entitled: false });
 
     const auth = req.headers.get("authorization") || "";

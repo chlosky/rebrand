@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import {
   GUIDE_SECTIONS,
+  getDigitalSessionSecret,
   guideSectionBySlug,
   hasGuideEntitlement,
   readSessionEmail,
@@ -25,18 +26,21 @@ function redirect(location: string): Response {
 
 serve(async (req) => {
   const url = new URL(req.url);
-  const readerBase = `${url.origin}${url.pathname}`;
   const homeOrigin = (Deno.env.get("DIGITAL_SITE_ORIGIN") || "https://paletteplotting.com").replace(/\/$/, "");
   const productUrl = `${homeOrigin}/palette-plotting-guide`;
 
   try {
     const token = url.searchParams.get("token") || "";
     const requestedSlug = url.searchParams.get("section") || GUIDE_SECTIONS[0].slug;
+    const readerBaseParam = url.searchParams.get("reader_base");
+    const readerBase = readerBaseParam
+      ? readerBaseParam.replace(/\/$/, "")
+      : `${url.origin}${url.pathname}`;
 
-    const secret = Deno.env.get("DIGITAL_SESSION_SECRET");
+    const secret = getDigitalSessionSecret();
     if (!secret) {
-      console.error("DIGITAL_SESSION_SECRET is not configured");
-      return redirect(productUrl);
+      console.error("Guide session secret is not configured");
+      return redirect(`${productUrl}?locked=1`);
     }
 
     const email = await readSessionEmail(secret, token);
@@ -55,7 +59,7 @@ serve(async (req) => {
     }
 
     const section = guideSectionBySlug(requestedSlug) ?? GUIDE_SECTIONS[0];
-    return htmlResponse(renderGuideReaderPage(section, { readerBase, token, homeOrigin }));
+    return htmlResponse(renderGuideReaderPage(section, { readerBase, homeOrigin }));
   } catch (e) {
     console.error("guide-reader error:", e);
     return redirect(productUrl);

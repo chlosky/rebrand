@@ -50,6 +50,8 @@ export function DigitalLibraryLogin({
       }
 
       localStorage.setItem(GUIDE_TOKEN_STORAGE_KEY, data.token);
+      const secure = window.location.protocol === "https:";
+      document.cookie = `pp_guide_token=${encodeURIComponent(data.token)}; path=/; max-age=31536000; SameSite=Lax${secure ? "; Secure" : ""}`;
       window.location.href = buildGuideReaderUrl(data.token, data.firstSection ?? "start-here");
     } catch {
       setError("Could not open the guide. Try again.");
@@ -96,6 +98,8 @@ export function DigitalAccessNotice() {
   useEffect(() => {
     if (searchParams.get("signout") === "1") {
       localStorage.removeItem(GUIDE_TOKEN_STORAGE_KEY);
+      const secure = window.location.protocol === "https:";
+      document.cookie = `pp_guide_token=; path=/; max-age=0; SameSite=Lax${secure ? "; Secure" : ""}`;
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -171,4 +175,6 @@ export function useDigitalProductAccess() {
 
 export function signOutDigitalLibrary(): void {
   localStorage.removeItem(GUIDE_TOKEN_STORAGE_KEY);
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:";
+  document.cookie = `pp_guide_token=; path=/; max-age=0; SameSite=Lax${secure ? "; Secure" : ""}`;
 }

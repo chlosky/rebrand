@@ -11,14 +11,14 @@ const FUNCTIONS_BASE = `${SUPABASE_URL.replace(/\/$/, "")}/functions/v1`;
 export const DIGITAL_UNLOCK_URL = `${FUNCTIONS_BASE}/digital-unlock`;
 export const DIGITAL_SESSION_URL = `${FUNCTIONS_BASE}/digital-session`;
 export const CREATE_GUIDE_CHECKOUT_URL = `${FUNCTIONS_BASE}/create-guide-checkout`;
-const GUIDE_READER_URL = `${FUNCTIONS_BASE}/palette-plotting-guide-reader`;
+export const GUIDE_READER_API_URL = `${FUNCTIONS_BASE}/palette-plotting-guide-reader`;
 
 /** apikey required so the Supabase functions gateway routes the request. */
 export const DIGITAL_FUNCTIONS_APIKEY = SUPABASE_PUBLISHABLE_KEY;
 
 export function buildGuideReaderUrl(token: string, section = "start-here"): string {
-  const params = new URLSearchParams({ section, token });
-  return `${GUIDE_READER_URL}?${params.toString()}`;
+  const params = new URLSearchParams({ token });
+  return `/palette-plotting-guide/read/${section}?${params.toString()}`;
 }
 
 export type DigitalAccessModel = "lifetime" | "subscription" | "rental";

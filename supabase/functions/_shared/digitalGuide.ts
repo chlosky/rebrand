@@ -490,6 +490,14 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+/** HMAC secret for guide reader tokens — explicit env preferred, service role as fallback. */
+export function getDigitalSessionSecret(): string | null {
+  const explicit = (Deno.env.get("DIGITAL_SESSION_SECRET") || "").trim();
+  if (explicit) return explicit;
+  const serviceRole = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  return serviceRole || null;
+}
+
 export async function createSessionToken(secret: string, email: string): Promise<string> {
   const payload = {
     email: normalizeEmail(email),
@@ -580,7 +588,7 @@ export async function grantGuideEntitlement(
   });
 }
 
-// ---- HTML renderer (server-side, inlined CSS) ----
+// ---- HTML renderer (server-side, uses /guide-reader.css on the site origin) ----
 
 function escapeHtml(value: string): string {
   return value
@@ -631,108 +639,62 @@ function renderBlock(block: GuideBlock): string {
   }
 }
 
-const GUIDE_READER_CSS = `
-:root{color-scheme:light;--guide-bg:#faf8f5;--guide-text:#18181b;--guide-muted:#52525b;--guide-border:#e5e5e5;--guide-card:#ffffff;--guide-max:42rem;--guide-sidebar:14rem;}
-*{box-sizing:border-box;}html,body{margin:0;padding:0;}
-.guide-body{background:var(--guide-bg);color:var(--guide-text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;}
-.guide-shell{min-height:100vh;}
-.guide-header{position:sticky;top:0;z-index:20;background:rgba(250,248,245,0.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--guide-border);}
-.guide-header-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;max-width:calc(var(--guide-max) + var(--guide-sidebar) + 4rem);margin:0 auto;padding:0.75rem 1rem;}
-.guide-brand{color:var(--guide-text);font-size:0.95rem;font-weight:600;letter-spacing:0.01em;text-decoration:none;}
-.guide-sign-out{appearance:none;border:0;background:transparent;color:var(--guide-muted);cursor:pointer;font-size:0.8125rem;font-weight:500;margin-left:auto;margin-right:0.75rem;text-decoration:none;}
-.guide-sign-out:hover{color:var(--guide-text);}
-.guide-toc-toggle{appearance:none;border:1px solid var(--guide-border);background:var(--guide-card);border-radius:999px;color:var(--guide-text);cursor:pointer;font-size:0.8125rem;font-weight:500;min-height:40px;padding:0 1rem;}
-.guide-header-meta{max-width:calc(var(--guide-max) + var(--guide-sidebar) + 4rem);margin:0 auto;padding:0 1rem 0.75rem;}
-.guide-product-title{margin:0;font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--guide-muted);}
-.guide-layout{display:grid;grid-template-columns:1fr;gap:0;max-width:calc(var(--guide-max) + var(--guide-sidebar) + 4rem);margin:0 auto;padding:1.5rem 1rem 3rem;}
-.guide-sidebar{display:none;}
-.guide-mobile-toc{margin-bottom:1.5rem;padding:1rem;background:var(--guide-card);border:1px solid var(--guide-border);border-radius:0.75rem;}
-.guide-main{min-width:0;}
-.guide-toc-label{margin:0 0 0.75rem;color:var(--guide-muted);font-size:0.6875rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;}
-.guide-toc-list{list-style:none;margin:0;padding:0;}
-.guide-toc-list li + li{margin-top:0.25rem;}
-.guide-toc-link{display:block;padding:0.375rem 0;color:var(--guide-muted);font-size:0.875rem;text-decoration:none;}
-.guide-toc-link:hover,.guide-toc-link.is-active{color:var(--guide-text);}
-.guide-toc-link.is-active{font-weight:600;}
-.guide-section{max-width:var(--guide-max);}
-.guide-h1{margin:0 0 1.25rem;font-size:1.75rem;font-weight:600;letter-spacing:-0.02em;line-height:1.25;}
-.guide-h2{margin:1.5rem 0 0.75rem;font-size:1.0625rem;font-weight:600;line-height:1.35;}
-.guide-board-label{color:var(--guide-text);font-weight:600;}
-.guide-p{margin:0 0 1rem;color:var(--guide-muted);font-size:1rem;line-height:1.7;}
-.guide-ul,.guide-checklist{margin:0 0 1rem;padding-left:1.25rem;color:var(--guide-muted);}
-.guide-ul li,.guide-checklist li{margin-bottom:0.375rem;line-height:1.6;}
-.guide-checklist{list-style:none;padding-left:0;}
-.guide-checklist li{position:relative;padding-left:1.5rem;}
-.guide-checklist li::before{content:"□";position:absolute;left:0;color:var(--guide-text);}
-.guide-callout{margin:1.25rem 0;padding:1rem 1.125rem;background:var(--guide-card);border:1px solid var(--guide-border);border-radius:0.75rem;color:var(--guide-text);font-size:0.9375rem;line-height:1.6;}
-.guide-divider{border:0;border-top:1px solid var(--guide-border);margin:1.75rem 0;}
-.guide-color-grid{display:grid;gap:0.75rem;}
-.guide-color-card{padding:1rem;background:var(--guide-card);border:1px solid var(--guide-border);border-radius:0.75rem;}
-.guide-color-card-head{display:flex;gap:0.75rem;align-items:flex-start;}
-.guide-swatch{width:2rem;height:2rem;border-radius:999px;border:1px solid var(--guide-border);flex-shrink:0;}
-.guide-color-name{margin:0;font-size:1rem;font-weight:600;}
-.guide-color-best{margin:0.25rem 0 0;color:var(--guide-muted);font-size:0.875rem;line-height:1.5;}
-.guide-color-label{color:var(--guide-text);font-weight:600;}
-.guide-color-desc{margin:0.75rem 0 0;color:var(--guide-muted);font-size:0.9375rem;line-height:1.6;}
-.guide-prev-next{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--guide-border);}
-.guide-nav-btn{display:flex;align-items:center;min-height:44px;padding:0.75rem 1rem;background:var(--guide-card);border:1px solid var(--guide-border);border-radius:0.75rem;color:var(--guide-text);font-size:0.8125rem;font-weight:500;text-decoration:none;}
-.guide-nav-prev{justify-content:flex-start;}
-.guide-nav-next{justify-content:flex-end;}
-.guide-nav-spacer{display:block;}
-@media (min-width:900px){.guide-toc-toggle,.guide-mobile-toc{display:none;}.guide-layout{grid-template-columns:var(--guide-sidebar) minmax(0,1fr);gap:2.5rem;}.guide-sidebar{display:block;position:sticky;top:6.5rem;align-self:start;}}
-`;
-
-function sectionHref(readerBase: string, slug: string, token: string): string {
-  const params = new URLSearchParams({ section: slug, token });
+function sectionHref(readerBase: string, slug: string): string {
+  if (readerBase.endsWith("/read")) {
+    return `${readerBase}/${slug}`;
+  }
+  const params = new URLSearchParams({ section: slug });
   return `${readerBase}?${params.toString()}`;
 }
 
-function renderToc(readerBase: string, token: string, activeSlug: string): string {
+function renderToc(readerBase: string, activeSlug: string): string {
   return `<nav class="guide-toc" aria-label="Table of contents">
     <p class="guide-toc-label">Sections</p>
     <ol class="guide-toc-list">
       ${GUIDE_SECTIONS.map(
         (section) =>
-          `<li><a class="guide-toc-link${section.slug === activeSlug ? " is-active" : ""}" href="${sectionHref(readerBase, section.slug, token)}">${escapeHtml(section.title)}</a></li>`,
+          `<li><a class="guide-toc-link${section.slug === activeSlug ? " is-active" : ""}" href="${sectionHref(readerBase, section.slug)}" target="_top">${escapeHtml(section.title)}</a></li>`,
       ).join("")}
     </ol>
   </nav>`;
 }
 
-function renderPrevNext(readerBase: string, token: string, section: GuideSection): string {
+function renderPrevNext(readerBase: string, section: GuideSection): string {
   const index = GUIDE_SECTIONS.findIndex((item) => item.slug === section.slug);
   const prev = index > 0 ? GUIDE_SECTIONS[index - 1] : null;
   const next = index < GUIDE_SECTIONS.length - 1 ? GUIDE_SECTIONS[index + 1] : null;
   return `<nav class="guide-prev-next" aria-label="Section navigation">
-    ${prev ? `<a class="guide-nav-btn guide-nav-prev" href="${sectionHref(readerBase, prev.slug, token)}">← ${escapeHtml(prev.title)}</a>` : `<span class="guide-nav-spacer"></span>`}
-    ${next ? `<a class="guide-nav-btn guide-nav-next" href="${sectionHref(readerBase, next.slug, token)}">${escapeHtml(next.title)} →</a>` : `<span class="guide-nav-spacer"></span>`}
+    ${prev ? `<a class="guide-nav-btn guide-nav-prev" href="${sectionHref(readerBase, prev.slug)}" target="_top">← ${escapeHtml(prev.title)}</a>` : `<span class="guide-nav-spacer"></span>`}
+    ${next ? `<a class="guide-nav-btn guide-nav-next" href="${sectionHref(readerBase, next.slug)}" target="_top">${escapeHtml(next.title)} →</a>` : `<span class="guide-nav-spacer"></span>`}
   </nav>`;
 }
 
 export function renderGuideReaderPage(
   section: GuideSection,
-  opts: { readerBase: string; token: string; homeOrigin: string },
+  opts: { readerBase: string; homeOrigin: string },
 ): string {
   const body = section.blocks.map(renderBlock).join("\n");
-  const toc = renderToc(opts.readerBase, opts.token, section.slug);
-  const prevNext = renderPrevNext(opts.readerBase, opts.token, section);
+  const toc = renderToc(opts.readerBase, section.slug);
+  const prevNext = renderPrevNext(opts.readerBase, section);
   const signOutHref = `${opts.homeOrigin}/palette-plotting-guide?signout=1`;
+  const cssHref = `${opts.homeOrigin}/guide-reader.css`;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="color-scheme: light; background: #fafafa;">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
+  <meta name="color-scheme" content="light" />
   <title>${escapeHtml(section.title)} · ${escapeHtml(GUIDE_PRODUCT_TITLE)}</title>
-  <style>${GUIDE_READER_CSS}</style>
+  <link rel="stylesheet" href="${escapeHtml(cssHref)}" />
 </head>
 <body class="guide-body">
   <div class="guide-shell">
     <header class="guide-header">
       <div class="guide-header-inner">
-        <a class="guide-brand" href="${escapeHtml(opts.homeOrigin)}/">palette plotting</a>
-        <a class="guide-sign-out" href="${escapeHtml(signOutHref)}">Sign out</a>
+        <a class="guide-brand" href="${escapeHtml(opts.homeOrigin)}/" target="_top">palette plotting</a>
+        <a class="guide-sign-out" href="${escapeHtml(signOutHref)}" target="_top">Sign out</a>
         <button type="button" class="guide-toc-toggle" id="guide-toc-toggle" aria-expanded="false" aria-controls="guide-mobile-toc">Sections</button>
       </div>
       <div class="guide-header-meta">
