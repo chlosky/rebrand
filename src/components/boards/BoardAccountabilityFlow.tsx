@@ -342,14 +342,15 @@ function ActionNodeRow({
           </div>
         </div>
 
-        <div className="absolute inset-0 [perspective:1000px]">
+        <div className="absolute inset-0">
           <div
             className={cn(
-              "relative h-full transition-transform duration-500 [transform-style:preserve-3d]",
-              flipped && "[transform:rotateY(180deg)]",
+              cardFace,
+              cardFaceLayout,
+              "absolute inset-0 transition-opacity duration-150 ease-out",
+              flipped ? "pointer-events-none opacity-0" : "opacity-100",
             )}
           >
-            <div className={cn(cardFace, cardFaceLayout, "absolute inset-0 [backface-visibility:hidden]")}>
               <div className="flex min-w-0 flex-1 items-center gap-1">
                 <Input
                   value={action.title}
@@ -378,8 +379,8 @@ function ActionNodeRow({
               className={cn(
                 cardFace,
                 cardFaceLayout,
-                "absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]",
-                !flipped && "pointer-events-none",
+                "absolute inset-0 transition-opacity duration-150 ease-out",
+                flipped ? "opacity-100" : "pointer-events-none opacity-0",
               )}
             >
               <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -422,7 +423,6 @@ function ActionNodeRow({
                 />
               </div>
             </div>
-          </div>
         </div>
       </div>
       {action.channels.sms && !locked ? (
