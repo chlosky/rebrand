@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
@@ -495,7 +495,22 @@ export function BoardAccountabilityFlow({
 }: BoardAccountabilityFlowProps) {
   const boardById = new Map(boards.map((b) => [b.id, b]));
   const viewportRef = useRef<HTMLDivElement>(null);
+  const contentLayerRef = useRef<HTMLDivElement>(null);
   const panDrag = useRef<{ sx: number; sy: number; sl: number; st: number } | null>(null);
+  const mapViewRef = useRef({ x: 0, y: 0, scale: 1 });
+  const touchGestureRef = useRef<
+    | {
+        kind: "pinch";
+        startDist: number;
+        startScale: number;
+        startX: number;
+        startY: number;
+        focalX: number;
+        focalY: number;
+      }
+    | { kind: "pan"; startX: number; startY: number; baseX: number; baseY: number }
+    | null
+  >(null);
 
   const isInteractiveTarget = (target: EventTarget | null) =>
     !!(target as Element)?.closest?.(
@@ -647,13 +662,131 @@ export function BoardAccountabilityFlow({
   };
 
   const emptyMap = !map?.focuses?.length;
+  const mobilePinchPan = compact && !emptyMap;
+
+  useEffect(() => {
+    if (!mobilePinchPan) {
+      mapViewRef.current = { x: 0, y: 0, scale: 1 };
+      if (contentLayerRef.current) contentLayerRef.current.style.transform = "";
+      return;
+    }
+
+    const viewport = viewportRef.current;
+    const layer = contentLayerRef.current;
+    if (!viewport || !layer) return;
+
+    const applyMapView = () => {
+      const { x, y, scale } = mapViewRef.current;
+      layer.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+    };
+
+    const touchDistance = (a: Touch, b: Touch) =>
+      Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+    const touchMidpoint = (a: Touch, b: Touch) => ({
+      x: (a.clientX + b.clientX) / 2,
+      y: (a.clientY + b.clientY) / 2,
+    });
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (isInteractiveTarget(e.target)) return;
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const rect = viewport.getBoundingClientRect();
+        const mid = touchMidpoint(e.touches[0], e.touches[1]);
+        touchGestureRef.current = {
+          kind: "pinch",
+          startDist: touchDistance(e.touches[0], e.touches[1]),
+          startScale: mapViewRef.current.scale,
+          startX: mapViewRef.current.x,
+          startY: mapViewRef.current.y,
+          focalX: mid.x - rect.left,
+          focalY: mid.y - rect.top,
+        };
+      } else if (e.touches.length === 1) {
+        touchGestureRef.current = {
+          kind: "pan",
+          startX: e.touches[0].clientX,
+          startY: e.touches[0].clientY,
+          baseX: mapViewRef.current.x,
+          baseY: mapViewRef.current.y,
+        };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const gesture = touchGestureRef.current;
+      if (!gesture) return;
+
+      if (gesture.kind === "pinch" && e.touches.length >= 2) {
+        e.preventDefault();
+        const dist = touchDistance(e.touches[0], e.touches[1]);
+        if (gesture.startDist <= 0) return;
+        const scale = Math.min(2.5, Math.max(0.55, gesture.startScale * (dist / gesture.startDist)));
+        const ratio = scale / gesture.startScale;
+        mapViewRef.current = {
+          scale,
+          x: gesture.focalX - (gesture.focalX - gesture.startX) * ratio,
+          y: gesture.focalY - (gesture.focalY - gesture.startY) * ratio,
+        };
+        applyMapView();
+        return;
+      }
+
+      if (gesture.kind === "pan" && e.touches.length === 1) {
+        e.preventDefault();
+        mapViewRef.current = {
+          ...mapViewRef.current,
+          x: gesture.baseX + (e.touches[0].clientX - gesture.startX),
+          y: gesture.baseY + (e.touches[0].clientY - gesture.startY),
+        };
+        applyMapView();
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        touchGestureRef.current = null;
+        return;
+      }
+      if (e.touches.length === 1 && touchGestureRef.current?.kind === "pinch") {
+        touchGestureRef.current = {
+          kind: "pan",
+          startX: e.touches[0].clientX,
+          startY: e.touches[0].clientY,
+          baseX: mapViewRef.current.x,
+          baseY: mapViewRef.current.y,
+        };
+      }
+    };
+
+    viewport.addEventListener("touchstart", onTouchStart, { passive: false });
+    viewport.addEventListener("touchmove", onTouchMove, { passive: false });
+    viewport.addEventListener("touchend", onTouchEnd);
+    viewport.addEventListener("touchcancel", onTouchEnd);
+
+    return () => {
+      viewport.removeEventListener("touchstart", onTouchStart);
+      viewport.removeEventListener("touchmove", onTouchMove);
+      viewport.removeEventListener("touchend", onTouchEnd);
+      viewport.removeEventListener("touchcancel", onTouchEnd);
+      layer.style.transform = "";
+      touchGestureRef.current = null;
+    };
+  }, [mobilePinchPan]);
 
   return (
     <main
       ref={viewportRef}
       className={cn(
         "min-h-0 min-w-0 flex-1 overscroll-contain",
-        emptyMap && !compact ? "flex overflow-hidden" : compact && emptyMap ? "overflow-hidden" : "cursor-grab overflow-auto touch-pan-x touch-pan-y",
+        emptyMap && !compact
+          ? "flex overflow-hidden"
+          : compact && emptyMap
+            ? "overflow-hidden"
+            : mobilePinchPan
+              ? "overflow-hidden touch-none"
+              : "cursor-grab overflow-auto touch-pan-x touch-pan-y",
       )}
       onPointerDown={onPanStart}
       onPointerMove={onPanMove}
@@ -662,13 +795,14 @@ export function BoardAccountabilityFlow({
       onPointerLeave={onPanEnd}
     >
       <div
+        ref={contentLayerRef}
         className={cn(
           emptyMap && !compact
             ? "flex h-full w-full min-w-0 items-center justify-center p-12"
             : compact && emptyMap
               ? "flex h-full w-full min-w-0 flex-col p-4"
               : compact
-                ? "inline-block min-w-[1100px] p-4"
+                ? "inline-block min-w-[1100px] origin-top-left p-4 will-change-transform"
                 : "inline-block min-w-[1100px] p-12",
         )}
       >

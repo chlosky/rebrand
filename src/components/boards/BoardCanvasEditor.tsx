@@ -273,16 +273,34 @@ function polaroidMetrics(photoW: number, photoH: number) {
 }
 
 function imageFrameInnerSize(group: Group): { w: number; h: number } {
+  const sx = Math.abs(group.scaleX ?? 1);
+  const sy = Math.abs(group.scaleY ?? 1);
   if (group.get("frameShapeType") === "photo") {
     return {
-      w: Number(group.get("framePhotoWidth") ?? 200),
-      h: Number(group.get("framePhotoHeight") ?? 200),
+      w: Number(group.get("framePhotoWidth") ?? 200) * sx,
+      h: Number(group.get("framePhotoHeight") ?? 200) * sy,
     };
   }
   return {
-    w: Number(group.get("frameWidth") ?? group.width ?? 200),
-    h: Number(group.get("frameHeight") ?? group.height ?? 200),
+    w: Number(group.get("frameWidth") ?? group.width ?? 200) * sx,
+    h: Number(group.get("frameHeight") ?? group.height ?? 200) * sy,
   };
+}
+
+function syncPolaroidFrameImageClip(image: FabricImage, photoW: number, photoH: number) {
+  const sx = Math.abs(image.scaleX ?? 1);
+  const sy = Math.abs(image.scaleY ?? 1);
+  image.set({
+    clipPath: new Rect({
+      width: photoW / sx,
+      height: photoH / sy,
+      originX: "center",
+      originY: "center",
+      left: -(image.left ?? 0) / sx,
+      top: -(image.top ?? 0) / sy,
+    }),
+  });
+  image.setCoords();
 }
 
 function prepareImageForPolaroidFrame(img: FabricImage, m: ReturnType<typeof polaroidMetrics>) {
@@ -902,7 +920,7 @@ function restoreImageFrameAfterLoad(group: Group) {
     }
     for (const child of group.getObjects()) {
       if (child instanceof FabricImage && child.get("markKind") === "frame-image") {
-        prepareImageForPolaroidFrame(child, m);
+        syncPolaroidFrameImageClip(child, m.photoW, m.photoH);
         child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
       } else if (child.get("markKind") === "frame-backing" || child.get("markKind") === "frame-inset") {
         child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
@@ -924,6 +942,45 @@ function restoreImageFrameAfterLoad(group: Group) {
   }
   applyBoardFabricControls(group);
   group.setCoords();
+}
+
+function normalizeImageFrameResize(group: Group) {
+  const sx = Math.abs(group.scaleX ?? 1);
+  const sy = Math.abs(group.scaleY ?? 1);
+  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return group;
+
+  const shapeType = group.get("frameShapeType") as BoardMarkShapeType | undefined;
+  if (shapeType === "photo") {
+    const photoW = Math.max(40, Number(group.get("framePhotoWidth") ?? 200) * sx);
+    const photoH = Math.max(40, Number(group.get("framePhotoHeight") ?? 200) * sy);
+    const m = polaroidMetrics(photoW, photoH);
+    group.set({
+      scaleX: 1,
+      scaleY: 1,
+      width: m.totalW,
+      height: m.totalH,
+      frameWidth: m.totalW,
+      frameHeight: m.totalH,
+      framePhotoWidth: m.photoW,
+      framePhotoHeight: m.photoH,
+    });
+  } else if (shapeType && IMAGE_CLIP_FRAME_SHAPES.has(shapeType)) {
+    const frameW = Math.max(40, Number(group.get("frameWidth") ?? group.width ?? 200) * sx);
+    const frameH = Math.max(40, Number(group.get("frameHeight") ?? group.height ?? 200) * sy);
+    group.set({
+      scaleX: 1,
+      scaleY: 1,
+      width: frameW,
+      height: frameH,
+      frameWidth: frameW,
+      frameHeight: frameH,
+    });
+  } else {
+    return group;
+  }
+
+  restoreImageFrameAfterLoad(group);
+  return group;
 }
 
 function prepareImageForFrame(img: FabricImage, frameW: number, frameH: number) {
@@ -4379,6 +4436,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               normalizeParchmentResize(target);
             } else if (target.get("markKind") === "shape" && target.get("textCapable")) {
               normalizeTextCapableShapeResize(target);
+            } else if (target.get("markKind") === "image-frame") {
+              normalizeImageFrameResize(target);
             } else if (target.get("structureId")) {
               const structureType = target.get("structureType");
 
@@ -4943,6 +5002,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         subTargetCheck: false,
       });
       applyBoardFabricControls(crop.group ?? crop.image);
+      if (crop.group?.get("frameShapeType") === "photo") {
+        const photoW = Number(crop.group.get("framePhotoWidth") ?? 200);
+        const photoH = Number(crop.group.get("framePhotoHeight") ?? 200);
+        syncPolaroidFrameImageClip(crop.image, photoW, photoH);
+      }
       crop.image.set({
         selectable: false,
         evented: false,
@@ -4981,6 +5045,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         setQuickSelector(null);
         deleteTargetRef.current = group ?? image;
+        if (group?.get("frameShapeType") === "photo") {
+          image.set({ clipPath: undefined });
+        }
         group?.set({
           hasControls: false,
           hasBorders: false,
@@ -4989,14 +5056,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           lockScaling: true,
           lockRotation: true,
           selectable: false,
-          evented: false,
+          evented: true,
+          subTargetCheck: true,
+          interactive: true,
         });
+        for (const child of group?.getObjects() ?? []) {
+          if (child instanceof FabricImage && child.get("markKind") === "frame-image") continue;
+          child.set({ evented: false, selectable: false });
+        }
         image.set({
           hasControls: true,
           hasBorders: true,
           selectable: true,
           evented: true,
           lockRotation: true,
+          objectCaching: false,
         });
         applyBoardFabricControls(image);
         canvas.setActiveObject(image);
@@ -6902,6 +6976,20 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (e.changedTouches.length !== 1) return;
 
         const target = activeCanvas.findTarget(e) as FabricObject | undefined;
+        if (imageFrameGroupFromTarget(target as FabricObject)) {
+          const frameRoot = imageFrameGroupFromTarget(target as FabricObject)!;
+          const now = Date.now();
+          if (lastTapRef.target === frameRoot && now - lastTapRef.time < 400) {
+            enterImageCropModeRef.current(target as FabricObject);
+            lastTapRef.time = 0;
+            lastTapRef.target = null;
+            return;
+          }
+          lastTapRef.time = now;
+          lastTapRef.target = frameRoot;
+          return;
+        }
+
         if (isStatementTarget(target)) {
           e.preventDefault();
           enterObjectTextEditing(
