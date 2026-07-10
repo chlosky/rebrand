@@ -309,7 +309,7 @@ BOARD TARGETING — user may ask to change ANY board in the workspace, not only 
    dash: true, false, or "toggle" (lines, dividers, freehand strokes)
    font_size: S, M, L, XL (text elements)
    text_align: left, center, right
-   font: sans, serif, display, script
+   font: sans, serif, garamond, display, script
    Image frame requests → style_element with frame (photo, rect, circle, heart, star, hexagon, diamond). Same native Frame button as long-press on an image.
    NEVER use add_shape or add_sticker for framing. NEVER say "shapes around the images" or similar workarounds in reply text.
 

@@ -61,7 +61,7 @@ export type BoardMarkTextSize = "S" | "M" | "L" | "XL";
 
 export type BoardMarkTextAlign = "left" | "center" | "right";
 
-export type BoardMarkTextFont = "sans" | "serif" | "display" | "script";
+export type BoardMarkTextFont = "sans" | "serif" | "garamond" | "display" | "script";
 
 export const BOARD_MARK_FONT_OPTIONS: {
   id: BoardMarkTextFont;
@@ -70,6 +70,7 @@ export const BOARD_MARK_FONT_OPTIONS: {
 }[] = [
   { id: "sans", label: "Sans", fontFamily: "Satoshi, system-ui, sans-serif" },
   { id: "serif", label: "Serif", fontFamily: "Georgia, 'Times New Roman', serif" },
+  { id: "garamond", label: "Garamond", fontFamily: '"EB Garamond", Garamond, Georgia, "Times New Roman", serif' },
   { id: "display", label: "Display", fontFamily: '"Bricolage Grotesque", Satoshi, system-ui, sans-serif' },
   { id: "script", label: "Script", fontFamily: "Allura, cursive" },
 ];
@@ -182,6 +183,7 @@ export const BOARD_MARK_FRAME_OPTIONS: {
 ];
 
 const IMAGE_OBJECT_ACTIONS: WheelItem[] = [
+  { id: "edit", label: "Edit", Icon: ImagePlus },
   { id: "round", label: "Round", Icon: Radius },
   { id: "frame", label: "Frame", Icon: Shapes },
   { id: "copy", label: "Copy", Icon: ClipboardCopy },
@@ -206,6 +208,7 @@ type BoardMarksQuickSelectorProps = {
   imageCapable?: boolean;
   lineCapable?: boolean;
   batchMixed?: boolean;
+  batchCount?: number;
   canPaste?: boolean;
   onPick: (action: BoardMarksQuickAction) => void;
   onClose: () => void;
@@ -216,6 +219,7 @@ type BoardMarksQuickSelectorProps = {
   onElementSizePick?: (size: BoardMarkTextSize) => void;
   onElementTextAlignPick?: (align: BoardMarkTextAlign) => void;
   onElementFontPick?: (font: BoardMarkTextFont) => void;
+  onImageEditPick?: () => void;
   onImageRoundPick?: () => void;
   onImageFramePick?: (shape: BoardMarkShapeType) => void;
   onLineDashPick?: () => void;
@@ -297,6 +301,7 @@ export function BoardMarksQuickSelector({
   imageCapable = false,
   lineCapable = false,
   batchMixed = false,
+  batchCount,
   canPaste = false,
   onPick,
   onClose,
@@ -307,6 +312,7 @@ export function BoardMarksQuickSelector({
   onElementSizePick,
   onElementTextAlignPick,
   onElementFontPick,
+  onImageEditPick,
   onImageRoundPick,
   onImageFramePick,
   onLineDashPick,
@@ -354,8 +360,12 @@ export function BoardMarksQuickSelector({
         return actions.map((item, i) => ({ ...item, angle: angles[i] }));
       }
       if (imageCapable) {
-        const angles = spreadAngles(IMAGE_OBJECT_ACTIONS.length);
-        return IMAGE_OBJECT_ACTIONS.map((item, i) => ({ ...item, angle: angles[i] }));
+        const imageActions =
+          batchCount && batchCount > 1
+            ? IMAGE_OBJECT_ACTIONS.filter((item) => item.id !== "edit")
+            : IMAGE_OBJECT_ACTIONS;
+        const angles = spreadAngles(imageActions.length);
+        return imageActions.map((item, i) => ({ ...item, angle: angles[i] }));
       }
       if (lineCapable) {
         const angles = spreadAngles(LINE_OBJECT_ACTIONS.length);
@@ -467,6 +477,11 @@ export function BoardMarksQuickSelector({
       return;
     }
     if (id === "edit") {
+      if (imageCapable && !textCapable) {
+        onImageEditPick?.();
+        onClose();
+        return;
+      }
       setPaletteOpen(false);
       setSizeOpen(false);
       setFrameOpen(false);

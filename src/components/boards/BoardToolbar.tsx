@@ -1,8 +1,10 @@
 import { useState } from "react";
 import {
   Layers,
+  Loader2,
   Redo2,
   RotateCcw,
+  Save,
   StickyNote,
   Trash2,
   Type,
@@ -37,6 +39,9 @@ type BoardToolbarProps = {
   orientation?: "vertical" | "horizontal";
   canUndo?: boolean;
   canRedo?: boolean;
+  /** Explicit save — writes all open boards to Supabase. */
+  onSave?: () => void | Promise<void>;
+  saving?: boolean;
   /** Mobile: keep toolbar on one row; Reset + Delete stay paired. */
   compact?: boolean;
   /** Mobile only: Delete menu includes delete board. */
@@ -55,6 +60,8 @@ export function BoardToolbar({
   orientation = "vertical",
   canUndo = false,
   canRedo = false,
+  onSave,
+  saving = false,
   compact = false,
   onDeleteBoard,
 }: BoardToolbarProps) {
@@ -126,6 +133,27 @@ export function BoardToolbar({
         </Button>
 
         {horizontal && <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />}
+
+        {onSave ? (
+          <Button
+            variant="default"
+            className={cn(
+              toolBtn,
+              horizontal
+                ? "h-9 w-auto bg-stone-900 text-white hover:bg-stone-800 hover:text-white"
+                : "w-full bg-stone-900 text-white hover:bg-stone-800 hover:text-white",
+            )}
+            disabled={saving}
+            onClick={() => void onSave()}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {horizontal ? <span className="sr-only sm:not-sr-only">Save</span> : "Save"}
+          </Button>
+        ) : null}
+
+        {horizontal && onSave ? (
+          <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />
+        ) : null}
 
         <div className="flex shrink-0 items-center gap-1">
           <Button

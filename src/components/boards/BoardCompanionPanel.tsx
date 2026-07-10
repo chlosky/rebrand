@@ -210,7 +210,7 @@ const VALID_FRAME_SHAPES = new Set<BoardMarkShapeType>([
 
 const VALID_TEXT_SIZES = new Set<BoardMarkTextSize>(["S", "M", "L", "XL"]);
 const VALID_TEXT_ALIGNS = new Set<BoardMarkTextAlign>(["left", "center", "right"]);
-const VALID_TEXT_FONTS = new Set<BoardMarkTextFont>(["sans", "serif", "display", "script"]);
+const VALID_TEXT_FONTS = new Set<BoardMarkTextFont>(["sans", "serif", "garamond", "display", "script"]);
 
 function hasElementTarget(a: Record<string, unknown>): boolean {
   if (typeof a.element_index === "number" && Number.isFinite(a.element_index)) return true;

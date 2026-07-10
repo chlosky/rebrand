@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
@@ -52,6 +52,8 @@ function suggestedBorder(status: string) {
 
 const PILL_SELECT =
   "h-7 max-w-full shrink-0 rounded-lg border-0 bg-neutral-100 px-1.5 text-[10px] text-neutral-700 outline-none focus:ring-1 focus:ring-neutral-300";
+
+const DELETE_SLOT_CLASS = "flex h-8 w-6 shrink-0 items-center justify-end";
 
 type ReminderType = "calendar" | "email" | "sms";
 
@@ -169,7 +171,7 @@ function CadenceTimingControls({
         disabled={locked}
         value={timeValue}
         onChange={(e) => onTime(e.target.value || "09:00")}
-        className={cn(PILL_SELECT, "w-[5.25rem] min-w-[5.25rem] px-1.5 text-center [&::-webkit-calendar-picker-indicator]:hidden")}
+        className={cn(PILL_SELECT, "w-[5.25rem] min-w-[5.25rem] px-1.5 text-center max-md:w-[4.5rem] max-md:min-w-[4.5rem] [&::-webkit-calendar-picker-indicator]:hidden")}
         aria-label="Reminder time"
       />
     </div>
@@ -200,42 +202,46 @@ function PlanNodeRow({
   return (
     <div
       className={cn(
-        "flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
+        "flex min-h-[40px] w-full flex-nowrap items-center gap-1 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
         suggestedBorder(status),
         className,
       )}
       data-map-node
     >
-      <Input
-        value={title}
-        disabled={locked}
-        onChange={(e) => onTitle(stripChromeFromInput(e.target.value))}
-        onBlur={(e) => {
-          const cleaned = naturalizeTitle(e.target.value);
-          if (cleaned !== e.target.value) onTitle(cleaned);
-        }}
-        className="h-8 min-w-[120px] flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
-        placeholder={placeholder}
-      />
-      {!locked && onAddAction ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddAction();
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        <Input
+          value={title}
+          disabled={locked}
+          onChange={(e) => onTitle(stripChromeFromInput(e.target.value))}
+          onBlur={(e) => {
+            const cleaned = naturalizeTitle(e.target.value);
+            if (cleaned !== e.target.value) onTitle(cleaned);
           }}
-          className="shrink-0 rounded-full border border-dashed border-neutral-300 bg-white/70 px-2.5 py-1 text-[10px] text-neutral-500 hover:border-neutral-400 hover:text-neutral-700"
-        >
-          <Plus className="mr-1 inline h-3 w-3" />
-          Add action
-        </button>
-      ) : null}
-      <RejectOrDeleteButton
-        suggested={status === "suggested"}
-        locked={locked}
-        onReject={onReject}
-        onDelete={onDelete}
-      />
+          className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0 max-md:min-w-[80px]"
+          placeholder={placeholder}
+        />
+        {!locked && onAddAction ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddAction();
+            }}
+            className="shrink-0 rounded-full border border-dashed border-neutral-300 bg-white/70 px-2.5 py-1 text-[10px] text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 max-md:px-2 max-md:py-0.5"
+          >
+            <Plus className="mr-1 inline h-3 w-3" />
+            Add action
+          </button>
+        ) : null}
+      </div>
+      <div className={DELETE_SLOT_CLASS}>
+        <RejectOrDeleteButton
+          suggested={status === "suggested"}
+          locked={locked}
+          onReject={onReject}
+          onDelete={onDelete}
+        />
+      </div>
     </div>
   );
 }
@@ -259,6 +265,7 @@ function ActionNodeRow({
   onReject: () => void;
   onDelete: () => void;
 }) {
+  const [flipped, setFlipped] = useState(false);
   const smsLen = stripSmsText(action.sms_text ?? smsTextFromTitle(action.title)).length;
   const smsOver = smsLen > SMS_MAX_LENGTH;
 
@@ -286,60 +293,138 @@ function ActionNodeRow({
     onPatch(patch);
   };
 
+  const cardFace = cn(
+    "rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
+    suggestedBorder(action.status),
+  );
+
+  const reminderSettingsLink = (
+    <button
+      type="button"
+      className="shrink-0 text-[10px] font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline max-md:text-[9px]"
+      onClick={(e) => {
+        e.stopPropagation();
+        setFlipped(true);
+      }}
+    >
+      <span className="max-md:hidden">Reminder settings</span>
+      <span className="md:hidden">Reminders</span>
+    </button>
+  );
+
+  const backLink = (
+    <button
+      type="button"
+      className="shrink-0 text-[10px] font-medium text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+      onClick={(e) => {
+        e.stopPropagation();
+        setFlipped(false);
+      }}
+    >
+      Action
+    </button>
+  );
+
+  const cardFaceLayout = "flex min-h-[40px] w-full max-w-full flex-nowrap items-center gap-1";
+
   return (
     <div className="w-full max-w-full space-y-1" data-map-node>
-      <div
-        className={cn(
-          "inline-flex min-h-[40px] w-full max-w-full flex-nowrap items-center gap-1 rounded-xl border bg-white/95 py-1 pl-2.5 pr-1 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
-          suggestedBorder(action.status),
-        )}
-      >
-        <Input
-          value={action.title}
-          disabled={locked}
-          onChange={(e) => onPatch({ title: stripChromeFromInput(e.target.value) })}
-          onBlur={(e) => {
-            const cleaned = naturalizeTitle(e.target.value);
-            if (cleaned !== e.target.value) onPatch({ title: cleaned });
-          }}
-          className="h-8 min-w-0 flex-1 truncate border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
-          placeholder="Action"
-        />
-        <select
-          disabled={locked}
-          value={reminderType}
-          onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
-          className={cn(PILL_SELECT, "w-[82px]")}
-          title="Reminder type"
-        >
-          <option value="email">Email</option>
-          <option value="calendar">Calendar</option>
-          <option value="sms" disabled={!hasPro}>
-            Text
-          </option>
-        </select>
-        <CadenceTimingControls
-          cadence={action.cadence}
-          remind_date={action.remind_date}
-          remind_day_of_month={action.remind_day_of_month}
-          remind_day_of_week={action.remind_day_of_week}
-          remind_time={action.remind_time}
-          locked={locked}
-          onCadence={(c) => onPatch({ cadence: c, ...applyCadenceFields(c) })}
-          onRemindDate={(d) => onPatch({ remind_date: d })}
-          onDayOfMonth={(d) => onPatch({ remind_day_of_month: d })}
-          onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
-          onTime={(t) => onPatch({ remind_time: t })}
-        />
-        <RejectOrDeleteButton
-          suggested={action.status === "suggested"}
-          locked={locked}
-          onReject={onReject}
-          onDelete={onDelete}
-        />
+      <div className="relative w-full max-w-full">
+        <div className="invisible pointer-events-none" aria-hidden>
+          <div className={cn(cardFace, cardFaceLayout)}>
+            <div className="flex min-w-0 flex-1 items-center gap-1">
+              <div className="h-8 min-w-0 flex-1 px-1 text-sm font-medium">&nbsp;</div>
+              {!locked ? <span className="shrink-0 text-[10px]">Reminder settings</span> : null}
+            </div>
+            <div className={DELETE_SLOT_CLASS}>
+              <div className="h-3.5 w-3.5" />
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute inset-0 [perspective:1000px]">
+          <div
+            className={cn(
+              "relative h-full transition-transform duration-500 [transform-style:preserve-3d]",
+              flipped && "[transform:rotateY(180deg)]",
+            )}
+          >
+            <div className={cn(cardFace, cardFaceLayout, "absolute inset-0 [backface-visibility:hidden]")}>
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <Input
+                  value={action.title}
+                  disabled={locked}
+                  onChange={(e) => onPatch({ title: stripChromeFromInput(e.target.value) })}
+                  onBlur={(e) => {
+                    const cleaned = naturalizeTitle(e.target.value);
+                    if (cleaned !== e.target.value) onPatch({ title: cleaned });
+                  }}
+                  className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-sm font-medium text-neutral-900 shadow-none placeholder:text-neutral-400 focus-visible:ring-0"
+                  placeholder="Action"
+                />
+                {!locked ? reminderSettingsLink : null}
+              </div>
+              <div className={DELETE_SLOT_CLASS}>
+                <RejectOrDeleteButton
+                  suggested={action.status === "suggested"}
+                  locked={locked}
+                  onReject={onReject}
+                  onDelete={onDelete}
+                />
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                cardFace,
+                cardFaceLayout,
+                "absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]",
+                !flipped && "pointer-events-none",
+              )}
+            >
+              <div className="flex min-w-0 flex-1 touch-pan-x items-center gap-1 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {backLink}
+                <select
+                  disabled={locked}
+                  value={reminderType}
+                  onChange={(e) => onReminderTypeChange(e.target.value as ReminderType)}
+                  className={cn(PILL_SELECT, "w-[82px] max-md:w-[72px]")}
+                  title="Reminder type"
+                >
+                  <option value="email">Email</option>
+                  <option value="calendar">Calendar</option>
+                  <option value="sms" disabled={!hasPro}>
+                    Text
+                  </option>
+                </select>
+                <CadenceTimingControls
+                  cadence={action.cadence}
+                  remind_date={action.remind_date}
+                  remind_day_of_month={action.remind_day_of_month}
+                  remind_day_of_week={action.remind_day_of_week}
+                  remind_time={action.remind_time}
+                  locked={locked}
+                  onCadence={(c) => onPatch({ cadence: c, ...applyCadenceFields(c) })}
+                  onRemindDate={(d) => onPatch({ remind_date: d })}
+                  onDayOfMonth={(d) => onPatch({ remind_day_of_month: d })}
+                  onDayOfWeek={(d) => onPatch({ remind_day_of_week: d })}
+                  onTime={(t) => onPatch({ remind_time: t })}
+                />
+              </div>
+              <div className={DELETE_SLOT_CLASS}>
+                <RejectOrDeleteButton
+                  suggested={action.status === "suggested"}
+                  locked={locked}
+                  onReject={onReject}
+                  onDelete={onDelete}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       {action.channels.sms && !locked ? (
-        <div className="ml-2 flex max-w-[28rem] items-center gap-2 px-1">
+        <div className="flex w-full max-w-full items-center gap-2 px-1">
           <Input
             value={action.sms_text ?? smsTextFromTitle(action.title)}
             onChange={(e) =>
@@ -580,7 +665,9 @@ export function BoardAccountabilityFlow({
             ? "flex h-full w-full min-w-0 items-center justify-center p-12"
             : compact && emptyMap
               ? "flex h-full w-full min-w-0 flex-col p-4"
-              : "inline-block min-w-[1180px] p-12",
+              : compact
+                ? "inline-block min-w-[1180px] p-4"
+                : "inline-block min-w-[1180px] p-12",
         )}
       >
         {emptyMap ? (

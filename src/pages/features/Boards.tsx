@@ -52,6 +52,7 @@ export default function Boards() {
   const [showTrialUnlock, setShowTrialUnlock] = useState(false);
   const trialBlocksExports = hasPro && onTrial;
   const [undoRedo, setUndoRedo] = useState({ canUndo: false, canRedo: false });
+  const [savingBoards, setSavingBoards] = useState(false);
   const [isPortraitViewport, setIsPortraitViewport] = useState(() =>
     typeof window === "undefined" ? true : window.innerHeight > window.innerWidth,
   );
@@ -246,8 +247,40 @@ export default function Boards() {
     } catch {
       if (saveSeqRef.current.get(boardId) !== seq) return;
       toast.error("Could not save board");
+      throw new Error("board save failed");
     }
   }, []);
+
+  const handleSaveBoards = useCallback(async () => {
+    if (savingBoards) return;
+    setSavingBoards(true);
+    try {
+      const seen = new Set<string>();
+      const jobs: Promise<void>[] = [];
+      const saved: { boardId: string; layout: Record<string, unknown> }[] = [];
+      for (const handle of editorMapRef.current.values()) {
+        if (seen.has(handle.boardId)) continue;
+        seen.add(handle.boardId);
+        const layout = handle.saveNow();
+        if (!layout) continue;
+        saved.push({ boardId: handle.boardId, layout });
+        jobs.push(handleSaveLayoutFor(handle.boardId, layout));
+      }
+      if (!jobs.length) {
+        toast.error("Nothing to save");
+        return;
+      }
+      await Promise.all(jobs);
+      for (const { boardId, layout } of saved) {
+        editorMapRef.current.get(boardId)?.pinSavedLayout(layout);
+      }
+      toast.success("Board saved");
+    } catch {
+      // handleSaveLayoutFor already toasts on failure
+    } finally {
+      setSavingBoards(false);
+    }
+  }, [handleSaveLayoutFor, savingBoards]);
 
   const handleBoardColorFromAi = useCallback(async (boardId: string, colorKey: string) => {
     try {
@@ -534,6 +567,8 @@ export default function Boards() {
             editorRef={activeEditorRef}
             onUndo={handleUndo}
             onRedo={handleRedo}
+            onSave={() => void handleSaveBoards()}
+            saving={savingBoards}
             onResetBoard={() => {
               const id = activeBoard.id;
               editorMapRef.current.get(id)?.resetBoard();

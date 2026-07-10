@@ -450,6 +450,40 @@ function topLevelBoardRoot(obj: FabricObject): FabricObject {
   return root;
 }
 
+function isFabricActiveSelection(obj: FabricObject | null | undefined): obj is ActiveSelection {
+  if (!obj) return false;
+  if (obj instanceof ActiveSelection) return true;
+  return String(obj.type ?? "").toLowerCase() === "activeselection";
+}
+
+function collectMultiSelectRoots(canvas: Canvas): FabricObject[] {
+  const active = canvas.getActiveObject();
+  if (isFabricActiveSelection(active)) {
+    const objs = active.getObjects();
+    if (objs.length > 1) {
+      return [...new Set(objs.map(topLevelBoardRoot))];
+    }
+  }
+  const selected = canvas.getActiveObjects();
+  if (selected.length > 1) {
+    return [...new Set(selected.map(topLevelBoardRoot))];
+  }
+  return [];
+}
+
+function resolveRadialMultiSelectRoots(
+  canvas: Canvas,
+  target: FabricObject | undefined,
+  snapshot: FabricObject[],
+): FabricObject[] {
+  const current = collectMultiSelectRoots(canvas);
+  if (current.length > 1) return current;
+  if (snapshot.length <= 1) return current;
+  if (!target) return snapshot;
+  const clickedRoot = topLevelBoardRoot(target);
+  return snapshot.some((root) => root === clickedRoot) ? snapshot : current;
+}
+
 function isStrayActiveSelectionObject(obj: FabricObject): boolean {
   if (obj instanceof ActiveSelection) return true;
   const type = String(obj.type ?? "").toLowerCase();
@@ -580,6 +614,9 @@ function findGuideElements(canvas: Canvas, criteria: GuideElementCriteria): Fabr
 function radialKindForRoot(root: FabricObject): RadialObjectKind {
   const structureType = structureProp(root, "structureType");
   if (structureType) return "structure";
+
+  if (imageFrameGroupFromTarget(root)) return "image";
+  if (boardImageFromTarget(root)) return "image";
 
   const markKind = root.get("markKind") as string | undefined;
   const shapeType = root.get("shapeType") as string | undefined;
@@ -3660,6 +3697,10 @@ export type BoardCanvasHandle = {
   canUndo: () => boolean;
   canRedo: () => boolean;
   getLayoutJson: () => Record<string, unknown>;
+  /** Serialize the current canvas for persistence (does not write to Supabase by itself). */
+  saveNow: () => Record<string, unknown> | null;
+  /** Mark a layout as persisted (avoids redundant canvas reload after manual save). */
+  pinSavedLayout: (layout: Record<string, unknown>) => void;
   addShape: (shape: BoardMarkShapeType) => void;
   addShapeAt: (shape: BoardMarkShapeType, x: number, y: number) => void;
   addSticker: (sticker: BoardMarkStickerId) => void;
@@ -3688,6 +3729,7 @@ type QuickSelectorState = {
   imageCapable?: boolean;
   lineCapable?: boolean;
   batchMixed?: boolean;
+  batchCount?: number;
 };
 
 type CalendarControlState = {
@@ -3784,6 +3826,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     const drawColorRef = useRef(MARK_SHAPE_STROKE);
     const deleteTargetRef = useRef<FabricObject | null>(null);
     const radialTargetsRef = useRef<FabricObject[]>([]);
+    const radialMultiSelectSnapshotRef = useRef<FabricObject[]>([]);
     const isActiveRef = useRef(isActive);
     isActiveRef.current = isActive;
     const syncTextFocusRef = useRef(fabricSelectionControls);
@@ -3824,19 +3867,66 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
     refreshCalendarControlRef.current = refreshCalendarControl;
 
+    const buildLayoutForSave = useCallback((): Record<string, unknown> | null => {
+      const canvas = fabricRef.current;
+      if (!canvas || readOnly) return null;
+      stripStrayActiveSelectionsFromCanvas(canvas);
+      return stripActiveSelectionsFromLayoutJson(
+        withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize),
+      );
+    }, [readOnly, artboardSize]);
+
+    const emitLayoutSave = useCallback(
+      (layout: Record<string, unknown>) => {
+        lastEmittedLayoutRef.current = { boardId, json: JSON.stringify(layout) };
+        onSave(layout);
+      },
+      [boardId, onSave],
+    );
+
     const scheduleSave = useCallback(() => {
       const canvas = fabricRef.current;
       if (!canvas || readOnly) return;
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => {
-        stripStrayActiveSelectionsFromCanvas(canvas);
-        const layout = stripActiveSelectionsFromLayoutJson(
-          withArtboardMeta(canvas.toJSON() as Record<string, unknown>, artboardSize),
-        );
-        lastEmittedLayoutRef.current = { boardId, json: JSON.stringify(layout) };
-        onSave(layout);
+        const layout = buildLayoutForSave();
+        if (layout) emitLayoutSave(layout);
       }, 700);
-    }, [onSave, readOnly, artboardSize, boardId]);
+    }, [buildLayoutForSave, emitLayoutSave, readOnly]);
+
+    const saveNow = useCallback((): Record<string, unknown> | null => {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = undefined;
+      return buildLayoutForSave();
+    }, [buildLayoutForSave]);
+
+    const pinSavedLayout = useCallback((layout: Record<string, unknown>) => {
+      lastEmittedLayoutRef.current = { boardId, json: JSON.stringify(layout) };
+    }, [boardId]);
+
+    const flushSave = useCallback(() => {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = undefined;
+      const layout = buildLayoutForSave();
+      if (layout) emitLayoutSave(layout);
+    }, [buildLayoutForSave, emitLayoutSave]);
+
+    const flushSaveRef = useRef(flushSave);
+    flushSaveRef.current = flushSave;
+
+    useEffect(() => {
+      const onHide = () => {
+        if (document.visibilityState === "hidden") flushSaveRef.current();
+      };
+      const onPageHide = () => flushSaveRef.current();
+      document.addEventListener("visibilitychange", onHide);
+      window.addEventListener("pagehide", onPageHide);
+      return () => {
+        document.removeEventListener("visibilitychange", onHide);
+        window.removeEventListener("pagehide", onPageHide);
+        flushSaveRef.current();
+      };
+    }, [boardId]);
 
     const notifyHistoryChange = useCallback(() => {
       const h = historyRef.current;
@@ -4021,10 +4111,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const rect = wrap.getBoundingClientRect();
       const pointer = canvas.getScenePoint(e as MouseEvent);
 
-      const active = canvas.getActiveObject();
-      let batchRoots: FabricObject[] = [];
-      if (active instanceof ActiveSelection && active.getObjects().length > 1) {
-        batchRoots = [...new Set(active.getObjects().map(topLevelBoardRoot))];
+      let batchRoots = resolveRadialMultiSelectRoots(canvas, target, radialMultiSelectSnapshotRef.current);
+      if (
+        batchRoots.length <= 1 &&
+        target &&
+        isFabricActiveSelection(target) &&
+        target.getObjects().length > 1
+      ) {
+        batchRoots = [...new Set(target.getObjects().map(topLevelBoardRoot))];
       }
 
       const homogeneousKind = batchRoots.length > 1 ? homogeneousRadialKind(batchRoots) : null;
@@ -4032,10 +4126,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       radialTargetsRef.current = [];
 
-      if (batchRoots.length > 1 && homogeneousKind) {
+      if (batchRoots.length > 1) {
         radialTargetsRef.current = batchRoots;
-      } else if (batchRoots.length > 1 && batchMixed) {
-        radialTargetsRef.current = batchRoots;
+        deleteTargetRef.current = null;
+        canvas.setActiveObject(new ActiveSelection(batchRoots, { canvas }));
+        canvas.requestRenderAll();
       } else if (target) {
         let root = target;
         while (root.group) {
@@ -4053,14 +4148,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           deleteTargetRef.current = root;
         }
         radialTargetsRef.current = [root];
-        canvas.setActiveObject(root);
-        const objects = canvas.getObjects();
-        if (objects[objects.length - 1] !== root) {
-          canvas.bringObjectToFront(root);
+        const multiCount = collectMultiSelectRoots(canvas).length;
+        if (multiCount <= 1 && canvas.getActiveObjects().length <= 1) {
+          canvas.setActiveObject(root);
+          const objects = canvas.getObjects();
+          if (objects[objects.length - 1] !== root) {
+            canvas.bringObjectToFront(root);
+          }
+          canvas.requestRenderAll();
         }
-        canvas.requestRenderAll();
-      } else if (active) {
-        const root = topLevelBoardRoot(active);
+      } else if (canvas.getActiveObject()) {
+        const root = topLevelBoardRoot(canvas.getActiveObject()!);
         deleteTargetRef.current = root;
         radialTargetsRef.current = [root];
       } else {
@@ -4120,23 +4218,27 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         clientY,
         normX: Math.min(1, Math.max(0, pointer.x / activeArtboardWidth)),
         normY: Math.min(1, Math.max(0, pointer.y / activeArtboardHeight)),
-        mode: target || active || radialTargetsRef.current.length ? "object" : "empty",
+        mode: target || canvas.getActiveObject() || radialTargetsRef.current.length ? "object" : "empty",
         textCapable,
         shapeCapable,
         stickerCapable,
         imageCapable,
         lineCapable,
         batchMixed,
+        batchCount: batchRoots.length > 1 ? batchRoots.length : undefined,
       });
+      radialMultiSelectSnapshotRef.current = [];
     }, [readOnly, activeArtboardWidth, activeArtboardHeight]);
 
     const getRadialActionTargets = useCallback((): FabricObject[] => {
       if (radialTargetsRef.current.length) return [...radialTargetsRef.current];
       const canvas = fabricRef.current;
       if (!canvas) return [];
+      const multi = collectMultiSelectRoots(canvas);
+      if (multi.length > 1) return multi;
       const selected = deleteTargetRef.current ?? canvas.getActiveObject();
       if (!selected) return [];
-      if (selected instanceof ActiveSelection) {
+      if (isFabricActiveSelection(selected)) {
         return [...new Set(selected.getObjects().map(topLevelBoardRoot))];
       }
       return [topLevelBoardRoot(selected)];
@@ -4245,6 +4347,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       }
 
       let onContextMenu: ((e: MouseEvent) => void) | undefined;
+      let captureMultiSelectForRadial: ((e: Event) => void) | undefined;
       let onSelectionChanged: ((event?: { selected?: FabricObject[] }) => void) | undefined;
       let onSelectionCleared: (() => void) | undefined;
 
@@ -4493,6 +4596,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             return;
           }
 
+          if (e.button === 2) return;
+
           if (!target) return;
           let root = target;
           while (root.group) {
@@ -4509,16 +4614,25 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           }
         });
 
+        captureMultiSelectForRadial = (e: Event) => {
+          if (e instanceof MouseEvent && e.button !== 2) return;
+          radialMultiSelectSnapshotRef.current = collectMultiSelectRoots(canvas);
+        };
+
         onContextMenu = (e: MouseEvent) => {
           if (!isActiveRef.current) return;
           e.preventDefault();
           openQuickSelectorRef.current(canvas, e, canvas.findTarget(e) ?? undefined);
         };
+        canvas.upperCanvasEl.addEventListener("mousedown", captureMultiSelectForRadial, true);
+        canvas.upperCanvasEl.addEventListener("touchstart", captureMultiSelectForRadial, true);
         canvas.upperCanvasEl.addEventListener("contextmenu", onContextMenu);
       }
 
       return () => {
-        if (onContextMenu) {
+        if (onContextMenu && captureMultiSelectForRadial) {
+          canvas.upperCanvasEl.removeEventListener("mousedown", captureMultiSelectForRadial, true);
+          canvas.upperCanvasEl.removeEventListener("touchstart", captureMultiSelectForRadial, true);
           canvas.upperCanvasEl.removeEventListener("contextmenu", onContextMenu);
         }
         if (onSelectionChanged) {
@@ -4528,6 +4642,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (onSelectionCleared) canvas.off("selection:cleared", onSelectionCleared);
         window.removeEventListener("resize", onResize);
         containerObserver?.disconnect();
+        flushSaveRef.current();
         window.clearTimeout(saveTimerRef.current);
         window.clearTimeout(historyTimerRef.current);
         canvas.dispose();
@@ -4894,6 +5009,12 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     );
     enterImageCropModeRef.current = enterImageCropMode;
 
+    const enterImageEditFromRadial = useCallback(() => {
+      const targets = getRadialActionTargets();
+      if (targets.length !== 1) return;
+      enterImageCropMode(targets[0]);
+    }, [enterImageCropMode, getRadialActionTargets]);
+
     const toggleImageRoundOnActive = useCallback(
       () => {
         const canvas = fabricRef.current;
@@ -4995,6 +5116,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         if (!nextGroups.length) return;
 
         restoreRadialSelection(canvas, nextGroups);
+        radialTargetsRef.current = nextGroups;
         canvas.requestRenderAll();
         recordHistory();
         scheduleSave();
@@ -5873,7 +5995,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       if (!activeObject) return false;
 
       const toCopy =
-        activeObject instanceof ActiveSelection ? activeObject.getObjects() : [activeObject];
+        radialTargetsRef.current.length > 1
+          ? radialTargetsRef.current
+          : activeObject instanceof ActiveSelection
+            ? activeObject.getObjects()
+            : [activeObject];
       if (!toCopy.length) return false;
 
       const clones = await Promise.all(toCopy.map((obj) => obj.clone()));
@@ -6851,12 +6977,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canRedo,
       getLayoutJson: () =>
         withArtboardMeta((fabricRef.current?.toJSON() as Record<string, unknown>) ?? {}, artboardSize),
+      saveNow,
+      pinSavedLayout,
       addShape: (shape) => addShapeAtPoint(shape, 0.5, 0.5),
       addShapeAt: (shape, x, y) => addShapeAtPoint(shape, x, y),
       addSticker: (sticker) => addStickerAtPoint(sticker, 0.5, 0.5),
       addStickerAt: (sticker, x, y) => addStickerAtPoint(sticker, x, y),
       startDrawMode,
-    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addParchmentNote, addParchmentNoteAt, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, duplicateElements, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, redo, removeElements, resetBoard, startDrawMode, styleElements, undo]);
+    }), [boardId, addDiagramOverlay, addImageFromFile, addImageFromUrl, addParchmentNote, addParchmentNoteAt, addShapeAtPoint, addStickerAtPoint, addStickyNote, addStickyNoteAt, addText, addTextAt, addTextNormalized, artboardSize, canPasteClipboard, canRedo, canUndo, copySelected, deleteSelected, duplicateElements, hasSelection, mergeLayoutObjects, pasteAtPoint, pasteClipboard, pinSavedLayout, redo, removeElements, resetBoard, saveNow, startDrawMode, styleElements, undo]);
 
     return (
       <div
@@ -6941,6 +7069,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   imageCapable={quickSelector.imageCapable}
                   lineCapable={quickSelector.lineCapable}
                   batchMixed={quickSelector.batchMixed}
+                  batchCount={quickSelector.batchCount}
                   canPaste={canPasteClipboard()}
                   onPick={handleQuickPick}
                   onClose={closeQuickSelector}
@@ -6951,6 +7080,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   onElementSizePick={applyMarkFontSize}
                   onElementTextAlignPick={applyMarkTextAlign}
                   onElementFontPick={applyMarkFontFamily}
+                  onImageEditPick={enterImageEditFromRadial}
                   onImageRoundPick={toggleImageRoundOnActive}
                   onImageFramePick={applyImageFrameToActive}
                   onLineDashPick={toggleLineDashOnActive}
