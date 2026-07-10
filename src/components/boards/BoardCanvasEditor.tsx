@@ -3399,6 +3399,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     isActiveRef.current = isActive;
     const syncTextFocusRef = useRef(fabricSelectionControls);
     syncTextFocusRef.current = fabricSelectionControls;
+    const cropModeRef = useRef(cropMode);
+    cropModeRef.current = cropMode;
 
     onHistoryChangeRef.current = onHistoryChange;
 
@@ -6074,8 +6076,46 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       let drawTapStartX = 0;
       let drawTapStartY = 0;
       let drawTapHadMove = false;
+      let pinchRotateActive = false;
+      let pinchStartFingerAngle = 0;
+      let pinchStartObjectAngle = 0;
+      let pinchRotateTarget: FabricObject | null = null;
       const lastTapRef = { time: 0, target: null as FabricObject | null };
       const lastDrawTapRef = { time: 0 };
+
+      const fingerAngle = (t1: Touch, t2: Touch) =>
+        (Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * 180) / Math.PI;
+
+      const touchScenePoint = (canvas: Canvas, touch: Touch) =>
+        canvas.getScenePoint({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+
+      const isPinchRotatable = (obj: FabricObject | null | undefined): obj is FabricObject => {
+        if (!obj || obj.lockRotation) return false;
+        if (obj instanceof IText || obj instanceof Textbox) {
+          if (obj.isEditing) return false;
+        }
+        const root = topLevelBoardRoot(obj);
+        if (structureProp(root, "structureType")) return false;
+        return true;
+      };
+
+      const pinchTargetForTouches = (canvas: Canvas, t1: Touch, t2: Touch): FabricObject | null => {
+        const active = canvas.getActiveObject();
+        if (!isPinchRotatable(active)) return null;
+        const root = topLevelBoardRoot(active);
+        root.setCoords();
+        const rect = root.getBoundingRect();
+        const pad = 28;
+        const inRect = (x: number, y: number) =>
+          x >= rect.left - pad &&
+          x <= rect.left + rect.width + pad &&
+          y >= rect.top - pad &&
+          y <= rect.top + rect.height + pad;
+        const p1 = touchScenePoint(canvas, t1);
+        const p2 = touchScenePoint(canvas, t2);
+        if (!inRect(p1.x, p1.y) || !inRect(p2.x, p2.y)) return null;
+        return active;
+      };
 
       const isStatementTarget = (obj: FabricObject | undefined): boolean => {
         if (!obj) return false;
@@ -6112,6 +6152,21 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const onTouchStart = (e: TouchEvent) => {
         if (!isActiveRef.current) return;
+        if (e.touches.length === 2) {
+          if (longPressTimer) {
+            window.clearTimeout(longPressTimer);
+            longPressTimer = undefined;
+          }
+          const activeCanvas = fabricRef.current;
+          if (!activeCanvas || activeCanvas.isDrawingMode || cropModeRef.current) return;
+          const target = pinchTargetForTouches(activeCanvas, e.touches[0], e.touches[1]);
+          if (!target) return;
+          pinchRotateActive = true;
+          pinchRotateTarget = target;
+          pinchStartFingerAngle = fingerAngle(e.touches[0], e.touches[1]);
+          pinchStartObjectAngle = target.angle ?? 0;
+          return;
+        }
         if (e.touches.length !== 1) return;
         if (fabricRef.current?.isDrawingMode) {
           drawTapStartX = e.touches[0].clientX;
@@ -6131,6 +6186,14 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       };
 
       const onTouchMove = (e: TouchEvent) => {
+        if (pinchRotateActive && e.touches.length === 2 && pinchRotateTarget && fabricRef.current) {
+          e.preventDefault();
+          const angle = fingerAngle(e.touches[0], e.touches[1]);
+          pinchRotateTarget.set({ angle: pinchStartObjectAngle + (angle - pinchStartFingerAngle) });
+          pinchRotateTarget.setCoords();
+          fabricRef.current.requestRenderAll();
+          return;
+        }
         if (fabricRef.current?.isDrawingMode && e.touches[0]) {
           const dx = e.touches[0].clientX - drawTapStartX;
           const dy = e.touches[0].clientY - drawTapStartY;
@@ -6149,6 +6212,16 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const onTouchEnd = (e: TouchEvent) => {
         if (longPressTimer) window.clearTimeout(longPressTimer);
         longPressTimer = undefined;
+
+        if (pinchRotateActive && e.touches.length < 2) {
+          if (pinchRotateTarget) {
+            recordHistoryRef.current();
+            scheduleSaveRef.current();
+          }
+          pinchRotateActive = false;
+          pinchRotateTarget = null;
+          return;
+        }
 
         const activeCanvas = fabricRef.current;
         if (!activeCanvas || !isActiveRef.current) return;
@@ -6202,7 +6275,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const touchRoot = wrap;
       const capture = { capture: true as const };
       touchRoot.addEventListener("touchstart", onTouchStart, { passive: true, ...capture });
-      touchRoot.addEventListener("touchmove", onTouchMove, { passive: true, ...capture });
+      touchRoot.addEventListener("touchmove", onTouchMove, { passive: false, ...capture });
       touchRoot.addEventListener("touchend", onTouchEnd, capture);
       touchRoot.addEventListener("touchcancel", onTouchEnd, capture);
 
