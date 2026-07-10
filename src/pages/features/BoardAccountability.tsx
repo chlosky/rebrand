@@ -48,7 +48,6 @@ import {
   finalizeAccountabilityMap,
   normalizeAccountabilityMap,
   reminderToIso,
-  scrubMapTitles,
   smsTextFromTitle,
   stripSmsText,
   type AccountabilityMap,
@@ -162,10 +161,9 @@ export default function BoardAccountability() {
 
   const persistMap = useCallback(
     (next: AccountabilityMap) => {
-      const scrubbed = scrubMapTitles(next);
-      setMap(scrubbed);
+      setMap(next);
       if (workspace) {
-        sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(scrubbed));
+        sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(next));
       }
     },
     [workspace],
@@ -176,7 +174,7 @@ export default function BoardAccountability() {
     (next: AccountabilityMap) => {
       if (map?.finalized) {
         persistMap({
-          ...scrubMapTitles(next),
+          ...next,
           finalized: false,
           reminders: [],
           analysis_status: "draft_ready",
