@@ -503,6 +503,9 @@ serve(async (req) => {
           to: email,
           actionTitle: reminder.title,
           reminderId: reminder.id,
+          cadence: typeof metadata?.cadence === "string" ? metadata.cadence : null,
+          remindAt: reminder.remind_at,
+          timezone: userTimezone,
         });
         await supabase.from("board_reminder_deliveries").insert({
           reminder_id: reminder.id,

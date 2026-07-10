@@ -351,8 +351,7 @@ export default function BoardAccountability() {
       .eq("board_id", planBoard.id)
       .eq("user_id", user.id)
       .eq("source", "ai_extracted")
-      .eq("status", "scheduled")
-      .filter("metadata->>source_page", "eq", "action");
+      .eq("status", "scheduled");
     if (deleteErr) throw deleteErr;
 
     let email = 0;

@@ -40,10 +40,65 @@ export function formatReminderTime(iso: string): string {
   });
 }
 
+/** Maps stored cadence (e.g. quarterly = one-time action) to email copy. */
+export function cadenceLabelForEmail(cadence: string | null | undefined): string {
+  const c = (cadence ?? "").toLowerCase();
+  if (c === "quarterly" || c === "once") return "one-time";
+  if (c === "daily" || c === "weekly" || c === "monthly") return c;
+  return "one-time";
+}
+
+export function formatReminderClockTime(iso: string, timezone: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "the scheduled time";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  } catch {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  }
+}
+
+export function buildReminderEmailSubline(input: {
+  cadence?: string | null;
+  remindAt: string;
+  timezone?: string | null;
+}): string {
+  const cadence = cadenceLabelForEmail(input.cadence);
+  const tz = input.timezone?.trim() || "UTC";
+  const timeLabel = formatReminderClockTime(input.remindAt, tz);
+  return `This is your ${cadence} reminder to complete this action at ${timeLabel}.`;
+}
+
+export function buildReminderEmailContent(input: {
+  actionTitle: string;
+  cadence?: string | null;
+  remindAt: string;
+  timezone?: string | null;
+}): { htmlContent: string; textContent: string } {
+  const cleanTitle = input.actionTitle.trim();
+  const subline = buildReminderEmailSubline(input);
+  return {
+    htmlContent: `<p>${escapeHtml(cleanTitle)}</p><p>${escapeHtml(subline)}</p>`,
+    textContent: `${cleanTitle}\n\n${subline}`,
+  };
+}
+
 export async function sendBrevoReminderEmail(input: {
   to: string;
   actionTitle: string;
   reminderId: string;
+  cadence?: string | null;
+  remindAt?: string | null;
+  timezone?: string | null;
 }): Promise<{ ok: boolean; statusCode?: number; messageId?: string | null; error?: string }> {
   const apiKey = Deno.env.get("BREVO_API_KEY");
   const fromEmail = Deno.env.get("BREVO_REMINDER_FROM_EMAIL");
@@ -53,6 +108,15 @@ export async function sendBrevoReminderEmail(input: {
 
   const cleanTitle = input.actionTitle.trim();
   const subject = cleanTitle.length <= 120 ? cleanTitle : cleanTitle.slice(0, 120);
+  const { htmlContent, textContent } =
+    input.remindAt && input.remindAt.trim()
+      ? buildReminderEmailContent({
+          actionTitle: cleanTitle,
+          cadence: input.cadence,
+          remindAt: input.remindAt.trim(),
+          timezone: input.timezone,
+        })
+      : { htmlContent: `<p>${escapeHtml(cleanTitle)}</p>`, textContent: cleanTitle };
 
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -68,8 +132,8 @@ export async function sendBrevoReminderEmail(input: {
       },
       to: [{ email: input.to }],
       subject,
-      htmlContent: `<p>${escapeHtml(cleanTitle)}</p>`,
-      textContent: cleanTitle,
+      htmlContent,
+      textContent,
       tags: ["palette_plan_reminder"],
       headers: {
         "X-Palette-Reminder-Id": input.reminderId,
