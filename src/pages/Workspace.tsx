@@ -532,7 +532,7 @@ export default function Workspace() {
 
         locked={!hasPro}
 
-        label={t("workspace.tabs.imageLibrary")}
+        label={t("workspace.tabs.images")}
 
         onClick={() => setTab("images")}
 
