@@ -28,6 +28,14 @@ function resolvePasswordResetTemplateId(locale: AppLocale, defaultTemplateId: nu
   return defaultTemplateId;
 }
 
+function recoveryActionLink(linkData: { properties?: { action_link?: string }; action_link?: string } | null): string | null {
+  const fromProperties = linkData?.properties?.action_link;
+  if (typeof fromProperties === "string" && fromProperties.length > 0) return fromProperties;
+  const direct = linkData?.action_link;
+  if (typeof direct === "string" && direct.length > 0) return direct;
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -41,8 +49,9 @@ serve(async (req) => {
   }
 
   try {
-    const { email, redirectTo } = await req.json();
-    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const body = await req.json().catch(() => ({}));
+    const email = typeof body?.email === "string" ? body.email : "";
+    const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !normalizedEmail.includes("@")) {
       return new Response(JSON.stringify({ error: "Valid email is required" }), {
         status: 400,
@@ -67,18 +76,33 @@ serve(async (req) => {
 
     const siteUrl =
       Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplotting.com";
-    const resetRedirect =
-      typeof redirectTo === "string" && redirectTo.startsWith("http")
-        ? redirectTo
-        : `${siteUrl.replace(/\/$/, "")}/reset-password`;
+    const resetRedirect = `${siteUrl.replace(/\/$/, "")}/reset-password`;
 
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    let linkData: Awaited<ReturnType<typeof supabase.auth.admin.generateLink>>["data"] = null;
+    let linkError: Awaited<ReturnType<typeof supabase.auth.admin.generateLink>>["error"] = null;
+
+    ({ data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: "recovery",
       email: normalizedEmail,
       options: { redirectTo: resetRedirect },
-    });
+    }));
 
-    if (linkError || !linkData?.properties?.action_link) {
+    let actionLink = recoveryActionLink(linkData);
+    if (linkError || !actionLink) {
+      console.error(
+        "[send-password-reset] generateLink with redirect failed:",
+        linkError?.message ?? "missing action_link",
+        "redirectTo:",
+        resetRedirect,
+      );
+      ({ data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "recovery",
+        email: normalizedEmail,
+      }));
+      actionLink = recoveryActionLink(linkData);
+    }
+
+    if (linkError || !actionLink) {
       console.info("[send-password-reset] no recovery link (user may not exist):", linkError?.message ?? "missing link");
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
@@ -86,7 +110,7 @@ serve(async (req) => {
       });
     }
 
-    let resetPasswordUrl = String(linkData.properties.action_link);
+    let resetPasswordUrl = actionLink;
     try {
       const url = new URL(resetPasswordUrl);
       url.searchParams.set("redirect_to", resetRedirect);
@@ -94,7 +118,8 @@ serve(async (req) => {
     } catch {
       /* use action_link as-is */
     }
-    const userId = linkData.user?.id ?? null;
+
+    const userId = linkData?.user?.id ?? null;
     let firstName = "there";
 
     if (userId) {
@@ -106,7 +131,7 @@ serve(async (req) => {
       firstName =
         (typeof profile?.first_name === "string" && profile.first_name.trim()) ||
         (typeof profile?.username === "string" && profile.username.trim()) ||
-        (typeof linkData.user?.user_metadata?.first_name === "string"
+        (typeof linkData?.user?.user_metadata?.first_name === "string"
           ? linkData.user.user_metadata.first_name.trim()
           : "") ||
         "there";
@@ -120,6 +145,7 @@ serve(async (req) => {
       templateId: resolvePasswordResetTemplateId(preferredLocale, templateId),
       to: [{ email: normalizedEmail, name: firstName !== "there" ? firstName : undefined }],
       params: {
+        FIRSTNAME: firstName,
         name: firstName,
         reset_password_url: resetPasswordUrl,
       },
@@ -131,6 +157,8 @@ serve(async (req) => {
     if (fromEmail) {
       emailPayload.sender = { email: fromEmail, name: fromName };
     }
+
+    console.info("[send-password-reset] sending Brevo template", templateId, "to", normalizedEmail);
 
     const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -150,6 +178,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.info("[send-password-reset] Brevo send ok for", normalizedEmail);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

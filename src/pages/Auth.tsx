@@ -113,10 +113,7 @@ const Auth = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("send-password-reset", {
-        body: {
-          email: resetEmail.trim(),
-          redirectTo: `${window.location.origin}/reset-password`,
-        },
+        body: { email: resetEmail.trim() },
       });
 
       if (error) throw error;

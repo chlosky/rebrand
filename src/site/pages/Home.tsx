@@ -74,10 +74,10 @@ export default function Home() {
                 Choose your color
               </a>
               <Link
-                to={GUIDE_CATALOG.path}
+                to="/onboarding/welcome"
                 className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
               >
-                Get the Method
+                Get the Tool
               </Link>
             </div>
           </div>
