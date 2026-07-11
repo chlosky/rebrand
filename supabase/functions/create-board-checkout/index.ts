@@ -9,9 +9,9 @@ const corsHeaders = {
 
 // Server-authoritative pricing (cents). Never trust client-sent prices.
 const SIZE_PRICE_CENTS: Record<string, number> = {
-  "12x24": 9999,
-  "18x24": 13999,
-  "24x36": 19999,
+  "12x24": 12999,
+  "18x24": 17999,
+  "24x36": 25999,
 };
 
 const SIZE_LABEL: Record<string, string> = {

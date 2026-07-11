@@ -32,22 +32,22 @@ export const BOARD_SIZE_OPTIONS: BoardSizeOption[] = [
   {
     id: "12x24",
     label: "12×24",
-    priceUsd: 99.99,
-    priceLabel: "$99.99",
+    priceUsd: 129.99,
+    priceLabel: "$129.99",
     checkoutEnabled: true,
   },
   {
     id: "18x24",
     label: "18×24",
-    priceUsd: 139.99,
-    priceLabel: "$139.99",
+    priceUsd: 179.99,
+    priceLabel: "$179.99",
     checkoutEnabled: true,
   },
   {
     id: "24x36",
     label: "24×36",
-    priceUsd: 199.99,
-    priceLabel: "$199.99",
+    priceUsd: 259.99,
+    priceLabel: "$259.99",
     checkoutEnabled: true,
   },
 ];
@@ -63,7 +63,7 @@ export function boardSizeOption(size: BoardSizeId): BoardSizeOption {
 }
 
 export function boardPriceForSize(size: BoardSizeId): number {
-  return boardSizeOption(size).priceUsd ?? 199.99;
+  return boardSizeOption(size).priceUsd ?? 259.99;
 }
 
 export function boardPriceLabelForSize(size: BoardSizeId): string {

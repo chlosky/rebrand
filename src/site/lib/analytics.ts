@@ -63,7 +63,7 @@ export function flushTikTokEvents(ms = 400, maxWaitMs = 900): Promise<void> {
   });
 }
 
-export const BOARD_PRICE_USD = 199.99;
+export const BOARD_PRICE_USD = 259.99;
 const CURRENCY = "USD";
 
 export type TikTokContent = {

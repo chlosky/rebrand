@@ -13,7 +13,7 @@ export type BoardPageSlug =
   | "vision-boards"
   | "neon-boards";
 
-export const BOARD_PRICE_LABEL = "From $99.99";
+export const BOARD_PRICE_LABEL = "From $129.99";
 export const BOARD_SIZE_LABEL = "24×36";
 
 /** Matches Shopify product title — last segment is board color only (never standoff/variant options). */
@@ -84,7 +84,7 @@ export const SHARED_FAQ = [
   },
   {
     q: "What sizes are available?",
-    a: "12×24 ($99.99), 18×24 ($139.99), and 24×36 ($199.99). Select your size on the product page before checkout.",
+    a: "12×24 ($129.99), 18×24 ($179.99), and 24×36 ($259.99). Select your size on the product page before checkout.",
   },
   {
     q: "How do stickers and photos work on it?",
@@ -257,7 +257,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
     slug: "dry-erase-boards",
     path: "/dry-erase-boards",
     metaDescription:
-      "Acrylic Dry Erase Board · 24×36 — colored acrylic wall board for planning and organization. Multiple colors, standoffs & sticker sheet included. $199.99.",
+      "Acrylic Dry Erase Board · 24×36 — colored acrylic wall board for planning and organization. Multiple colors, standoffs & sticker sheet included. $259.99.",
     h1: "Acrylic Dry Erase Board",
     subheadline:
       "Colored acrylic board for lists, calendars, and everyday wall organization.",
@@ -307,7 +307,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
     slug: "home-decor-boards",
     path: "/home-decor-boards",
     metaDescription:
-      "Home Command Board · 24×36 — scripture, schedules, and goals on one beautiful acrylic wall board. Multiple colors, standoffs & sticker sheet included. $199.99.",
+      "Home Command Board · 24×36 — scripture, schedules, and goals on one beautiful acrylic wall board. Multiple colors, standoffs & sticker sheet included. $259.99.",
     h1: "Home Command Board",
     subheadline:
       "Scripture, schedules, and goals — the intentional corner of your home, on one board.",
@@ -362,7 +362,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
     slug: "vision-boards",
     path: "/vision-boards",
     metaDescription:
-      "Acrylic Vision Board · 24×36 — photos, goals, and where you're headed on a board people notice. Multiple colors including rose gold and pink. $199.99.",
+      "Acrylic Vision Board · 24×36 — photos, goals, and where you're headed on a board people notice. Multiple colors including rose gold and pink. $259.99.",
     h1: "Acrylic Vision Board",
     subheadline: "The board people stop and ask about — photos, goals, and where you're headed.",
     colorSelectorLabel: "Choose your color",
@@ -414,7 +414,7 @@ export const BOARD_PAGE_VARIANTS: Record<BoardPageSlug, BoardPageVariant> = {
     slug: "neon-boards",
     path: "/neon-boards",
     metaDescription:
-      "Neon Acrylic Board · 24×36 — one panel that sets the whole mood, especially under LED light. Neon pink, green, yellow, blue & more. $199.99.",
+      "Neon Acrylic Board · 24×36 — one panel that sets the whole mood, especially under LED light. Neon pink, green, yellow, blue & more. $259.99.",
     h1: "Neon Acrylic Board",
     subheadline:
       "One panel that sets the whole mood — especially under LED light.",
