@@ -4861,23 +4861,17 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-      if (fabricSelectionControls) {
-        t.enterEditing();
-        t.selectAll();
-        const hidden = (t as IText & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
-        if (hidden) {
-          hidden.focus({ preventScroll: true });
-          hidden.click();
-        }
-      } else {
-        requestAnimationFrame(() => {
-          t.enterEditing();
-          t.selectAll();
-        });
-      }
+      enterObjectTextEditing(canvas, t, fabricSelectionControls);
       commitHistorySnapshot();
       scheduleSave();
-    }, [commitHistorySnapshot, fabricSelectionControls, readOnly, scheduleSave]);
+    }, [
+      activeArtboardHeight,
+      activeArtboardWidth,
+      commitHistorySnapshot,
+      fabricSelectionControls,
+      readOnly,
+      scheduleSave,
+    ]);
 
     const addStickyNote = useCallback(() => {
       const canvas = fabricRef.current;
@@ -4925,22 +4919,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-      if (fabricSelectionControls) {
-        t.enterEditing();
-        t.selectAll();
-        const hidden = (t as IText & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
-        if (hidden) {
-          hidden.focus({ preventScroll: true });
-          hidden.click();
-        }
-      } else {
-        requestAnimationFrame(() => {
-          t.enterEditing();
-          t.selectAll();
-        });
-      }
+      enterObjectTextEditing(canvas, t, fabricSelectionControls);
       scheduleSave();
-    }, [fabricSelectionControls, readOnly, scheduleSave]);
+    }, [activeArtboardHeight, activeArtboardWidth, fabricSelectionControls, readOnly, scheduleSave]);
 
     const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;

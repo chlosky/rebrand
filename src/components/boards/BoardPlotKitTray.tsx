@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { RefObject } from "react";
 import { BookImage, MessageCircleHeart, Palette, PenLine, ScrollText, StickyNote, Type } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -69,6 +69,7 @@ export function BoardPlotKitTray({
   getActiveBoardId,
 }: BoardPlotKitTrayProps) {
   const [sheetTab, setSheetTab] = useState<PlotDockTab | null>(null);
+  const keepCanvasFocusOnCloseRef = useRef(false);
   const close = () => setSheetTab(null);
   const activeBoardFill = boardFillForKey(activeBoard.color_key);
   const editor = () => getEditor?.() ?? editorRef.current;
@@ -106,6 +107,12 @@ export function BoardPlotKitTray({
           side="bottom"
           className="max-h-[min(70vh,520px)] rounded-t-2xl border-stone-300 bg-[#f3f0eb] p-0"
           onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => {
+            if (keepCanvasFocusOnCloseRef.current) {
+              e.preventDefault();
+              keepCanvasFocusOnCloseRef.current = false;
+            }
+          }}
         >
           <SheetHeader className="border-b border-stone-300/60 px-4 py-3 text-left">
             <SheetTitle className="font-welcome-serif text-base font-normal text-stone-900">
@@ -230,8 +237,9 @@ export function BoardPlotKitTray({
                       type="button"
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-stone-700 active:bg-stone-200/60"
                       onClick={() => {
+                        keepCanvasFocusOnCloseRef.current = true;
+                        editor()?.addText();
                         close();
-                        window.setTimeout(() => editor()?.addText(), 200);
                       }}
                     >
                       <Type className="h-4 w-4" /> Statement
