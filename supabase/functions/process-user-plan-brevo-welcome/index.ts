@@ -1,10 +1,11 @@
 /**
- * Server-only Brevo welcome worker (Supabase cron + CRON_SECRET).
+ * Server-only Brevo paywall welcome worker (Supabase cron + CRON_SECRET).
+ * Adds paid users to the Brevo paywall list; Brevo automations send the welcome email.
  * Not imported or invoked from the web/mobile app build.
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { type AppLocale, resolveUserAppLocale } from "../_shared/aiLocale.ts";
+import { resolveUserAppLocale } from "../_shared/aiLocale.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,30 +14,14 @@ const corsHeaders = {
 };
 
 const BATCH_SIZE = 25;
-/** Brevo transactional template "Welcome to palette plotting" (#2). Override with BREVO_WELCOME_TEMPLATE_ID secret. */
-const BREVO_WELCOME_TEMPLATE_ID_DEFAULT = 2;
-/** Brevo paywall contacts list (#7). Override with BREVO_PAYWALL_LIST_ID secret. */
-const BREVO_PAYWALL_LIST_ID_DEFAULT = 7;
+/** Brevo paywall contacts list (#8). Override with BREVO_PAYWALL_LIST_ID secret. */
+const BREVO_PAYWALL_LIST_ID_DEFAULT = 8;
 
 function isEnabledFlag(value: string | null | undefined): boolean {
   if (!value) return true;
   const s = value.trim().toLowerCase();
   if (s === "false" || s === "0" || s === "no" || s === "off") return false;
   return s === "true" || s === "1" || s === "yes" || s === "on";
-}
-
-function resolveWelcomeTemplateId(locale: AppLocale, defaultTemplateId: number): number {
-  if (locale === "es-419") {
-    const raw = Deno.env.get("BREVO_WELCOME_TEMPLATE_ID_ES_419");
-    const id = raw ? Number(raw) : NaN;
-    if (Number.isFinite(id) && id > 0) return id;
-  }
-  if (locale === "pt-BR") {
-    const raw = Deno.env.get("BREVO_WELCOME_TEMPLATE_ID_PT_BR");
-    const id = raw ? Number(raw) : NaN;
-    if (Number.isFinite(id) && id > 0) return id;
-  }
-  return defaultTemplateId;
 }
 
 serve(async (req) => {
@@ -106,11 +91,11 @@ serve(async (req) => {
       });
     }
 
-    const templateIdRaw = Deno.env.get("BREVO_WELCOME_TEMPLATE_ID");
-    const templateId = templateIdRaw ? Number(templateIdRaw) : BREVO_WELCOME_TEMPLATE_ID_DEFAULT;
-    if (!Number.isFinite(templateId) || templateId <= 0) {
-      console.error("[process-user-plan-brevo-welcome] invalid BREVO_WELCOME_TEMPLATE_ID");
-      return new Response(JSON.stringify({ error: "Invalid BREVO_WELCOME_TEMPLATE_ID" }), {
+    const listIdRaw = Deno.env.get("BREVO_PAYWALL_LIST_ID");
+    const paywallListId = listIdRaw ? Number(listIdRaw) : BREVO_PAYWALL_LIST_ID_DEFAULT;
+    if (!Number.isFinite(paywallListId) || paywallListId <= 0) {
+      console.error("[process-user-plan-brevo-welcome] invalid BREVO_PAYWALL_LIST_ID");
+      return new Response(JSON.stringify({ error: "Invalid BREVO_PAYWALL_LIST_ID" }), {
         status: 501,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -142,12 +127,6 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    const listIdRaw = Deno.env.get("BREVO_PAYWALL_LIST_ID");
-    const paywallListId = listIdRaw ? Number(listIdRaw) : BREVO_PAYWALL_LIST_ID_DEFAULT;
-    const siteUrl =
-      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplotting.com";
-    const privacyPolicyUrl = `${siteUrl.replace(/\/$/, "")}/privacy`;
 
     let processed = 0;
     let failed = 0;
@@ -201,7 +180,12 @@ serve(async (req) => {
       );
 
       if (dryRun) {
-        console.log("[process-user-plan-brevo-welcome] dryRun would send to:", userEmail, userId);
+        console.log(
+          "[process-user-plan-brevo-welcome] dryRun would add to list:",
+          paywallListId,
+          userEmail,
+          userId,
+        );
         processed += 1;
         continue;
       }
@@ -209,15 +193,13 @@ serve(async (req) => {
       const contactPayload: Record<string, unknown> = {
         email: userEmail,
         updateEnabled: true,
+        listIds: [paywallListId],
         attributes: {
           FIRSTNAME: firstName,
           USER_ID: userId,
           PREFERRED_LOCALE: preferredLocale,
         },
       };
-      if (Number.isFinite(paywallListId) && paywallListId > 0) {
-        contactPayload.listIds = [paywallListId];
-      }
 
       const contactRes = await fetch("https://api.brevo.com/v3/contacts", {
         method: "POST",
@@ -231,46 +213,21 @@ serve(async (req) => {
 
       if (!contactRes.ok) {
         const contactErr = await contactRes.text();
-        console.error("[process-user-plan-brevo-welcome] Brevo contact failed (not retrying):", userId, contactRes.status, contactErr);
+        console.error(
+          "[process-user-plan-brevo-welcome] Brevo contact/list failed (not retrying):",
+          userId,
+          contactRes.status,
+          contactErr,
+        );
         await supabase.from("user_plan_brevo_welcome_queue").delete().eq("user_id", userId);
         failed += 1;
         continue;
       }
 
-      const emailPayload: Record<string, unknown> = {
-        templateId: resolveWelcomeTemplateId(preferredLocale, templateId),
-        to: [{ email: userEmail, name: firstName !== "there" ? firstName : undefined }],
-        params: {
-          FIRSTNAME: firstName,
-          name: firstName,
-          app_url: siteUrl,
-          privacy_policy_url: privacyPolicyUrl,
-        },
-        tags: ["welcome", "paywall"],
-      };
-
-      const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
-        method: "POST",
-        headers: {
-          "api-key": brevoApiKey,
-          "content-type": "application/json",
-          accept: "application/json",
-        },
-        body: JSON.stringify(emailPayload),
-      });
-
-      if (!emailRes.ok) {
-        const emailErr = await emailRes.text();
-        console.error("[process-user-plan-brevo-welcome] Brevo email failed (not retrying):", userId, emailRes.status, emailErr);
-        await supabase.from("user_plan_brevo_welcome_queue").delete().eq("user_id", userId);
-        failed += 1;
-        continue;
-      }
-
-      const sentAt = new Date().toISOString();
+      const syncedAt = new Date().toISOString();
       const { data: claimed, error: claimErr } = await supabase
         .from("user_plans")
-        .update({ welcome_email_sent_at: sentAt })
+        .update({ welcome_email_sent_at: syncedAt })
         .eq("user_id", userId)
         .is("welcome_email_sent_at", null)
         .select("user_id")
@@ -292,6 +249,7 @@ serve(async (req) => {
         processed,
         failed,
         queued: queueRows.length,
+        paywallListId,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

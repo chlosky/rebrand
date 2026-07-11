@@ -112,11 +112,17 @@ const Auth = () => {
     setResetLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { data, error } = await supabase.functions.invoke("send-password-reset", {
+        body: {
+          email: resetEmail.trim(),
+          redirectTo: `${window.location.origin}/reset-password`,
+        },
       });
 
       if (error) throw error;
+      if (data && typeof data === "object" && "error" in data && data.error) {
+        throw new Error(String(data.error));
+      }
 
       setResetSent(true);
       toast.success(t("toasts.resetLinkSent"));

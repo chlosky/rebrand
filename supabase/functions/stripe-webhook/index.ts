@@ -1037,21 +1037,25 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
         await postStripePurchaseToRevenueCat(finalUserId, rcToken);
       }
 
-      // Step 7: Send password setup email through Supabase Auth (non-blocking).
+      // Step 7: Password setup email via Brevo (non-blocking). Users who signed up on web already have a password.
       try {
-        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplotting.com';
-        const { error: resetError } = await supabase.auth.admin.generateLink({
-          type: 'recovery',
-          email: updatedSession.email,
-          options: {
-            redirectTo: `${siteUrl}/reset-password`,
+        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://tool.paletteplotting.com';
+        const resetResponse = await fetch(`${supabaseUrl}/functions/v1/send-password-reset`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
           },
+          body: JSON.stringify({
+            email: updatedSession.email,
+            redirectTo: `${siteUrl.replace(/\/$/, '')}/reset-password`,
+          }),
         });
         console.log('STEP7_EMAIL_RESET_ATTEMPTED', {
           onboardingSessionId,
           finalUserId,
-          ok: !resetError,
-          error: resetError?.message ?? null,
+          ok: resetResponse.ok,
+          status: resetResponse.status,
         });
       } catch (emailError) {
         console.error('STEP7_EMAIL_RESET_EXCEPTION', {

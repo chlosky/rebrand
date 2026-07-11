@@ -146,10 +146,6 @@ serve(async (req) => {
       );
     }
 
-    const siteUrl =
-      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplotting.com";
-    const privacyPolicyUrl = `${siteUrl.replace(/\/$/, "")}/privacy`;
-
     let processed = 0;
     let failed = 0;
     let emailSent = 0;
@@ -260,11 +256,15 @@ serve(async (req) => {
           params: {
             FIRSTNAME: firstName,
             name: firstName,
-            app_url: siteUrl,
-            privacy_policy_url: privacyPolicyUrl,
           },
           tags: ["cancellation", "paywall"],
         };
+
+        const fromEmail = Deno.env.get("BREVO_AUTH_FROM_EMAIL")?.trim();
+        const fromName = Deno.env.get("BREVO_AUTH_FROM_NAME")?.trim() || "Palette Plotting";
+        if (fromEmail) {
+          emailPayload.sender = { email: fromEmail, name: fromName };
+        }
 
         const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
           method: "POST",

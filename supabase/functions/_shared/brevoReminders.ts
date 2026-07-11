@@ -127,7 +127,7 @@ export async function sendBrevoReminderEmail(input: {
     },
     body: JSON.stringify({
       sender: {
-        name: Deno.env.get("BREVO_REMINDER_FROM_NAME") || "palette plotting Reminders",
+        name: Deno.env.get("BREVO_REMINDER_FROM_NAME") || "Palette Plotting Reminders",
         email: fromEmail,
       },
       to: [{ email: input.to }],
