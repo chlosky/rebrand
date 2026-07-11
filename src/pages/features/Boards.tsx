@@ -29,6 +29,7 @@ import { TrialExportUnlockDialog } from "@/components/boards/TrialExportUnlockDi
 import { BoardImagePicker } from "@/components/boards/BoardImagePicker";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import "@/styles/board-editor.css";
 
 const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
