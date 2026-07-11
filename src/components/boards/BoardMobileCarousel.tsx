@@ -4,6 +4,7 @@ import { BoardCanvasEditor, type BoardCanvasHandle } from "@/components/boards/B
 import { boardFillForKey } from "@/lib/boards/colors";
 import type { Board } from "@/lib/boards/types";
 import { BoardEditableTitle } from "@/components/boards/BoardEditableTitle";
+import { cn } from "@/lib/utils";
 
 type BoardMobileCarouselProps = {
   boards: Board[];
@@ -162,7 +163,12 @@ export function BoardMobileCarousel({
                 <span className="w-10 shrink-0" />
               )}
             </div>
-            <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div
+              className={cn(
+                "relative min-h-0 flex-1",
+                board.artboard_width > board.artboard_height ? "overflow-auto" : "overflow-hidden",
+              )}
+            >
               <RegisteredBoardCanvasEditor
                 boardId={board.id}
                 registerEditor={registerEditor}

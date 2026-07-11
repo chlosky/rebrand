@@ -4311,10 +4311,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       const maxW = Math.max(container.clientWidth - pad, 1);
       const maxH = Math.max(container.clientHeight - pad, 1);
 
-      const fitScale = Math.min(
-        maxW / activeArtboardWidth,
-        maxH / activeArtboardHeight,
-      );
+      // Landscape boards fill the cell width so the full 1350px artboard is usable edge-to-edge.
+      const fitScale =
+        embedded && isLandscapeArtboard
+          ? maxW / activeArtboardWidth
+          : Math.min(maxW / activeArtboardWidth, maxH / activeArtboardHeight);
 
       const displayScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : 0.5;
 
@@ -4347,17 +4348,35 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         fabricContainer.style.flex = "0 0 auto";
       }
 
-      wrap.style.overflow = "auto";
+      for (const el of [canvas.lowerCanvasEl, canvas.upperCanvasEl]) {
+        if (!el) continue;
+        el.style.width = `${displayW}px`;
+        el.style.height = `${displayH}px`;
+        el.style.maxWidth = "none";
+        el.style.maxHeight = "none";
+      }
+
+      wrap.style.overflow = embedded && isLandscapeArtboard ? "auto" : "auto";
       wrap.style.display = "flex";
-      wrap.style.justifyContent = displayW <= wrap.clientWidth ? "center" : "flex-start";
-      wrap.style.alignItems = displayH <= wrap.clientHeight ? "center" : "flex-start";
+      wrap.style.justifyContent =
+        embedded && isLandscapeArtboard
+          ? "flex-start"
+          : displayW <= wrap.clientWidth
+            ? "center"
+            : "flex-start";
+      wrap.style.alignItems =
+        embedded && isLandscapeArtboard
+          ? "flex-start"
+          : displayH <= wrap.clientHeight
+            ? "center"
+            : "flex-start";
 
       const canvasEl = canvas.getElement();
       canvasEl.style.margin = "0";
 
       canvas.calcOffset();
       canvas.requestRenderAll();
-    }, [embedded, activeArtboardWidth, activeArtboardHeight]);
+    }, [embedded, isLandscapeArtboard, activeArtboardWidth, activeArtboardHeight]);
 
     fitCanvasRef.current = fitCanvas;
 

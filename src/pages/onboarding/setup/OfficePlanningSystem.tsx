@@ -13,7 +13,7 @@ import {
 } from "@/lib/onboardingSetupTheme";
 import { useTranslation } from "react-i18next";
 
-const SYSTEMS = ["kanban", "strategy_sessions", "checklists", "other"] as const;
+const SYSTEMS = ["kanban", "strategy_sessions", "brainstorming", "checklists", "other"] as const;
 
 export default function SetupOfficePlanningSystem() {
   const { t } = useTranslation("onboarding");
@@ -22,8 +22,7 @@ export default function SetupOfficePlanningSystem() {
 
   const [selected, setSelected] = useState<string | null>(() => {
     const k = readSetupDraft().officePlanningSystem;
-    const normalized = k === "brainstorming" ? "strategy_sessions" : k;
-    return normalized && SYSTEMS.includes(normalized as (typeof SYSTEMS)[number]) ? normalized : null;
+    return k && SYSTEMS.includes(k as (typeof SYSTEMS)[number]) ? k : null;
   });
   const [otherText, setOtherText] = useState<string>(() => readSetupDraft().officePlanningOther ?? "");
 

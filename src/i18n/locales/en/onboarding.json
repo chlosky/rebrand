@@ -39,7 +39,7 @@
         },
         "office_work": {
           "title": "Office & projects",
-          "description": "Kanban, strategy & brainstorm, checklists, etc."
+          "description": "Kanban, strategy sessions, brainstorm, checklists, etc."
         },
         "moodboarding": {
           "title": "Moodboarding",
@@ -67,8 +67,12 @@
           "description": "Move work from To Do to Done."
         },
         "strategy_sessions": {
-          "title": "Strategy sessions & brainstorm",
+          "title": "Strategy sessions",
           "description": "Map priorities, goals, and next moves."
+        },
+        "brainstorming": {
+          "title": "Brainstorm",
+          "description": "Capture ideas, options, and creative directions."
         },
         "checklists": {
           "title": "Checklists",
