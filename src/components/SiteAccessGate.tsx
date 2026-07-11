@@ -8,6 +8,8 @@ type SiteAccessGateProps = {
 
 const PUBLIC_PATHS = new Set([
   "/",
+  "/login",
+  "/reset-password",
   "/payment-processing",
   "/onboarding/post-paywall",
   "/activate",

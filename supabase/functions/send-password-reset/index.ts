@@ -66,7 +66,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const siteUrl =
-      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://tool.paletteplotting.com";
+      Deno.env.get("SITE_URL") || Deno.env.get("APP_URL") || "https://paletteplotting.com";
     const resetRedirect =
       typeof redirectTo === "string" && redirectTo.startsWith("http")
         ? redirectTo
@@ -86,7 +86,14 @@ serve(async (req) => {
       });
     }
 
-    const resetPasswordUrl = String(linkData.properties.action_link);
+    let resetPasswordUrl = String(linkData.properties.action_link);
+    try {
+      const url = new URL(resetPasswordUrl);
+      url.searchParams.set("redirect_to", resetRedirect);
+      resetPasswordUrl = url.toString();
+    } catch {
+      /* use action_link as-is */
+    }
     const userId = linkData.user?.id ?? null;
     let firstName = "there";
 

@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { endStripeTrialEarly } from "@/lib/endStripeTrialEarly";
 import { usePlottingPro } from "@/hooks/usePlottingPro";
+import { toast } from "sonner";
 import { BRAND_LOGO_CLASS } from "@/lib/siteBrand";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -62,15 +64,20 @@ export function WorkspaceHeader({ tabs }: { tabs?: React.ReactNode }) {
   const userEmail = user?.email ?? "";
 
   const handleEndTrial = async () => {
+    if (!user?.id || endingTrial) return;
     setEndingTrial(true);
     try {
-      const { error } = await supabase.functions.invoke("end-stripe-trial");
-      if (error) throw error;
-      toast.success(t("trial.success"));
+      const result = await endStripeTrialEarly(user.id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
       refreshPlan();
+      toast.success(t("trial.success"));
       window.location.reload();
     } catch {
       toast.error(t("trial.error"));
+    } finally {
       setEndingTrial(false);
     }
   };

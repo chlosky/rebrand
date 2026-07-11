@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useRef } from "react";
 import { validatePassword, validatePasswordMatch } from "@/lib/password-validation";
 import { MarketingSiteHeader } from "@/components/MarketingSiteHeader";
+
 const ResetPassword = () => {
   const { t } = useTranslation(["auth", "settings"]);
   const navigate = useNavigate();
@@ -17,48 +17,64 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasValidSession, setHasValidSession] = useState(false);
-  
-  // Validation states
+  const [checkingSession, setCheckingSession] = useState(true);
+
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [isValidatingPassword, setIsValidatingPassword] = useState(false);
-  
-  // Refs for debouncing
+
   const passwordValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Check for valid recovery session on mount
+
   useEffect(() => {
-    const checkSession = async () => {
-      // Check URL hash for access_token (from email link)
-      const hash = window.location.hash;
-      if (hash.includes('access_token=') && hash.includes('type=recovery')) {
-        // Supabase will automatically set the session when we have the token in the hash
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          setHasValidSession(true);
+    let subscription: { unsubscribe: () => void } | undefined;
+
+    const acceptSession = () => {
+      setHasValidSession(true);
+      setCheckingSession(false);
+    };
+
+    const init = async () => {
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const type = params.get("type");
+
+      if (type === "recovery" && accessToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken ?? "",
+        });
+        if (!error) {
+          window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+          acceptSession();
           return;
         }
       }
 
-      // Listen for auth state changes (when user clicks reset link)
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY' && session) {
-          setHasValidSession(true);
-        }
-      });
-
-      // Also check existing session
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
-      if (existingSession) {
-        setHasValidSession(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
+        acceptSession();
+        return;
       }
 
-      return () => subscription.unsubscribe();
+      const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && nextSession) {
+          acceptSession();
+        }
+      });
+      subscription = data.subscription;
+      setCheckingSession(false);
     };
-    checkSession();
+
+    void init();
+    return () => subscription?.unsubscribe();
   }, []);
 
-  // Real-time password validation (debounced)
   useEffect(() => {
     if (passwordValidationTimeoutRef.current) {
       clearTimeout(passwordValidationTimeoutRef.current);
@@ -86,7 +102,6 @@ const ResetPassword = () => {
     };
   }, [password, t]);
 
-  // Real-time confirm password validation
   useEffect(() => {
     if (!confirmPassword) {
       setConfirmPasswordError(null);
@@ -99,7 +114,7 @@ const ResetPassword = () => {
     );
   }, [confirmPassword, password, t]);
 
-  const canSubmit = 
+  const canSubmit =
     !!password &&
     !!confirmPassword &&
     password === confirmPassword &&
@@ -122,94 +137,99 @@ const ResetPassword = () => {
 
       toast.success(t("toasts.passwordResetSuccess"));
       navigate("/login");
-    } catch (error: any) {
-      toast.error(error.message || t("toasts.passwordResetFailed"));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t("toasts.passwordResetFailed");
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Show loading while checking session
+  if (checkingSession) {
+    return (
+      <main className="min-h-screen bg-background" style={{ colorScheme: "light" }}>
+        <MarketingSiteHeader />
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+          <p className="text-sm text-muted-foreground">{t("resetPassword.validatingPassword")}</p>
+        </div>
+      </main>
+    );
+  }
+
   if (!hasValidSession) {
     return (
-      <main className="min-h-screen bg-background" style={{ colorScheme: 'light' }}>
+      <main className="min-h-screen bg-background" style={{ colorScheme: "light" }}>
         <MarketingSiteHeader />
-        <div className="flex items-center justify-center p-6 min-h-[calc(100vh-4rem)]">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>{t("resetPassword.title")}</CardTitle>
-            <CardDescription>
-              {t("resetPassword.noSessionDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/login")} className="w-full">
-              {t("resetPassword.backToSignIn")}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>{t("resetPassword.title")}</CardTitle>
+              <CardDescription>{t("resetPassword.noSessionDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate("/login")} className="w-full">
+                {t("resetPassword.backToSignIn")}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background" style={{ colorScheme: 'light' }}>
+    <main className="min-h-screen bg-background" style={{ colorScheme: "light" }}>
       <MarketingSiteHeader />
-      <div className="flex items-center justify-center p-6 min-h-[calc(100vh-4rem)]">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">{t("resetPassword.title")}</CardTitle>
-          <CardDescription>
-            {t("resetPassword.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleResetPassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">{t("resetPassword.newPasswordLabel")}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={t("resetPassword.newPasswordPlaceholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={passwordError ? "border-destructive" : ""}
-                required
-              />
-              {isValidatingPassword && (
-                <p className="text-xs text-muted-foreground">{t("resetPassword.validatingPassword")}</p>
-              )}
-              {passwordError && (
-                <p className="text-xs text-destructive">{passwordError}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t("resetPassword.confirmPasswordLabel")}</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder={t("resetPassword.confirmPasswordPlaceholder")}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={confirmPasswordError ? "border-destructive" : ""}
-                required
-              />
-              {confirmPasswordError && (
-                <p className="text-xs text-destructive">{confirmPasswordError}</p>
-              )}
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-gradient-primary hover:shadow-glow-primary"
-              disabled={!canSubmit || loading}
-            >
-              {loading ? t("resetPassword.submitting") : t("resetPassword.submit")}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">{t("resetPassword.title")}</CardTitle>
+            <CardDescription>{t("resetPassword.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">{t("resetPassword.newPasswordLabel")}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder={t("resetPassword.newPasswordPlaceholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={passwordError ? "border-destructive" : ""}
+                  required
+                />
+                {isValidatingPassword && (
+                  <p className="text-xs text-muted-foreground">{t("resetPassword.validatingPassword")}</p>
+                )}
+                {passwordError && <p className="text-xs text-destructive">{passwordError}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">{t("resetPassword.confirmPasswordLabel")}</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder={t("resetPassword.confirmPasswordPlaceholder")}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={confirmPasswordError ? "border-destructive" : ""}
+                  required
+                />
+                {confirmPasswordError && (
+                  <p className="text-xs text-destructive">{confirmPasswordError}</p>
+                )}
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-gradient-primary hover:shadow-glow-primary"
+                disabled={!canSubmit || loading}
+              >
+                {loading ? t("resetPassword.submitting") : t("resetPassword.submit")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 };

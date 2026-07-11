@@ -1039,7 +1039,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any, strip
 
       // Step 7: Password setup email via Brevo (non-blocking). Users who signed up on web already have a password.
       try {
-        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://tool.paletteplotting.com';
+        const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('APP_URL') || 'https://paletteplotting.com';
         const resetResponse = await fetch(`${supabaseUrl}/functions/v1/send-password-reset`, {
           method: 'POST',
           headers: {
