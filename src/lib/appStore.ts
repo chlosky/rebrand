@@ -1,9 +1,8 @@
-/** Native iOS app link placeholder. */
-export const PALETTE_PLOTTING_APP_STORE_ID = "6759469696";
+/** No public App Store listing wired on web yet. */
+export const PALETTE_PLOTTING_APP_STORE_ID = "";
 
-/** Native iOS app link target. */
-export const PALETTE_PLOTTING_APP_STORE_URL =
-  "https://apps.apple.com/us/app/palette-plotting-app/id6759469696";
+/** Web fallback for iOS CTAs until Palette Plotting has its own App Store page. */
+export const PALETTE_PLOTTING_APP_STORE_URL = "https://paletteplotting.com/onboarding/welcome";
 
 /** Native Android app link placeholder. */
 export const PALETTE_PLOTTING_GOOGLE_PLAY_URL =

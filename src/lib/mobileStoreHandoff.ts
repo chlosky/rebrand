@@ -9,8 +9,10 @@ import type { MobileWebStore } from "@/lib/marketingGetApp";
 export { PALETTE_PLOTTING_APP_STORE_ID };
 export const PALETTE_PLOTTING_ANDROID_PACKAGE = "com.paletteplotting.app";
 
-/** Native iOS app handoff URL. */
-export const ITMS_APP_STORE_URL = `itms-apps://itunes.apple.com/app/id${PALETTE_PLOTTING_APP_STORE_ID}`;
+/** Native iOS handoff — App Store only when a real listing id is configured. */
+export const ITMS_APP_STORE_URL = PALETTE_PLOTTING_APP_STORE_ID
+  ? `itms-apps://itunes.apple.com/app/id${PALETTE_PLOTTING_APP_STORE_ID}`
+  : PALETTE_PLOTTING_APP_STORE_URL;
 
 function buildAndroidPlayIntentUrl(fallbackHttps: string): string {
   const encodedFallback = encodeURIComponent(fallbackHttps);
