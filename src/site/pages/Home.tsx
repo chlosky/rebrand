@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { HeroVideo } from "@/site/components/home/HeroVideo";
 import { SiteLayout } from "@/site/components/layout/SiteLayout";
@@ -17,6 +18,9 @@ const HOME_DESCRIPTION =
   "Aesthetic acrylic boards for organizing, moodboarding, planning, and envisioning. Standoffs and sticker sheet included. US shipping calculated at checkout.";
 
 export default function Home() {
+  const [heroSlide, setHeroSlide] = useState(0);
+  const isBoardHero = heroSlide === 0;
+
   usePageSeo({
     title: `${SITE_NAME} — Aesthetic Acrylic Boards`,
     description: HOME_DESCRIPTION,
@@ -32,7 +36,7 @@ export default function Home() {
           </p>
 
           <div className="order-2 md:col-start-2 md:row-start-1 md:row-span-2">
-            <HeroVideo />
+            <HeroVideo onActiveChange={setHeroSlide} />
           </div>
 
           <div className="order-3 flex flex-col md:col-start-1 md:row-start-2 md:min-h-0 md:h-full">
@@ -44,13 +48,23 @@ export default function Home() {
               organizing need.
             </h1>
             <p className="mt-4 flex flex-col gap-1 text-base leading-relaxed text-neutral-600 md:mt-5 md:gap-2 md:text-lg">
-              <span>Available in multiple colors</span>
-              <span>Handmade, laser cut holes, edge polished</span>
-              <span>Ready to mount on wall</span>
-              <span>Standoffs and sticker sheet included</span>
-              <span>
-                Digital Guide on palette plotting method free with Board
-              </span>
+              {isBoardHero ? (
+                <>
+                  <span>Available in multiple colors</span>
+                  <span>Handmade, laser cut holes, edge polished</span>
+                  <span>Ready to mount on wall</span>
+                  <span>Standoffs and sticker sheet included</span>
+                  <span>Digital Guide on the method free with Board</span>
+                </>
+              ) : (
+                <>
+                  <span>Your new favorite tool for</span>
+                  <span>vision boarding, moodboarding,</span>
+                  <span>home organization and</span>
+                  <span>late night strategy sessions</span>
+                  <span>Design, Download, Remind</span>
+                </>
+              )}
             </p>
             <div className="mt-8 flex flex-wrap gap-3 md:mt-auto md:pt-6">
               <a

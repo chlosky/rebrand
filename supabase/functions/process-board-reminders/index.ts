@@ -350,7 +350,22 @@ serve(async (req) => {
 
   const subscriptionCache = new Map<string, boolean>();
 
+  const globalPauseCache = new Map<string, boolean>();
 
+  async function remindersGloballyPaused(userId: string): Promise<boolean> {
+    const cached = globalPauseCache.get(userId);
+    if (cached !== undefined) return cached;
+
+    const { data } = await supabase
+      .from("user_preferences")
+      .select("board_reminders_paused")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const paused = data?.board_reminders_paused === true;
+    globalPauseCache.set(userId, paused);
+    return paused;
+  }
 
   async function planAllowsReminders(userId: string): Promise<boolean> {
 
@@ -398,7 +413,15 @@ serve(async (req) => {
 
     }
 
-
+    if (await remindersGloballyPaused(reminder.user_id)) {
+      await supabase.from("board_reminder_deliveries").insert({
+        reminder_id: reminder.id,
+        channel: primaryReminderChannel(reminder.channels ?? ["email"]),
+        status: "skipped_global_pause",
+        error: "board_reminders_globally_paused",
+      });
+      continue;
+    }
 
     const { data: profile } = await supabase
 

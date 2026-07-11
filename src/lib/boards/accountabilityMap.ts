@@ -152,6 +152,10 @@ export type AccountabilityMap = {
   plans: AccountabilityPlan[];
   actions: AccountabilityAction[];
   reminders: AccountabilityReminder[];
+  /** When true, scheduled email/text reminders are not sent until resumed. */
+  reminders_paused?: boolean;
+  /** Which delivery channels to schedule when reminders are active. */
+  delivery_channels?: { email: boolean; sms: boolean };
 };
 
 export const WEEKDAY_OPTIONS = [
@@ -608,6 +612,15 @@ export function normalizeAccountabilityMap(raw: unknown): AccountabilityMap | nu
       plans,
       actions,
       reminders: Array.isArray(o.reminders) ? (o.reminders as AccountabilityReminder[]) : [],
+      reminders_paused: o.reminders_paused === true,
+      delivery_channels:
+        o.delivery_channels && typeof o.delivery_channels === "object"
+          ? {
+              email:
+                (o.delivery_channels as { email?: unknown }).email === false ? false : true,
+              sms: (o.delivery_channels as { sms?: unknown }).sms === true,
+            }
+          : { email: true, sms: false },
     }),
   );
 }

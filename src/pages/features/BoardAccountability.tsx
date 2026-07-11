@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -155,6 +156,7 @@ export default function BoardAccountability() {
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
   const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
   const [pendingSmsActionId, setPendingSmsActionId] = useState<string | null>(null);
+  const [boardRemindersGloballyPaused, setBoardRemindersGloballyPaused] = useState(false);
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -293,7 +295,11 @@ export default function BoardAccountability() {
 
       const normalized = normalizeAccountabilityMap(data);
       if (!normalized) return;
-      persistMap(normalized);
+      persistMap({
+        ...normalized,
+        reminders_paused: false,
+        delivery_channels: normalized.delivery_channels ?? { email: true, sms: false },
+      });
     } catch (error: unknown) {
       const status =
         error && typeof error === "object" && "context" in error
@@ -314,10 +320,42 @@ export default function BoardAccountability() {
     }
   };
 
+  const cancelScheduledReminders = useCallback(async () => {
+    if (!planBoard || !user?.id) return;
+    const { error } = await supabase
+      .from("board_reminders")
+      .delete()
+      .eq("board_id", planBoard.id)
+      .eq("user_id", user.id)
+      .eq("source", "ai_extracted")
+      .eq("status", "scheduled");
+    if (error) throw error;
+  }, [planBoard, user?.id]);
+
   const scheduleAllReminders = async (
     finalizedMap: AccountabilityMap,
   ): Promise<{ email: number; sms: number; calendar: number; total: number }> => {
-    if (!planBoard || !user?.id || !finalizedMap.reminders.length) {
+    if (!planBoard || !user?.id || !finalizedMap.reminders.length || finalizedMap.reminders_paused) {
+      return { email: 0, sms: 0, calendar: 0, total: 0 };
+    }
+
+    const { data: globalPrefs } = await supabase
+      .from("user_preferences")
+      .select("board_reminders_paused")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (globalPrefs?.board_reminders_paused === true) {
+      return { email: 0, sms: 0, calendar: 0, total: 0 };
+    }
+
+    const delivery = finalizedMap.delivery_channels ?? { email: true, sms: false };
+    const schedulableReminders = finalizedMap.reminders.filter((r) => {
+      const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
+      if (reminderType === "email") return delivery.email;
+      if (reminderType === "sms") return delivery.sms;
+      return true;
+    });
+    if (!schedulableReminders.length) {
       return { email: 0, sms: 0, calendar: 0, total: 0 };
     }
 
@@ -332,7 +370,7 @@ export default function BoardAccountability() {
       prefs?.sms_reminder_consent_at != null &&
       prefs?.sms_reminder_opted_out_at == null;
 
-    const hasSmsReminders = finalizedMap.reminders.some((r) => r.reminder_type === "sms");
+    const hasSmsReminders = schedulableReminders.some((r) => r.reminder_type === "sms");
     if (hasSmsReminders) {
       if (!prefs?.phone_number_e164?.trim()) {
         setPendingFinalizeAfterSms(true);
@@ -344,7 +382,7 @@ export default function BoardAccountability() {
         setShowSmsConsentDialog(true);
         throw new Error("Turn on text reminders to use this channel.");
       }
-      const smsInPlan = finalizedMap.reminders.filter((r) => r.reminder_type === "sms").length;
+      const smsInPlan = schedulableReminders.filter((r) => r.reminder_type === "sms").length;
       if (smsInPlan > DAILY_SMS_LIMIT) {
         throw new Error("You can set up to 5 text reminders. Use email or calendar for the rest.");
       }
@@ -365,7 +403,7 @@ export default function BoardAccountability() {
     let sms = 0;
     let calendar = 0;
 
-    for (const r of finalizedMap.reminders) {
+    for (const r of schedulableReminders) {
       const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
       const channels = [reminderType];
       const remindAt = reminderToIso(r);
@@ -422,6 +460,13 @@ export default function BoardAccountability() {
     setFinalizing(true);
     try {
       const next = finalizeAccountabilityMap(map);
+      if (next.reminders_paused) {
+        await cancelScheduledReminders();
+        persistMap(next);
+        toast.success("Action Map finalized. Reminders paused.");
+        return;
+      }
+
       const scheduled = await scheduleAllReminders(next);
       persistMap(next);
 
@@ -442,6 +487,63 @@ export default function BoardAccountability() {
       setFinalizing(false);
     }
   };
+
+  const setRemindersPaused = useCallback(
+    async (paused: boolean) => {
+      if (!map) return;
+      if (!paused && boardRemindersGloballyPaused) {
+        toast.error("All board reminders are paused in Settings");
+        return;
+      }
+      const next: AccountabilityMap = {
+        ...map,
+        reminders_paused: paused,
+        edited_at: new Date().toISOString(),
+      };
+      persistMap(next);
+      try {
+        if (paused) {
+          await cancelScheduledReminders();
+          toast.success("Reminders paused");
+          return;
+        }
+        if (map.finalized) {
+          const scheduled = await scheduleAllReminders(next);
+          const parts = [
+            scheduled.email ? `${scheduled.email} email` : null,
+            scheduled.sms ? `${scheduled.sms} text` : null,
+            scheduled.calendar ? `${scheduled.calendar} calendar` : null,
+          ].filter(Boolean);
+          toast.success(
+            parts.length
+              ? `Reminders started. ${parts.join(" · ")} scheduled.`
+              : "Reminders started.",
+          );
+        }
+      } catch (e) {
+        toast.error(actionErrorMessage(e, "Couldn't update reminders"));
+      }
+    },
+    [boardRemindersGloballyPaused, cancelScheduledReminders, map, persistMap, scheduleAllReminders],
+  );
+
+  const setDeliveryChannel = useCallback(
+    (channel: "email" | "sms", enabled: boolean) => {
+      if (!map) return;
+      const current = map.delivery_channels ?? { email: true, sms: false };
+      const nextChannels = { ...current, [channel]: enabled };
+      if (!nextChannels.email && !nextChannels.sms) {
+        toast.error("Keep at least one reminder channel on");
+        return;
+      }
+      persistMap({
+        ...map,
+        delivery_channels: nextChannels,
+        edited_at: new Date().toISOString(),
+      });
+    },
+    [map, persistMap],
+  );
 
   const exportableReminders = useMemo(() => {
     if (!map) return [];
@@ -473,9 +575,12 @@ export default function BoardAccountability() {
     if (!user?.id) return;
     const { data: prefs } = await supabase
       .from("user_preferences")
-      .select("sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at")
+      .select(
+        "sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at, board_reminders_paused",
+      )
       .eq("user_id", user.id)
       .maybeSingle();
+    setBoardRemindersGloballyPaused(prefs?.board_reminders_paused === true);
     setSmsRemindersEnabled(prefs?.sms_reminders_enabled === true);
     const phone =
       typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()
@@ -613,6 +718,55 @@ export default function BoardAccountability() {
   };
 
   const smsReady = hasPro && smsRemindersEnabled && smsPhoneConfigured && smsConsentOk;
+  const deliveryChannels = map?.delivery_channels ?? { email: true, sms: false };
+  const remindersActive = map ? !map.reminders_paused && !boardRemindersGloballyPaused : false;
+
+  const reminderControls = hasDraft ? (
+    <div className="flex shrink-0 flex-wrap items-center gap-3">
+      {boardRemindersGloballyPaused ? (
+        <p className="text-[11px] font-medium text-amber-800">
+          All reminders paused in Settings
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="reminders-active"
+              checked={remindersActive}
+              onCheckedChange={(on) => void setRemindersPaused(!on)}
+            />
+            <Label htmlFor="reminders-active" className="text-[11px] font-medium text-neutral-700">
+              {remindersActive ? "Reminders on" : "Reminders paused"}
+            </Label>
+          </div>
+          {remindersActive ? (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <Checkbox
+                  id="reminder-channel-email"
+                  checked={deliveryChannels.email}
+                  onCheckedChange={(checked) => setDeliveryChannel("email", checked === true)}
+                />
+                <Label htmlFor="reminder-channel-email" className="text-[11px] text-neutral-700">
+                  Email
+                </Label>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Checkbox
+                  id="reminder-channel-text"
+                  checked={deliveryChannels.sms}
+                  onCheckedChange={(checked) => setDeliveryChannel("sms", checked === true)}
+                />
+                <Label htmlFor="reminder-channel-text" className="text-[11px] text-neutral-700">
+                  Text
+                </Label>
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
+  ) : null;
 
   if (!user) return null;
 
@@ -722,16 +876,25 @@ export default function BoardAccountability() {
           {analyzePhase ? (
             <p className="text-[11px] text-neutral-500">{analyzePhase}</p>
           ) : null}
+          {reminderControls}
           {map?.finalized ? (
-            <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
-              Reminders on · edit anytime
+            <span
+              className={cn(
+                "shrink-0 rounded px-2 py-0.5 text-[10px] font-medium",
+                boardRemindersGloballyPaused || map.reminders_paused
+                  ? "bg-amber-100 text-amber-900"
+                  : "bg-emerald-100 text-emerald-800",
+              )}
+            >
+              {boardRemindersGloballyPaused || map.reminders_paused ? "Paused" : "Live"} · edit anytime
             </span>
           ) : null}
           {map ? <p className="shrink-0 text-[11px] text-stone-500">{smsCounterText}</p> : null}
         </div>
 
         {isMobile && map ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-neutral-200 bg-[#f3f0eb] px-4 py-2">
+            {reminderControls}
             <p className="text-[11px] text-stone-500">{smsCounterText}</p>
           </div>
         ) : null}

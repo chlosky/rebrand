@@ -1675,6 +1675,7 @@ export type Database = {
           user_id: string
           weekly_checkin_enabled: boolean | null
           weekly_goals_sms: boolean | null
+          board_reminders_paused: boolean
         }
         Insert: {
           app_notifications_enabled?: boolean
@@ -1704,6 +1705,7 @@ export type Database = {
           user_id: string
           weekly_checkin_enabled?: boolean | null
           weekly_goals_sms?: boolean | null
+          board_reminders_paused?: boolean
         }
         Update: {
           app_notifications_enabled?: boolean
@@ -1733,6 +1735,7 @@ export type Database = {
           user_id?: string
           weekly_checkin_enabled?: boolean | null
           weekly_goals_sms?: boolean | null
+          board_reminders_paused?: boolean
         }
         Relationships: []
       }

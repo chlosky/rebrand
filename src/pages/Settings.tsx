@@ -71,6 +71,7 @@ const Settings = () => {
   const [emailMarketing, setEmailMarketing] = useState(false);
   const [marketingSMSEnabled, setMarketingSMSEnabled] = useState(false);
   const [dataTrainingOptIn, setDataTrainingOptIn] = useState(false);
+  const [boardRemindersPaused, setBoardRemindersPaused] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -131,7 +132,7 @@ const Settings = () => {
         // Fetch user preferences (email reminders and text reminders)
         const { data: prefs, error: prefsError } = await (supabase as any)
           .from('user_preferences')
-          .select('email_marketing, texts_enabled, data_training_opt_in')
+          .select('email_marketing, texts_enabled, data_training_opt_in, board_reminders_paused')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -139,6 +140,7 @@ const Settings = () => {
           setEmailMarketing(prefs.email_marketing || false);
           setMarketingSMSEnabled(prefs.texts_enabled || false);
           setDataTrainingOptIn(prefs.data_training_opt_in || false);
+          setBoardRemindersPaused(prefs.board_reminders_paused === true);
         }
 
         // Fetch profile for phone number, username, and first name
@@ -488,6 +490,42 @@ const Settings = () => {
     }
   };
 
+  const handleToggleBoardRemindersPause = async (paused: boolean) => {
+    setBoardRemindersPaused(paused);
+
+    if (user) {
+      const { error } = await (supabase as any)
+        .from("user_preferences")
+        .upsert(
+          {
+            user_id: user.id,
+            board_reminders_paused: paused,
+          },
+          { onConflict: "user_id" },
+        );
+
+      if (error) {
+        console.error("Error updating board reminders pause:", error);
+        setBoardRemindersPaused(!paused);
+        toast.error(t("toasts.boardRemindersPauseFailed"));
+        return;
+      }
+
+      if (paused) {
+        const { error: cancelErr } = await supabase
+          .from("board_reminders")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("status", "scheduled");
+        if (cancelErr) {
+          console.error("Error cancelling scheduled board reminders:", cancelErr);
+        }
+      }
+
+      toast.success(paused ? t("toasts.boardRemindersPaused") : t("toasts.boardRemindersResumed"));
+    }
+  };
+
   const handleToggleEmailMarketing = async (enabled: boolean) => {
     setEmailMarketing(enabled);
     
@@ -804,6 +842,22 @@ const Settings = () => {
               <p className={cn("text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
                 {t("preferences.planRemindersDescription")}
               </p>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-3">
+                <div className="pr-4">
+                  <Label htmlFor="board-reminders-pause" className="text-sm">
+                    {t("preferences.boardRemindersPauseLabel")}
+                  </Label>
+                  <p className={cn("mt-1 text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
+                    {t("preferences.boardRemindersPauseDescription")}
+                  </p>
+                </div>
+                <Switch
+                  id="board-reminders-pause"
+                  checked={boardRemindersPaused}
+                  onCheckedChange={handleToggleBoardRemindersPause}
+                  className="data-[state=checked]:bg-amber-500"
+                />
+              </div>
               <Button
                 variant="outline"
                 className={cn(
