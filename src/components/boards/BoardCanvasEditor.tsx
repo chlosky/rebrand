@@ -4659,25 +4659,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             }
           }
 
-          if (syncTextFocusRef.current && target) {
-            if (!isStickyRect(target as FabricObject) && !stickyGroupFromTarget(target as FabricObject) && !parchmentGroupFromTarget(target as FabricObject)) {
-              let root: FabricObject = target;
-              while (root.group) root = root.group as FabricObject;
-              if (
-                (root instanceof IText || root instanceof Textbox) &&
-                root.get("markKind") !== "sticky-text" &&
-                root.get("markKind") !== "parchment-text" &&
-                !structureProp(root, "structureRole")
-              ) {
-                if (enterObjectTextEditing(canvas, root, true)) {
-                  opt.e.preventDefault?.();
-                  opt.e.stopPropagation?.();
-                  return;
-                }
-              }
-            }
-          }
-
           const isLeftEmpty = e.button === 0 && !target && !e.ctrlKey && !e.metaKey && !e.shiftKey;
           if (isLeftEmpty) {
             canvas.discardActiveObject();
@@ -6912,10 +6893,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         const touchTarget = fabricRef.current?.findTarget(e) as FabricObject | undefined;
-        if (isStatementTarget(touchTarget) && fabricRef.current) {
-          enterObjectTextEditing(fabricRef.current, statementRoot(touchTarget!), true);
-          return;
-        }
+        if (isStatementTarget(touchTarget)) return;
         longPressTimer = window.setTimeout(() => {
           const activeCanvas = fabricRef.current;
           if (!activeCanvas) return;
@@ -7014,17 +6992,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           return;
         }
 
-        if (isStatementTarget(target)) {
-          e.preventDefault();
-          const root = statementRoot(target!);
-          if (!(root instanceof IText && root.isEditing) && !(root instanceof Textbox && root.isEditing)) {
-            enterObjectTextEditing(activeCanvas, root, true);
-          }
-          lastTapRef.time = 0;
-          lastTapRef.target = null;
-          return;
-        }
-
         const editTarget = textEditTarget(target);
         if (!editTarget) {
           lastTapRef.time = 0;
@@ -7045,7 +7012,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const touchRoot = wrap;
       const capture = { capture: true as const };
-      touchRoot.addEventListener("touchstart", onTouchStart, { passive: false, ...capture });
+      touchRoot.addEventListener("touchstart", onTouchStart, { passive: true, ...capture });
       touchRoot.addEventListener("touchmove", onTouchMove, { passive: false, ...capture });
       touchRoot.addEventListener("touchend", onTouchEnd, capture);
       touchRoot.addEventListener("touchcancel", onTouchEnd, capture);
