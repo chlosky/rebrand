@@ -51,6 +51,9 @@ type BoardToolbarProps = {
 const toolBtn =
   "h-9 justify-start gap-2 rounded-lg px-3 text-xs font-medium text-neutral-700 hover:bg-neutral-100";
 
+const mobileScrollRow =
+  "min-w-0 w-full max-w-full flex-nowrap overflow-x-auto overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]";
+
 export function BoardToolbar({
   editorRef,
   onUndo,
@@ -66,6 +69,7 @@ export function BoardToolbar({
   onDeleteBoard,
 }: BoardToolbarProps) {
   const horizontal = orientation === "horizontal";
+  const mobileToolbar = horizontal && compact;
 
   const [resetOpen, setResetOpen] = useState(false);
 
@@ -83,7 +87,7 @@ export function BoardToolbar({
           horizontal
             ? cn(
                 "flex flex-row items-center border-b border-neutral-200",
-                compact ? "flex-nowrap gap-0.5 overflow-x-auto p-1.5" : "flex-wrap gap-1 p-2",
+                mobileToolbar ? cn(mobileScrollRow, "gap-0.5 p-1.5") : "flex-wrap gap-1 p-2",
               )
             : "flex flex-col border-r border-neutral-200",
           className,
@@ -94,78 +98,100 @@ export function BoardToolbar({
         )}
         <Button
           variant="ghost"
-          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full")}
+          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full", mobileToolbar && "shrink-0 whitespace-nowrap")}
           onClick={() => editorRef.current?.addText()}
         >
           <Type className="h-4 w-4" />
-          {horizontal ? <span className="sr-only sm:not-sr-only">Text</span> : "Text"}
+          {horizontal ? (
+            mobileToolbar ? <span className="sr-only">Text</span> : <span className="sr-only sm:not-sr-only">Text</span>
+          ) : (
+            "Text"
+          )}
         </Button>
         <Button
           variant="ghost"
-          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full")}
+          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full", mobileToolbar && "shrink-0 whitespace-nowrap")}
           onClick={() => editorRef.current?.addStickyNote()}
         >
           <StickyNote className="h-4 w-4" />
-          {horizontal ? <span className="sr-only sm:not-sr-only">Note</span> : "Sticky note"}
+          {horizontal ? (
+            mobileToolbar ? (
+              <span className="sr-only">Sticky note</span>
+            ) : (
+              <span className="sr-only sm:not-sr-only">Note</span>
+            )
+          ) : (
+            "Sticky note"
+          )}
         </Button>
 
-        {horizontal && <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />}
+        {horizontal && !mobileToolbar && <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />}
 
         <Button
           variant="ghost"
-          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full")}
+          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full", mobileToolbar && "shrink-0 whitespace-nowrap")}
           disabled={!canUndo}
           onClick={() => (onUndo ?? (() => editorRef.current?.undo()))()}
           title="Undo (Ctrl+Z)"
         >
           <Undo2 className="h-4 w-4" />
-          {horizontal ? <span className="sr-only sm:not-sr-only">Undo</span> : "Undo"}
+          {horizontal ? (
+            mobileToolbar ? <span className="sr-only">Undo</span> : <span className="sr-only sm:not-sr-only">Undo</span>
+          ) : (
+            "Undo"
+          )}
         </Button>
         <Button
           variant="ghost"
-          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full")}
+          className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full", mobileToolbar && "shrink-0 whitespace-nowrap")}
           disabled={!canRedo}
           onClick={() => (onRedo ?? (() => editorRef.current?.redo()))()}
           title="Redo (Ctrl+Shift+Z)"
         >
           <Redo2 className="h-4 w-4" />
-          {horizontal ? <span className="sr-only sm:not-sr-only">Redo</span> : "Redo"}
+          {horizontal ? (
+            mobileToolbar ? <span className="sr-only">Redo</span> : <span className="sr-only sm:not-sr-only">Redo</span>
+          ) : (
+            "Redo"
+          )}
         </Button>
 
-        {horizontal && <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />}
+        {horizontal && !mobileToolbar && <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />}
 
         {onSave ? (
           <Button
-            variant="default"
-            className={cn(
-              toolBtn,
-              horizontal
-                ? "h-9 w-auto bg-stone-900 text-white hover:bg-stone-800 hover:text-white"
-                : "w-full bg-stone-900 text-white hover:bg-stone-800 hover:text-white",
-            )}
+            variant="ghost"
+            className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full", mobileToolbar && "shrink-0 whitespace-nowrap")}
             disabled={saving}
             onClick={() => void onSave()}
+            title="Save board"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {horizontal ? <span className="sr-only sm:not-sr-only">Save</span> : "Save"}
+            {horizontal ? (
+              mobileToolbar ? <span className="sr-only">Save</span> : <span className="sr-only sm:not-sr-only">Save</span>
+            ) : (
+              "Save"
+            )}
           </Button>
         ) : null}
 
-        {horizontal && onSave ? (
+        {horizontal && onSave && !mobileToolbar ? (
           <span className="mx-1 hidden h-6 w-px bg-neutral-200 sm:block" aria-hidden />
         ) : null}
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className={cn("flex items-center gap-1", mobileToolbar ? "shrink-0 flex-nowrap" : "shrink-0")}>
           <Button
             variant="ghost"
             className={cn(
               toolBtn,
               horizontal ? "h-9 w-auto text-amber-800 hover:bg-amber-50 hover:text-amber-900" : "w-full text-amber-800 hover:bg-amber-50 hover:text-amber-900",
+              mobileToolbar && "shrink-0 whitespace-nowrap",
             )}
             onClick={() => setResetOpen(true)}
+            title="Reset board"
           >
             <RotateCcw className="h-4 w-4" />
-            {horizontal ? "Reset board" : "Reset board"}
+            {horizontal ? (mobileToolbar ? <span className="sr-only">Reset board</span> : "Reset board") : "Reset board"}
           </Button>
           {compact && onDeleteBoard ? (
             <DropdownMenu>
@@ -175,10 +201,12 @@ export function BoardToolbar({
                   className={cn(
                     toolBtn,
                     "h-9 w-auto text-red-600 hover:text-red-700 hover:bg-red-50",
+                    mobileToolbar && "shrink-0 whitespace-nowrap",
                   )}
+                  title="Delete"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  {mobileToolbar ? <span className="sr-only">Delete</span> : "Delete"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="min-w-[10.5rem]">

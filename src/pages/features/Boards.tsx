@@ -563,23 +563,25 @@ export default function Boards() {
         </header>
 
         {!loading && workspace && activeBoard && (
-          <BoardToolbar
-            editorRef={activeEditorRef}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onSave={() => void handleSaveBoards()}
-            saving={savingBoards}
-            onResetBoard={() => {
-              const id = activeBoard.id;
-              editorMapRef.current.get(id)?.resetBoard();
-            }}
-            orientation="horizontal"
-            className="shrink-0"
-            compact={isMobile}
-            onDeleteBoard={isMobile && canRemoveBoard ? handleRemoveBoard : undefined}
-            canUndo={undoRedo.canUndo}
-            canRedo={undoRedo.canRedo}
-          />
+          <div className={cn("shrink-0", isMobile && "min-w-0 max-w-full overflow-hidden")}>
+            <BoardToolbar
+              editorRef={activeEditorRef}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              onSave={() => void handleSaveBoards()}
+              saving={savingBoards}
+              onResetBoard={() => {
+                const id = activeBoard.id;
+                editorMapRef.current.get(id)?.resetBoard();
+              }}
+              orientation="horizontal"
+              className="shrink-0"
+              compact={isMobile}
+              onDeleteBoard={isMobile && canRemoveBoard ? handleRemoveBoard : undefined}
+              canUndo={undoRedo.canUndo}
+              canRedo={undoRedo.canRedo}
+            />
+          </div>
         )}
 
         {loading ? (
