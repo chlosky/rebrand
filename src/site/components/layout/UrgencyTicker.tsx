@@ -1,4 +1,4 @@
-const TICKER_MESSAGE = "12 COLORS & 3 SIZES · SHIPS TO ALL 50 STATES";
+const TICKER_MESSAGE = "12 COLORS & 3 SIZES · SHIPS TO ALL 50 STATES · FREE SHIPPING";
 
 function TickerStrip({ hidden }: { hidden?: boolean }) {
   return (
