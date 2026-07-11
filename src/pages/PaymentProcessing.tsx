@@ -126,13 +126,16 @@ export default function PaymentProcessing() {
   }, [sid, token, checkoutSessionId, navigate, t]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 py-10">
+    <div
+      className="flex min-h-screen items-center justify-center px-6 py-16 font-sans text-neutral-900 antialiased"
+      style={{ backgroundColor: "#faf8f5" }}
+    >
       <div className="w-full max-w-md space-y-6 text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-        <h1 className="text-2xl font-bold tracking-tight">{t("paymentProcessing.title")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("paymentProcessing.subtitle")}
-        </p>
+        <Loader2 className="mx-auto h-12 w-12 animate-spin text-neutral-900" aria-hidden />
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">
+          {t("paymentProcessing.title")}
+        </h1>
+        <p className="text-sm leading-relaxed text-neutral-600">{t("paymentProcessing.subtitle")}</p>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "postPaywall": {
-    "title": "Your workspace is ready",
+    "title": "Welcome to palette plotting",
     "buildingDashboard": "Opening your workspace…",
     "finishingSubtitle": "Almost there — setting up your boards.",
     "loadingStatusAria": "Loading status",
@@ -8,7 +8,7 @@
     "commitmentText": "You have a place to put the boards, plans, images, and structures you are building. Start simple, then keep arranging.",
     "simsLines": [
       "Confirming your trial…",
-      "Setting up your four-board workspace…",
+      "Setting up your workspace.",
       "Adding your starter boards and plan layout…",
       "Opening your workspace — almost there."
     ],

@@ -2,15 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-import { WELCOME_LIGHT_BASE } from "@/components/onboarding/WelcomeCosmicBackground";
-import { SetupHeadingBlock } from "@/components/onboarding/SetupHeadingBlock";
-import { SETUP_MUTED_TEXT_CLASS } from "@/lib/onboardingSetupTheme";
-import { cn } from "@/lib/utils";
 import { provisionPostPaywallIfNeeded } from "@/lib/postPaywallProvisioning";
 import { markIapSubscriptionConfirmed } from "@/lib/postPurchaseEntitlementGate";
 import { readSetupDraft } from "@/lib/setupDraft";
 import { readStoredPreferredLocale, resolveAppLocale } from "@/lib/locale";
 import i18n from "@/i18n";
+
+const SHELL_BG = "#faf8f5";
 
 /** Visual ring only — not tied to backend provisioning milestones. */
 const VISUAL_PROGRESS_CAP = 97;
@@ -41,20 +39,20 @@ function logPostPaywall(step: string, extra?: Record<string, unknown>) {
 
 function ProgressRing({ value }: { value: number }) {
   const pct = clamp(Math.round(value), 0, 100);
-  const r = 46;
+  const r = 52;
   const c = 2 * Math.PI * r;
   const dash = (pct / 100) * c;
 
   return (
-    <div className="relative size-28 shrink-0">
-      <svg viewBox="0 0 120 120" className="absolute inset-0">
-        <circle cx="60" cy="60" r={r} stroke="rgba(24,24,27,0.12)" strokeWidth="10" fill="none" />
+    <div className="relative size-32 shrink-0" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+      <svg viewBox="0 0 120 120" className="absolute inset-0 size-full">
+        <circle cx="60" cy="60" r={r} stroke="#e7e5e4" strokeWidth="8" fill="none" />
         <circle
           cx="60"
           cy="60"
           r={r}
-          stroke="rgba(24,24,27,0.9)"
-          strokeWidth="10"
+          stroke="#171717"
+          strokeWidth="8"
           fill="none"
           strokeLinecap="round"
           strokeDasharray={`${dash} ${c - dash}`}
@@ -62,7 +60,7 @@ function ProgressRing({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center">
-        <div className="text-xl font-semibold tabular-nums text-zinc-900">{pct}%</div>
+        <div className="text-xl font-semibold tabular-nums text-neutral-900">{pct}%</div>
       </div>
     </div>
   );
@@ -79,17 +77,6 @@ function getActiveStepIndexFromBackendPct(
   return SIMS_LINE_COUNT - 1;
 }
 
-function CommitmentBlock({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="space-y-3 border-b border-zinc-200 pb-4">
-      <p className={cn("text-xs font-medium uppercase tracking-wide", SETUP_MUTED_TEXT_CLASS)}>
-        {label}
-      </p>
-      <p className="text-[0.9375rem] leading-[1.65] text-zinc-800 text-pretty">{text}</p>
-    </div>
-  );
-}
-
 export default function PostPaywallLoading() {
   const { t } = useTranslation("paywall");
   const navigate = useNavigate();
@@ -104,7 +91,7 @@ export default function PostPaywallLoading() {
   const simsLinesRaw = t("postPaywall.simsLines", { returnObjects: true });
   const simsLines = Array.isArray(simsLinesRaw) ? simsLinesRaw : [];
 
-  const subtitle = useMemo(() => {
+  const statusLine = useMemo(() => {
     if (phase === "finishing") return t("postPaywall.finishingSubtitle");
     return simsLines[activeStepIndex] ?? simsLines[simsLines.length - 1] ?? "";
   }, [activeStepIndex, phase, simsLines, t]);
@@ -114,19 +101,18 @@ export default function PostPaywallLoading() {
   }, []);
 
   useEffect(() => {
-    const shellBg = WELCOME_LIGHT_BASE;
     const html = document.documentElement;
     const body = document.body;
     const root = document.getElementById("root");
     const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-    html.style.setProperty("background", shellBg, "important");
-    html.style.setProperty("background-color", WELCOME_LIGHT_BASE, "important");
-    body.style.setProperty("background", shellBg, "important");
-    body.style.setProperty("background-color", WELCOME_LIGHT_BASE, "important");
-    root?.style.setProperty("background", shellBg, "important");
-    root?.style.setProperty("background-color", WELCOME_LIGHT_BASE, "important");
-    themeMeta?.setAttribute("content", WELCOME_LIGHT_BASE);
+    html.style.setProperty("background", SHELL_BG, "important");
+    html.style.setProperty("background-color", SHELL_BG, "important");
+    body.style.setProperty("background", SHELL_BG, "important");
+    body.style.setProperty("background-color", SHELL_BG, "important");
+    root?.style.setProperty("background", SHELL_BG, "important");
+    root?.style.setProperty("background-color", SHELL_BG, "important");
+    themeMeta?.setAttribute("content", SHELL_BG);
 
     return () => {
       html.style.removeProperty("background");
@@ -200,25 +186,23 @@ export default function PostPaywallLoading() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-white font-sans text-zinc-900 antialiased">
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-8 py-16">
-        <div className="w-full max-w-md space-y-6">
-          <SetupHeadingBlock title={t("postPaywall.title")} subtitle={subtitle} />
-
-          <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <CommitmentBlock
-              label={t("postPaywall.commitmentLabel")}
-              text={t("postPaywall.commitmentText")}
-            />
-
-            <div className="flex items-center gap-4">
-              <ProgressRing value={progress} />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-zinc-800">{t("postPaywall.buildingDashboard")}</div>
-              </div>
-            </div>
-          </div>
+    <div
+      className="flex min-h-screen items-center justify-center px-6 py-16 font-sans text-neutral-900 antialiased"
+      style={{ backgroundColor: SHELL_BG }}
+    >
+      <div className="w-full max-w-md space-y-10 text-center">
+        <div className="space-y-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl">
+            {t("postPaywall.title")}
+          </h1>
+          <p className="min-h-[2.75rem] text-sm leading-relaxed text-neutral-600">{statusLine}</p>
         </div>
+
+        <div className="flex justify-center">
+          <ProgressRing value={progress} />
+        </div>
+
+        <p className="text-xs text-neutral-500">{t("postPaywall.buildingDashboard")}</p>
       </div>
     </div>
   );
