@@ -24,9 +24,14 @@
     height: 100%;
   }
 
-  .board-mobile-carousel .canvas-container {
+  .board-mobile-carousel .board-artboard-host:not(.board-artboard-host--landscape) .canvas-container {
     max-width: 100%;
     max-height: 100%;
+  }
+
+  .board-mobile-carousel .board-artboard-host--landscape .canvas-container {
+    max-width: none;
+    max-height: none;
   }
 }
 
@@ -36,9 +41,14 @@
     height: 100%;
   }
 
-  .board-grid-cell .canvas-container {
+  .board-grid-cell .board-artboard-host:not(.board-artboard-host--landscape) .canvas-container {
     max-width: 100%;
     max-height: 100%;
+  }
+
+  .board-grid-cell .board-artboard-host--landscape .canvas-container {
+    max-width: none;
+    max-height: none;
   }
 
   .board-row-scroll {

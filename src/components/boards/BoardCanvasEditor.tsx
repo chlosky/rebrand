@@ -520,11 +520,21 @@ function stripStrayActiveSelectionsFromCanvas(canvas: Canvas): boolean {
 }
 
 function stripActiveSelectionsFromLayoutJson(layout: Record<string, unknown>): Record<string, unknown> {
+  let next: Record<string, unknown> = layout;
   const objects = (layout as { objects?: Record<string, unknown>[] }).objects;
-  if (!Array.isArray(objects)) return layout;
-  const filtered = objects.filter((obj) => String(obj?.type ?? "").toLowerCase() !== "activeselection");
-  if (filtered.length === objects.length) return layout;
-  return { ...layout, objects: filtered };
+  if (Array.isArray(objects)) {
+    const filtered = objects.filter((obj) => String(obj?.type ?? "").toLowerCase() !== "activeselection");
+    if (filtered.length !== objects.length) {
+      next = { ...layout, objects: filtered };
+    }
+  }
+  // Fabric loadFromJSON applies root width/height to the canvas; drop them so the live
+  // artboard props stay authoritative (landscape boards must keep 1350×1080, not 1080×1350).
+  if ("width" in next || "height" in next) {
+    const { width: _w, height: _h, ...rest } = next;
+    return rest;
+  }
+  return next;
 }
 
 export type GuideElementCriteria = {
@@ -3858,8 +3868,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
     // canvas sizing and pointer math must use these, never the scaled display size.
     const activeArtboardWidth = artboardSize.width;
     const activeArtboardHeight = artboardSize.height;
+    const isLandscapeArtboard = activeArtboardWidth > activeArtboardHeight;
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const fitCanvasRef = useRef<(canvas: Canvas) => void>(() => {});
     const canvasWrapRef = useRef<HTMLDivElement>(null);
     const canvasElRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<Canvas | null>(null);
@@ -4104,14 +4116,18 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           }
         }
         canvas.discardActiveObject();
-        canvas.requestRenderAll();
+        canvas.setDimensions(
+          { width: activeArtboardWidth, height: activeArtboardHeight },
+          { backstoreOnly: true },
+        );
+        fitCanvasRef.current(canvas);
         restoringHistoryRef.current = false;
         h.index = index;
         notifyHistoryChange();
         scheduleSave();
         rebindStructureHandlersRef.current(canvas);
       },
-      [colorKey, notifyHistoryChange, scheduleSave],
+      [activeArtboardHeight, activeArtboardWidth, colorKey, notifyHistoryChange, scheduleSave],
     );
 
     const undo = useCallback(async () => {
@@ -4371,6 +4387,8 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.calcOffset();
       canvas.requestRenderAll();
     }, [embedded, activeArtboardWidth, activeArtboardHeight]);
+
+    fitCanvasRef.current = fitCanvas;
 
     useEffect(() => {
       if (!canvasElRef.current) return;
@@ -4781,6 +4799,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   }
                 }
               }
+              canvas.setDimensions(
+                { width: activeArtboardWidth, height: activeArtboardHeight },
+                { backstoreOnly: true },
+              );
+              fitCanvasRef.current(canvas);
               requestFabricRender(canvas);
               resetHistory(canvas);
               suppressHistoryRef.current = false;
@@ -4802,6 +4825,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
           canvas.remove(obj);
         }
         canvas.backgroundColor = bg;
+        canvas.setDimensions(
+          { width: activeArtboardWidth, height: activeArtboardHeight },
+          { backstoreOnly: true },
+        );
+        fitCanvasRef.current(canvas);
         requestFabricRender(canvas);
         resetHistory(canvas);
         suppressHistoryRef.current = false;
@@ -4814,7 +4842,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         cancelled = true;
         cancelAnimationFrame(frame);
       };
-    }, [boardId, colorKey, fabricSelectionControls, layoutJson, resetHistory]);
+    }, [activeArtboardHeight, activeArtboardWidth, boardId, colorKey, fabricSelectionControls, layoutJson, resetHistory]);
 
     const addText = useCallback((text = "") => {
       const canvas = fabricRef.current;
@@ -7080,6 +7108,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         style={embedded ? { backgroundColor: boardFillForKey(colorKey) } : undefined}
         className={cn(
           "board-artboard-host h-full w-full",
+          isLandscapeArtboard && "board-artboard-host--landscape",
           embedded
             ? "min-h-0 overflow-auto p-0"
             : "flex min-h-[420px] items-center justify-center bg-[#ebe8e3] p-4",

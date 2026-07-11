@@ -547,7 +547,13 @@ export function BoardDesktopGrid({
 
                   </div>
 
-                  <div className="relative min-h-0 flex-1 overflow-hidden" style={{ height: cellSize.height }}>
+                  <div
+                    className={cn(
+                      "relative min-h-0 flex-1",
+                      isMatrix ? "overflow-auto" : "overflow-hidden",
+                    )}
+                    style={{ height: cellSize.height }}
+                  >
 
                     <RegisteredBoardCanvasEditor
                       boardId={board.id}

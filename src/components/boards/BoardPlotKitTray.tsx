@@ -230,8 +230,8 @@ export function BoardPlotKitTray({
                       type="button"
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-stone-700 active:bg-stone-200/60"
                       onClick={() => {
-                        editor()?.addText();
-                        window.setTimeout(() => close(), 0);
+                        close();
+                        window.setTimeout(() => editor()?.addText(), 200);
                       }}
                     >
                       <Type className="h-4 w-4" /> Statement

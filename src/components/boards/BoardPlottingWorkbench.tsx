@@ -384,7 +384,10 @@ export function BoardPlottingWorkbench({
                 <div className="rounded-lg border border-stone-300/70 bg-white/60 p-2">
                   <p className="px-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">Text & notes</p>
                   <div className="mt-1 space-y-0.5">
-                    <button type="button" className={markBtn} onClick={() => editorRef.current?.addText()}>
+                    <button type="button" className={markBtn} onClick={() => {
+                      setOpenTab(null);
+                      editorRef.current?.addText();
+                    }}>
                       <Type className="h-4 w-4" /> Statement
                     </button>
                     <button type="button" className={markBtn} onClick={() => editorRef.current?.addStickyNote()}>

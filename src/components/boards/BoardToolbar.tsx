@@ -191,7 +191,7 @@ export function BoardToolbar({
             title="Reset board"
           >
             <RotateCcw className="h-4 w-4" />
-            {horizontal ? (mobileToolbar ? <span className="sr-only">Reset board</span> : "Reset board") : "Reset board"}
+            Reset board
           </Button>
           {compact && onDeleteBoard ? (
             <DropdownMenu>
@@ -206,7 +206,7 @@ export function BoardToolbar({
                   title="Delete"
                 >
                   <Trash2 className="h-4 w-4" />
-                  {mobileToolbar ? <span className="sr-only">Delete</span> : "Delete"}
+                  Delete
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="min-w-[10.5rem]">
