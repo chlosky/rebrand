@@ -236,7 +236,8 @@ export function BoardPlotKitTray({
                     <button
                       type="button"
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-stone-700 active:bg-stone-200/60"
-                      onClick={() => {
+                      onPointerDown={(e) => {
+                        e.preventDefault();
                         keepCanvasFocusOnCloseRef.current = true;
                         editor()?.addText();
                         close();

@@ -99,7 +99,15 @@ export function BoardToolbar({
         <Button
           variant="ghost"
           className={cn(toolBtn, horizontal ? "h-9 w-auto" : "w-full", mobileToolbar && "shrink-0 whitespace-nowrap")}
-          onClick={() => editorRef.current?.addText()}
+          onPointerDown={(e) => {
+            if (!mobileToolbar) return;
+            e.preventDefault();
+            editorRef.current?.addText();
+          }}
+          onClick={() => {
+            if (mobileToolbar) return;
+            editorRef.current?.addText();
+          }}
         >
           <Type className="h-4 w-4" />
           {horizontal ? (

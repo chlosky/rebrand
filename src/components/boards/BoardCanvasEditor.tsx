@@ -1590,10 +1590,22 @@ function enterObjectTextEditing(
       textObj.selectionEnd = len;
     }
 
-    const hiddenTextarea = (textObj as Textbox & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
-    if (hiddenTextarea) {
+    const focusHiddenInput = () => {
+      const hiddenTextarea = (textObj as Textbox & { hiddenTextarea?: HTMLTextAreaElement }).hiddenTextarea;
+      if (!hiddenTextarea) return false;
+      hiddenTextarea.setAttribute("inputmode", "text");
+      hiddenTextarea.setAttribute("autocomplete", "off");
+      hiddenTextarea.setAttribute("autocorrect", "on");
+      hiddenTextarea.style.fontSize = "16px";
       hiddenTextarea.focus({ preventScroll: true });
       if (syncFocus) hiddenTextarea.click();
+      return document.activeElement === hiddenTextarea;
+    };
+
+    if (!focusHiddenInput() && syncFocus) {
+      requestAnimationFrame(() => {
+        if (!focusHiddenInput()) requestAnimationFrame(focusHiddenInput);
+      });
     }
 
     canvas.requestRenderAll();
@@ -4610,7 +4622,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
             opt.e.stopPropagation?.();
             return;
           }
-          if (enterObjectTextEditing(canvas, target as FabricObject)) {
+          if (enterObjectTextEditing(canvas, target as FabricObject, syncTextFocusRef.current)) {
             opt.e.preventDefault?.();
             opt.e.stopPropagation?.();
           }
@@ -4861,14 +4873,13 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-      enterObjectTextEditing(canvas, t, fabricSelectionControls);
+      enterObjectTextEditing(canvas, t, true);
       commitHistorySnapshot();
       scheduleSave();
     }, [
       activeArtboardHeight,
       activeArtboardWidth,
       commitHistorySnapshot,
-      fabricSelectionControls,
       readOnly,
       scheduleSave,
     ]);
@@ -4919,9 +4930,9 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       canvas.add(t);
       canvas.setActiveObject(t);
       canvas.requestRenderAll();
-      enterObjectTextEditing(canvas, t, fabricSelectionControls);
+      enterObjectTextEditing(canvas, t, true);
       scheduleSave();
-    }, [activeArtboardHeight, activeArtboardWidth, fabricSelectionControls, readOnly, scheduleSave]);
+    }, [activeArtboardHeight, activeArtboardWidth, readOnly, scheduleSave]);
 
     const addStickyNoteAtPoint = useCallback((normX: number, normY: number) => {
       const canvas = fabricRef.current;
@@ -6900,7 +6911,11 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
         }
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-        if (isStatementTarget(fabricRef.current?.findTarget(e) as FabricObject | undefined)) return;
+        const touchTarget = fabricRef.current?.findTarget(e) as FabricObject | undefined;
+        if (isStatementTarget(touchTarget) && fabricRef.current) {
+          enterObjectTextEditing(fabricRef.current, statementRoot(touchTarget!), true);
+          return;
+        }
         longPressTimer = window.setTimeout(() => {
           const activeCanvas = fabricRef.current;
           if (!activeCanvas) return;
@@ -7001,11 +7016,10 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
         if (isStatementTarget(target)) {
           e.preventDefault();
-          enterObjectTextEditing(
-            activeCanvas,
-            statementRoot(target!),
-            true,
-          );
+          const root = statementRoot(target!);
+          if (!(root instanceof IText && root.isEditing) && !(root instanceof Textbox && root.isEditing)) {
+            enterObjectTextEditing(activeCanvas, root, true);
+          }
           lastTapRef.time = 0;
           lastTapRef.target = null;
           return;
@@ -7031,7 +7045,7 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
 
       const touchRoot = wrap;
       const capture = { capture: true as const };
-      touchRoot.addEventListener("touchstart", onTouchStart, { passive: true, ...capture });
+      touchRoot.addEventListener("touchstart", onTouchStart, { passive: false, ...capture });
       touchRoot.addEventListener("touchmove", onTouchMove, { passive: false, ...capture });
       touchRoot.addEventListener("touchend", onTouchEnd, capture);
       touchRoot.addEventListener("touchcancel", onTouchEnd, capture);
