@@ -52,7 +52,6 @@ import SiteBoardProduct from "@/site/pages/BoardProduct";
 import SiteCart from "@/site/pages/CartPage";
 import SiteGuidePreview from "@/site/pages/PalettePlottingGuidePreviewPage";
 import PalettePlottingGuideReaderPage from "@/site/pages/PalettePlottingGuideReaderPage";
-import PricingPlans from "./pages/PricingPlans";
 import GetAppStore from "./pages/GetAppStore";
 import GetNewsletter from "./pages/GetNewsletter";
 import WhatIsPalettePlotting from "./pages/WhatIsPalettePlotting";
@@ -213,7 +212,8 @@ const App = () => {
               <Route path="/acceptable-use" element={<Navigate to="/policies/acceptable-use" replace />} />
               <Route path="/dmca" element={<DMCA />} />
               <Route path="/billing" element={<Navigate to="/policies/billing" replace />} />
-              <Route path="/pricingplans" element={<PricingPlans />} />
+              <Route path="/pricingplans" element={<Navigate to="/" replace />} />
+              <Route path="/pricingplan" element={<Navigate to="/" replace />} />
               <Route path="/eula" element={<Navigate to="/policies/app-terms" replace />} />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

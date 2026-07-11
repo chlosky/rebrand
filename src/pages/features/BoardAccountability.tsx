@@ -65,16 +65,6 @@ import "@/styles/board-editor.css";
 
 export type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
 
-function storageKey(workspaceId: string) {
-  return `board-accountability-map:${workspaceId}`;
-}
-
-function mapTimestamp(map: AccountabilityMap | null): number {
-  if (!map) return 0;
-  const ts = map.edited_at ?? map.analyzed_at ?? map.finalized_at;
-  return ts ? Date.parse(ts) || 0 : 0;
-}
-
 function mapFromJson(raw: unknown): AccountabilityMap | null {
   if (!raw) return null;
   try {
@@ -82,16 +72,6 @@ function mapFromJson(raw: unknown): AccountabilityMap | null {
   } catch {
     return null;
   }
-}
-
-function pickNewerMap(
-  serverMap: AccountabilityMap | null,
-  cachedMap: AccountabilityMap | null,
-): AccountabilityMap | null {
-  const serverTs = mapTimestamp(serverMap);
-  const cachedTs = mapTimestamp(cachedMap);
-  if (serverTs >= cachedTs) return serverMap;
-  return cachedMap;
 }
 
 const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
@@ -175,8 +155,6 @@ export default function BoardAccountability() {
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
   const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
   const [pendingSmsActionId, setPendingSmsActionId] = useState<string | null>(null);
-  const saveMapTimerRef = useRef<number | null>(null);
-  const saveMapSeqRef = useRef(0);
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -192,24 +170,9 @@ export default function BoardAccountability() {
     (next: AccountabilityMap) => {
       setMap(next);
       if (!workspace) return;
-      sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(next));
-
-      if (saveMapTimerRef.current != null) {
-        window.clearTimeout(saveMapTimerRef.current);
-      }
-      saveMapTimerRef.current = window.setTimeout(() => {
-        saveMapTimerRef.current = null;
-        const seq = saveMapSeqRef.current + 1;
-        saveMapSeqRef.current = seq;
-        void saveAccountabilityMap(workspace.id, next)
-          .then(() => {
-            if (saveMapSeqRef.current !== seq) return;
-          })
-          .catch(() => {
-            if (saveMapSeqRef.current !== seq) return;
-            toast.error("Could not sync your action map");
-          });
-      }, 400);
+      void saveAccountabilityMap(workspace.id, next).catch(() => {
+        toast.error("Could not save your action map");
+      });
     },
     [workspace],
   );
@@ -219,15 +182,7 @@ export default function BoardAccountability() {
     try {
       const raw = await fetchAccountabilityMapJson(workspace.id);
       const serverMap = mapFromJson(raw);
-      setMap((current) => {
-        const serverTs = mapTimestamp(serverMap);
-        const currentTs = mapTimestamp(current);
-        if (serverTs > currentTs && serverMap) {
-          sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(serverMap));
-          return serverMap;
-        }
-        return current;
-      });
+      if (serverMap) setMap(serverMap);
     } catch {
       /* ignore background refresh errors */
     }
@@ -283,23 +238,7 @@ export default function BoardAccountability() {
       sessionStorage.setItem(ACTIVE_WORKSPACE_KEY, full.id);
       setWorkspace(full);
 
-      const serverMap = mapFromJson(full.accountability_map_json);
-      let cachedMap: AccountabilityMap | null = null;
-      const cached = sessionStorage.getItem(storageKey(full.id));
-      if (cached) {
-        cachedMap = mapFromJson(cached);
-      }
-
-      const nextMap = pickNewerMap(serverMap, cachedMap);
-      if (nextMap) {
-        sessionStorage.setItem(storageKey(full.id), JSON.stringify(nextMap));
-      }
-      if (nextMap && mapTimestamp(cachedMap) > mapTimestamp(serverMap)) {
-        void saveAccountabilityMap(full.id, nextMap).catch(() => {
-          /* session cache will retry on next edit */
-        });
-      }
-      setMap(nextMap);
+      setMap(mapFromJson(full.accountability_map_json));
     } catch {
       toast.error("Could not load your boards");
     } finally {
@@ -570,14 +509,6 @@ export default function BoardAccountability() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [loadSmsPrefs, reloadMapFromServer]);
-
-  useEffect(() => {
-    return () => {
-      if (saveMapTimerRef.current != null) {
-        window.clearTimeout(saveMapTimerRef.current);
-      }
-    };
-  }, []);
 
   const openSmsSetup = useCallback(
     (actionId?: string) => {

@@ -17,7 +17,6 @@ const MARKETING_SITE_EXACT = new Set([
   "/contact",
   "/community",
   "/billing",
-  "/pricingplans",
   "/dmca",
   "/help/plotting",
 ]);

@@ -176,13 +176,6 @@ const DOCK_TABS: { id: PlotDockTab; label: string; Icon: typeof Type }[] = [
   { id: "marks", label: "Marks", Icon: PenLine },
 ];
 
-const TAB_INTROS: Record<PlotDockTab, string> = {
-  companion: "Colors, labels, images, notes, structures, digital decals, layout, and board names.",
-  clippings: "Collection, Affixments, Objects, and Uploads — each with its own tab.",
-  structures: "Pick a board color, then add digital decals like calendar, checkbox, and divider.",
-  marks: "Right-click empty board to add marks.",
-};
-
 type BoardPlottingWorkbenchProps = {
   workspaceId: string;
   activeBoard: Board;
@@ -308,15 +301,6 @@ export function BoardPlottingWorkbench({
 
       {!collapsed && openTab ? (
         <div className="flex h-full min-h-0 w-[min(100vw,17.5rem)] flex-col overflow-hidden xl:w-72">
-          {openTab !== "companion" ? (
-            <header className="border-b border-stone-300/60 px-3 py-2.5">
-              <p className="font-welcome-serif text-sm font-normal text-stone-900">
-                {DOCK_TABS.find((t) => t.id === openTab)?.label}
-              </p>
-              <p className="mt-0.5 text-[11px] leading-snug text-stone-500">{TAB_INTROS[openTab]}</p>
-            </header>
-          ) : null}
-
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {openTab === "companion" && (
               <BoardCompanionPanel
