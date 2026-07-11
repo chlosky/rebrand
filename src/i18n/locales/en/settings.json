@@ -63,8 +63,8 @@
     "planRemindersDescription": "Default channels and text reminder setup for dates, goals and next steps from The Plan.",
     "planRemindersButtonTitle": "Plan reminder preferences",
     "planRemindersButtonSubtitle": "Email, calendar export and text nudges",
-    "boardRemindersPauseLabel": "Pause all board reminders",
-    "boardRemindersPauseDescription": "Stops email and text reminders across every board until you turn this back on."
+    "boardRemindersActiveLabel": "Board reminders",
+    "boardRemindersActiveDescription": "Email and text reminders from your Action maps. Turn off to pause across every board."
   },
   "deletion": {
     "heading": "Delete account",
@@ -205,7 +205,7 @@
     "planSmsDisabled": "Text reminders turned off.",
     "planPhoneSaved": "Phone number saved.",
     "boardRemindersPaused": "All board reminders paused",
-    "boardRemindersResumed": "Board reminders resumed",
+    "boardRemindersResumed": "Board reminders resumed. Scheduled reminders restore when you open Action.",
     "boardRemindersPauseFailed": "Could not update board reminder pause"
   },
   "legalDisclaimer": "",

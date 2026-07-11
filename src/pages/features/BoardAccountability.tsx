@@ -157,6 +157,7 @@ export default function BoardAccountability() {
   const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
   const [pendingSmsActionId, setPendingSmsActionId] = useState<string | null>(null);
   const [boardRemindersGloballyPaused, setBoardRemindersGloballyPaused] = useState(false);
+  const wasGloballyPausedRef = useRef(false);
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -476,11 +477,15 @@ export default function BoardAccountability() {
         scheduled.calendar ? `${scheduled.calendar} calendar` : null,
       ].filter(Boolean);
 
-      toast.success(
-        parts.length
-          ? `Action Map finalized. ${parts.join(" · ")} reminder${scheduled.total === 1 ? "" : "s"} ready.`
-          : "Action Map finalized.",
-      );
+      if (scheduled.total === 0 && boardRemindersGloballyPaused) {
+        toast.success("Action Map finalized. All board reminders are paused in Settings.");
+      } else {
+        toast.success(
+          parts.length
+            ? `Action Map finalized. ${parts.join(" · ")} reminder${scheduled.total === 1 ? "" : "s"} ready.`
+            : "Action Map finalized.",
+        );
+      }
     } catch (e) {
       toast.error(actionErrorMessage(e, "Couldn't finalize your plan"));
     } finally {
@@ -528,7 +533,7 @@ export default function BoardAccountability() {
   );
 
   const setDeliveryChannel = useCallback(
-    (channel: "email" | "sms", enabled: boolean) => {
+    async (channel: "email" | "sms", enabled: boolean) => {
       if (!map) return;
       const current = map.delivery_channels ?? { email: true, sms: false };
       const nextChannels = { ...current, [channel]: enabled };
@@ -536,13 +541,30 @@ export default function BoardAccountability() {
         toast.error("Keep at least one reminder channel on");
         return;
       }
-      persistMap({
+      const next: AccountabilityMap = {
         ...map,
         delivery_channels: nextChannels,
         edited_at: new Date().toISOString(),
-      });
+      };
+      persistMap(next);
+
+      if (!next.finalized || next.reminders_paused || boardRemindersGloballyPaused) return;
+
+      try {
+        const scheduled = await scheduleAllReminders(next);
+        const parts = [
+          scheduled.email ? `${scheduled.email} email` : null,
+          scheduled.sms ? `${scheduled.sms} text` : null,
+          scheduled.calendar ? `${scheduled.calendar} calendar` : null,
+        ].filter(Boolean);
+        if (parts.length) {
+          toast.success(`Reminders updated. ${parts.join(" · ")}.`);
+        }
+      } catch (e) {
+        toast.error(actionErrorMessage(e, "Couldn't update reminders"));
+      }
     },
-    [map, persistMap],
+    [boardRemindersGloballyPaused, map, persistMap, scheduleAllReminders],
   );
 
   const exportableReminders = useMemo(() => {
@@ -580,7 +602,8 @@ export default function BoardAccountability() {
       )
       .eq("user_id", user.id)
       .maybeSingle();
-    setBoardRemindersGloballyPaused(prefs?.board_reminders_paused === true);
+    const globallyPaused = prefs?.board_reminders_paused === true;
+    setBoardRemindersGloballyPaused(globallyPaused);
     setSmsRemindersEnabled(prefs?.sms_reminders_enabled === true);
     const phone =
       typeof prefs?.phone_number_e164 === "string" && prefs.phone_number_e164.trim()
@@ -597,6 +620,70 @@ export default function BoardAccountability() {
     if (!user?.id) return;
     void loadSmsPrefs();
   }, [user?.id, loadSmsPrefs]);
+
+  useEffect(() => {
+    const wasPaused = wasGloballyPausedRef.current;
+    if (wasPaused === boardRemindersGloballyPaused) return;
+    wasGloballyPausedRef.current = boardRemindersGloballyPaused;
+
+    if (!wasPaused || boardRemindersGloballyPaused || !map?.finalized || map.reminders_paused) return;
+
+    void (async () => {
+      try {
+        const scheduled = await scheduleAllReminders(map);
+        const parts = [
+          scheduled.email ? `${scheduled.email} email` : null,
+          scheduled.sms ? `${scheduled.sms} text` : null,
+          scheduled.calendar ? `${scheduled.calendar} calendar` : null,
+        ].filter(Boolean);
+        toast.success(
+          parts.length
+            ? `Reminders resumed. ${parts.join(" · ")} scheduled.`
+            : "Reminders resumed.",
+        );
+      } catch (e) {
+        toast.error(actionErrorMessage(e, "Couldn't resume reminders"));
+      }
+    })();
+  }, [boardRemindersGloballyPaused, map]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      boardRemindersGloballyPaused ||
+      !map?.finalized ||
+      map.reminders_paused ||
+      !planBoard ||
+      !user?.id ||
+      !map.reminders.length
+    ) {
+      return;
+    }
+
+    void (async () => {
+      const { count, error: countErr } = await supabase
+        .from("board_reminders")
+        .select("id", { count: "exact", head: true })
+        .eq("board_id", planBoard.id)
+        .eq("user_id", user.id)
+        .eq("source", "ai_extracted")
+        .eq("status", "scheduled");
+      if (countErr) return;
+      if ((count ?? 0) > 0) return;
+
+      try {
+        await scheduleAllReminders(map);
+      } catch {
+        /* user can retry via Update or the reminders toggle */
+      }
+    })();
+  }, [
+    boardRemindersGloballyPaused,
+    loading,
+    map,
+    planBoard,
+    user?.id,
+  ]);
 
   useEffect(() => {
     const syncPrefs = () => void loadSmsPrefs();
@@ -745,7 +832,7 @@ export default function BoardAccountability() {
                 <Checkbox
                   id="reminder-channel-email"
                   checked={deliveryChannels.email}
-                  onCheckedChange={(checked) => setDeliveryChannel("email", checked === true)}
+                  onCheckedChange={(checked) => void setDeliveryChannel("email", checked === true)}
                 />
                 <Label htmlFor="reminder-channel-email" className="text-[11px] text-neutral-700">
                   Email
@@ -755,7 +842,7 @@ export default function BoardAccountability() {
                 <Checkbox
                   id="reminder-channel-text"
                   checked={deliveryChannels.sms}
-                  onCheckedChange={(checked) => setDeliveryChannel("sms", checked === true)}
+                  onCheckedChange={(checked) => void setDeliveryChannel("sms", checked === true)}
                 />
                 <Label htmlFor="reminder-channel-text" className="text-[11px] text-neutral-700">
                   Text

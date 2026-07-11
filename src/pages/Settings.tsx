@@ -844,18 +844,18 @@ const Settings = () => {
               </p>
               <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-3">
                 <div className="pr-4">
-                  <Label htmlFor="board-reminders-pause" className="text-sm">
-                    {t("preferences.boardRemindersPauseLabel")}
+                  <Label htmlFor="board-reminders-active" className="text-sm">
+                    {t("preferences.boardRemindersActiveLabel")}
                   </Label>
                   <p className={cn("mt-1 text-xs", theme === "dark" ? "text-white/55" : "text-muted-foreground")}>
-                    {t("preferences.boardRemindersPauseDescription")}
+                    {t("preferences.boardRemindersActiveDescription")}
                   </p>
                 </div>
                 <Switch
-                  id="board-reminders-pause"
-                  checked={boardRemindersPaused}
-                  onCheckedChange={handleToggleBoardRemindersPause}
-                  className="data-[state=checked]:bg-amber-500"
+                  id="board-reminders-active"
+                  checked={!boardRemindersPaused}
+                  onCheckedChange={(active) => void handleToggleBoardRemindersPause(!active)}
+                  className="data-[state=checked]:bg-green-500"
                 />
               </div>
               <Button

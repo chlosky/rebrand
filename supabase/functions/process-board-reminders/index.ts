@@ -348,6 +348,8 @@ serve(async (req) => {
 
   let cancelledSubscription = 0;
 
+  let cancelledGlobalPause = 0;
+
   const subscriptionCache = new Map<string, boolean>();
 
   const globalPauseCache = new Map<string, boolean>();
@@ -414,12 +416,20 @@ serve(async (req) => {
     }
 
     if (await remindersGloballyPaused(reminder.user_id)) {
+      await supabase
+        .from("board_reminders")
+        .update({ status: "cancelled" })
+        .eq("id", reminder.id);
+
       await supabase.from("board_reminder_deliveries").insert({
         reminder_id: reminder.id,
         channel: primaryReminderChannel(reminder.channels ?? ["email"]),
         status: "skipped_global_pause",
         error: "board_reminders_globally_paused",
       });
+
+      cancelledGlobalPause++;
+
       continue;
     }
 
@@ -740,6 +750,8 @@ serve(async (req) => {
       sms_skipped_daily_limit: smsSkippedLimit,
 
       cancelled_subscription: cancelledSubscription,
+
+      cancelled_global_pause: cancelledGlobalPause,
 
       daily_sms_limit: DEFAULT_SMS_DAILY_LIMIT,
 
