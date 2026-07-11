@@ -134,6 +134,26 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function saveAccountabilityMap(workspaceId: string, map: Record<string, unknown>): Promise<void> {
+  const { error } = await supabase
+    .from("board_workspaces")
+    .update({ accountability_map_json: map })
+    .eq("id", workspaceId);
+  if (error) throw error;
+}
+
+export async function fetchAccountabilityMapJson(workspaceId: string): Promise<Record<string, unknown> | null> {
+  const { data, error } = await supabase
+    .from("board_workspaces")
+    .select("accountability_map_json")
+    .eq("id", workspaceId)
+    .maybeSingle();
+  if (error) throw error;
+  const raw = data?.accountability_map_json;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  return raw as Record<string, unknown>;
+}
+
 export async function saveBoardLayout(boardId: string, layoutJson: Record<string, unknown>): Promise<void> {
   const { error } = await supabase
     .from("boards")

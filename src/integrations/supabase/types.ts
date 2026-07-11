@@ -294,6 +294,7 @@ export type Database = {
       }
       board_workspaces: {
         Row: {
+          accountability_map_json: Json | null
           created_at: string
           id: string
           name: string
@@ -302,6 +303,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accountability_map_json?: Json | null
           created_at?: string
           id?: string
           name?: string
@@ -310,6 +312,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accountability_map_json?: Json | null
           created_at?: string
           id?: string
           name?: string

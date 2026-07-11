@@ -19,6 +19,7 @@ export type BoardWorkspace = {
   user_id: string;
   name: string;
   preset_slug: string | null;
+  accountability_map_json: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };

@@ -38,9 +38,11 @@ import {
 import { usePlottingPro } from "@/hooks/usePlottingPro";
 import {
   createBoardReminder,
+  fetchAccountabilityMapJson,
   fetchUserWorkspaces,
   fetchWorkspaceWithBoards,
   loadDefaultWorkspace,
+  saveAccountabilityMap,
 } from "@/lib/boards/api";
 import {
   buildRemindersFromMap,
@@ -65,6 +67,31 @@ export type { AccountabilityMap } from "@/lib/boards/accountabilityMap";
 
 function storageKey(workspaceId: string) {
   return `board-accountability-map:${workspaceId}`;
+}
+
+function mapTimestamp(map: AccountabilityMap | null): number {
+  if (!map) return 0;
+  const ts = map.edited_at ?? map.analyzed_at ?? map.finalized_at;
+  return ts ? Date.parse(ts) || 0 : 0;
+}
+
+function mapFromJson(raw: unknown): AccountabilityMap | null {
+  if (!raw) return null;
+  try {
+    return normalizeAccountabilityMap(typeof raw === "string" ? JSON.parse(raw) : raw);
+  } catch {
+    return null;
+  }
+}
+
+function pickNewerMap(
+  serverMap: AccountabilityMap | null,
+  cachedMap: AccountabilityMap | null,
+): AccountabilityMap | null {
+  const serverTs = mapTimestamp(serverMap);
+  const cachedTs = mapTimestamp(cachedMap);
+  if (serverTs >= cachedTs) return serverMap;
+  return cachedMap;
 }
 
 const ACTIVE_WORKSPACE_KEY = "board-workspace-id";
@@ -148,6 +175,8 @@ export default function BoardAccountability() {
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
   const [pendingFinalizeAfterSms, setPendingFinalizeAfterSms] = useState(false);
   const [pendingSmsActionId, setPendingSmsActionId] = useState<string | null>(null);
+  const saveMapTimerRef = useRef<number | null>(null);
+  const saveMapSeqRef = useRef(0);
 
   const planBoard = useMemo(
     () => workspace?.boards.find((b) => b.role === "plan") ?? workspace?.boards[0] ?? null,
@@ -162,12 +191,47 @@ export default function BoardAccountability() {
   const persistMap = useCallback(
     (next: AccountabilityMap) => {
       setMap(next);
-      if (workspace) {
-        sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(next));
+      if (!workspace) return;
+      sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(next));
+
+      if (saveMapTimerRef.current != null) {
+        window.clearTimeout(saveMapTimerRef.current);
       }
+      saveMapTimerRef.current = window.setTimeout(() => {
+        saveMapTimerRef.current = null;
+        const seq = saveMapSeqRef.current + 1;
+        saveMapSeqRef.current = seq;
+        void saveAccountabilityMap(workspace.id, next)
+          .then(() => {
+            if (saveMapSeqRef.current !== seq) return;
+          })
+          .catch(() => {
+            if (saveMapSeqRef.current !== seq) return;
+            toast.error("Could not sync your action map");
+          });
+      }, 400);
     },
     [workspace],
   );
+
+  const reloadMapFromServer = useCallback(async () => {
+    if (!workspace?.id) return;
+    try {
+      const raw = await fetchAccountabilityMapJson(workspace.id);
+      const serverMap = mapFromJson(raw);
+      setMap((current) => {
+        const serverTs = mapTimestamp(serverMap);
+        const currentTs = mapTimestamp(current);
+        if (serverTs > currentTs && serverMap) {
+          sessionStorage.setItem(storageKey(workspace.id), JSON.stringify(serverMap));
+          return serverMap;
+        }
+        return current;
+      });
+    } catch {
+      /* ignore background refresh errors */
+    }
+  }, [workspace?.id]);
 
   /** Grid + Guide edits stay live after finalize; reminders refresh on Update. */
   const applyMapChange = useCallback(
@@ -219,15 +283,21 @@ export default function BoardAccountability() {
       sessionStorage.setItem(ACTIVE_WORKSPACE_KEY, full.id);
       setWorkspace(full);
 
-      let nextMap: AccountabilityMap | null = null;
+      const serverMap = mapFromJson(full.accountability_map_json);
+      let cachedMap: AccountabilityMap | null = null;
       const cached = sessionStorage.getItem(storageKey(full.id));
       if (cached) {
-        try {
-          const parsed: unknown = JSON.parse(cached);
-          nextMap = normalizeAccountabilityMap(parsed);
-        } catch {
-          /* ignore */
-        }
+        cachedMap = mapFromJson(cached);
+      }
+
+      const nextMap = pickNewerMap(serverMap, cachedMap);
+      if (nextMap) {
+        sessionStorage.setItem(storageKey(full.id), JSON.stringify(nextMap));
+      }
+      if (nextMap && mapTimestamp(cachedMap) > mapTimestamp(serverMap)) {
+        void saveAccountabilityMap(full.id, nextMap).catch(() => {
+          /* session cache will retry on next edit */
+        });
       }
       setMap(nextMap);
     } catch {
@@ -453,17 +523,9 @@ export default function BoardAccountability() {
     if (map.finalized && map.reminders?.length) {
       return map.reminders.filter((r) => r.reminder_type === "sms").length;
     }
-    let count = 0;
-    for (const focus of map.focuses ?? []) {
-      for (const goal of focus.goals ?? []) {
-        for (const plan of goal.plans ?? []) {
-          for (const action of plan.actions ?? []) {
-            if (action.reminder_type === "sms" || action.channels?.sms) count++;
-          }
-        }
-      }
-    }
-    return count;
+    return (map.actions ?? []).filter(
+      (action) => action.reminder_type === "sms" || action.channels?.sms,
+    ).length;
   }, [map]);
 
   const smsCounterText = `${smsConfiguredCount} of ${DAILY_SMS_LIMIT} text reminders used`;
@@ -494,16 +556,28 @@ export default function BoardAccountability() {
 
   useEffect(() => {
     const syncPrefs = () => void loadSmsPrefs();
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") syncPrefs();
+    const onFocus = () => {
+      syncPrefs();
+      void reloadMapFromServer();
     };
-    window.addEventListener("focus", syncPrefs);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") onFocus();
+    };
+    window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.removeEventListener("focus", syncPrefs);
+      window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [loadSmsPrefs]);
+  }, [loadSmsPrefs, reloadMapFromServer]);
+
+  useEffect(() => {
+    return () => {
+      if (saveMapTimerRef.current != null) {
+        window.clearTimeout(saveMapTimerRef.current);
+      }
+    };
+  }, []);
 
   const openSmsSetup = useCallback(
     (actionId?: string) => {
