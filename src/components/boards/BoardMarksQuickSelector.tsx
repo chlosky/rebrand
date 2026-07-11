@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Image as ImageIcon,
-  ImagePlus,
   ChevronLeft,
   ClipboardCopy,
   ClipboardPaste,
@@ -183,7 +182,6 @@ export const BOARD_MARK_FRAME_OPTIONS: {
 ];
 
 const IMAGE_OBJECT_ACTIONS: WheelItem[] = [
-  { id: "edit", label: "Edit", Icon: ImagePlus },
   { id: "round", label: "Round", Icon: Radius },
   { id: "frame", label: "Frame", Icon: Shapes },
   { id: "copy", label: "Copy", Icon: ClipboardCopy },
@@ -219,7 +217,6 @@ type BoardMarksQuickSelectorProps = {
   onElementSizePick?: (size: BoardMarkTextSize) => void;
   onElementTextAlignPick?: (align: BoardMarkTextAlign) => void;
   onElementFontPick?: (font: BoardMarkTextFont) => void;
-  onImageEditPick?: () => void;
   onImageRoundPick?: () => void;
   onImageFramePick?: (shape: BoardMarkShapeType) => void;
   onLineDashPick?: () => void;
@@ -312,7 +309,6 @@ export function BoardMarksQuickSelector({
   onElementSizePick,
   onElementTextAlignPick,
   onElementFontPick,
-  onImageEditPick,
   onImageRoundPick,
   onImageFramePick,
   onLineDashPick,
@@ -360,12 +356,8 @@ export function BoardMarksQuickSelector({
         return actions.map((item, i) => ({ ...item, angle: angles[i] }));
       }
       if (imageCapable) {
-        const imageActions =
-          batchCount && batchCount > 1
-            ? IMAGE_OBJECT_ACTIONS.filter((item) => item.id !== "edit")
-            : IMAGE_OBJECT_ACTIONS;
-        const angles = spreadAngles(imageActions.length);
-        return imageActions.map((item, i) => ({ ...item, angle: angles[i] }));
+        const angles = spreadAngles(IMAGE_OBJECT_ACTIONS.length);
+        return IMAGE_OBJECT_ACTIONS.map((item, i) => ({ ...item, angle: angles[i] }));
       }
       if (lineCapable) {
         const angles = spreadAngles(LINE_OBJECT_ACTIONS.length);
@@ -477,11 +469,6 @@ export function BoardMarksQuickSelector({
       return;
     }
     if (id === "edit") {
-      if (imageCapable && !textCapable) {
-        onImageEditPick?.();
-        onClose();
-        return;
-      }
       setPaletteOpen(false);
       setSizeOpen(false);
       setFrameOpen(false);

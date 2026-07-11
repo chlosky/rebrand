@@ -273,17 +273,15 @@ function polaroidMetrics(photoW: number, photoH: number) {
 }
 
 function imageFrameInnerSize(group: Group): { w: number; h: number } {
-  const sx = Math.abs(group.scaleX ?? 1);
-  const sy = Math.abs(group.scaleY ?? 1);
   if (group.get("frameShapeType") === "photo") {
     return {
-      w: Number(group.get("framePhotoWidth") ?? 200) * sx,
-      h: Number(group.get("framePhotoHeight") ?? 200) * sy,
+      w: Number(group.get("framePhotoWidth") ?? 200),
+      h: Number(group.get("framePhotoHeight") ?? 200),
     };
   }
   return {
-    w: Number(group.get("frameWidth") ?? group.width ?? 200) * sx,
-    h: Number(group.get("frameHeight") ?? group.height ?? 200) * sy,
+    w: Number(group.get("frameWidth") ?? group.width ?? 200),
+    h: Number(group.get("frameHeight") ?? group.height ?? 200),
   };
 }
 
@@ -930,7 +928,7 @@ function restoreImageFrameAfterLoad(group: Group) {
     }
     for (const child of group.getObjects()) {
       if (child instanceof FabricImage && child.get("markKind") === "frame-image") {
-        syncPolaroidFrameImageClip(child, m.photoW, m.photoH);
+        prepareImageForPolaroidFrame(child, m);
         child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
       } else if (child.get("markKind") === "frame-backing" || child.get("markKind") === "frame-inset") {
         child.set({ selectable: false, evented: false, hasControls: false, hasBorders: false });
@@ -952,45 +950,6 @@ function restoreImageFrameAfterLoad(group: Group) {
   }
   applyBoardFabricControls(group);
   group.setCoords();
-}
-
-function normalizeImageFrameResize(group: Group) {
-  const sx = Math.abs(group.scaleX ?? 1);
-  const sy = Math.abs(group.scaleY ?? 1);
-  if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) return group;
-
-  const shapeType = group.get("frameShapeType") as BoardMarkShapeType | undefined;
-  if (shapeType === "photo") {
-    const photoW = Math.max(40, Number(group.get("framePhotoWidth") ?? 200) * sx);
-    const photoH = Math.max(40, Number(group.get("framePhotoHeight") ?? 200) * sy);
-    const m = polaroidMetrics(photoW, photoH);
-    group.set({
-      scaleX: 1,
-      scaleY: 1,
-      width: m.totalW,
-      height: m.totalH,
-      frameWidth: m.totalW,
-      frameHeight: m.totalH,
-      framePhotoWidth: m.photoW,
-      framePhotoHeight: m.photoH,
-    });
-  } else if (shapeType && IMAGE_CLIP_FRAME_SHAPES.has(shapeType)) {
-    const frameW = Math.max(40, Number(group.get("frameWidth") ?? group.width ?? 200) * sx);
-    const frameH = Math.max(40, Number(group.get("frameHeight") ?? group.height ?? 200) * sy);
-    group.set({
-      scaleX: 1,
-      scaleY: 1,
-      width: frameW,
-      height: frameH,
-      frameWidth: frameW,
-      frameHeight: frameH,
-    });
-  } else {
-    return group;
-  }
-
-  restoreImageFrameAfterLoad(group);
-  return group;
 }
 
 function prepareImageForFrame(img: FabricImage, frameW: number, frameH: number) {
@@ -4466,8 +4425,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
               normalizeParchmentResize(target);
             } else if (target.get("markKind") === "shape" && target.get("textCapable")) {
               normalizeTextCapableShapeResize(target);
-            } else if (target.get("markKind") === "image-frame") {
-              normalizeImageFrameResize(target);
             } else if (target.get("structureId")) {
               const structureType = target.get("structureType");
 
@@ -5083,12 +5040,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
       [readOnly],
     );
     enterImageCropModeRef.current = enterImageCropMode;
-
-    const enterImageEditFromRadial = useCallback(() => {
-      const targets = getRadialActionTargets();
-      if (targets.length !== 1) return;
-      enterImageCropMode(targets[0]);
-    }, [enterImageCropMode, getRadialActionTargets]);
 
     const toggleImageRoundOnActive = useCallback(
       () => {
@@ -7159,7 +7110,6 @@ export const BoardCanvasEditor = forwardRef<BoardCanvasHandle, BoardCanvasEditor
                   onElementSizePick={applyMarkFontSize}
                   onElementTextAlignPick={applyMarkTextAlign}
                   onElementFontPick={applyMarkFontFamily}
-                  onImageEditPick={enterImageEditFromRadial}
                   onImageRoundPick={toggleImageRoundOnActive}
                   onImageFramePick={applyImageFrameToActive}
                   onLineDashPick={toggleLineDashOnActive}

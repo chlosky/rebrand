@@ -491,39 +491,51 @@ const Settings = () => {
   };
 
   const handleToggleBoardRemindersPause = async (paused: boolean) => {
+    if (!user) return;
     setBoardRemindersPaused(paused);
 
-    if (user) {
-      const { error } = await (supabase as any)
-        .from("user_preferences")
-        .upsert(
-          {
-            user_id: user.id,
-            board_reminders_paused: paused,
-          },
-          { onConflict: "user_id" },
-        );
+    const { data: existing, error: fetchError } = await supabase
+      .from("user_preferences")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      if (error) {
-        console.error("Error updating board reminders pause:", error);
-        setBoardRemindersPaused(!paused);
-        toast.error(t("toasts.boardRemindersPauseFailed"));
-        return;
-      }
-
-      if (paused) {
-        const { error: cancelErr } = await supabase
-          .from("board_reminders")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("status", "scheduled");
-        if (cancelErr) {
-          console.error("Error cancelling scheduled board reminders:", cancelErr);
-        }
-      }
-
-      toast.success(paused ? t("toasts.boardRemindersPaused") : t("toasts.boardRemindersResumed"));
+    if (fetchError) {
+      console.error("Error loading user preferences:", fetchError);
+      setBoardRemindersPaused(!paused);
+      toast.error(t("toasts.boardRemindersPauseFailed"));
+      return;
     }
+
+    const writeResult = existing
+      ? await supabase
+          .from("user_preferences")
+          .update({ board_reminders_paused: paused })
+          .eq("user_id", user.id)
+      : await supabase.from("user_preferences").insert({
+          user_id: user.id,
+          board_reminders_paused: paused,
+        });
+
+    if (writeResult.error) {
+      console.error("Error updating board reminders pause:", writeResult.error);
+      setBoardRemindersPaused(!paused);
+      toast.error(t("toasts.boardRemindersPauseFailed"));
+      return;
+    }
+
+    if (paused) {
+      const { error: cancelErr } = await supabase
+        .from("board_reminders")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("status", "scheduled");
+      if (cancelErr) {
+        console.error("Error cancelling scheduled board reminders:", cancelErr);
+      }
+    }
+
+    toast.success(paused ? t("toasts.boardRemindersPaused") : t("toasts.boardRemindersResumed"));
   };
 
   const handleToggleEmailMarketing = async (enabled: boolean) => {
