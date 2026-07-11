@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
@@ -27,7 +28,15 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
-    return null;
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-[#faf8f5]"
+        aria-busy="true"
+        aria-label="Redirecting to sign in"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
   }
 
   return <>{children}</>;

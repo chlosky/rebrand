@@ -6,7 +6,12 @@ type SiteAccessGateProps = {
   children: ReactNode;
 };
 
-const PUBLIC_PATHS = new Set(["/"]);
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/payment-processing",
+  "/onboarding/post-paywall",
+  "/activate",
+]);
 
 export function SiteAccessGate({ children }: SiteAccessGateProps) {
   const location = useLocation();

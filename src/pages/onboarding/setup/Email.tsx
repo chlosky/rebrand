@@ -318,7 +318,7 @@ export default function SetupEmail() {
 
   return (
     <OnboardingLayout
-      currentPage={11}
+      currentPage={10}
       nativeFormPage
       onContinue={footerContinue}
       canContinue={footerCanContinue}

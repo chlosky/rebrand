@@ -138,7 +138,11 @@
     "subtitle": "Please wait while we confirm your payment. This usually takes a few seconds.",
     "missingInfo": "Missing payment information. Please restart onboarding.",
     "verificationSlow": "Payment verification is taking longer than expected. Please contact support.",
-    "verificationFailed": "Unable to verify payment. Please contact support."
+    "verificationFailed": "Unable to verify payment. Please contact support.",
+    "paymentConfirmed": "Payment confirmed — setting up your workspace…",
+    "signInToContinueTitle": "Payment received",
+    "signInToContinueSubtitle": "Sign in with the email you used during signup to finish setup.",
+    "signInToContinueCta": "Sign in to continue"
   },
   "webStripe": {
     "headline": "Your workspace is ready",

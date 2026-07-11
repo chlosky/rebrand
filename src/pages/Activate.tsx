@@ -94,7 +94,17 @@ export default function Activate() {
     if (remoteSession.status === "paid" || remoteSession.status === "active") return;
 
     // Payment not confirmed by webhook yet - redirect to processing page
-    navigate(`/payment-processing?sid=${encodeURIComponent(sid)}&token=${encodeURIComponent(token)}`, { replace: true });
+    const checkoutFromSession =
+      typeof remoteSession.stripe_checkout_session_id === "string"
+        ? remoteSession.stripe_checkout_session_id.trim()
+        : "";
+    const checkoutQs = checkoutFromSession
+      ? `&checkout_session_id=${encodeURIComponent(checkoutFromSession)}`
+      : "";
+    navigate(
+      `/payment-processing?sid=${encodeURIComponent(sid)}&token=${encodeURIComponent(token)}${checkoutQs}`,
+      { replace: true },
+    );
   }, [remoteSession, sid, token, navigate]);
 
   // Poll for account creation when payment is confirmed but account not created yet

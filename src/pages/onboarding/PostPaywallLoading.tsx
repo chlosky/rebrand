@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { supabase } from "@/integrations/supabase/client";
+import { invalidatePlottingProCache } from "@/hooks/usePlottingPro";
 import { provisionPostPaywallIfNeeded } from "@/lib/postPaywallProvisioning";
 import { markIapSubscriptionConfirmed } from "@/lib/postPurchaseEntitlementGate";
+import { syncWebStripeEntitlementAfterPurchaseWithRetries } from "@/lib/webStripeEntitlementSync";
 import { readSetupDraft } from "@/lib/setupDraft";
 import { readStoredPreferredLocale, resolveAppLocale } from "@/lib/locale";
 import i18n from "@/i18n";
@@ -77,11 +80,24 @@ function getActiveStepIndexFromBackendPct(
   return SIMS_LINE_COUNT - 1;
 }
 
+async function waitForAuthUserId(maxAttempts = 15): Promise<string | null> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id ?? null;
+    if (userId) return userId;
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
+  }
+  return null;
+}
+
 export default function PostPaywallLoading() {
   const { t } = useTranslation("paywall");
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
+  const provisionRunRef = useRef(0);
 
   const [progress, setProgress] = useState(8);
   const [backendProvisionPct, setBackendProvisionPct] = useState(0);
@@ -125,14 +141,18 @@ export default function PostPaywallLoading() {
   }, []);
 
   useEffect(() => {
-    let alive = true;
+    const runId = ++provisionRunRef.current;
     let tickId: number | null = null;
+    let navigateTimer: number | null = null;
 
-    logPostPaywall("provisioning effect started");
+    logPostPaywall("provisioning effect started", { runId });
+
+    const isCurrentRun = () => runId === provisionRunRef.current;
 
     const startVisualProgress = () => {
       if (tickId != null) window.clearInterval(tickId);
       tickId = window.setInterval(() => {
+        if (!isCurrentRun()) return;
         setProgress((current) => {
           if (current >= VISUAL_PROGRESS_CAP) return VISUAL_PROGRESS_CAP;
           const distance = VISUAL_PROGRESS_CAP - current;
@@ -142,46 +162,83 @@ export default function PostPaywallLoading() {
       }, VISUAL_PROGRESS_INTERVAL_MS);
     };
 
+    const finishToWorkspace = (userId: string, delayMs: number) => {
+      markIapSubscriptionConfirmed(userId);
+      invalidatePlottingProCache(userId);
+      setPhase("finishing");
+      if (tickId != null) window.clearInterval(tickId);
+      setProgress(100);
+      logPostPaywall("navigate dashboard", { userId, delayMs });
+      navigateTimer = window.setTimeout(() => {
+        if (!isCurrentRun()) return;
+        navigateRef.current("/workspace?tab=projects", { replace: true });
+      }, delayMs);
+    };
+
     (async () => {
       startVisualProgress();
       try {
+        logPostPaywall("entitlement sync start");
+        await syncWebStripeEntitlementAfterPurchaseWithRetries();
+        logPostPaywall("entitlement sync end");
+
+        if (!isCurrentRun()) {
+          logPostPaywall("aborted after entitlement sync (stale run)");
+          return;
+        }
+
         logPostPaywall("provisioning start");
         const provisionResult = await provisionPostPaywallIfNeeded({
           quiet: true,
           onProgress: (provisionPct) => {
-            if (!alive) return;
+            if (!isCurrentRun()) return;
             setBackendProvisionPct(provisionPct);
             logPostPaywall("provisioning milestone", { provisionPct });
           },
         });
         logPostPaywall("provisioning end", { provisionResult });
-        if (!alive) {
-          logPostPaywall("aborted after provisioning (alive=false)");
+        if (!isCurrentRun()) {
+          logPostPaywall("aborted after provisioning (stale run)");
           return;
         }
 
-        markIapSubscriptionConfirmed(null);
+        const userId = await waitForAuthUserId();
+        if (!isCurrentRun()) return;
 
-        setPhase("finishing");
-        if (tickId != null) window.clearInterval(tickId);
-        setProgress(100);
+        if (!userId) {
+          logPostPaywall("navigate login (no auth session after payment)");
+          navigateRef.current("/login", {
+            replace: true,
+            state: { from: "/onboarding/post-paywall" },
+          });
+          return;
+        }
 
-        logPostPaywall("navigate dashboard");
-        window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 250);
+        finishToWorkspace(userId, 250);
       } catch (e) {
         console.error("[post-paywall] provisioning failed:", e);
         logPostPaywall("provisioning error", { error: String((e as Error)?.message ?? e) });
-        if (!alive) return;
-        markIapSubscriptionConfirmed(null);
-        logPostPaywall("navigate dashboard after error");
-        window.setTimeout(() => navigateRef.current("/workspace?tab=projects", { replace: true }), 650);
+        if (!isCurrentRun()) return;
+
+        const userId = await waitForAuthUserId();
+        if (!isCurrentRun()) return;
+
+        if (!userId) {
+          navigateRef.current("/login", {
+            replace: true,
+            state: { from: "/onboarding/post-paywall" },
+          });
+          return;
+        }
+
+        finishToWorkspace(userId, 650);
       }
     })();
 
     return () => {
-      logPostPaywall("provisioning effect cleanup");
-      alive = false;
+      logPostPaywall("provisioning effect cleanup", { runId });
       if (tickId != null) window.clearInterval(tickId);
+      if (navigateTimer != null) window.clearTimeout(navigateTimer);
     };
   }, []);
 

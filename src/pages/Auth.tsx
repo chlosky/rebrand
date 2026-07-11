@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +68,11 @@ const Auth = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectAfterAuth =
+    typeof (location.state as { from?: unknown } | null)?.from === "string"
+      ? String((location.state as { from: string }).from)
+      : "/workspace";
   const trackActivity = async () => {};
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -90,7 +95,10 @@ const Auth = () => {
         );
       }
 
-      navigate("/workspace");
+      navigate(
+        redirectAfterAuth.startsWith("/") ? redirectAfterAuth : "/workspace",
+        { replace: true },
+      );
     } catch (error: unknown) {
       void trackActivity();
       toast.error(error instanceof Error ? error.message : t("toasts.resetLinkFailed"));
