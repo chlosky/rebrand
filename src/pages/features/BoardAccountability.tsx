@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { Capacitor } from "@capacitor/core";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BoardAccountabilityFlow } from "@/components/boards/BoardAccountabilityFlow";
 import { BoardActionKitTray } from "@/components/boards/BoardActionKitTray";
@@ -151,6 +152,8 @@ export default function BoardAccountability() {
   const [smsRemindersEnabled, setSmsRemindersEnabled] = useState(false);
   const [smsPhoneConfigured, setSmsPhoneConfigured] = useState(false);
   const [smsConsentOk, setSmsConsentOk] = useState(false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
+  const [pushPermissionGranted, setPushPermissionGranted] = useState(false);
   const [showSmsConsentDialog, setShowSmsConsentDialog] = useState(false);
   const [smsConsentChecked, setSmsConsentChecked] = useState(false);
   const [smsPhoneInput, setSmsPhoneInput] = useState("");
@@ -299,7 +302,7 @@ export default function BoardAccountability() {
       persistMap({
         ...normalized,
         reminders_paused: false,
-        delivery_channels: normalized.delivery_channels ?? { email: true, sms: false },
+        delivery_channels: normalized.delivery_channels ?? { email: true, sms: false, push: false },
       });
     } catch (error: unknown) {
       const status =
@@ -335,9 +338,9 @@ export default function BoardAccountability() {
 
   const scheduleAllReminders = async (
     finalizedMap: AccountabilityMap,
-  ): Promise<{ email: number; sms: number; calendar: number; total: number }> => {
+  ): Promise<{ email: number; sms: number; push: number; calendar: number; total: number }> => {
     if (!planBoard || !user?.id || !finalizedMap.reminders.length || finalizedMap.reminders_paused) {
-      return { email: 0, sms: 0, calendar: 0, total: 0 };
+      return { email: 0, sms: 0, push: 0, calendar: 0, total: 0 };
     }
 
     const { data: globalPrefs } = await supabase
@@ -346,18 +349,19 @@ export default function BoardAccountability() {
       .eq("user_id", user.id)
       .maybeSingle();
     if (globalPrefs?.board_reminders_paused === true) {
-      return { email: 0, sms: 0, calendar: 0, total: 0 };
+      return { email: 0, sms: 0, push: 0, calendar: 0, total: 0 };
     }
 
-    const delivery = finalizedMap.delivery_channels ?? { email: true, sms: false };
+    const delivery = finalizedMap.delivery_channels ?? { email: true, sms: false, push: false };
     const schedulableReminders = finalizedMap.reminders.filter((r) => {
       const reminderType = r.reminder_type ?? r.channels[0] ?? "email";
       if (reminderType === "email") return delivery.email;
       if (reminderType === "sms") return delivery.sms;
+      if (reminderType === "push") return delivery.push === true;
       return true;
     });
     if (!schedulableReminders.length) {
-      return { email: 0, sms: 0, calendar: 0, total: 0 };
+      return { email: 0, sms: 0, push: 0, calendar: 0, total: 0 };
     }
 
     const { data: prefs } = await supabase
@@ -402,6 +406,7 @@ export default function BoardAccountability() {
 
     let email = 0;
     let sms = 0;
+    let push = 0;
     let calendar = 0;
 
     for (const r of schedulableReminders) {
@@ -416,7 +421,7 @@ export default function BoardAccountability() {
         continue;
       }
       const smsContent =
-        reminderType === "sms"
+        reminderType === "sms" || reminderType === "push"
           ? stripSmsText(r.sms_text ?? r.title).slice(0, 70)
           : undefined;
 
@@ -450,10 +455,11 @@ export default function BoardAccountability() {
 
       if (reminderType === "email") email += 1;
       if (reminderType === "sms") sms += 1;
+      if (reminderType === "push") push += 1;
       if (reminderType === "calendar") calendar += 1;
     }
 
-    return { email, sms, calendar, total: email + sms + calendar };
+    return { email, sms, push, calendar, total: email + sms + push + calendar };
   };
 
   const runFinalize = async () => {
@@ -474,6 +480,7 @@ export default function BoardAccountability() {
       const parts = [
         scheduled.email ? `${scheduled.email} email` : null,
         scheduled.sms ? `${scheduled.sms} text` : null,
+        scheduled.push ? `${scheduled.push} push` : null,
         scheduled.calendar ? `${scheduled.calendar} calendar` : null,
       ].filter(Boolean);
 
@@ -517,6 +524,7 @@ export default function BoardAccountability() {
           const parts = [
             scheduled.email ? `${scheduled.email} email` : null,
             scheduled.sms ? `${scheduled.sms} text` : null,
+            scheduled.push ? `${scheduled.push} push` : null,
             scheduled.calendar ? `${scheduled.calendar} calendar` : null,
           ].filter(Boolean);
           toast.success(
@@ -533,11 +541,11 @@ export default function BoardAccountability() {
   );
 
   const setDeliveryChannel = useCallback(
-    async (channel: "email" | "sms", enabled: boolean) => {
+    async (channel: "email" | "sms" | "push", enabled: boolean) => {
       if (!map) return;
-      const current = map.delivery_channels ?? { email: true, sms: false };
+      const current = map.delivery_channels ?? { email: true, sms: false, push: false };
       const nextChannels = { ...current, [channel]: enabled };
-      if (!nextChannels.email && !nextChannels.sms) {
+      if (!nextChannels.email && !nextChannels.sms && !nextChannels.push) {
         toast.error("Keep at least one reminder channel on");
         return;
       }
@@ -555,6 +563,7 @@ export default function BoardAccountability() {
         const parts = [
           scheduled.email ? `${scheduled.email} email` : null,
           scheduled.sms ? `${scheduled.sms} text` : null,
+          scheduled.push ? `${scheduled.push} push` : null,
           scheduled.calendar ? `${scheduled.calendar} calendar` : null,
         ].filter(Boolean);
         if (parts.length) {
@@ -598,9 +607,14 @@ export default function BoardAccountability() {
     const { data: prefs } = await supabase
       .from("user_preferences")
       .select(
-        "sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at, board_reminders_paused",
+        "sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at, board_reminders_paused, app_notifications_enabled, notification_permission_status",
       )
       .eq("user_id", user.id)
+      .maybeSingle();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("app_notifications_enabled, notification_permission_status")
+      .eq("id", user.id)
       .maybeSingle();
     const globallyPaused = prefs?.board_reminders_paused === true;
     setBoardRemindersGloballyPaused(globallyPaused);
@@ -613,6 +627,12 @@ export default function BoardAccountability() {
     setSmsConsentOk(
       prefs?.sms_reminder_consent_at != null && prefs?.sms_reminder_opted_out_at == null,
     );
+    const notificationsEnabled =
+      prefs?.app_notifications_enabled === true || profile?.app_notifications_enabled === true;
+    const permissionGranted =
+      (prefs?.notification_permission_status ?? profile?.notification_permission_status) === "granted";
+    setPushNotificationsEnabled(notificationsEnabled);
+    setPushPermissionGranted(permissionGranted);
     if (phone) setSmsPhoneInput(phone.replace(/^\+1/, ""));
   }, [user?.id]);
 
@@ -634,6 +654,7 @@ export default function BoardAccountability() {
         const parts = [
           scheduled.email ? `${scheduled.email} email` : null,
           scheduled.sms ? `${scheduled.sms} text` : null,
+          scheduled.push ? `${scheduled.push} push` : null,
           scheduled.calendar ? `${scheduled.calendar} calendar` : null,
         ].filter(Boolean);
         toast.success(
@@ -805,7 +826,9 @@ export default function BoardAccountability() {
   };
 
   const smsReady = hasPro && smsRemindersEnabled && smsPhoneConfigured && smsConsentOk;
-  const deliveryChannels = map?.delivery_channels ?? { email: true, sms: false };
+  const pushReady =
+    Capacitor.isNativePlatform() && hasPro && pushNotificationsEnabled && pushPermissionGranted;
+  const deliveryChannels = map?.delivery_channels ?? { email: true, sms: false, push: false };
   const remindersActive = map ? !map.reminders_paused && !boardRemindersGloballyPaused : false;
 
   const reminderControls = hasDraft ? (
@@ -848,6 +871,19 @@ export default function BoardAccountability() {
                   Text
                 </Label>
               </div>
+              {Capacitor.isNativePlatform() ? (
+                <div className="flex items-center gap-1.5">
+                  <Checkbox
+                    id="reminder-channel-push"
+                    checked={deliveryChannels.push === true}
+                    disabled={!pushReady}
+                    onCheckedChange={(checked) => void setDeliveryChannel("push", checked === true)}
+                  />
+                  <Label htmlFor="reminder-channel-push" className="text-[11px] text-neutral-700">
+                    Push
+                  </Label>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </>
@@ -1017,6 +1053,7 @@ export default function BoardAccountability() {
                   boards={workspace.boards}
                   onChange={applyMapChange}
                   smsReady={smsReady}
+                  pushReady={pushReady}
                   hasPro={hasPro}
                   compact
                   onRequestSmsSetup={openSmsSetup}
@@ -1044,6 +1081,7 @@ export default function BoardAccountability() {
                 boards={workspace.boards}
                 onChange={applyMapChange}
                 smsReady={smsReady}
+                pushReady={pushReady}
                 hasPro={hasPro}
                 onRequestSmsSetup={openSmsSetup}
               />

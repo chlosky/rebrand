@@ -23,7 +23,7 @@ From **Tools → Events Manager → your iOS app → SDK setup**:
 | TikTok UI label | SDK parameter | Info.plist key (CI inject only) |
 |-----------------|---------------|----------------------------------|
 | **App Secret** | `accessToken` | `TikTokAccessToken` |
-| **App ID** (numeric, e.g. `6759469696`) | `appId` | `TikTokAppId` |
+| **App ID** (numeric from Events Manager) | `appId` | `TikTokAppId` |
 | **TikTok App ID** (long numeric id) | `tiktokAppId` | `TikTokTikTokAppId` |
 
 Do **not** use:
