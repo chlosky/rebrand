@@ -6,7 +6,7 @@ import TikTokBusinessSDK
 /// Maps to TikTok Events Manager + official sample (`InitViewController.swift`):
 ///   TikTokConfig(accessToken:appSecret, appId:appId, tiktokAppId:tiktokAppId)
 ///   - accessToken ← App Secret
-///   - appId ← App ID (numeric, e.g. App Store id6759469696 → 6759469696)
+///   - appId ← App ID (numeric from TikTok Events Manager, not the bundle id)
 ///   - tiktokAppId ← TikTok App ID
 enum TikTokSdkBootstrap {
     private static var didConfigure = false

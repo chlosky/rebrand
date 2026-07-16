@@ -30,6 +30,7 @@ type BoardAccountabilityFlowProps = {
   boards: Board[];
   onChange: (map: AccountabilityMap) => void;
   smsReady?: boolean;
+  pushReady?: boolean;
   hasPro?: boolean;
   onRequestSmsSetup?: (actionId: string) => void;
   compact?: boolean;
@@ -55,16 +56,22 @@ const PILL_SELECT =
 
 const DELETE_SLOT_CLASS = "flex h-8 w-6 shrink-0 items-center justify-end";
 
-type ReminderType = "calendar" | "email" | "sms";
+type ReminderType = "calendar" | "email" | "sms" | "push";
 
 function primaryReminderType(channels: ReminderChannelFlags): ReminderType {
+  if (channels.push) return "push";
   if (channels.sms) return "sms";
   if (channels.calendar) return "calendar";
   return "email";
 }
 
 function reminderTypeToChannels(type: ReminderType): ReminderChannelFlags {
-  return { calendar: type === "calendar", email: type === "email", sms: type === "sms" };
+  return {
+    calendar: type === "calendar",
+    email: type === "email",
+    sms: type === "sms",
+    push: type === "push",
+  };
 }
 
 function CadenceTimingControls({
@@ -250,6 +257,7 @@ function ActionNodeRow({
   action,
   locked,
   smsReady,
+  pushReady,
   hasPro,
   onRequestSmsSetup,
   onPatch,
@@ -259,6 +267,7 @@ function ActionNodeRow({
   action: AccountabilityAction;
   locked: boolean;
   smsReady: boolean;
+  pushReady: boolean;
   hasPro: boolean;
   onRequestSmsSetup?: (actionId: string) => void;
   onPatch: (patch: Partial<AccountabilityAction>) => void;
@@ -279,15 +288,19 @@ function ActionNodeRow({
         return;
       }
     }
+    if (type === "push") {
+      if (!hasPro) return;
+      if (!pushReady) return;
+    }
     const channels = reminderTypeToChannels(type);
     const patch: Partial<AccountabilityAction> = {
       channels,
       reminder_type: type,
     };
-    if (type === "sms" && !action.sms_text) {
+    if ((type === "sms" || type === "push") && !action.sms_text) {
       patch.sms_text = smsTextFromTitle(action.title);
     }
-    if (type !== "sms") {
+    if (type !== "sms" && type !== "push") {
       patch.sms_text = null;
     }
     onPatch(patch);
@@ -397,6 +410,11 @@ function ActionNodeRow({
                     <option value="sms" disabled={!hasPro}>
                       Text
                     </option>
+                    {pushReady ? (
+                      <option value="push" disabled={!hasPro}>
+                        Push
+                      </option>
+                    ) : null}
                   </select>
                   <CadenceTimingControls
                     cadence={action.cadence}
@@ -425,7 +443,7 @@ function ActionNodeRow({
             </div>
         </div>
       </div>
-      {action.channels.sms && !locked ? (
+      {(action.channels.sms || action.channels.push) && !locked ? (
         <div className="flex w-full max-w-full items-center gap-2 px-1">
           <Input
             value={action.sms_text ?? smsTextFromTitle(action.title)}
@@ -489,6 +507,7 @@ export function BoardAccountabilityFlow({
   boards,
   onChange,
   smsReady = false,
+  pushReady = false,
   hasPro = false,
   onRequestSmsSetup,
   compact = false,
@@ -913,6 +932,7 @@ export function BoardAccountabilityFlow({
                                       action={action}
                                       locked={locked}
                                       smsReady={smsReady}
+                                      pushReady={pushReady}
                                       hasPro={hasPro}
                                       onRequestSmsSetup={onRequestSmsSetup}
                                       onPatch={(patchAction) => updateAction(action.id, patchAction)}

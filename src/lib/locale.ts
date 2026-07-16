@@ -65,3 +65,13 @@ export function legalPrivacyUrl(): string {
 export function detectInitialAppLocale(): AppLocale {
   return "en";
 }
+
+/** RevenueCat Paywall Localization uses underscore locale IDs (dashboard is source of truth). */
+export function revenueCatUILocaleForApp(locale: AppLocale): string {
+  if (locale === "en") return "en_US";
+  return "en_US";
+}
+
+export function resolveRevenueCatUILocale(locale?: AppLocale): string {
+  return revenueCatUILocaleForApp(locale ?? detectInitialAppLocale());
+}

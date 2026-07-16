@@ -11,12 +11,13 @@ export type StepType =
   | "review"
   | "custom";
 
-export type ReminderType = "calendar" | "email" | "sms";
+export type ReminderType = "calendar" | "email" | "sms" | "push";
 
 export type ReminderChannelFlags = {
   calendar: boolean;
   email: boolean;
   sms: boolean;
+  push: boolean;
 };
 
 export const DEFAULT_REMINDER_TYPE: ReminderType = "email";
@@ -25,13 +26,20 @@ export const DEFAULT_REMINDER_CHANNELS: ReminderChannelFlags = {
   calendar: false,
   email: true,
   sms: false,
+  push: false,
 };
 
 export function channelsFromReminderType(type: ReminderType): ReminderChannelFlags {
-  return { calendar: type === "calendar", email: type === "email", sms: type === "sms" };
+  return {
+    calendar: type === "calendar",
+    email: type === "email",
+    sms: type === "sms",
+    push: type === "push",
+  };
 }
 
 export function reminderTypeFromChannels(channels: ReminderChannelFlags): ReminderType {
+  if (channels.push) return "push";
   if (channels.sms) return "sms";
   if (channels.calendar) return "calendar";
   return "email";
@@ -43,7 +51,7 @@ export function normalizeReminderChannels(raw: unknown): ReminderChannelFlags {
   const o = raw as Record<string, unknown>;
   if (typeof o.reminder_type === "string") {
     const t = o.reminder_type as ReminderType;
-    if (t === "calendar" || t === "email" || t === "sms") {
+    if (t === "calendar" || t === "email" || t === "sms" || t === "push") {
       return channelsFromReminderType(t);
     }
   }
@@ -51,8 +59,9 @@ export function normalizeReminderChannels(raw: unknown): ReminderChannelFlags {
     calendar: o.calendar === true,
     email: o.email === true,
     sms: o.sms === true,
+    push: o.push === true,
   };
-  const active = (["sms", "calendar", "email"] as ReminderType[]).filter((t) => flags[t]);
+  const active = (["push", "sms", "calendar", "email"] as ReminderType[]).filter((t) => flags[t]);
   if (active.length === 1) return channelsFromReminderType(active[0]);
   if (active.length > 1) return channelsFromReminderType(active[0]);
   return { ...DEFAULT_REMINDER_CHANNELS };
@@ -155,7 +164,7 @@ export type AccountabilityMap = {
   /** When true, scheduled email/text reminders are not sent until resumed. */
   reminders_paused?: boolean;
   /** Which delivery channels to schedule when reminders are active. */
-  delivery_channels?: { email: boolean; sms: boolean };
+  delivery_channels?: { email: boolean; sms: boolean; push?: boolean };
 };
 
 export const WEEKDAY_OPTIONS = [
@@ -619,8 +628,9 @@ export function normalizeAccountabilityMap(raw: unknown): AccountabilityMap | nu
               email:
                 (o.delivery_channels as { email?: unknown }).email === false ? false : true,
               sms: (o.delivery_channels as { sms?: unknown }).sms === true,
+              push: (o.delivery_channels as { push?: unknown }).push === true,
             }
-          : { email: true, sms: false },
+          : { email: true, sms: false, push: false },
     }),
   );
 }
@@ -644,9 +654,9 @@ export function buildRemindersFromMap(map: AccountabilityMap): AccountabilityRem
     const reminder_type = action.reminder_type ?? reminderTypeFromChannels(action.channels);
     const channels = reminderChannelsArray(reminder_type);
     const sms_text =
-      reminder_type === "sms" && action.sms_text
+      (reminder_type === "sms" || reminder_type === "push") && action.sms_text
         ? stripSmsText(action.sms_text).slice(0, SMS_MAX_LENGTH)
-        : reminder_type === "sms"
+        : reminder_type === "sms" || reminder_type === "push"
           ? smsTextFromTitle(action.title)
           : null;
 
@@ -712,17 +722,20 @@ export function validateMapForFinalize(map: AccountabilityMap): FinalizeValidati
       return { ok: false, message: "Every action needs a title before finalizing." };
     }
     const channels = normalizeReminderChannels(action.channels);
-    const activeCount = [channels.calendar, channels.email, channels.sms].filter(Boolean).length;
+    const activeCount = [channels.calendar, channels.email, channels.sms, channels.push].filter(Boolean).length;
     if (activeCount !== 1) {
       return { ok: false, message: "Each action must have exactly one reminder type." };
     }
     const reminder_type = reminderTypeFromChannels(channels);
-    if (reminder_type === "sms") {
+    if (reminder_type === "sms" || reminder_type === "push") {
       const sms = action.sms_text ? stripSmsText(action.sms_text) : smsTextFromTitle(action.title);
       if (!isValidSmsReminderText(sms)) {
         return {
           ok: false,
-          message: "Text reminders must be 70 characters or less with no links or emoji.",
+          message:
+            reminder_type === "push"
+              ? "Push reminders must be 70 characters or less with no links or emoji."
+              : "Text reminders must be 70 characters or less with no links or emoji.",
         };
       }
     }

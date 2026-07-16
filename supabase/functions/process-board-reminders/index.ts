@@ -34,6 +34,25 @@ const DEFAULT_TIME = "09:00";
 
 const DEFAULT_SMS_DAILY_LIMIT = 5;
 
+const ROUTINE_PUSH_IOS_SOUND = "celestial_bloom.wav";
+const ROUTINE_PUSH_ANDROID_SOUND = "celestial_bloom";
+
+function isBoardReminderPushEnabled(): boolean {
+  const raw = Deno.env.get("BOARD_REMINDER_PUSH_ENABLED");
+  if (!raw) return false;
+  const s = raw.trim().toLowerCase();
+  if (s === "false" || s === "0" || s === "no" || s === "off") return false;
+  return s === "true" || s === "1" || s === "yes" || s === "on";
+}
+
+function buildPushReminderBody(title: string, body?: string | null, smsContent?: string | null): string {
+  if (typeof smsContent === "string" && smsContent.trim()) {
+    return stripSmsContent(smsContent).replace(/\breply\s+stop\s+to\s+opt\s+out\.?$/i, "").trim();
+  }
+  if (typeof body === "string" && body.trim()) return stripSmsContent(body);
+  return stripSmsContent(title);
+}
+
 const WEEKDAY_OPTIONS = [
 
   "monday",
@@ -344,6 +363,8 @@ serve(async (req) => {
 
   let smsSent = 0;
 
+  let pushSent = 0;
+
   let smsSkippedLimit = 0;
 
   let cancelledSubscription = 0;
@@ -437,7 +458,7 @@ serve(async (req) => {
 
       .from("profiles")
 
-      .select("email, phone")
+      .select("email, phone, app_notifications_enabled, notification_permission_status")
 
       .eq("id", reminder.user_id)
 
@@ -451,7 +472,7 @@ serve(async (req) => {
 
       .select(
 
-        "sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at, sms_daily_limit, timezone",
+        "sms_reminders_enabled, phone_number_e164, sms_reminder_consent_at, sms_reminder_opted_out_at, sms_daily_limit, timezone, app_notifications_enabled, notification_permission_status",
 
       )
 
@@ -504,7 +525,9 @@ serve(async (req) => {
 
       prefs?.sms_reminder_opted_out_at == null;
 
-
+    const pushAllowed =
+      (prefs?.app_notifications_enabled === true || profile?.app_notifications_enabled === true) &&
+      (prefs?.notification_permission_status ?? profile?.notification_permission_status) === "granted";
 
     const channels: string[] = reminder.channels ?? ["email"];
 
@@ -520,6 +543,8 @@ serve(async (req) => {
     let emailDelivered = false;
 
     let smsDelivered = false;
+
+    let pushDelivered = false;
 
     let smsLimitDeferred = false;
 
@@ -681,25 +706,80 @@ serve(async (req) => {
 
     }
 
+    if (channel === "push") {
+      const pushBody = buildPushReminderBody(reminder.title, reminder.body, reminder.sms_content);
+      let pushStatus = "failed";
+      let pushError: string | null = null;
+      let providerMessageId: string | null = null;
 
+      if (!isBoardReminderPushEnabled()) {
+        pushStatus = "skipped_disabled";
+        pushError = "board_reminder_push_disabled";
+      } else if (!pushAllowed) {
+        pushStatus = "skipped_no_consent";
+        pushError = "push_not_enabled_or_no_permission";
+      } else if (!pushBody) {
+        pushStatus = "failed";
+        pushError = "invalid_push_content";
+      } else {
+        const oneSignalAppId = Deno.env.get("ONESIGNAL_APP_ID")?.trim();
+        const oneSignalRestKey = Deno.env.get("ONESIGNAL_REST_API_KEY")?.trim();
+        if (!oneSignalAppId || !oneSignalRestKey) {
+          pushStatus = "skipped_not_configured";
+          pushError = "onesignal_not_configured";
+        } else {
+          const pushRes = await fetch("https://api.onesignal.com/notifications", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Key ${oneSignalRestKey}`,
+            },
+            body: JSON.stringify({
+              app_id: oneSignalAppId,
+              include_aliases: { external_id: [reminder.user_id] },
+              target_channel: "push",
+              headings: { en: "palette plotting" },
+              contents: { en: pushBody },
+              ios_sound: ROUTINE_PUSH_IOS_SOUND,
+              android_sound: ROUTINE_PUSH_ANDROID_SOUND,
+            }),
+          });
 
-    if (channels.includes("push")) {
+          let pushResponse: Record<string, unknown> | null = null;
+          try {
+            pushResponse = (await pushRes.json()) as Record<string, unknown>;
+          } catch {
+            pushResponse = { raw: await pushRes.text().catch(() => "") };
+          }
+
+          const errors = Array.isArray(pushResponse?.errors) ? pushResponse.errors : [];
+          providerMessageId =
+            typeof pushResponse?.id === "string" ? pushResponse.id.trim() : null;
+
+          if (pushRes.ok && errors.length === 0 && providerMessageId) {
+            pushStatus = "sent";
+            pushDelivered = true;
+            pushSent++;
+          } else {
+            pushStatus = "failed";
+            pushError = "push_send_failed";
+            console.error("[process-board-reminders] OneSignal push failed:", pushRes.status, pushResponse);
+          }
+        }
+      }
 
       await supabase.from("board_reminder_deliveries").insert({
-
         reminder_id: reminder.id,
-
         channel: "push",
-
-        status: "queued",
-
+        status: pushStatus,
+        provider_message_id: providerMessageId,
+        error: pushError,
       });
-
     }
 
 
 
-    const anyDelivered = emailDelivered || smsDelivered;
+    const anyDelivered = emailDelivered || smsDelivered || pushDelivered;
 
     if (!anyDelivered && !smsLimitDeferred) continue;
 
@@ -746,6 +826,8 @@ serve(async (req) => {
       email_sent: emailSent,
 
       sms_sent: smsSent,
+
+      push_sent: pushSent,
 
       sms_skipped_daily_limit: smsSkippedLimit,
 
