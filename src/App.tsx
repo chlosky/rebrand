@@ -59,7 +59,6 @@ import PlottingHelp from "./pages/PlottingHelp";
 import Community from "./pages/Community";
 import Unsubscribe from "./pages/Unsubscribe";
 import { SiteAccessGate } from "@/components/SiteAccessGate";
-import Maintenance from "./pages/Maintenance";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { WebGetAppAfterPurchaseDialog } from "@/components/WebGetAppAfterPurchaseDialog";
 import { NativeAppRootRedirect, NativeSplashGate, signalNativeSplashReadyToHide } from "@/components/NativeAppRootRedirect";
@@ -77,10 +76,6 @@ const DashboardLayout = () => {
 const WebResubscribeRedirect = () => <Navigate to="/onboarding/web-paywall" replace />;
 
 const App = () => {
-  if (import.meta.env.VITE_MAINTENANCE_MODE === "true") {
-    return <Maintenance />;
-  }
-
   return (
   <ThemeProvider>
     <AttributionCapture />
